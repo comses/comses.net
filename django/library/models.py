@@ -1,5 +1,6 @@
 import hashlib
 import json
+import yaml
 import logging
 import os
 import pathlib
@@ -13,7 +14,6 @@ from packaging.version import Version
 from abc import ABC
 from collections import OrderedDict, defaultdict
 from datetime import date, timedelta
-from codemeticulous import convert
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -53,6 +53,7 @@ from core.models import Platform, MemberProfile, ModeratedContent
 from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
 from core.view_helpers import get_search_queryset
+from .metadata import CodeMetaConverter, DataCiteConverter, CitationFileFormatConverter
 from .fs import (
     CodebaseReleaseFsApi,
     StagingDirectories,
@@ -670,6 +671,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         settings.AUTH_USER_MODEL, related_name="codebases", on_delete=models.PROTECT
     )
 
+    codemeta_json = models.JSONField(
+        default=dict,
+        help_text=_(
+            "JSON metadata conforming to the codemeta schema. Cached as of the last update"
+        ),
+    )
+
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
@@ -701,9 +709,21 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     HAS_PUBLISHED_KEY = True
 
+    @property
+    def codemeta(self):
+        """a freshly generated CodeMeta object represnting this codebase"""
+        return CodeMetaConverter.convert_codebase(self)
+
     @cached_property
     def datacite(self):
         return DataCiteSchema.from_codebase(self)
+
+    # FIXME: replace the above datacite metadata generation with this
+    # @property
+    # def datacite(self):
+    #     return DataCiteConverter.convert_codebase(
+    #         self, codemeta=self.codemeta_json or None
+    #     )
 
     @property
     def is_replication(self):
@@ -1123,6 +1143,15 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             self.latest_version = release
             self.save()
         return release
+
+    def save(self, **kwargs):
+        logger.debug("Building codemeta for codebase: %s", self)
+        self.codemeta_json = json.loads(self.codemeta.json())
+        super().save(**kwargs)
+        # saving releases will trigger metadata rebuilding and updating
+        # the fs and git mirror if one exists
+        for release in self.releases.all():
+            release.save(rebuild_metadata=True)
 
     @classmethod
     def get_indexed_objects(cls):
@@ -1727,9 +1756,34 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             )
         return DataCiteSchema.from_release(self)
 
+    # FIXME: replace the above datacite metadata generation with this
+    # @property
+    # def datacite_temp(self):
+    #     return DataCiteConverter.convert_release(
+    #         self, codemeta=self.codemeta_json or None
+    #     )
+
+    @property
+    def codemeta(self):
+        """a freshly generated CodeMeta object represnting this release"""
+        return CodeMetaConverter.convert_release(self)
+
+    @property
+    def cff(self):
+        """an object representing this release in the Citation File Format"""
+        return CitationFileFormatConverter.convert_release(
+            self, codemeta=self.codemeta_json or None
+        )
+
     @property
     def codemeta_json_str(self):
+        """json-formatted string of the codemeta metadata"""
         return json.dumps(self.codemeta_json, indent=2)
+
+    @property
+    def cff_yaml_str(self):
+        """yaml-formatted string of the cff metadata"""
+        return yaml.dump(json.loads(self.cff.json()), default_flow_style=False)
 
     @cached_property
     def license_text(self) -> str:
@@ -1895,6 +1949,23 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 }
             )
         self.version_number = version_number
+
+    def save(self, rebuild_metadata=True, **kwargs):
+        if rebuild_metadata:
+            logger.debug("Building codemeta for release: %s", self)
+            old_codemeta = self.codemeta_json
+            self.codemeta_json = json.loads(self.codemeta.json())
+            super().save(**kwargs)
+
+            if old_codemeta != self.codemeta_json:
+                from .tasks import update_fs_release_metadata
+
+                update_fs_release_metadata(self.id)
+                # if the codebase has a git mirror, update the metadata in the git repository
+                if self.codebase.git_mirror and self.codebase.git_mirror.remote_url:
+                    from .tasks import update_mirrored_release_metadata
+
+                    update_mirrored_release_metadata(self.id)
 
     @classmethod
     def get_indexed_objects(cls):

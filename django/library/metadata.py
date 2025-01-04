@@ -1,4 +1,4 @@
-import json
+from datetime import date
 from typing import Literal
 from codemeticulous.codemeta.models import (
     CodeMeta,
@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class CodeMetaConverter:
+    """Create codemeta objects that represent the metadata for a codebase or release."""
+
     COMSES_ORGANIZATION = {
         "@id": "https://ror.org/015bsfc29",
         "@type": "Organization",
@@ -71,8 +73,8 @@ class CodeMetaConverter:
                 codemeta_actors.append(
                     Person(
                         id_=contributor_id,
-                        givenName=contributor.given_name,
-                        familyName=contributor.family_name,
+                        givenName=contributor.get_given_name() or None,
+                        familyName=contributor.get_family_name() or None,
                         affiliation=affiliation,
                         email=contributor.email or None,
                     )
@@ -186,51 +188,54 @@ class CodeMetaConverter:
 
     @classmethod
     def convert_codebase(cls, codebase) -> CodeMeta:
-        raise NotImplementedError
+        # TODO: finish this, should extract common stuff from create_release
+        return CodeMeta(
+            type_="SoftwareSourceCode",
+            id_=codebase.permanent_url,
+            name=codebase.title,
+            publisher=cls.COMSES_ORGANIZATION,
+        )
 
 
 class CitationFileFormatConverter:
-    @classmethod
-    def convert_release(cls, release, codemeta: CodeMeta = None) -> CitationFileFormat:
-        if not codemeta:
-            codemeta = CodeMetaConverter.convert_release(release)
-        return convert("codemeta", "cff", codemeta)
+    """Create citation file format objects that represent the metadata for a codebase or release."""
 
     @classmethod
-    def convert_codebase(
-        cls, codebase, codemeta: CodeMeta = None
+    def convert_release(
+        cls, release, codemeta: CodeMeta | dict = None
     ) -> CitationFileFormat:
-        raise NotImplementedError
+        if not codemeta:
+            codemeta = CodeMetaConverter.convert_release(release)
+        elif isinstance(codemeta, dict):
+            codemeta = CodeMeta(**codemeta)
+        return convert("codemeta", "cff", codemeta)
 
 
 class DataCiteConverter:
+    """Create datacite metadata objects that represent the metadata for a codebase or release."""
+
     @classmethod
-    def convert_release(cls, release, codemeta: CodeMeta = None) -> DataCite:
+    def convert_release(cls, release, codemeta: CodeMeta | dict = None) -> DataCite:
         if not codemeta:
             codemeta = CodeMetaConverter.convert_release(release)
-        return convert("codemeta", "datacite", codemeta)
+        elif isinstance(codemeta, dict):
+            codemeta = CodeMeta(**codemeta)
+        # datacite always needs a publication date
+        if not codemeta.datePublished:
+            codemeta.datePublished = date.today()
+        # any additional fields that cannot be derived from codemeta
+        addl_datacite_fields = {}
+        return convert("codemeta", "datacite", codemeta, **addl_datacite_fields)
 
     @classmethod
-    def convert_codebase(cls, codebase, codemeta: CodeMeta = None) -> DataCite:
-        raise NotImplementedError
-
-
-class CodebaseReleaseMetadataBuilder:
-    def __init__(self, release):
-        self.release = release
-        self.codemeta: CodeMeta = None
-
-    def build_codemeta(self) -> CodeMeta:
-        self.codemeta = CodeMetaConverter.convert_release(self.release)
-        return self.codemeta
-
-    def build_codemeta_and_cache(self) -> CodeMeta:
-        self.build_codemeta()
-        self.release.codemeta_json = json.loads(self.codemeta.json())
-        return self.codemeta
-
-    def build_datacite(self):
-        return DataCiteConverter.convert_release(self.release, self.codemeta)
-
-    def build_cff(self):
-        return CitationFileFormatConverter.convert_release(self.release, self.codemeta)
+    def convert_codebase(cls, codebase, codemeta: CodeMeta | dict = None) -> DataCite:
+        if not codemeta:
+            codemeta = CodeMetaConverter.convert_codebase(codebase)
+        elif isinstance(codemeta, dict):
+            codemeta = CodeMeta(**codemeta)
+        # datacite always needs a publication date
+        if not codemeta.datePublished:
+            codemeta.datePublished = date.today()
+        # any additional fields that cannot be derived from codemeta
+        addl_datacite_fields = {}
+        return convert("codemeta", "datacite", codemeta, **addl_datacite_fields)

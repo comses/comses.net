@@ -27,7 +27,6 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from core import fs
-from .metadata import CodebaseReleaseMetadataBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -372,7 +371,6 @@ class CodebaseReleaseFsApi:
         self.identifier = codebase_release.codebase.identifier
         self.version_number = codebase_release.version_number
         self.release_id = codebase_release.id
-        self.metadata_builder = CodebaseReleaseMetadataBuilder(codebase_release)
         self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
@@ -414,19 +412,19 @@ class CodebaseReleaseFsApi:
         return self.rootdir.joinpath("sip")
 
     @property
-    def codemeta(self):
-        return self.metadata_builder.build_codemeta_and_cache()
+    def codemeta_contents(self) -> str:
+        return self.release.codemeta_json_str
 
     @property
     def codemeta_path(self):
         return self.sip_contents_dir.joinpath("codemeta.json")
 
     @property
-    def citation_cff(self):
-        return self.metadata_builder.build_cff()
+    def cff_contents(self) -> str:
+        return self.release.cff_yaml_str
 
     @property
-    def citation_cff_path(self):
+    def cff_path(self):
         return self.sip_contents_dir.joinpath("CITATION.cff")
 
     @property
@@ -539,7 +537,7 @@ class CodebaseReleaseFsApi:
         path = self.codemeta_path
         if force or not path.exists():
             with path.open(mode="w", encoding="utf-8") as codemeta_out:
-                json.dump(self.codemeta.to_dict(), codemeta_out, indent=4)
+                codemeta_out.write(self.codemeta_contents)
             return True
         return False
 
@@ -547,10 +545,10 @@ class CodebaseReleaseFsApi:
         """
         Returns True if a CITATION.cff file was created, False otherwise
         """
-        path = self.citation_cff_path
+        path = self.cff_path
         if force or not path.exists():
-            with path.open(mode="w", encoding="utf-8") as citation_out:
-                citation_out.write(self.citation_cff.yaml())
+            with path.open(mode="w", encoding="utf-8") as cff_out:
+                cff_out.write(self.cff_contents)
             return True
         return False
 
@@ -564,9 +562,6 @@ class CodebaseReleaseFsApi:
                 license_out.write(self.release.license_text)
             return True
         return False
-
-    def get_codemeta_json(self):
-        return self.codemeta.json()
 
     def build_published_archive(self, force=False):
         """
@@ -781,12 +776,21 @@ class CodebaseReleaseFsApi:
         if not self.archivepath.exists() or force:
             self.build_archive_at_dest(dest=str(self.archivepath))
 
-    def rebuild(self):
-        msgs = self.build_sip()
+    def rebuild(self, metadata_only=False) -> MessageGroup:
+        """rebuild the submission package and archive if it already exists
+
+        if metadata_only is True, only the metadata files are rebuilt, not the entire package
+        """
+        if not metadata_only:
+            msgs = self.build_sip()
+        else:
+            msgs = self._create_msg_group()
         self.create_or_update_codemeta(force=True)
         self.create_or_update_citation_cff(force=True)
         self.create_or_update_license(force=True)
-        self.build_archive(force=True)
+        # only rebuild the archive package if it already exists
+        if self.aip_dir.exists():
+            self.build_archive(force=True)
         return msgs
 
 
@@ -926,32 +930,25 @@ class CodebaseGitRepositoryApi:
         helper for adding all 'meta' files (readme, codemeta, citation, license) for a release.
         If overwrite is True, overwrite existing files, otherwise only add if they do not exist
         """
-        metadata_builder = CodebaseReleaseMetadataBuilder(release)
         self._add_meta_file("README.md", self.generate_readme(), overwrite=overwrite)
         self._add_meta_file(
             "CITATION.cff",
-            lambda: metadata_builder.build_cff().yaml(),
+            release.cff_yaml_str,
             overwrite=overwrite,
         )
         self._add_meta_file(
             "codemeta.json",
-            lambda: metadata_builder.build_codemeta_and_cache().json(),
+            release.codemeta_json_str,
             overwrite=overwrite,
         )
         if release.license:
             self._add_meta_file("LICENSE", release.license_text)
 
-    def _add_meta_file(
-        self, filename, content: str | Callable[[], str], overwrite=False
-    ):
+    def _add_meta_file(self, filename, content: str, overwrite=False):
         dest_path = self.repo_dir / filename
         if not dest_path.exists() or overwrite:
-            if callable(content):
-                content = content()
-            if not isinstance(content, str):
-                raise ValueError("metadata file content must be a string")
             with dest_path.open("w") as f:
-                f.write(content + "\n")
+                f.write(content)
             self.repo.index.add([filename])
 
     def commit_release(self, release, tag=True):
@@ -988,24 +985,7 @@ class CodebaseGitRepositoryApi:
         self.repo.create_head(release_branch_name, commit)
         return release_branch_name
 
-    def is_release_codemeta_stale(self, release):
-        """
-        check if the codemeta.json file for a release branch is out of date
-
-        this has the side effect of updating the branch whenever we change how codemeta is generated
-        """
-        release_branch_name = self.get_release_branch_name(release)
-        self.repo.git.checkout(release_branch_name)
-        codemeta_path = self.repo_dir / "codemeta.json"
-        if not codemeta_path.exists():
-            return True
-        with codemeta_path.open() as f:
-            checked_in_codemeta = json.load(f)
-        current_codemeta = json.loads(release.codemeta_json)
-        self.checkout_main()
-        return checked_in_codemeta != current_codemeta
-
-    def update_release_branch(self, release):
+    def update_release_branch(self, release) -> Repo | None:
         """
         update a release branch with new metadata, merging back into main (fast-forward)
         if it is the latest release
@@ -1013,6 +993,8 @@ class CodebaseGitRepositoryApi:
         this ONLY updates metadata files and does not add
         changes to the code, docs, etc. as it is assumed that any synced releases are published
         and frozen
+
+        returns None if no changes were made, otherwise returns the updated repo
         """
         with self.use_temporary_repo(from_existing=True):
             self.initialize(should_exist=True)
@@ -1027,6 +1009,11 @@ class CodebaseGitRepositoryApi:
 
             self.repo.git.checkout(release_branch_name)
             self.add_release_meta_files(release)
+
+            # check for changes before committing
+            if not self.repo.is_dirty():
+                return None
+
             commit_msg = f"Update metadata for release {release.version_number}"
             self.repo.index.commit(
                 message=commit_msg,

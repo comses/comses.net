@@ -871,6 +871,8 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         )
         crs.is_valid(raise_exception=True)
         crs.save()
+        # trigger a re-generation of release codemeta by saving
+        codebase_release.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"])
