@@ -69,10 +69,8 @@ def create(model_cls, validated_data, context):
 
 def update(serializer_update, instance, validated_data):
     tags = TagSerializer(many=True, data=validated_data.pop("tags"))
-    instance = serializer_update(instance, validated_data)
     set_tags(instance, tags)
-    instance.save()
-    return instance
+    return serializer_update(instance, validated_data)
 
 
 class EditableSerializerMixin(serializers.Serializer):
