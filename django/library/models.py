@@ -1961,11 +1961,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 from .tasks import update_fs_release_metadata
 
                 update_fs_release_metadata(self.id)
-                # if the codebase has a git mirror, update the metadata in the git repository
-                if self.codebase.git_mirror and self.codebase.git_mirror.remote_url:
-                    from .tasks import update_mirrored_release_metadata
-
-                    update_mirrored_release_metadata(self.id)
 
     @classmethod
     def get_indexed_objects(cls):

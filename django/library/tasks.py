@@ -94,8 +94,12 @@ def update_mirrored_release_metadata(release_id: int):
         mirror.update_remote_releases()
 
 
-@db_task(retries=3, retry_delay=30)
+@db_task(retries=1, retry_delay=30)
 def update_fs_release_metadata(release_id: int):
     release = CodebaseRelease.objects.get(id=release_id)
+    codebase = release.codebase
     fs_api = release.get_fs_api()
     fs_api.rebuild(metadata_only=True)
+    # if the codebase has a git mirror, update the metadata in the git repository
+    if codebase.git_mirror and codebase.git_mirror.remote_url:
+        update_mirrored_release_metadata(release_id)

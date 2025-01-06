@@ -154,7 +154,9 @@ class CodeMetaConverter:
                 release.last_published_on.year if release.last_published_on else None
             ),
             dateCreated=codebase.date_created.date(),
-            dateModified=release.last_modified.date(),
+            dateModified=(
+                release.last_modified.date() if release.last_modified else None
+            ),
             datePublished=(
                 release.last_published_on.date() if release.last_published_on else None
             ),
