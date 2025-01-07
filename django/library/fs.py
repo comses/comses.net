@@ -889,14 +889,10 @@ class CodebaseGitRepositoryApi:
     def checkout_main(self):
         self.repo.git.checkout(self.DEFAULT_BRANCH_NAME)
 
-    def add_release_files(self, release):
+    def clear_existing_files(self):
         """
-        copy over submission package files for a release to the working tree of the git repo
-        starting from a clean directory by removing all files except .git/
+        clear any existing files in the working tree (tracked or untracked) besides .git
         """
-        release_fs_api: CodebaseReleaseFsApi = release.get_fs_api()
-        sip_storage = release_fs_api.get_sip_storage()
-        # clear existing file besides .git
         for item in self.repo_dir.iterdir():
             if item.name != ".git":
                 if item.is_dir():
@@ -908,43 +904,45 @@ class CodebaseGitRepositoryApi:
                     working_tree=True,
                     r=True,
                 )
-        readme_pattern = re.compile(
-            r"(?i)^readme(?:\.(?:markdown|mdown|mkdn|md|textile|rdoc|org|creole|mediawiki|wiki|rst|asciidoc|adoc|asc|pod|txt))?$"
-        )
+
+    def add_release_files(self, release):
+        """
+        copy over submission package files for a release to the working tree of the git repo
+        starting from a clean directory by removing all files except .git/
+        """
+        release_fs_api: CodebaseReleaseFsApi = release.get_fs_api()
+        sip_storage = release_fs_api.get_sip_storage()
+        self.clear_existing_files()
         # copy over files from the sip storage and add to the index
         # FIXME: consider moving this copy all operation to the CodebaseReleaseStorage class
         for file in sip_storage.list(absolute=True):
-            # check for an existing readme and duplicate it to the repo root
-            # for github to recognize. Otherwise, we'll generate one later
-            if readme_pattern.match(file.name):
-                shutil.copy(file, self.repo_dir / file.name)
-                self.repo.index.add([file.name])
             rel_path = file.relative_to(sip_storage.location)
             dest_path = self.repo_dir / rel_path
             dest_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(file, dest_path)
             self.repo.index.add([str(rel_path)])
 
-    def add_release_meta_files(self, release, overwrite=False):
+    def add_readme(self, release):
         """
-        helper for adding all 'meta' files (readme, codemeta, citation, license) for a release.
-        If overwrite is True, overwrite existing files, otherwise only add if they do not exist
+        add a readme file to the repository root. If one already exists somewhere, move it.
+        Otherwise, generate one from a template
         """
-        self._add_meta_file("README.md", self.generate_readme(), overwrite=overwrite)
-        self._add_meta_file(
-            "CITATION.cff",
-            release.cff_yaml_str,
-            overwrite=overwrite,
+        release_fs_api: CodebaseReleaseFsApi = release.get_fs_api()
+        sip_storage = release_fs_api.get_sip_storage()
+        readme_pattern = re.compile(
+            r"(?i)^readme(?:\.(?:markdown|mdown|mkdn|md|textile|rdoc|org|creole|mediawiki|wiki|rst|asciidoc|adoc|asc|pod|txt))?$"
         )
-        self._add_meta_file(
-            "codemeta.json",
-            release.codemeta_json_str,
-            overwrite=overwrite,
-        )
-        if release.license:
-            self._add_meta_file("LICENSE", release.license_text)
+        for file in sip_storage.list(absolute=True):
+            # check for an existing readme and duplicate it to the repo root
+            # for github to recognize. Otherwise, we'll generate one later
+            if readme_pattern.match(file.name):
+                shutil.copy(file, self.repo_dir / file.name)
+                self.repo.index.add([file.name])
+                return
+        readme_content = f"# {self.codebase.title}\n\n{self.codebase.description.raw}\n"
+        self._add_single_file("README.md", readme_content)
 
-    def _add_meta_file(self, filename, content: str, overwrite=False):
+    def _add_single_file(self, filename, content: str, overwrite=False):
         dest_path = self.repo_dir / filename
         if not dest_path.exists() or overwrite:
             with dest_path.open("w") as f:
@@ -956,7 +954,9 @@ class CodebaseGitRepositoryApi:
         commit the the release and tag it, should only be called after adding all necessary files
         """
         # make sure the commit goes to main, then create the release branch later
-        self.checkout_main()
+        # unless this is the first commit
+        if self.DEFAULT_BRANCH_NAME in self.repo.heads:
+            self.checkout_main()
         commit_msg = (
             f"Release {release.version_number}\n\n{release.release_notes.raw}\n"
         )
@@ -1008,7 +1008,8 @@ class CodebaseGitRepositoryApi:
             )
 
             self.repo.git.checkout(release_branch_name)
-            self.add_release_meta_files(release)
+            self.add_release_files(release)
+            self.add_readme(release)
 
             # check for changes before committing
             if not self.repo.is_dirty():
@@ -1029,7 +1030,8 @@ class CodebaseGitRepositoryApi:
                     logger.error(
                         f"Unexpected divergence when trying to merge {release_branch_name} into {self.DEFAULT_BRANCH_NAME}: {e}"
                     )
-        self.checkout_main()
+            self.checkout_main()
+
         return Repo(self.repo_dir)
 
     def append_releases(self, releases=None) -> Repo:
@@ -1063,7 +1065,7 @@ class CodebaseGitRepositoryApi:
             # append releases to the git repo by adding files, committing, and creating a branch
             for release in releases:
                 self.add_release_files(release)
-                self.add_release_meta_files(release)
+                self.add_readme(release)
                 commit = self.commit_release(release)
                 self.create_release_branch(release, commit)
             self.checkout_main()
@@ -1086,7 +1088,7 @@ class CodebaseGitRepositoryApi:
             self.initialize()
             for release in releases:
                 self.add_release_files(release)
-                self.add_release_meta_files(release)
+                self.add_readme(release)
                 commit = self.commit_release(release)
                 self.create_release_branch(release, commit)
             self.checkout_main()
@@ -1123,12 +1125,6 @@ class CodebaseGitRepositoryApi:
                 if not self.dirs_equal(dir1 / subdir, dir2 / subdir):
                     return False
             return True
-
-    def generate_readme(self):
-        """
-        create a README.md file for the repository based on the codebase metadata
-        """
-        return f"# {self.codebase.title}\n\n" f"{self.codebase.description.raw}\n"
 
 
 class ArchiveExtractor:

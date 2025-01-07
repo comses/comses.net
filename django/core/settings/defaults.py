@@ -493,8 +493,9 @@ CACHES = {
 HUEY = {
     "name": "comses",
     "huey_class": "core.huey.DjangoRedisHuey",
-    "immediate": False,  # always run tasks in the background, even in dev (for now)
-    # if removed here, it will default to DEBUG
+    "immediate": False,  # always run tasks in the background (for now), if removed it will default to DEBUG
+    # FIXME: this should generally be True in development, the huey consumer WILL NOT
+    # automatically reload when the code changes when False
 }
 
 # SSO, user registration, and django-allauth configuration, see

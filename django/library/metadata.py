@@ -209,7 +209,10 @@ class CitationFileFormatConverter:
         if not codemeta:
             codemeta = CodeMetaConverter.convert_release(release)
         elif isinstance(codemeta, dict):
-            codemeta = CodeMeta(**codemeta)
+            try:
+                codemeta = CodeMeta(**codemeta)
+            except:
+                codemeta = None
         return convert("codemeta", "cff", codemeta)
 
 
@@ -221,7 +224,10 @@ class DataCiteConverter:
         if not codemeta:
             codemeta = CodeMetaConverter.convert_release(release)
         elif isinstance(codemeta, dict):
-            codemeta = CodeMeta(**codemeta)
+            try:
+                codemeta = CodeMeta(**codemeta)
+            except:
+                codemeta = None
         # datacite always needs a publication date
         if not codemeta.datePublished:
             codemeta.datePublished = date.today()
@@ -234,7 +240,10 @@ class DataCiteConverter:
         if not codemeta:
             codemeta = CodeMetaConverter.convert_codebase(codebase)
         elif isinstance(codemeta, dict):
-            codemeta = CodeMeta(**codemeta)
+            try:
+                codemeta = CodeMeta(**codemeta)
+            except:
+                codemeta = None
         # datacite always needs a publication date
         if not codemeta.datePublished:
             codemeta.datePublished = date.today()

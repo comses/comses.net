@@ -1655,7 +1655,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def coauthor_release_contributors(self):
-        return self.authors.exclude(contributor__user=self.submitter)
+        return self.author_release_contributors.exclude(
+            contributor__user=self.submitter
+        )
 
     @property
     def nonauthor_release_contributors(self):
