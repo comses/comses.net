@@ -5,7 +5,7 @@ services:
     healthcheck:
       disable: true
   e2edb:
-    image: postgis/postgis:15-3.4
+    image: postgis/postgis:16-3.5
     secrets:
       - db_password # re-using the same db password
     volumes:

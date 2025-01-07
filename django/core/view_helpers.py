@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from django.core.exceptions import FieldError
 from rest_framework.response import Response
 from wagtail.search.backends import get_search_backend
@@ -87,13 +88,12 @@ def build_search_query(input_text: str) -> SearchQuery:
 
 
 def get_search_queryset(
-    query,
+    query_params,
     queryset,
     operator="or",
     fields=None,
     tags=None,
     criteria=None,
-    order_by_relevance=False,
 ):
     search_backend = get_search_backend()
 
@@ -105,6 +105,18 @@ def get_search_queryset(
 
     if not criteria:
         criteria = {}
+
+    if not query_params:
+        query_params = {}
+
+    # pull query from params
+    query = query_params.get("query", "")
+
+    # set order_by_relevance if there is a query specified or if explicitly requested via ordering
+    if "ordering" in query_params:
+        order_by_relevance = query_params["ordering"] == "relevance"
+    else:
+        order_by_relevance = bool(query)
 
     """
     # FIXME: this won't work until RelatedFields support filtering

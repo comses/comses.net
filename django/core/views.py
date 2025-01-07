@@ -311,9 +311,8 @@ class MemberProfileFilter(filters.BaseFilterBackend):
         if view.action != "list":
             return queryset
         query_params = request.query_params
-        qs = query_params.get("query")
         tags = query_params.getlist("tags")
-        return get_search_queryset(qs, queryset, tags=tags, order_by_relevance=True)
+        return get_search_queryset(query_params, queryset, tags=tags)
 
 
 class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
@@ -406,9 +405,8 @@ class EventFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         if view.action != "list":
             return queryset
-        query_string = request.query_params.get("query")
         query_params = request.query_params
-        logger.debug(query_params)
+        logger.debug("query params %s", query_params)
         submission_deadline__gte = parse_date(
             query_params.get("submission_deadline__gte")
             or query_params.get("submission_deadline_after")
@@ -424,7 +422,12 @@ class EventFilter(filters.BaseFilterBackend):
             criteria.update(submission_deadline__gte=submission_deadline__gte)
         if start_date__gte:
             criteria.update(start_date__gte=start_date__gte)
-        return get_search_queryset(query_string, queryset, tags=tags, criteria=criteria)
+        return get_search_queryset(
+            query_params,
+            queryset,
+            tags=tags,
+            criteria=criteria,
+        )
 
 
 class EventViewSet(
@@ -537,22 +540,22 @@ class JobFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         if view.action != "list":
             return queryset
-        qs = request.query_params.get("query")
+        query_params = request.query_params
         date_created = parse_datetime(
-            request.query_params.get("date_created__gte")
-            or request.query_params.get("date_created_after")
+            query_params.get("date_created__gte")
+            or query_params.get("date_created_after")
         )
         application_deadline = parse_date(
-            request.query_params.get("application_deadline__gte")
-            or request.query_params.get("application_deadline_after")
+            query_params.get("application_deadline__gte")
+            or query_params.get("application_deadline_after")
         )
-        tags = request.query_params.getlist("tags")
+        tags = query_params.getlist("tags")
         criteria = {}
         if date_created:
             criteria.update(date_created__gte=date_created)
         if application_deadline:
             criteria.update(application_deadline__gte=application_deadline)
-        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
+        return get_search_queryset(query_params, queryset, tags=tags, criteria=criteria)
 
 
 class JobViewSet(

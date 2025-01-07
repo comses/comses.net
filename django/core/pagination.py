@@ -15,6 +15,13 @@ SORT_BY_FILTERS = defaultdict(
         "-first_published_at": "Sort by: Recently published",
         "first_published_at": "Sort by: Earliest published",
         "-last_modified": "Sort by: Recently modified",
+        "last_modified": "Sort by: Earliest modified",
+        "-date_created": "Sort by: Recently created",
+        "date_created": "Sort by: Earliest created",
+        "start_date": "Sort by: Start date",
+        "submission_deadline": "Sort by: Submission deadline",
+        "early_registration_deadline": "Sort by: Early registration deadline",
+        "application_deadline": "Sort by: Application deadline",
     },
 )
 
