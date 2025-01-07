@@ -303,8 +303,7 @@
 
             {% if codebase.git_mirror %}
                 {% if codebase.git_mirror.remote_url %}
-                    <div class="d-flex align-items-center">
-                        <i class="fab fa-github me-1"></i>
+                    <div class="d-flex align-items-center pt-1">
                         <a href="{{ codebase.git_mirror.remote_url }}" class="d-block text-truncate" target="_blank">
                             <span class='badge bg-info'>
                                 {{ codebase.git_mirror.repository_name }}

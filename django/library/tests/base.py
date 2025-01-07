@@ -58,7 +58,7 @@ class CodebaseFactory(ContentModelFactory):
                 **kwargs, defaults=self.get_default_data()
             )
         release = ReleaseSetup.setUpPublishableDraftRelease(codebase)
-        release.publish(defer_fs=True)
+        release.publish()
         return release
 
 

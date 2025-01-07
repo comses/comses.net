@@ -121,9 +121,12 @@ class CodeMetaConverter:
             programmingLanguage=[
                 # FIXME: this can include "version" when langs are refactored
                 {"@type": "ComputerLanguage", "name": pl.name}
-                for pl in release.programming_languages.all()
+                for pl in release.programming_languages.all().order_by("name")
             ],
-            runtimePlatform=[tag.name for tag in release.platform_tags.all()] or None,
+            runtimePlatform=[
+                tag.name for tag in release.platform_tags.all().order_by("name")
+            ]
+            or None,
             # FIXME: anything to use this for? it can be either the target os or target
             # framework (e.g. Mesa, NetLogo) but these are both already covered
             # targetProduct=release.os,
@@ -160,7 +163,8 @@ class CodeMetaConverter:
             datePublished=(
                 release.last_published_on.date() if release.last_published_on else None
             ),
-            keywords=[tag.name for tag in codebase.tags.all()] or None,
+            # tags are sorted so that comparisons are deterministic
+            keywords=[tag.name for tag in codebase.tags.all().order_by("name")] or None,
             license=release.license.url if release.license else None,
             publisher=cls.COMSES_ORGANIZATION,
             version=release.version_number,

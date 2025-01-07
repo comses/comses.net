@@ -1144,14 +1144,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             self.save()
         return release
 
-    def save(self, **kwargs):
-        logger.debug("Building codemeta for codebase: %s", self)
-        self.codemeta_json = json.loads(self.codemeta.json())
+    def save(self, rebuild_metadata=True, **kwargs):
+        if rebuild_metadata:
+            logger.debug("Building codemeta for codebase: %s", self)
+            self.codemeta_json = json.loads(self.codemeta.json())
         super().save(**kwargs)
         # saving releases will trigger metadata rebuilding and updating
         # the fs and git mirror if one exists
-        for release in self.releases.all():
-            release.save(rebuild_metadata=True)
+        if rebuild_metadata:
+            for release in self.releases.all():
+                release.save(rebuild_metadata=True)
 
     @classmethod
     def get_indexed_objects(cls):
@@ -1868,32 +1870,33 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             return existing_release_contributor
 
     @transaction.atomic
-    def publish(self, defer_fs=False):
+    def publish(self):
         self.validate_publishable()
-        self._publish(defer_fs)
+        self._publish()
         if self.codebase.git_mirror:
             from .tasks import update_mirrored_codebase
 
-            update_mirrored_codebase(self.codebase.id)
+            transaction.on_commit(lambda: update_mirrored_codebase(self.codebase.id))
 
-    def _publish(self, defer_fs=False):
+    def _publish(self):
         if not self.live:
             now = timezone.now()
             self.first_published_at = now
             self.last_published_on = now
             self.status = self.Status.PUBLISHED
-            if defer_fs:
-                logger.debug("FIXME: set up async publish archive task")
-            else:
-                self.get_fs_api().build_published_archive(force=True)
-            self.save()
+            self.get_fs_api().build_published_archive(force=True)
             codebase = self.codebase
             codebase.latest_version = self
             codebase.live = True
             codebase.last_published_on = now
             if codebase.first_published_at is None:
                 codebase.first_published_at = now
-            codebase.save()
+            codebase.save(rebuild_metadata=False)
+            # normally, rebuilding metadata is asynchronous and automatic but
+            # here we need to build it synchronously after setting everything
+            self.codemeta_json = json.loads(self.codemeta.json())
+            self.save(rebuild_metadata=False)
+            self.get_fs_api().rebuild(metadata_only=True)
 
     @transaction.atomic
     def unpublish(self):
@@ -1952,8 +1955,14 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             )
         self.version_number = version_number
 
+    def cache_codemeta(self):
+        self.codemeta_json = json.loads(self.codemeta.json())
+        self.save(rebuild_metadata=False)
+
     def save(self, rebuild_metadata=True, **kwargs):
-        if rebuild_metadata:
+        if not rebuild_metadata:
+            super().save(**kwargs)
+        else:
             logger.debug("Building codemeta for release: %s", self)
             old_codemeta = self.codemeta_json
             self.codemeta_json = json.loads(self.codemeta.json())
