@@ -49,6 +49,10 @@ export function useCodebaseAPI() {
     return del(detailUrl(identifier, ["media", "clear"]));
   }
 
+  async function githubMirror(identifier: string, repoName: string, options?: RequestOptions) {
+    return post(detailUrl(identifier, ["github_mirror"]), { repoName }, options);
+  }
+
   return {
     ...toRefs(state),
     create,
@@ -59,6 +63,7 @@ export function useCodebaseAPI() {
     mediaClear,
     mediaListUrl,
     detailUrl,
+    githubMirror,
     searchUrl: searchUrl<CodebaseQueryParams>,
   };
 }
