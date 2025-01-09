@@ -300,19 +300,13 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         instance = ReleaseContributor(**validated_data)
         return instance
 
-    def update_codebase_contributor_cache(self, release_contributor):
-        # invalidate contributors cache for the given codebase
-        release_contributor.release.codebase.clear_contributors_cache()
-
     def create(self, validated_data):
         release_contributor = self.create_unsaved(self.context, validated_data)
         release_contributor.save()
-        self.update_codebase_contributor_cache(release_contributor)
         return release_contributor
 
     def update(self, instance, validated_data):
         release_contributor = super().update(instance, validated_data)
-        self.update_codebase_contributor_cache(release_contributor)
         return release_contributor
 
     class Meta:

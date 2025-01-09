@@ -411,10 +411,16 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         total number of added unique authors and non-author contributors should match
         """
         real_author_contributors_count = (
-            ReleaseContributor.objects.authors(self.codebase_release).all().count()
+            ReleaseContributor.objects.authors()
+            .for_release(self.codebase_release)
+            .all()
+            .count()
         )
         real_nonauthor_contributors_count = (
-            ReleaseContributor.objects.nonauthors(self.codebase_release).all().count()
+            ReleaseContributor.objects.nonauthors()
+            .for_release(self.codebase_release)
+            .all()
+            .count()
         )
 
         assert (

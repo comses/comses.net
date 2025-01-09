@@ -822,84 +822,44 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return self.git_mirror
 
     @property
-    def codebase_contributors_redis_key(self):
-        return f"codebase:contributors:{self.identifier}"
-
-    @property
-    def codebase_authors_redis_key(self):
-        return f"codebase:authors:{self.identifier}"
-
-    @property
     def publication_year(self):
         return (
             self.last_published_on.year if self.last_published_on else date.today().year
         )
 
-    def clear_contributors_cache(self):
-        cache.delete(self.codebase_contributors_redis_key)
-        cache.delete(self.codebase_authors_redis_key)
-
-    def compute_contributors(self, force=False):
-        """
-        caches and returns a two values: codebase_contributors and codebase_authors
-        codebase_contributors are all contributors to the release
-        codebase_authors are the contributors to the release that should be included in the citation
-
-        both return types should be ordered, distinct lists of ReleaseContributor objects
-        """
-        contributors_redis_key = self.codebase_contributors_redis_key
-        codebase_contributors = cache.get(contributors_redis_key) if not force else None
-        codebase_authors = (
-            cache.get(self.codebase_authors_redis_key) if not force else None
+    @cached_property
+    def all_contributors(self):
+        return Contributor.objects.filter(
+            id__in=ReleaseContributor.objects.for_codebase(self).values(
+                "contributor_id"
+            )
         )
 
-        codebase_authors_dict = OrderedDict()
+    @cached_property
+    def all_author_contributors(self):
+        return Contributor.objects.filter(
+            id__in=ReleaseContributor.objects.authors()
+            .for_codebase(self)
+            .values("contributor_id")
+        )
 
-        if codebase_contributors is None:
-            codebase_contributors_dict = OrderedDict()
-            for release_contributor in ReleaseContributor.objects.for_codebase(self):
-                contributor = release_contributor.contributor
-                codebase_contributors_dict[contributor] = release_contributor
-                # only include citable authors in returned codebase_authors
-                if release_contributor.include_in_citation:
-                    codebase_authors_dict[contributor] = release_contributor
-            # PEP 448 syntax to unpack dict keys into list literal
-            # https://www.python.org/dev/peps/pep-0448/
-            codebase_contributors = [*codebase_contributors_dict.values()]
-            codebase_authors = [*codebase_authors_dict.values()]
-            cache.set(contributors_redis_key, codebase_contributors)
-            cache.set(self.codebase_authors_redis_key, codebase_authors)
-        return codebase_contributors, codebase_authors
+    @cached_property
+    def all_nonauthor_contributors(self):
+        return self.all_contributors.exclude(
+            id__in=self.all_author_contributors.values("id")
+        )
 
-    @property
-    def all_contributors(self):
-        """Get all the contributors associated with this codebase. A contributor is associated
-        with a codebase if any release associated with that codebase is also associated with the
-        same contributor.
-
-        Caching contributors on _all_contributors makes it possible to ask for
-        codebase_contributors in bulk"""
-        if not hasattr(self, "_all_contributors"):
-            all_contributors, all_authors = self.compute_contributors(force=True)
-            self._all_contributors = all_contributors
-            self._all_authors = all_authors
-        return self._all_contributors
+    @cached_property
+    def all_citable_contributors(self):
+        return Contributor.objects.filter(
+            id__in=ReleaseContributor.objects.citable()
+            .for_codebase(self)
+            .values("contributor_id")
+        )
 
     @property
-    def all_authors(self):
-        if not hasattr(self, "_all_authors"):
-            all_contributors, all_authors = self.compute_contributors(force=True)
-            self._all_contributors = all_contributors
-            self._all_authors = all_authors
-        return self._all_authors
-
-    @property
-    def author_list(self):
-        return [c.get_full_name() for c in self.all_authors if c.has_name]
-
-    @property
-    def contributor_list(self):
-        return [c.get_full_name() for c in self.all_contributors if c.has_name]
+    def citable_names(self):
+        return [c.get_full_name() for c in self.all_citable_contributors if c.has_name]
 
     def get_all_contributors_search_fields(self):
         return " ".join(
@@ -1652,8 +1612,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.comses_permanent_url
 
     @property
+    def release_contributors(self):
+        return ReleaseContributor.objects.for_release(self)
+
+    @property
     def author_release_contributors(self):
-        return ReleaseContributor.objects.authors(self)
+        return ReleaseContributor.objects.authors().for_release(self)
 
     @property
     def coauthor_release_contributors(self):
@@ -1663,17 +1627,17 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def nonauthor_release_contributors(self):
-        return ReleaseContributor.objects.nonauthors(self)
+        return ReleaseContributor.objects.nonauthors().for_release(self)
 
     @cached_property
     def citation_authors(self):
         authors = self.submitter.member_profile.name
-        author_list = self.codebase.author_list
-        if author_list:
-            authors = ", ".join(author_list)
+        citable_names = self.codebase.citable_names
+        if citable_names:
+            authors = ", ".join(citable_names)
         else:
             logger.warning(
-                "No authors found for release, using default submitter name: %s",
+                "No authors found for release when building citation text, using default submitter name: %s",
                 self.submitter,
             )
         return authors
@@ -1721,12 +1685,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return f"{slugify(self.codebase.title)}_v{self.version_number}.zip"
 
     @property
-    def contributor_list(self):
-        """Returns all contributors for just this CodebaseRelease"""
+    def contributor_names(self):
+        """Returns the names for all contributors for just this CodebaseRelease"""
         return [
-            c.contributor.get_full_name()
-            for c in self.index_ordered_release_contributors
-            if c.contributor.has_name
+            rc.contributor.get_full_name()
+            for rc in self.release_contributors
+            if rc.contributor.has_name
         ]
 
     @property
@@ -1740,7 +1704,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return {
             "Contact-Name": self.submitter.get_full_name(),
             "Contact-Email": self.submitter.email,
-            "Author": self.contributor_list,
+            "Author": self.contributor_names,
             "Version-Number": self.version_number,
             "Codebase-DOI": str(self.codebase.doi),
             "DOI": str(self.doi),
@@ -1986,6 +1950,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
 class ReleaseContributorQuerySet(models.QuerySet):
     def for_codebase(self, codebase, ordered=True):
+        """all release contributors (with contributors) for any published release
+        of a codebase"""
         qs = self.select_related("contributor").filter(
             release__codebase=codebase, release__status=CodebaseRelease.Status.PUBLISHED
         )
@@ -1993,29 +1959,31 @@ class ReleaseContributorQuerySet(models.QuerySet):
             return qs.order_by("release__date_created", "index")
         return qs
 
+    def for_release(self, release, ordered=True):
+        """release contributors (with contributors) for a release"""
+        qs = self.select_related("contributor").filter(release=release)
+        if ordered:
+            return qs.order_by("index")
+        return qs
+
+    def authors(self):
+        """all release contributors with a role of 'Author' or include_in_citation=True"""
+        return self.filter(Q(include_in_citation=True) | Q(roles__contains="{author}"))
+
+    def nonauthors(self):
+        """all release contributors without a role of 'Author' or include_in_citation=True"""
+        return self.exclude(Q(include_in_citation=True) | Q(roles__contains="{author}"))
+
+    def citable(self):
+        """release contributors that should be included in a citation"""
+        return self.filter(include_in_citation=True)
+
     def copy_to(self, release: CodebaseRelease):
         release_contributors = list(self)
         for release_contributor in release_contributors:
             release_contributor.id = None
             release_contributor.release = release
         return self.bulk_create(release_contributors)
-
-    def authors(self, release):
-        return (
-            self.select_related("contributor")
-            .filter(
-                release=release, include_in_citation=True, roles__contains="{author}"
-            )
-            .order_by("index")
-        )
-
-    def nonauthors(self, release):
-        return (
-            self.select_related("contributor")
-            .filter(release=release, include_in_citation=True)
-            .exclude(roles__contains="{author}")
-            .order_by("index")
-        )
 
 
 class ReleaseContributor(models.Model):
@@ -2857,11 +2825,13 @@ class CommonMetadata:
 
     @cached_property
     def release_contributor_nonauthors(self):
-        return ReleaseContributor.objects.nonauthors(self.codebase_release)
+        return ReleaseContributor.objects.nonauthors().for_release(
+            self.codebase_release
+        )
 
     @cached_property
     def release_contributor_authors(self):
-        return ReleaseContributor.objects.authors(self.codebase_release)
+        return ReleaseContributor.objects.authors().for_release(self.codebase_release)
 
 
 class DataCiteSchema(ABC):
@@ -2908,11 +2878,10 @@ class DataCiteSchema(ABC):
         return [{"subject": keyword} for keyword in unique_keywords]
 
     @classmethod
-    def convert_release_contributor(cls, release_contributor: ReleaseContributor):
+    def convert_contributor(cls, contributor: Contributor):
         """
         Converts a ReleaseContributor to a DataCite creator dictionary
         """
-        contributor = release_contributor.contributor
         creator = {}
         # check for ORCID name identifier first: https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/#nameidentifier
         if contributor.is_person:
@@ -2963,13 +2932,13 @@ class DataCiteSchema(ABC):
         return datacite_affiliation
 
     @classmethod
-    def to_citable_authors(cls, release_contributors):
+    def to_citable_authors(cls, contributors: Contributor):
         """
         Maps a set of ReleaseContributors to a list of dictionaries representing DataCite creators
 
         https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/
         """
-        return [cls.convert_release_contributor(rc) for rc in release_contributors]
+        return [cls.convert_contributor(c) for c in contributors]
 
     @classmethod
     def to_publication_year(cls, common_metadata: CommonMetadata):
@@ -3062,7 +3031,7 @@ class ReleaseDataCiteSchema(DataCiteSchema):
         """
         metadata = {
             "creators": cls.to_citable_authors(
-                common_metadata.release_contributor_authors
+                [rc.contributor for rc in common_metadata.release_contributor_authors]
             ),
             "descriptions": common_metadata.descriptions,
             "publicationYear": str(cls.to_publication_year(common_metadata)),
@@ -3153,7 +3122,7 @@ class CodebaseDataCiteSchema(DataCiteSchema):
         # FIXME: establish CommonMetadata for Codebases as well and change signature to operate on CommonMetadata
         # add references_text and associated_publication_text fields when better structured metadata for those fields are available
         metadata = {
-            "creators": cls.to_citable_authors(codebase.all_authors),
+            "creators": cls.to_citable_authors(codebase.all_author_contributors),
             "titles": [{"title": codebase.title}],
             "descriptions": [
                 {
