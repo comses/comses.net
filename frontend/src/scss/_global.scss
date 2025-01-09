@@ -71,6 +71,22 @@ a.anchor {
   }
 }
 
+.w-100-with-icon {
+  width: 100%;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  .icon-left {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0.5rem;
+  }
+}
+
 .btn-group-xs > .btn,
 .btn-xs {
   padding: 0.25rem 0.4rem;
@@ -381,6 +397,22 @@ nav {
   .card-text {
     font-size: 0.9rem;
   }
+}
+
+.card-bridge::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -100px;
+  left: 50%;
+  width: 1px;
+  background-color: #ccc;
+  z-index: -1;
+}
+
+.card-bridge .card {
+  position: relative;
+  z-index: 1;
 }
 
 .card-metadata {

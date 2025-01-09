@@ -47,6 +47,16 @@ if settings.DEPLOY_ENVIRONMENT.is_development:
 
 urlpatterns = [
     path(
+        "github/",
+        TemplateView.as_view(
+            template_name="library/github-integration-overview.jinja",
+            extra_context={
+                "github_model_library_org_name": settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
+            },
+        ),
+        name="github-integration-overview",
+    ),
+    path(
         "reviews/",
         TemplateView.as_view(template_name="library/review/peer-review-overview.jinja"),
         name="peer-review-overview",
