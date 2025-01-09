@@ -360,11 +360,11 @@ class CodebaseReleaseFsApi:
         system_file_presence_message_level=MessageLevels.error,
         mimetype_mismatch_message_level=MessageLevels.error,
     ):
+        self.release = codebase_release
         self.uuid = str(codebase_release.codebase.uuid)
         self.identifier = codebase_release.codebase.identifier
         self.version_number = codebase_release.version_number
         self.release_id = codebase_release.id
-        self.codemeta = codebase_release.codemeta
         self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
@@ -408,6 +408,10 @@ class CodebaseReleaseFsApi:
     @property
     def codemeta_path(self):
         return self.sip_contents_dir.joinpath("codemeta.json")
+
+    @property
+    def license_path(self):
+        return self.sip_contents_dir.joinpath("LICENSE")
 
     @property
     def sip_contents_dir(self):
@@ -511,8 +515,6 @@ class CodebaseReleaseFsApi:
     def create_or_update_codemeta(self, force=False):
         """
         Returns True if a codemeta.json file was created, False otherwise
-        :param metadata: an optional dictionary with codemeta properties
-        :return:
         """
         path = self.codemeta_path
         if force or not path.exists():
@@ -521,20 +523,30 @@ class CodebaseReleaseFsApi:
             return True
         return False
 
-    def get_codemeta_json(self):
-        return self.codemeta.to_json()
+    def create_or_update_license(self, force=False):
+        """
+        Returns True if a LICENSE file was created, False otherwise
+        """
+        path = self.license_path
+        if self.release.license and (force or not path.exists()):
+            with path.open(mode="w", encoding="utf-8") as license_out:
+                license_out.write(self.release.license_text)
+            return True
+        return False
 
     def build_published_archive(self, force=False):
         """
         FIXME: some of this should be moved to an async processing task.
         """
         self.create_or_update_codemeta(force=force)
+        self.create_or_update_license(force=force)
         bag = self.get_or_create_sip_bag(self.bagit_info)
         self.validate_bagit(bag)
         self.build_archive(force=force)
 
     def build_review_archive(self):
         self.create_or_update_codemeta(force=True)
+        self.create_or_update_license(force=True)
         shutil.make_archive(
             str(self.review_archivepath.with_suffix("")),
             format="zip",

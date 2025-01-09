@@ -3,13 +3,15 @@ import json
 import logging
 import os
 import pathlib
+from string import Template
+import uuid
 import semver
 import uuid
-
+from collections import OrderedDict
+from datetime import timedelta
 from abc import ABC
 from collections import OrderedDict, defaultdict
 from datetime import date, timedelta
-from typing import List
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -122,6 +124,16 @@ class License(models.Model):
         max_length=200, help_text=_("SPDX license code from https://spdx.org/licenses/")
     )
     url = models.URLField(blank=True)
+    text = models.TextField(blank=True, help_text=_("Full license text"))
+
+    def get_formatted_text(self, authors: str):
+        template = Template(self.text)
+        return template.substitute(
+            {
+                "copyright_year": timezone.now().year,
+                "copyright_name": authors,
+            }
+        )
 
     def __str__(self):
         return f"{self.name} ({self.url})"
@@ -582,6 +594,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     submitter = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name="codebases", on_delete=models.PROTECT
+    )
+
+    codemeta_snapshot = models.JSONField(
+        default=dict,
+        help_text=_(
+            "JSON metadata conforming to the codemeta schema. Cached as of the last update"
+        ),
     )
 
     objects = CodebaseQuerySet.as_manager()
@@ -1246,6 +1265,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         max_length=1000,
         null=True,
         storage=FileSystemStorage(location=settings.LIBRARY_ROOT),
+    )
+    codemeta_snapshot = models.JSONField(
+        default=dict,
+        help_text=_(
+            "JSON metadata conforming to the codemeta schema. Cached as of the last update"
+        ),
     )
     # M2M relationships for publications, disabled until citation migrates to django 2.0
     # https://github.com/comses/citation/issues/20
