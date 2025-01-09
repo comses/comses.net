@@ -22,7 +22,7 @@
         https://scholar.google.com/intl/en/scholar/inclusion.html#indexing 
     #}
     <meta name='citation_title' content='{{ release.title }}'>
-    {% for c in codebase.all_contributors -%}
+    {% for c in codebase.all_citable_contributors -%}
     <meta name='citation_author' content='{{ c.name }}'>
         {% if c.email -%}
     <meta name='citation_author_email' content='{{ c.email }}'>
