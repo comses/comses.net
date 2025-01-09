@@ -1,5 +1,6 @@
 import json
 from django.forms import Form
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -46,6 +47,7 @@ from core.views import (
 )
 from core.pagination import SmallResultSetPagination
 from core.serializers import RelatedMemberProfileSerializer
+from .github_integration import GithubRepoNameValidator
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -53,7 +55,12 @@ from .forms import (
     PeerReviewerFeedbackEditorForm,
     PeerReviewFilterForm,
 )
-from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
+from .fs import (
+    CodebaseGitRepositoryApi,
+    FileCategoryDirectories,
+    StagingDirectories,
+    MessageLevels,
+)
 from .models import (
     Codebase,
     CodebaseRelease,
@@ -80,6 +87,7 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
+from .tasks import mirror_codebase, update_mirrored_codebase
 
 import logging
 import pathlib
@@ -512,6 +520,41 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
             serializer = self.get_serializer(instance)
             data = add_user_retrieve_perms(instance, serializer.data, request.user)
             return Response(data)
+
+    # @action(detail=True, methods=["post"])
+    # def github_sync(self, request, *args, **kwargs):
+    #     pass
+
+    @action(detail=True, methods=["post"])
+    def github_mirror(self, request, *args, **kwargs):
+        codebase = self.get_object()
+        if not codebase.live:
+            raise ValidationError("This model does not have any published releases")
+        if codebase.git_mirror:
+            raise ValidationError("This codebase is already mirrored to a GitHub repo")
+        CodebaseGitRepositoryApi.check_file_sizes(codebase)
+        repo_name = request.data.get("repo_name")
+        try:
+            GithubRepoNameValidator.validate(repo_name)
+        except ValueError as e:
+            raise ValidationError(str(e))
+        codebase.create_git_mirror(repo_name)
+        mirror_codebase(codebase.id, private_repo=settings.DEBUG)
+        return Response(
+            status=status.HTTP_202_ACCEPTED,
+            data="Mirroring process started, this should take only a few seconds. Refresh this page to see the status.",
+        )
+
+    @action(detail=True, methods=["post"])
+    def update_github_mirror(self, request, *args, **kwargs):
+        codebase = self.get_object()
+        if not codebase.git_mirror:
+            return Response(
+                data={"error": "This codebase is not mirrored to a GitHub repo"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        update_mirrored_codebase(codebase.id)
+        return Response(status=status.HTTP_202_ACCEPTED)
 
 
 class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, CodebaseViewSet):
