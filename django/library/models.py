@@ -541,6 +541,64 @@ class CodebaseQuerySet(models.QuerySet):
         return new_codebases, updated_codebases, releases
 
 
+class CodebaseGitMirror(models.Model):
+    """
+    Keeps track of a git repository and its GitHub remote that were created
+    from a Codebase using the mirror (read-only archiving) workflow
+    """
+
+    # is_active = models.BooleanField(default=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    repository_name = models.CharField(max_length=100, unique=True)
+    remote_url = models.URLField(
+        blank=True,
+        help_text=_("URL of mirrored remote repository"),
+    )
+    # keep track of timestamp and releases that have been mirrored locally
+    last_local_update = models.DateTimeField(null=True, blank=True)
+    local_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    # keep track of timestamp and releases that have been synced to the remote
+    last_remote_update = models.DateTimeField(null=True, blank=True)
+    remote_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    user_access_token = models.CharField(max_length=200, null=True, blank=True)
+    organization_login = models.CharField(max_length=100, null=True, blank=True)
+
+    @property
+    def latest_local_release(self):
+        return max(self.local_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def latest_remote_release(self):
+        return max(self.remote_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def unmirrored_local_releases(self):
+        return self.codebase.public_releases().exclude(
+            id__in=self.local_releases.values_list("id", flat=True)
+        )
+
+    @property
+    def unmirrored_remote_releases(self):
+        return self.local_releases.exclude(
+            id__in=self.remote_releases.values_list("id", flat=True)
+        )
+
+    def update_local_releases(self, new_releases: models.QuerySet | list):
+        if self.local_releases.exists():
+            self.local_releases.add(*new_releases)
+        else:
+            self.local_releases.set(new_releases)
+        self.last_local_update = timezone.now()
+        self.save()
+
+    def update_remote_releases(self):
+        releases = self.local_releases.all()
+        self.remote_releases.set(releases)
+        self.last_remote_update = timezone.now()
+        self.save()
+
+
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
@@ -577,6 +635,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         "CodebaseRelease",
         null=True,
         related_name="latest_version",
+        on_delete=models.SET_NULL,
+    )
+
+    git_mirror = models.OneToOneField(
+        "CodebaseGitMirror",
+        null=True,
+        related_name="codebase",
         on_delete=models.SET_NULL,
     )
 
@@ -757,6 +822,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     @property
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
+
+    def create_git_mirror(self, repository_name, **kwargs):
+        if not self.git_mirror:
+            git_mirror = CodebaseGitMirror.objects.create(
+                repository_name=repository_name,
+                **kwargs,
+            )
+            self.git_mirror = git_mirror
+            self.save()
+        return self.git_mirror
 
     @property
     def publication_year(self):
@@ -1828,6 +1903,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             schedule_mint_public_doi(
                 self.id, dry_run=settings.DEPLOY_ENVIRONMENT.is_development
             )
+        if self.codebase.git_mirror:
+            from .tasks import update_mirrored_codebase
+
+            transaction.on_commit(lambda: update_mirrored_codebase(self.codebase.id))
 
     def _publish(self):
         if not self.live:
