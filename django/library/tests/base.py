@@ -1,5 +1,6 @@
 import io
 import logging
+from pathlib import Path
 import random
 from uuid import UUID
 
@@ -16,6 +17,8 @@ from library.models import (
     PeerReviewer,
 )
 from library.serializers import CodebaseSerializer
+
+TEST_SAMPLES_DIR = Path("library/tests/samples")
 
 
 logger = logging.getLogger(__name__)
@@ -161,7 +164,7 @@ class ReviewSetup:
 
 class ReleaseSetup:
     @classmethod
-    def setUpPublishableDraftRelease(cls, codebase):
+    def setUpPublishableDraftRelease(cls, codebase, with_files=True):
         draft_release = codebase.create_release(
             status=CodebaseRelease.Status.DRAFT,
             initialize=True,
@@ -173,15 +176,14 @@ class ReleaseSetup:
         release_contributor_factory = ReleaseContributorFactory(draft_release)
         contributor = contributor_factory.create()
         release_contributor_factory.create(contributor)
-
-        code_file = io.BytesIO(b"print('hello world')")
-        code_file.name = "some_code_file.py"
-        docs_file = io.BytesIO(b"# Documentation")
-        docs_file.name = "some_doc_file.md"
-        fs_api = draft_release.get_fs_api()
-        fs_api.add(content=code_file, category=FileCategoryDirectories.code)
-        fs_api.add(content=docs_file, category=FileCategoryDirectories.docs)
+        if with_files:
+            code_file = io.BytesIO(b"print('hello world')")
+            code_file.name = "some_code_file.py"
+            docs_file = io.BytesIO(b"# Documentation")
+            docs_file.name = "some_doc_file.md"
+            fs_api = draft_release.get_fs_api()
+            fs_api.add(content=code_file, category=FileCategoryDirectories.code)
+            fs_api.add(content=docs_file, category=FileCategoryDirectories.docs)
 
         draft_release.save()
-
         return draft_release
