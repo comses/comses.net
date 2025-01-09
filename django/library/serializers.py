@@ -642,18 +642,14 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
             many=True, data=validated_data.pop("platform_tags")
         )
 
-        raw_license = validated_data.pop("license")
-        existing_license = License.objects.get(name=raw_license["name"])
-
         set_tags(instance, programming_languages, "programming_languages")
         set_tags(instance, platform_tags, "platform_tags")
 
-        instance = super().update(instance, validated_data)
-
+        raw_license = validated_data.pop("license")
+        existing_license = License.objects.get(name=raw_license["name"])
         instance.license = existing_license
-        instance.save()
 
-        return instance
+        return super().update(instance, validated_data)
 
     def save_release_contributors(
         self,
