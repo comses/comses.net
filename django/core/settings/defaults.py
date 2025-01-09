@@ -520,6 +520,23 @@ ORCID_CLIENT_SECRET = read_secret("orcid_client_secret")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = read_secret("github_client_secret")
 
+GITHUB_INTEGRATION_APP_ID = int(os.getenv("GITHUB_INTEGRATION_APP_ID") or 0)
+GITHUB_INTEGRATION_APP_PRIVATE_KEY = read_secret("github_integration_app_private_key")
+GITHUB_INTEGRATION_APP_INSTALLATION_ID = int(
+    os.getenv("GITHUB_INTEGRATION_APP_INSTALLATION_ID") or 0
+)
+# client id and secret are only used for getting user access tokens to be able to push
+# to the user's repositories. We are not re-using the regular oauth app in order to
+# keep minimal permissions
+GITHUB_INTEGRATION_APP_CLIENT_ID = os.getenv("GITHUB_INTEGRATION_APP_ID", "")
+GITHUB_INTEGRATION_APP_CLIENT_SECRET = read_secret(
+    "github_integration_app_client_secret"
+)
+GITHUB_MODEL_LIBRARY_ORG_NAME = os.getenv("GITHUB_MODEL_LIBRARY_ORG_NAME", "")
+GITHUB_INDIVIDUAL_FILE_SIZE_LIMIT = os.getenv(
+    "GITHUB_INDIVIDUAL_FILE_SIZE_LIMIT", 100 * 1024 * 1024
+)
+
 TEST_BASIC_AUTH_PASSWORD = os.getenv("TEST_BASIC_AUTH_PASSWORD", "test password")
 TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)
 TEST_USERNAME = os.getenv("TEST_USERNAME", "__test_user__")
