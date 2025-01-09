@@ -140,7 +140,12 @@ class CodeMetaConverter:
         return dict(
             type_="SoftwareSourceCode",
             name=codebase.title,
-            codeRepository=codebase.repository_url or None,
+            codeRepository=(
+                codebase.git_mirror.remote_url
+                if codebase.git_mirror
+                else codebase.repository_url
+            )
+            or None,
             applicationCategory="Computational Model",
             citation=[
                 cls.to_textual_creative_work(text)
