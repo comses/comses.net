@@ -189,10 +189,10 @@ class PeerReviewerDashboardView(PermissionRequiredMixin, ListView):
 
 class PeerReviewerFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
-        query = request.query_params.get("query", None)
-        if query is None:
+        query_params = request.query_params
+        if "query" in query_params:
             return queryset.order_by("member_profile__user__last_name")
-        return get_search_queryset(query, queryset, order_by_relevance=True)
+        return get_search_queryset(query_params, queryset)
 
 
 class PeerReviewerPermission(permissions.BasePermission):
@@ -389,13 +389,11 @@ class CodebaseFilter(filters.BaseFilterBackend):
 
         # Get request params
         query_params = request.query_params
-        qs = query_params.get("query", "")
         published_start_date = query_params.get("published_after")
         published_end_date = query_params.get("published_before")
         peer_review_status = query_params.get("peer_review_status")
         # platform = query_params.get("platform")
         programming_languages = query_params.getlist("programming_languages")
-        ordering = query_params.get("ordering")
 
         tags = query_params.getlist("tags")
 
@@ -431,17 +429,12 @@ class CodebaseFilter(filters.BaseFilterBackend):
                 releases__programming_languages__name__in=programming_languages
             )
             criteria.update(id__in=codebases.values_list("id", flat=True))
-            # or we could include the PL in the query
-            # qs += " ".join(programming_languages)
 
-        # set order by relevance if there's a query string and no explicit ordering requested
-        order_by_relevance = qs and (not ordering or ordering == "relevance")
         return get_search_queryset(
-            qs,
+            query_params,
             queryset,
             tags=tags,
             criteria=criteria,
-            order_by_relevance=order_by_relevance,
         )
 
 
@@ -460,6 +453,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         "peer_reviewed",
         "last_modified",
     )
+    ordering = ["-first_published_at"]
     context_list_name = "codebases"
 
     def get_list_context(self, page_or_queryset):

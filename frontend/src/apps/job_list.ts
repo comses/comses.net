@@ -10,7 +10,7 @@ createApp(SortBy, {
     { label: "Relevance", value: "" },
     { label: "Date posted: newest", value: "-date_created" },
     { label: "Date posted: oldest", value: "date_created" },
-    { label: "Application Deadline", value: "application_deadline" },
+    { label: "Application Deadline", value: "-application_deadline" },
     { label: "Recently modified ", value: "-last_modified" },
   ],
 }).mount("#sortby");

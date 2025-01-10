@@ -255,6 +255,14 @@ class Contributor(index.Indexed, ClusterableModel):
             return self.user.member_profile.get_absolute_url()
         return None
 
+    def get_profile_url(self):
+        profile_url = self.member_profile_url
+        if not profile_url:
+            return "{0}?{1}".format(
+                reverse("core:profile-list"), urlencode({"query": self.name})
+            )
+        return profile_url
+
     def get_markdown_link(self):
         return f"[{self.get_full_name()}]({self.member_profile_url})"
 
@@ -295,15 +303,6 @@ class Contributor(index.Indexed, ClusterableModel):
             return (
                 f"{self.given_name} {self.middle_name}".strip()
                 + f" {self.family_name}".rstrip()
-            )
-
-    def get_profile_url(self):
-        user = self.user
-        if user:
-            return user.member_profile.get_absolute_url()
-        else:
-            return "{0}?{1}".format(
-                reverse("core:profile-list"), urlencode({"query": self.name})
             )
 
     def __str__(self):
@@ -1846,6 +1845,7 @@ class ReleaseContributor(models.Model):
             "get_full_name",
             "get_profile_url",
             "get_aggregated_search_fields",
+            "member_profile_url",
             "name",
             "email",
             "affiliations",
@@ -1965,7 +1965,7 @@ class PeerReviewQuerySet(models.QuerySet):
 
         queryset = MemberProfile.objects.public()
         if query:
-            return get_search_queryset(query, queryset)
+            return get_search_queryset({"query": query}, queryset)
         return queryset
 
     def review_open(self, **kwargs):
