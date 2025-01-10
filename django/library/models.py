@@ -653,11 +653,11 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return DataCiteSchema.from_codebase(self)
 
     # FIXME: replace the above datacite metadata generation with this
-    # @property
-    # def datacite(self):
-    #     return DataCiteConverter.convert_codebase(
-    #         self, codemeta=self.codemeta_snapshot or None
-    #     )
+    @property
+    def datacite_temp(self):
+        return DataCiteConverter.convert_codebase(
+            self, codemeta=self.codemeta_snapshot or None
+        )
 
     @property
     def is_replication(self):
@@ -1636,11 +1636,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         }
 
     @cached_property
-    def common_metadata(self):
-        """Returns a CommonMetadata object used to build specific metadata objects: for example CodeMeta or DataCite"""
-        return CommonMetadata(self)
-
-    @cached_property
     def datacite(self):
         if not self.live:
             logger.warning(
@@ -1649,11 +1644,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return DataCiteSchema.from_release(self)
 
     # FIXME: replace the above datacite metadata generation with this
-    # @property
-    # def datacite_temp(self):
-    #     return DataCiteConverter.convert_release(
-    #         self, codemeta=self.codemeta_snapshot or None
-    #     )
+    @property
+    def datacite_temp(self):
+        if not self.live:
+            logger.warning(
+                "Attempting to generate datacite for an unpublished release: %s", self
+            )
+        return DataCiteConverter.convert_release(
+            self, codemeta=self.codemeta_snapshot or None
+        )
 
     @property
     def codemeta(self):
