@@ -1031,7 +1031,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def save(self, rebuild_metadata=True, **kwargs):
         if rebuild_metadata:
             logger.debug("Building codemeta for codebase: %s", self)
-            self.codemeta_snapshot = json.loads(self.codemeta.json())
+            self.codemeta_snapshot = self.codemeta.dict(serialize=True)
         super().save(**kwargs)
         # saving releases will trigger metadata rebuilding and updating
         # the fs and git mirror if one exists
@@ -1674,7 +1674,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def cff_yaml_str(self):
         """yaml-formatted string of the cff metadata"""
-        return yaml.dump(json.loads(self.cff.json()), default_flow_style=False)
+        return yaml.dump(self.cff.dict(serialize=True), default_flow_style=False)
 
     @cached_property
     def license_text(self) -> str:
@@ -1777,7 +1777,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             codebase.save(rebuild_metadata=False)
             # normally, rebuilding metadata is asynchronous and automatic but
             # here we need to build it synchronously after setting everything
-            self.codemeta_snapshot = json.loads(self.codemeta.json())
+            self.codemeta_snapshot = self.codemeta.dict(serialize=True)
             self.save(rebuild_metadata=False)
             self.get_fs_api().rebuild(metadata_only=True)
 
@@ -1839,7 +1839,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         self.version_number = version_number
 
     def cache_codemeta(self):
-        self.codemeta_snapshot = json.loads(self.codemeta.json())
+        self.codemeta_snapshot = self.codemeta.dict(serialize=True)
         self.save(rebuild_metadata=False)
 
     def save(self, rebuild_metadata=True, **kwargs):
@@ -1848,7 +1848,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         else:
             logger.debug("Building codemeta for release: %s", self)
             old_codemeta = self.codemeta_snapshot
-            self.codemeta_snapshot = json.loads(self.codemeta.json())
+            self.codemeta_snapshot = self.codemeta.dict(serialize=True)
             super().save(**kwargs)
 
             if old_codemeta != self.codemeta_snapshot:

@@ -33,7 +33,7 @@ class Command(BaseCommand):
         errors = []
         for obj in objects:
             try:
-                fresh_codemeta = json.loads(obj.codemeta.json())
+                fresh_codemeta = obj.codemeta.dict(serialize=True)
                 model.objects.filter(pk=obj.pk).update(codemeta_snapshot=fresh_codemeta)
             except Exception as e:
                 errors.append((obj, e))
