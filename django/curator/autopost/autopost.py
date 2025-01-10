@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime, timezone
-from django.conf import settings
+from curator.autopost import settings
 from library.models import CodebaseRelease
 
 
@@ -9,11 +9,8 @@ BLUESKY_APP_PASSWORD = "password"
 
 class Autopost:
     def __init__(self):
-        #initialize with creds
-        #user: test266.bsky.social
-        #password: password
-        self.identifier = BLUESKY_HANDLE
-        self.password = BLUESKY_APP_PASSWORD
+        self.identifier = settings.BLUESKY_HANDLE
+        self.password = settings.BLUESKY_APP_PASSWORD
         self.access_token = None
         self.did = None
 
