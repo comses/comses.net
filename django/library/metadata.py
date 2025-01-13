@@ -123,6 +123,13 @@ class CodeMetaConverter:
         }
 
     @classmethod
+    def url_to_datafeed(cls, url: str) -> dict:
+        return {
+            "@type": "DataFeed",
+            "url": url,
+        }
+
+    @classmethod
     def _common_codebase_fields(cls, codebase) -> dict:
         return dict(
             type_="SoftwareSourceCode",
@@ -196,7 +203,11 @@ class CodeMetaConverter:
             downloadUrl=f"{settings.BASE_URL}{release.get_download_url()}",
             operatingSystem=release.os,
             releaseNotes=release.release_notes.raw,
-            supportingData=release.output_data_url or None,
+            supportingData=(
+                cls.url_to_datafeed(release.output_data_url)
+                if release.output_data_url
+                else None
+            ),
             author=cls.convert_contributors(
                 release.author_release_contributors, "author"
             )

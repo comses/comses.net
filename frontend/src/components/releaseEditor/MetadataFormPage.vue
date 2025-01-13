@@ -87,8 +87,14 @@
         </template>
       </MultiSelectField>
       <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-      <button type="submit" data-cy="save-and-continue" class="btn btn-primary mt-3">
-        Save and Continue
+      <button
+        type="submit"
+        class="btn btn-primary mt-3"
+        data-cy="save-and-continue"
+        :class="{ disabled: isSubmitLoading }"
+      >
+        <span v-if="isSubmitLoading"><i class="fas fa-spinner fa-spin me-1"></i> Saving... </span>
+        <span v-else>Save and Continue</span>
       </button>
     </form>
   </div>
@@ -152,7 +158,7 @@ type ReleaseMetadataFields = yup.InferType<typeof schema>;
 
 const isLoading = ref(true);
 
-const { serverErrors, update } = useReleaseEditorAPI();
+const { serverErrors, update, isLoading: isSubmitLoading } = useReleaseEditorAPI();
 
 const { errors, handleSubmit, values, setValues } = useForm<ReleaseMetadataFields>({
   schema,
