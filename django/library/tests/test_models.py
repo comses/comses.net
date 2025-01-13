@@ -30,11 +30,11 @@ class CodebaseTest(BaseModelTestCase):
         )
 
     def test_base_dir(self):
-        self.assertEquals(
+        self.assertEqual(
             self.c1.base_library_dir,
             pathlib.Path(settings.LIBRARY_ROOT, str(self.c1.uuid)),
         )
-        self.assertEquals(
+        self.assertEqual(
             self.c1.base_git_dir,
             pathlib.Path(settings.REPOSITORY_ROOT, str(self.c1.uuid)),
         )
@@ -43,8 +43,8 @@ class CodebaseTest(BaseModelTestCase):
         release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)
         release.validate_publishable()
         release.publish()
-        self.assertEquals(self.c1.latest_version, release)
-        self.assertEquals(
+        self.assertEqual(self.c1.latest_version, release)
+        self.assertEqual(
             CodebaseRelease.objects.get(
                 codebase=self.c1, version_number=release.version_number
             ),

@@ -39,13 +39,13 @@ class MetricsTestCase(TestCase):
         )
         for chart_data in highcharts_timeseries:
             # 2012 and 2013 should also be 0
-            self.assertEquals(
+            self.assertEqual(
                 tuple(chart_data["data"][0:2]),
                 (0, 0),
                 "2012-13 should be zeroed out",
             )
             # missing year 2016
-            self.assertEquals(
+            self.assertEqual(
                 chart_data["data"][4],
                 0,
                 f"5th entry (2016) should be 0 {chart_data['name']}",
@@ -53,4 +53,4 @@ class MetricsTestCase(TestCase):
             self.assertTrue(
                 chart_data["name"] in OS_NAMES, f"Invalid OS name {chart_data['name']}"
             )
-            self.assertEquals(len(chart_data["data"]), 7, "Should be 7 years of data")
+            self.assertEqual(len(chart_data["data"]), 7, "Should be 7 years of data")

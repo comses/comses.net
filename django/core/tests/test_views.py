@@ -197,7 +197,7 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         )
         event.refresh_from_db()
         # non-moderators cannot mark content as spam
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
         self.assertFalse(event.is_marked_spam)
         # check moderator
         self.client.login(
