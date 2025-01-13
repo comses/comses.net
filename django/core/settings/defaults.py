@@ -543,6 +543,20 @@ DISCOURSE_SSO_SECRET = read_secret("discourse_sso_secret", "unconfigured")
 DISCOURSE_API_KEY = read_secret("discourse_api_key", "unconfigured")
 DISCOURSE_API_USERNAME = os.getenv("DISCOURSE_API_USERNAME", "unconfigured")
 
+
+LLM_SPAM_CHECK_API_URL = os.getenv("LLM_SPAM_CHECK_API_URL", "unconfigured")
+LLM_SPAM_CHECK_API_KEY = (
+    read_secret("llm_spam_check_api_key", "unconfigured") or "unconfigured"
+)
+
+LLM_SPAM_CHECK_JETSTREAM_SERVER_ID = os.getenv("LLM_SPAM_CHECK_JETSTREAM_SERVER_ID", "")
+LLM_SPAM_CHECK_JETSTREAM_OS_APPLICATION_CREDENTIAL_SECRET = read_secret(
+    "llm_spam_check_jetstream_os_application_credential_secret", "unconfigured"
+)
+LLM_SPAM_CHECK_JETSTREAM_OS_APPLICATION_CREDENTIAL_ID = read_secret(
+    "llm_spam_check_jetstream_os_application_credential_id", "unconfigured"
+)
+
 # https://docs.djangoproject.com/en/4.2/ref/settings/#templates
 TEMPLATES = [
     {

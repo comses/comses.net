@@ -1,15 +1,16 @@
 import logging
-import shortuuid
 
+import shortuuid
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from wagtail.models import Site as WagtailSite
 
 from core.discourse import create_discourse_user
-from core.models import MemberProfile, EXCLUDED_USERNAMES
+from core.models import EXCLUDED_USERNAMES, MemberProfile, SpamModeration
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,27 @@ def sync_discourse_user(user: User):
     return success
 
 
+def create_spam_moderation(mp: MemberProfile):
+    content_type = ContentType.objects.get_for_model(type(mp))
+    default_status = SpamModeration.Status.SCHEDULED_FOR_CHECK
+
+    default_spam_moderation = {
+        "status": default_status,
+        "detection_method": "",
+        "detection_details": "",
+    }
+
+    sm, created = SpamModeration.objects.update_or_create(
+        content_type=content_type,
+        object_id=mp.id,
+        defaults=default_spam_moderation,
+    )
+
+    # update the related object
+    mp.spam_moderation = sm
+    mp.save()
+
+
 @receiver(post_save, sender=User, dispatch_uid="member_profile_sync")
 def on_user_save(sender, instance: User, created, **kwargs):
     """
@@ -42,7 +64,9 @@ def on_user_save(sender, instance: User, created, **kwargs):
     if instance.username in EXCLUDED_USERNAMES:
         return
     if created:
-        sync_member_profile(instance)
+        mp = sync_member_profile(instance)
+        if mp:
+            create_spam_moderation(mp)
     if instance.email:
         # sync with discourse
         # to test discourse synchronization locally eliminate the DEPLOY_ENVIRONMENT check
