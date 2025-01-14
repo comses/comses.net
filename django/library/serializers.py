@@ -300,19 +300,13 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         instance = ReleaseContributor(**validated_data)
         return instance
 
-    def update_codebase_contributor_cache(self, release_contributor):
-        # invalidate contributors cache for the given codebase
-        release_contributor.release.codebase.clear_contributors_cache()
-
     def create(self, validated_data):
         release_contributor = self.create_unsaved(self.context, validated_data)
         release_contributor.save()
-        self.update_codebase_contributor_cache(release_contributor)
         return release_contributor
 
     def update(self, instance, validated_data):
         release_contributor = super().update(instance, validated_data)
-        self.update_codebase_contributor_cache(release_contributor)
         return release_contributor
 
     class Meta:
@@ -648,18 +642,14 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
             many=True, data=validated_data.pop("platform_tags")
         )
 
-        raw_license = validated_data.pop("license")
-        existing_license = License.objects.get(name=raw_license["name"])
-
         set_tags(instance, programming_languages, "programming_languages")
         set_tags(instance, platform_tags, "platform_tags")
 
-        instance = super().update(instance, validated_data)
-
+        raw_license = validated_data.pop("license")
+        existing_license = License.objects.get(name=raw_license["name"])
         instance.license = existing_license
-        instance.save()
 
-        return instance
+        return super().update(instance, validated_data)
 
     def save_release_contributors(
         self,

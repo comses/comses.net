@@ -118,6 +118,7 @@ THIRD_PARTY_APPS = [
     "django_extensions",
     "django_vite",
     "guardian",
+    "huey.contrib.djhuey",
     "rest_framework",
     "rest_framework_swagger",
     "robots",
@@ -396,6 +397,11 @@ LOGGING = {
             "handlers": ["console", "comsesfile"],
             "propagate": False,
         },
+        "huey": {
+            "level": "INFO",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
+        },
     },
 }
 
@@ -479,8 +485,17 @@ CACHES = {
         "LOCATION": "unix:///shared/redis/redis.sock",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 20},
         },
     }
+}
+
+HUEY = {
+    "name": "comses",
+    "huey_class": "core.huey.DjangoRedisHuey",
+    "immediate": False,  # always run tasks in the background (for now), if removed it will default to DEBUG
+    # FIXME: this should generally be True in development, the huey consumer WILL NOT
+    # automatically reload when the code changes when False
 }
 
 # SSO, user registration, and django-allauth configuration, see
@@ -501,9 +516,7 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_CHANGE_EMAIL = True
 
 ORCID_CLIENT_ID = os.getenv("ORCID_CLIENT_ID", "")
-
 ORCID_CLIENT_SECRET = read_secret("orcid_client_secret")
-
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = read_secret("github_client_secret")
 
