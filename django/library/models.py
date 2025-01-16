@@ -751,7 +751,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             self.last_published_on.year if self.last_published_on else date.today().year
         )
 
-    @cached_property
+    @property
     def all_contributors(self):
         return Contributor.objects.filter(
             id__in=ReleaseContributor.objects.for_codebase(self).values(
@@ -759,7 +759,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             )
         )
 
-    @cached_property
+    @property
     def all_author_contributors(self):
         return Contributor.objects.filter(
             id__in=ReleaseContributor.objects.authors()
@@ -767,13 +767,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             .values("contributor_id")
         )
 
-    @cached_property
+    @property
     def all_nonauthor_contributors(self):
         return self.all_contributors.exclude(
             id__in=self.all_author_contributors.values("id")
         )
 
-    @cached_property
+    @property
     def all_citable_contributors(self):
         return Contributor.objects.filter(
             id__in=ReleaseContributor.objects.citable()
@@ -1028,14 +1028,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             self.save()
         return release
 
-    def save(self, rebuild_metadata=True, **kwargs):
+    def save(self, rebuild_metadata=True, rebuild_release_metadata=True, **kwargs):
+        """save the codebase and optionally rebuild metadata by updating codemeta_snapshot.
+        If rebuild_release_metadata is True, all releases will be saved to trigger metadata updates"""
         if rebuild_metadata:
             logger.debug("Building codemeta for codebase: %s", self)
             self.codemeta_snapshot = self.codemeta.dict(serialize=True)
         super().save(**kwargs)
         # saving releases will trigger metadata rebuilding and updating
         # the fs and git mirror if one exists
-        if rebuild_metadata:
+        if rebuild_metadata and rebuild_release_metadata:
             for release in self.releases.all():
                 release.save(rebuild_metadata=True)
 
@@ -1774,12 +1776,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             codebase.last_published_on = now
             if codebase.first_published_at is None:
                 codebase.first_published_at = now
-            codebase.save(rebuild_metadata=False)
             # normally, rebuilding metadata is asynchronous and automatic but
             # here we need to build it synchronously after setting everything
-            self.codemeta_snapshot = self.codemeta.dict(serialize=True)
-            self.save(rebuild_metadata=False)
-            self.get_fs_api().rebuild(metadata_only=True)
+            self.save(defer_fs=False)
+            # and then rebuild the codebase metadata
+            codebase.save(rebuild_metadata=True, rebuild_release_metadata=False)
 
     @transaction.atomic
     def unpublish(self):
@@ -1838,11 +1839,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             )
         self.version_number = version_number
 
-    def cache_codemeta(self):
-        self.codemeta_snapshot = self.codemeta.dict(serialize=True)
-        self.save(rebuild_metadata=False)
-
-    def save(self, rebuild_metadata=True, **kwargs):
+    def save(self, rebuild_metadata=True, defer_fs=True, **kwargs):
+        """save the release and optionally rebuild metadata by updating codemeta_snapshot
+        and rebuilding the filesystem metadata. If defer_fs is True (default), the filesystem rebuild
+        will be deferred to an async task"""
         if not rebuild_metadata:
             super().save(**kwargs)
         else:
@@ -1852,9 +1852,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             super().save(**kwargs)
 
             if old_codemeta != self.codemeta_snapshot:
-                from .tasks import update_fs_release_metadata
+                if defer_fs:
+                    from .tasks import update_fs_release_metadata
 
-                update_fs_release_metadata(self.id)
+                    update_fs_release_metadata(self.id)
+                else:
+                    self.get_fs_api().rebuild(metadata_only=True)
 
     @classmethod
     def get_indexed_objects(cls):

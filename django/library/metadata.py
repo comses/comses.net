@@ -116,11 +116,13 @@ class CodeMetaConverter:
 
     @classmethod
     def license_to_creative_work(cls, license) -> dict:
-        return {
+        creative_work_license = {
             "@type": "CreativeWork",
             "name": license.name,
-            "url": license.url,
         }
+        if license.url:
+            creative_work_license["url"] = license.url
+        return creative_work_license
 
     @classmethod
     def url_to_datafeed(cls, url: str) -> dict:
@@ -168,7 +170,7 @@ class CodeMetaConverter:
                 codebase.all_nonauthor_contributors, "contributor"
             )
             or None,
-            dateCreated=codebase.date_created.date(),
+            dateCreated=codebase.date_created.date() if codebase.date_created else None,
             datePublished=(
                 codebase.last_published_on.date()
                 if codebase.last_published_on
@@ -219,7 +221,7 @@ class CodeMetaConverter:
             copyrightYear=(
                 release.last_published_on.year if release.last_published_on else None
             ),
-            dateCreated=release.date_created.date(),
+            dateCreated=release.date_created.date() if release.date_created else None,
             dateModified=(
                 release.last_modified.date() if release.last_modified else None
             ),
