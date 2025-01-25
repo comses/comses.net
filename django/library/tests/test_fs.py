@@ -102,7 +102,7 @@ class GitRepoApiTestCase(TestCase):
         self.codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = self.codebase_factory.create()
         self.release_1 = self.codebase.create_release()
-        self.git_mirror = self.codebase.create_git_mirror("animals-model")
+        self.git_mirror = self.codebase.create_git_mirror()
 
     def tearDown(self):
         clear_test_shared_folder(settings.REPOSITORY_ROOT)
