@@ -817,11 +817,7 @@ class CodebaseGitRepositoryApi:
         self.mirror = codebase.git_mirror
         if not self.mirror:
             raise ValueError("Codebase must have a git_mirror")
-        self.repo_dir = Path(self.codebase.base_git_dir, str(self.repo_name)).absolute()
-
-    @property
-    def repo_name(self):
-        return self.mirror.repository_name
+        self.repo_dir = Path(self.codebase.base_git_dir).absolute()
 
     @property
     def committer(self):
@@ -1053,7 +1049,7 @@ class CodebaseGitRepositoryApi:
         """
         self.check_file_sizes(self.codebase)
         if not releases:
-            releases = self.mirror.unmirrored_local_releases
+            releases = self.mirror.unbuilt_releases
         if not releases:
             # nothing to do, return the existing repo
             return Repo(self.repo_dir)
@@ -1061,7 +1057,7 @@ class CodebaseGitRepositoryApi:
             # make sure the releases are higher than the latest mirrored release
             if not all(
                 Version(release.version_number)
-                > Version(self.mirror.latest_local_release.version_number)
+                > Version(self.mirror.latest_built_release.version_number)
                 for release in releases
             ):
                 raise ValueError(
@@ -1077,7 +1073,7 @@ class CodebaseGitRepositoryApi:
                 self.create_release_branch(release, commit)
             self.checkout_main()
         # record newly mirrored releases and update timestamp
-        self.mirror.update_local_releases(releases)
+        self.mirror.mark_releases_built(releases)
         return Repo(self.repo_dir)
 
     def build(self) -> Repo:
@@ -1100,14 +1096,20 @@ class CodebaseGitRepositoryApi:
                 self.create_release_branch(release, commit)
             self.checkout_main()
         # record mirrored releases and update timestamp
-        self.mirror.update_local_releases(releases)
+        self.mirror.mark_releases_built(releases)
         return Repo(self.repo_dir)
 
     def update_or_build(self) -> Repo:
-        if self.repo_dir.exists() and self.repo_dir.joinpath(".git").exists():
-            return self.append_releases()
-        else:
+        # if the repo doesn't exist, is empty, or the mirror object is not tracking them,
+        # build (or rebuild) the repo
+        if (
+            not self.repo_dir.exists()
+            or not self.repo_dir.joinpath(".git").exists()
+            or not self.mirror.built_releases.exists()
+        ):
             return self.build()
+        else:
+            return self.append_releases()
 
     def dirs_equal(self, dir1: Path, dir2: Path, ignore=[".git"]):
         """

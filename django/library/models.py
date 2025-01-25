@@ -13,11 +13,12 @@ from abc import ABC
 from collections import defaultdict
 from datetime import date, timedelta
 
+from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import Prefetch, Q, Count, Max
 from django.utils.functional import cached_property
 from django.urls import reverse
@@ -541,62 +542,148 @@ class CodebaseQuerySet(models.QuerySet):
         return new_codebases, updated_codebases, releases
 
 
-class CodebaseGitMirror(models.Model):
-    """
-    Keeps track of a git repository and its GitHub remote that were created
-    from a Codebase using the mirror (read-only archiving) workflow
-    """
+class GithubIntegrationAppInstallation(models.Model):
+    """Represents a user's installation of the Github Integration App"""
 
-    # is_active = models.BooleanField(default=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        related_name="github_integration_app_installation",
+        on_delete=models.CASCADE,
+    )
+    github_user_id = models.BigIntegerField(unique=True)
+    github_login = models.CharField(max_length=255)
+    installation_id = models.BigIntegerField(unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    repository_name = models.CharField(max_length=100, unique=True)
-    remote_url = models.URLField(
-        blank=True,
-        help_text=_("URL of mirrored remote repository"),
+
+
+class CodebaseGitRemote(models.Model):
+    """Represents a remote repository that a local git mirror can push to"""
+
+    should_push = models.BooleanField(
+        default=True, help_text="Whether to push to this remote"
     )
-    # keep track of timestamp and releases that have been mirrored locally
-    last_local_update = models.DateTimeField(null=True, blank=True)
-    local_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
-    # keep track of timestamp and releases that have been synced to the remote
-    last_remote_update = models.DateTimeField(null=True, blank=True)
-    remote_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
-    user_access_token = models.CharField(max_length=200, null=True, blank=True)
-    organization_login = models.CharField(max_length=100, null=True, blank=True)
+    is_user_repo = models.BooleanField(
+        default=False, help_text="Whether this is a user-owned remote"
+    )
+    should_archive = models.BooleanField(
+        default=False, help_text="Whether to archive new releases from this remote"
+    )
+    repo_name = models.CharField(max_length=100)
+    owner = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Github username (or organization) who owns the remote repository",
+    )
+    url = models.URLField(
+        blank=True,
+        help_text=_("http URL of remote repository"),
+    )
+    mirror = models.ForeignKey(
+        "CodebaseGitMirror",
+        related_name="remotes",
+        on_delete=models.CASCADE,
+    )
+    last_push_log = models.TextField(blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     @property
-    def latest_local_release(self):
-        return max(self.local_releases.all(), key=lambda r: Version(r.version_number))
+    def installation(self) -> GithubIntegrationAppInstallation | None:
+        if self.is_user_repo:
+            return self.mirror.codebase.submitter.github_integration_app_installation
+        return None
+
+    def __str__(self):
+        return f"{self.owner}/{self.repo_name} (active={self.should_push}) (sync={self.should_archive})"
+
+    class Meta:
+        unique_together = [
+            ("mirror", "owner"),
+            ("owner", "repo_name"),
+        ]
+        unique_together = ("mirror", "owner")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["mirror"],
+                condition=models.Q(should_push=True, is_user_repo=True),
+                name="single_pushable_user_repo",
+            ),
+            models.UniqueConstraint(
+                fields=["mirror"],
+                condition=models.Q(should_push=True, is_user_repo=False),
+                name="single_pushable_org_repo",
+            ),
+            models.UniqueConstraint(
+                fields=["mirror"],
+                condition=models.Q(should_archive=True),
+                name="single_archivable_repo",
+            ),
+        ]
+
+
+class CodebaseGitMirror(models.Model):
+    """Represents a local git repository that mirrors a codebase's
+    regular (as opposed to pulled from github) published releases. It can have
+    two remotes: one on the submitter's account, and one in the CoMSES model library
+    organization
+    """
+
+    built_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     @property
-    def latest_remote_release(self):
-        return max(self.remote_releases.all(), key=lambda r: Version(r.version_number))
+    def latest_built_release(self):
+        if not self.built_releases.all():
+            return None
+        return max(self.built_releases.all(), key=lambda r: Version(r.version_number))
 
     @property
-    def unmirrored_local_releases(self):
+    def unbuilt_releases(self):
         return self.codebase.public_releases().exclude(
-            id__in=self.local_releases.values_list("id", flat=True)
+            id__in=self.built_releases.values_list("id", flat=True)
         )
 
-    @property
-    def unmirrored_remote_releases(self):
-        return self.local_releases.exclude(
-            id__in=self.remote_releases.values_list("id", flat=True)
-        )
-
-    def update_local_releases(self, new_releases: models.QuerySet | list):
-        if self.local_releases.exists():
-            self.local_releases.add(*new_releases)
-        else:
-            self.local_releases.set(new_releases)
-        self.last_local_update = timezone.now()
+    def mark_releases_built(self, new_releases: models.QuerySet | list):
+        self.built_releases.add(*new_releases)
         self.save()
 
-    def update_remote_releases(self):
-        releases = self.local_releases.all()
-        self.remote_releases.set(releases)
-        self.last_remote_update = timezone.now()
-        self.save()
+    def create_remote(self, owner, repo_name, **kwargs):
+        """create a new remote for this mirror, or get an existing one if there is a
+        matching remote that failed to actually be created at the remote location"""
+        try:
+            existing_remote = CodebaseGitRemote.objects.filter(
+                mirror=self,
+                owner=owner,
+                repo_name=repo_name,
+                url__isnull=False,  # proxy for a successful remote creation
+            ).first()
+            if existing_remote:
+                return existing_remote
+            remote = CodebaseGitRemote.objects.create(
+                mirror=self,
+                owner=owner,
+                repo_name=repo_name,
+                **kwargs,
+            )
+            return remote
+        except IntegrityError as e:
+            if "single_pushable_user_repo" in str(e):
+                raise ValidationError(
+                    "There can only be one active user-owned repository."
+                )
+            if "single_pushable_org_repo" in str(e):
+                raise ValidationError(
+                    "There can only be one active organization-owned repository."
+                )
+            if "single_archivable_repo" in str(e):
+                raise ValidationError(
+                    "There can only be one repository that releases are being archived from."
+                )
+            else:
+                raise ValidationError("A repository already exists at this location.")
 
 
 @add_to_comses_permission_whitelist
@@ -823,14 +910,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
-    def create_git_mirror(self, repository_name, **kwargs):
+    def create_git_mirror(self, **kwargs):
         if not self.git_mirror:
             git_mirror = CodebaseGitMirror.objects.create(
-                repository_name=repository_name,
                 **kwargs,
             )
             self.git_mirror = git_mirror
-            self.save()
+            self.save(rebuild_metadata=False)
         return self.git_mirror
 
     @property
@@ -1904,9 +1990,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 self.id, dry_run=settings.DEPLOY_ENVIRONMENT.is_development
             )
         if self.codebase.git_mirror:
-            from .tasks import update_mirrored_codebase
+            from .tasks import add_releases_and_push_codebase_repo
 
-            transaction.on_commit(lambda: update_mirrored_codebase(self.codebase.id))
+            transaction.on_commit(
+                lambda: add_releases_and_push_codebase_repo(self.codebase.id)
+            )
 
     def _publish(self):
         if not self.live:
