@@ -2,12 +2,13 @@ import re
 from github import GithubIntegration, Auth, Github
 from github.GithubException import UnknownObjectException
 from github.Repository import Repository as GithubRepo
+from github.AuthenticatedUser import AuthenticatedUser
 from git import Repo as GitRepo
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
-from .models import Codebase
+from .models import Codebase, CodebaseGitRemote, GithubIntegrationAppInstallation
 
 INSTALLATION_ACCESS_TOKEN_REDIS_KEY = "github_installation_access_token"
 
@@ -17,14 +18,11 @@ class GithubRepoNameValidator:
     def validate(
         cls,
         repo_name: str,
-        username: str | None = None,
-        user_access_token: str | None = None,
+        installation: GithubIntegrationAppInstallation | None = None,
     ):
         cls._validate_format(repo_name)
-        if username and user_access_token:
-            cls._check_user_repo_name_unused(repo_name, username, user_access_token)
-        elif username:
-            raise ValueError("User access token required for user repository")
+        if installation:
+            cls._check_user_repo_name_unused(repo_name, installation)
         else:
             cls._check_org_repo_name_unused(repo_name)
 
@@ -43,15 +41,16 @@ class GithubRepoNameValidator:
 
     @staticmethod
     def _check_user_repo_name_unused(
-        repo_name: str, username: str, user_access_token: str
+        repo_name: str, installation: GithubIntegrationAppInstallation
     ):
+        username = installation.github_login
         if username in repo_name:
             raise ValueError(
                 f"Repository name cannot contain your username: '{username}'"
             )
-        github = Github(user_access_token)
+        github = Github(GithubApi.get_user_installation_access_token(installation))
         try:
-            github.get_user(username).get_repo(repo_name)
+            github.get_user().get_repo(repo_name)
             raise ValueError(
                 f"Repository name already exists at https://github.com/{username}/{repo_name}"
             )
@@ -64,7 +63,7 @@ class GithubRepoNameValidator:
             raise ValueError(
                 f"Repository name cannot contain the organization name: '{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}'"
             )
-        github = Github(GithubApi.get_installation_access_token())
+        github = Github(GithubApi.get_org_installation_access_token())
         try:
             github.get_organization(settings.GITHUB_MODEL_LIBRARY_ORG_NAME).get_repo(
                 repo_name
@@ -84,27 +83,25 @@ class GithubApi:
     def __init__(
         self,
         codebase: Codebase,
+        remote: CodebaseGitRemote,
         local_repo: GitRepo,
-        repo_name: str,
-        is_user_repo=False,
-        organization_login: str | None = None,
-        user_access_token: str | None = None,
-        private_repo=False,
     ):
-        if is_user_repo:
-            raise NotImplementedError("User repositories not yet supported")
-        self.private_repo = private_repo
         self.codebase = codebase
+        self.remote = remote
         self.local_repo = local_repo
-        self.repo_name = repo_name
-        self.is_user_repo = is_user_repo
-        if is_user_repo and not organization_login:
-            raise ValueError("User access token required for user repository")
-        if not is_user_repo and not organization_login:
-            raise ValueError("Organization login required for org repository")
-        self.organization_login = organization_login
-        self.user_access_token = user_access_token
         self._github_repo = None
+
+    @property
+    def repo_owner(self):
+        return self.remote.owner
+
+    @property
+    def repo_name(self):
+        return self.remote.repo_name
+
+    @property
+    def is_user_repo(self):
+        return self.remote.is_user_repo
 
     @property
     def github_repo(self) -> GithubRepo:
@@ -117,19 +114,35 @@ class GithubApi:
 
     @property
     def installation_access_token(self):
-        return self.get_installation_access_token()
+        if self.is_user_repo:
+            return self.get_user_installation_access_token(self.remote.installation)
+        return self.get_org_installation_access_token()
+
+    @staticmethod
+    def get_user_installation_access_token(
+        installation: GithubIntegrationAppInstallation | None,
+    ) -> str | None:
+        if not installation:
+            return None
+        auth = Auth.AppAuth(
+            settings.GITHUB_INTEGRATION_APP_ID,
+            settings.GITHUB_INTEGRATION_APP_PRIVATE_KEY,
+        )
+        integration = GithubIntegration(auth=auth)
+        installation_auth = integration.get_access_token(installation.installation_id)
+        return installation_auth.token
 
     @classmethod
-    def get_installation_access_token(cls):
+    def get_org_installation_access_token(cls) -> str:
         cached_token = cache.get(INSTALLATION_ACCESS_TOKEN_REDIS_KEY)
         if cached_token:
             return cached_token
-        return cls.refresh_installation_access_token()
+        return cls.refresh_org_installation_access_token()
 
     @staticmethod
-    def refresh_installation_access_token():
-        """retrieve a new installation access token for the Github app
-        and cache it for future use
+    def refresh_org_installation_access_token() -> str:
+        """retrieve a new installation access token for the Github app installed
+        on the central CoMSES model library organization account and cache it for future use
         """
         auth = Auth.AppAuth(
             settings.GITHUB_INTEGRATION_APP_ID,
@@ -151,40 +164,22 @@ class GithubApi:
         )
         return token
 
-    @staticmethod
-    def get_user_access_token(code: str):
-        # just need to link to the app install and it will go to callback with ?code=...
-        """return an access token for the Github user
-
-        this token is used to authenticate requests to the Github API
-        to act on behalf of the user on resources they own
-        """
-        github = Github()
-        app = github.get_oauth_application(
-            settings.GITHUB_INTEGRATION_APP_CLIENT_ID,
-            settings.GITHUB_INTEGRATION_APP_CLIENT_SECRET,
-        )
-        return app.get_access_token(code).token
-
-    def get_or_create_repo(self) -> GithubRepo:
+    def get_or_create_repo(self, private=False) -> GithubRepo:
         """get or create the Github repository for a user or organization"""
         try:
             return self.github_repo
         except:
             if self.is_user_repo:
-                self._github_repo = self._create_user_repo()
+                self._github_repo = self._create_user_repo(private)
             else:
-                self._github_repo = self._create_org_repo()
+                self._github_repo = self._create_org_repo(private)
         return self._github_repo
 
-    def push(self, local_repo: GitRepo):
+    def push(self, local_repo: GitRepo) -> str:
         """push the local git repository to the Github repository"""
-        if self.is_user_repo:
-            raise NotImplementedError("User repositories not yet supported")
-        else:
-            token = self.installation_access_token
-            push_url = f"https://x-access-token:{token}@github.com/{self.github_repo.full_name}.git"
-        self._push_to_url(local_repo, push_url)
+        token = self.installation_access_token
+        push_url = f"https://x-access-token:{token}@github.com/{self.github_repo.full_name}.git"
+        return self._push_to_url(local_repo, push_url)
 
     def create_releases(self, local_repo: GitRepo):
         """create Github releases for each tag in the local repository that
@@ -205,31 +200,24 @@ class GithubApi:
 
     def _get_existing_repo(self):
         """attempt to get an existing repository for the authenticated user or organization"""
-        if self.is_user_repo:
-            github = Github(self.user_access_token)
-            name = github.get_user().login
-            return github.get_repo(f"{name}/{self.repo_name}")
-        else:
-            github = Github(self.installation_access_token)
-            return github.get_repo(f"{self.organization_login}/{self.repo_name}")
+        github = Github(self.installation_access_token)
+        return github.get_repo(f"{self.repo_owner}/{self.repo_name}")
 
-    def _create_user_repo(self):
+    def _create_user_repo(self, private=False):
         """create a new repository in the user's account
 
-        this function requires the `repo` scope for the user access token
+        this function requires the `repo` scope for the installation access token
         """
-        token = self.user_access_token
-        if not token:
-            raise ValueError("User access token required for creating user repository")
+        token = self.installation_access_token
         github = Github(token)
         repo = github.get_user().create_repo(
             name=self.repo_name,
-            description=self.codebase.description,
-            private=self.private_repo,
+            description=f"Mirror of {self.codebase.permanent_url}",
+            private=private,
         )
         return repo
 
-    def _create_org_repo(self):
+    def _create_org_repo(self, private=False):
         """create a new repository in the CoMSES model library organization
 
         this function requires the `repo` scope for the installation access token
@@ -240,14 +228,24 @@ class GithubApi:
         repo = org.create_repo(
             name=self.repo_name,
             description=f"Mirror of {self.codebase.permanent_url}",
-            private=self.private_repo,
+            private=private,
         )
         return repo
 
-    def _push_to_url(self, local_repo: GitRepo, push_url: str):
+    def _push_to_url(self, local_repo: GitRepo, push_url: str) -> str:
         if "origin" not in local_repo.remotes:
             local_repo.create_remote("origin", push_url)
         else:
             local_repo.remotes["origin"].set_url(push_url)
-        local_repo.git.push("--all")
-        local_repo.git.push("--tags")
+        # https://gitpython.readthedocs.io/en/stable/reference.html#git.remote.PushInfo
+        result_all = local_repo.git.push(["--all"])
+        result_tags = local_repo.git.push(["--tags"])
+        summaries = []
+        for result in (result_all, result_tags):
+            if result:  # result will be None if the push failed entirely
+                for info in result:
+                    if info.summary:
+                        summaries.append(info.summary)
+        if not summaries:
+            return "push failed entirely"
+        return "\n".join(summaries)
