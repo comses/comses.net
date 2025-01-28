@@ -1,0 +1,19 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb %}
+
+{% block title %}GitHub Integration{% endblock %}
+
+{% block introduction %}<h1>GitHub Integration Configuration</h1>{% endblock %}
+
+{% block content %}
+{{ breadcrumb([
+{'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
+{'url': url('library:codebase-detail', codebase.identifier), 'text': codebase.title|truncate(68) },
+{'text': 'GitHub Integration' },
+]) }}
+<div class='my-3' id="git-integration"></div>
+{% endblock %}
+
+{% block js %}
+{{ vite_asset("apps/github_configuration.ts") }}
+{% endblock %}

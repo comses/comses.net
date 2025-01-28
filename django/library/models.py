@@ -562,8 +562,6 @@ class CodebaseGitRemote(models.Model):
     repo_name = models.CharField(max_length=100)
     owner = models.CharField(
         max_length=100,
-        null=True,
-        blank=True,
         help_text="Github username (or organization) who owns the remote repository",
     )
     url = models.URLField(
@@ -610,6 +608,10 @@ class CodebaseGitRemote(models.Model):
                 condition=models.Q(should_archive=True),
                 name="single_archivable_repo",
             ),
+            models.CheckConstraint(
+                check=models.Q(is_user_repo=True) | models.Q(should_archive=False),
+                name="org_repo_not_archivable",
+            )
         ]
 
 
@@ -671,6 +673,10 @@ class CodebaseGitMirror(models.Model):
             if "single_archivable_repo" in str(e):
                 raise ValidationError(
                     "There can only be one repository that releases are being archived from."
+                )
+            if "org_repo_not_archivable" in str(e):
+                raise ValidationError(
+                    "Repositories in the CoMSES Model Library organization cannot be archived."
                 )
             else:
                 raise ValidationError("A repository already exists at this location.")
