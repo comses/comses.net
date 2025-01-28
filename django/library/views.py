@@ -1,4 +1,5 @@
 import json
+from allauth.socialaccount.models import SocialAccount
 from django.forms import Form
 from django.conf import settings
 from django.contrib import messages
@@ -28,6 +29,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import (
     PermissionDenied as DrfPermissionDenied,
     ValidationError,
+    NotFound,
 )
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -56,13 +58,13 @@ from .forms import (
     PeerReviewFilterForm,
 )
 from .fs import (
-    CodebaseGitRepositoryApi,
     FileCategoryDirectories,
     StagingDirectories,
     MessageLevels,
 )
 from .models import (
     Codebase,
+    CodebaseGitRemote,
     CodebaseRelease,
     Contributor,
     CodebaseImage,
@@ -75,6 +77,7 @@ from .models import (
 )
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (
+    CodebaseGitRemoteSerializer,
     CodebaseSerializer,
     CodebaseReleaseSerializer,
     ContributorSerializer,
@@ -87,7 +90,7 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
-from .tasks import mirror_codebase, update_mirrored_codebase
+from .tasks import build_and_push_codebase_repo
 
 import logging
 import pathlib
@@ -521,41 +524,6 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
             data = add_user_retrieve_perms(instance, serializer.data, request.user)
             return Response(data)
 
-    # @action(detail=True, methods=["post"])
-    # def github_sync(self, request, *args, **kwargs):
-    #     pass
-
-    @action(detail=True, methods=["post"])
-    def github_mirror(self, request, *args, **kwargs):
-        codebase = self.get_object()
-        if not codebase.live:
-            raise ValidationError("This model does not have any published releases")
-        if codebase.git_mirror:
-            raise ValidationError("This codebase is already mirrored to a GitHub repo")
-        CodebaseGitRepositoryApi.check_file_sizes(codebase)
-        repo_name = request.data.get("repo_name")
-        try:
-            GithubRepoNameValidator.validate(repo_name)
-        except ValueError as e:
-            raise ValidationError(str(e))
-        codebase.create_git_mirror(repo_name)
-        mirror_codebase(codebase.id, private_repo=settings.DEBUG)
-        return Response(
-            status=status.HTTP_202_ACCEPTED,
-            data="Mirroring process started, this should take only a few seconds. Refresh this page to see the status.",
-        )
-
-    @action(detail=True, methods=["post"])
-    def update_github_mirror(self, request, *args, **kwargs):
-        codebase = self.get_object()
-        if not codebase.git_mirror:
-            return Response(
-                data={"error": "This codebase is not mirrored to a GitHub repo"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        update_mirrored_codebase(codebase.id)
-        return Response(status=status.HTTP_202_ACCEPTED)
-
 
 class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, CodebaseViewSet):
     lookup_field = "identifier"
@@ -604,10 +572,139 @@ class CodebaseVersionRedirectView(RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
-class CodebaseImagePermission(permissions.BasePermission):
+class CanChangeCodebase(permissions.BasePermission):
     def has_permission(self, request, view):
         codebase = get_object_or_404(Codebase, identifier=view.kwargs["identifier"])
         return request.user.has_perm("library.change_codebase", codebase)
+
+
+class CodebaseGitRemoteViewSet(
+    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
+):
+    queryset = CodebaseGitRemote.objects.all()
+    permission_classes = (CanChangeCodebase,)
+    pagination_class = None
+    serializer_class = CodebaseGitRemoteSerializer
+
+    def get_queryset(self):
+        resolved = resolve(self.request.path)
+        identifier = resolved.kwargs["identifier"]
+        return self.queryset.filter(mirror__codebase__identifier=identifier)
+
+    def get_codebase(self):
+        try:
+            return Codebase.objects.get(identifier=self.kwargs.get("identifier"))
+        except Codebase.DoesNotExist:
+            raise NotFound("Codebase not found.")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if request.accepted_renderer.format == "html":
+            context = {"codebase": self.get_codebase(), "remotes": queryset}
+            return Response(
+                context,
+                template_name="library/codebases/git.jinja",
+            )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def submitter_installation_status(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        submitter = codebase.submitter
+        installation_url = None
+        try:
+            social_account = submitter.member_profile.get_social_account("github")
+            github_account = {
+                "id": social_account.uid,
+                "username": social_account.extra_data.get("login"),
+                "profile_url": social_account.get_profile_url(),
+            }
+        except SocialAccount.DoesNotExist:
+            github_account = None
+
+        if github_account:
+            if submitter.github_integration_app_installation:
+                github_account["installation_id"] = (
+                    submitter.github_integration_app_installation.installation_id
+                )
+            else:
+                installation_url = f"https://github.com/apps/{settings.GITHUB_INTEGRATION_APP_NAME}/installations/new?target_id={github_account['id']}"
+
+        return Response(
+            data={
+                "github_account": github_account,
+                "installation_url": installation_url,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["post"])
+    def setup_user_github_remote(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        installation = codebase.submitter.github_integration_app_installation
+        return self._setup_github_remote(
+            codebase=codebase,
+            repo_name=request.data.get("repo_name"),
+            owner=installation.github_login,
+            is_user_repo=True,
+            should_push=True,
+            should_archive=True,
+            installation=installation,
+        )
+
+    @action(detail=False, methods=["post"])
+    def setup_org_github_remote(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        return self._setup_github_remote(
+            codebase=codebase,
+            repo_name=request.data.get("repo_name"),
+            owner=settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
+            is_user_repo=False,
+            should_push=True,
+            should_archive=False,
+        )
+
+    def _setup_github_remote(
+        self,
+        codebase: Codebase,
+        repo_name: str,
+        owner: str,
+        is_user_repo: bool,
+        should_push: bool,
+        should_archive: bool,
+        installation=None,
+    ):
+        if is_user_repo and not installation:
+            raise ValidationError(
+                "Installation of the Github integration app is required"
+            )
+        if not codebase.live:
+            raise ValidationError("This model does not have any published releases")
+        if not repo_name:
+            raise ValidationError("Repository name is required")
+        try:
+            GithubRepoNameValidator.validate(repo_name, installation=installation)
+        except ValueError as e:
+            raise ValidationError(str(e))
+
+        # create a mirror if it doesn't exist
+        if not codebase.git_mirror:
+            codebase.create_git_mirror()
+        # set up the org remote
+        codebase.git_mirror.create_remote(
+            owner=owner,
+            repo_name=repo_name,
+            should_push=should_push,
+            is_user_repo=is_user_repo,
+            should_archive=should_archive,
+        )
+        # trigger the build and push task
+        build_and_push_codebase_repo(codebase.id, private_repo=settings.DEBUG)
+        return Response(
+            status=status.HTTP_202_ACCEPTED,
+            data="Synchronization process started, this should take only a few seconds. Refresh this page to see the status.",
+        )
 
 
 class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -615,7 +712,7 @@ class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_value_regex = r"\d+"
     queryset = CodebaseImage.objects.all()
     serializer_class = CodebaseImageSerializer
-    permission_classes = (CodebaseImagePermission,)
+    permission_classes = (CanChangeCodebase,)
 
     def get_queryset(self):
         resolved = resolve(self.request.path)
