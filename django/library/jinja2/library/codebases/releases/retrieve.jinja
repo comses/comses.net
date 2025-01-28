@@ -301,12 +301,14 @@
                 <sup class="badge bg-gray"><small>beta</small></sup>
             </div>
 
-            {% if codebase.git_mirror %}
+            {% if False %}
+                {# FIXME: multiple remotes! show all of them #}
+                {# and link to github configuration page #}
                 {% if codebase.git_mirror.remote_url %}
                     <div class="d-flex align-items-center pt-1">
                         <a href="{{ codebase.git_mirror.remote_url }}" class="d-block text-truncate" target="_blank">
                             <span class='badge bg-info'>
-                                {{ codebase.git_mirror.repository_name }}
+                                {{ codebase.git_mirror.repo_name }}
                                 <i class="fas fa-external-link-alt"></i>
                             </span>
                         </a>
