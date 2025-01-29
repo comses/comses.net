@@ -506,6 +506,8 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
 
 
 class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
+    is_active = serializers.ReadOnlyField(source="is_active")
+
     class Meta:
         model = CodebaseGitRemote
         fields = (
@@ -516,6 +518,7 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "should_push",
             "should_archive",
             "is_user_repo",
+            "is_active",
             "last_push_log",
         )
         read_only_fields = (
@@ -524,6 +527,7 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "repo_name",
             "url",
             "is_user_repo",
+            "is_active",
             "last_push_log",
         )
 
