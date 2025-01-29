@@ -600,7 +600,11 @@ class CodebaseGitRemoteViewSet(
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         if request.accepted_renderer.format == "html":
-            context = {"codebase": self.get_codebase(), "remotes": queryset}
+            context = {
+                "codebase": self.get_codebase(),
+                "remotes": queryset,
+                "github_org_name": settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
+            }
             return Response(
                 context,
                 template_name="library/codebases/git.jinja",
@@ -613,14 +617,14 @@ class CodebaseGitRemoteViewSet(
         codebase = self.get_codebase()
         submitter = codebase.submitter
         installation_url = None
-        try:
-            social_account = submitter.member_profile.get_social_account("github")
+        social_account = submitter.member_profile.get_social_account("github")
+        if social_account:
             github_account = {
                 "id": social_account.uid,
                 "username": social_account.extra_data.get("login"),
                 "profile_url": social_account.get_profile_url(),
             }
-        except SocialAccount.DoesNotExist:
+        else:
             github_account = None
 
         if github_account:
@@ -634,6 +638,7 @@ class CodebaseGitRemoteViewSet(
         return Response(
             data={
                 "github_account": github_account,
+                "connect_url": reverse("socialaccount_connections"),
                 "installation_url": installation_url,
             },
             status=status.HTTP_200_OK,

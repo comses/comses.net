@@ -578,6 +578,10 @@ class CodebaseGitRemote(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     @property
+    def is_active(self):
+        return self.should_push or self.should_archive
+
+    @property
     def installation(self) -> GithubIntegrationAppInstallation | None:
         if self.is_user_repo:
             return self.mirror.codebase.submitter.github_integration_app_installation
@@ -611,7 +615,7 @@ class CodebaseGitRemote(models.Model):
             models.CheckConstraint(
                 check=models.Q(is_user_repo=True) | models.Q(should_archive=False),
                 name="org_repo_not_archivable",
-            )
+            ),
         ]
 
 
@@ -625,6 +629,14 @@ class CodebaseGitMirror(models.Model):
     built_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+
+    @property
+    def active_remotes_list(self) -> list[CodebaseGitRemote]:
+        return list(
+            self.remotes.filter(
+                models.Q(should_push=True) | models.Q(should_archive=True)
+            )
+        )
 
     @property
     def latest_built_release(self):

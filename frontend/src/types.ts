@@ -361,8 +361,9 @@ export interface GithubAccount {
   installationId?: number;
 }
 
-export interface GitIntegrationStatus {
+export interface GitHubAppInstallationStatus {
   githubAccount: GithubAccount | null;
+  connectUrl: string;
   installationUrl: string | null;
 }
 
@@ -374,6 +375,7 @@ export interface CodebaseGitRemote {
   shouldPush: boolean;
   shouldArchive: boolean;
   isUserRepo: boolean;
+  isActive: boolean;
   lastPushLog: string;
 }
 
