@@ -289,62 +289,56 @@
     {% endif %}
 {% endwith %}
 
-{% if codebase.git_mirror or has_change_perm %}
-<div class="card-metadata">
-    <div class="card-body">
-        <div class="section mb-0">
-            <div>
-                <b class="card-title">
-                    <i class="fab fa-github"></i>
-                    Github Integration
-                </b>
-                <sup class="badge bg-gray"><small>beta</small></sup>
-            </div>
 
-            {% if False %}
-                {# FIXME: multiple remotes! show all of them #}
-                {# and link to github configuration page #}
-                {% if codebase.git_mirror.remote_url %}
-                    <div class="d-flex align-items-center pt-1">
-                        <a href="{{ codebase.git_mirror.remote_url }}" class="d-block text-truncate" target="_blank">
-                            <span class='badge bg-info'>
-                                {{ codebase.git_mirror.repo_name }}
-                                <i class="fas fa-external-link-alt"></i>
-                            </span>
+{% with remotes = codebase.git_mirror.active_remotes if codebase.git_mirror else None %}
+    {% if has_change_perm or remotes %}
+    <div class="card-metadata">
+        <div class="card-body">
+            <div class="section mb-0">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <b class="card-title mb-0">
+                        <i class="fab fa-github"></i>
+                        Github Sync
+                    </b>
+                    {% if has_change_perm %} 
+                        <a class="btn btn-sm btn-outline-secondary {{ 'disabled' if not codebase.live else '' }}"
+                            href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
+                            <i class="fas fa-cog"></i> Configure
                         </a>
-                    </div>
-                {% else %}
-                    <div class="alert alert-info mb-0">
-                        <small>
-                            <p>
-                                Mirroring in progress. This may take a few seconds.
-                            </p>
-                            <a href=".">Refresh this page.</a>
-                        </small>
-                    </div>
-                {% endif %}
-            {% elif has_change_perm %}
-                {% if codebase.live %}
-                    <div
-                        id="github-mirror"
-                        data-identifier="{{ codebase.identifier }}"
-                        data-default-repo-name="{{ slugify(codebase.title) }}"
-                    ></div>
-                {% else %}
+                    {% endif %}
+                </div>
+                {% if remotes %}
+                    <ul class="list-unstyled mb-2">
+                        {% for remote in remotes %}
+                            <li class="d-flex align-items-center mb-1">
+                                <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate" style="max-width: 70%;">
+                                    <strong>{{ remote.repo_name }}</strong>
+                                </a>
+                                {% if remote.should_push and remote.should_archive %}
+                                    <i class="fas fa-exchange-alt text-primary" title="Pushing and Archiving"></i>
+                                {% elif remote.should_push %}
+                                    <i class="fas fa-arrow-right text-success" title="Pushing Only"></i>
+                                {% elif remote.should_archive %}
+                                    <i class="fas fa-arrow-left text-warning" title="Archiving Only"></i>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% elif has_change_perm and not codebase.live %}
                     <div class="card-text">
                         Only available for published models
                     </div>
                 {% endif %}
-            {% endif %}
-            <div class="card-text">
-                <a class="small" href="/github/" target="_blank">
-                    <i class="fas fa-question-circle"></i> What is this?
-                </a>
+                <div class="card-text">
+                    <a class="small" href="/github/" target="_blank">
+                        <i class="fas fa-question-circle"></i> What is this?
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
+    {% endif %}
+{% endwith %}
 
 <div class="card-metadata">
     <div class="card-body">
