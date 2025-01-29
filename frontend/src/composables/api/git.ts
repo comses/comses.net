@@ -1,6 +1,10 @@
 import { toRefs } from "vue";
 import { useAxios, joinPaths, type RequestOptions } from "@/composables/api";
-import type { CodebaseGitRemote, CodebaseGitRemoteForm, GitIntegrationStatus } from "@/types";
+import type {
+  CodebaseGitRemote,
+  CodebaseGitRemoteForm,
+  GitHubAppInstallationStatus,
+} from "@/types";
 import type { AxiosResponse } from "axios";
 
 export function useGitRemotesAPI(codebaseIdentifier: string) {
@@ -17,9 +21,9 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     return joinPaths([baseUrl, ...paths]);
   }
 
-  async function submitterInstallationStatus(
+  async function getSubmitterInstallationStatus(
     options?: RequestOptions
-  ): Promise<AxiosResponse<GitIntegrationStatus>> {
+  ): Promise<AxiosResponse<GitHubAppInstallationStatus>> {
     return get(url(["submitter_installation_status"]), options);
   }
 
@@ -44,7 +48,7 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     detailUrl,
     list,
     update,
-    submitterInstallationStatus,
+    getSubmitterInstallationStatus,
     setupOrgGithubRemote,
     setupUserGithubRemote,
   };
