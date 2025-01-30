@@ -1,19 +1,4 @@
 <template>
-  <p>
-    GitHub Sync allows you to connect your model in the CoMSES Model Library (CML) to a GitHub
-    repository.
-  </p>
-  <p>
-    When creating a new repository here, a git repo will be automatically built from the public
-    releases of your model and <b><u>pushed</u></b> to GitHub. This will be updated every time you
-    publish a new release or update the metadata of an existing one, until it is disabled.
-  </p>
-  <p>
-    Changes made to synced repositories on GitHub can be automically pulled back into the CML by
-    enabling the <b><u>archiving</u></b> feature and creating a new release on GitHub. This works
-    similarly to the <i>Zenodo</i> GitHub integration.
-  </p>
-  <hr />
   <div class="row" style="min-height: 60vh">
     <div class="col border-end">
       <h3><i class="fas fa-university"></i> Repositories in the CoMSES organization</h3>
