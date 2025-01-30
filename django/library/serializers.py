@@ -506,7 +506,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
 
 
 class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
-    is_active = serializers.ReadOnlyField(source="is_active")
+    is_active = serializers.ReadOnlyField()
 
     class Meta:
         model = CodebaseGitRemote

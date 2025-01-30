@@ -50,7 +50,7 @@
             <i class="fas fa-spinner fa-spin"></i>
           </li>
           <li v-else-if="orgRemotes.length === 0" class="list-group-item text-muted">
-            No {{ selectedOrgTab }} remotes.
+            No {{ selectedOrgTab }} repos.
           </li>
           <li
             v-else
@@ -114,7 +114,7 @@
             <i class="fas fa-spinner fa-spin"></i>
           </li>
           <li v-else-if="userRemotes.length === 0" class="list-group-item text-muted">
-            No {{ selectedUserTab }} remotes.
+            No {{ selectedUserTab }} repos.
           </li>
           <li
             v-else
@@ -131,20 +131,46 @@
         </ol>
       </div>
       <div>
-        <!-- TODO: guide through connecting account and installing app -->
+        <div v-if="!canCreateUserRemote" class="alert alert-dark bg-gray show mt-4">
+          <div class="alert-heading mb-2">
+            <i class="fas fa-exclamation-triangle"></i> Before you can create a new repository:
+          </div>
+          <ol class="mb-0">
+            <li v-if="githubUsername" class="text-decoration-line-through">
+              Connect your GitHub account
+            </li>
+            <li v-else>
+              <a class="btn btn-link" :href="installationStatus.connectUrl">
+                <i class="fas fa-link"></i> Connect your GitHub account
+              </a>
+            </li>
+            <li v-if="githubAppInstalled" class="text-decoration-line-through">
+              Install the Sync app on your GitHub account
+            </li>
+            <li v-else>
+              <a
+                class="btn btn-link"
+                :class="{ disabled: !installationStatus.installationUrl }"
+                :href="installationStatus.installationUrl ?? ''"
+              >
+                <i class="fas fa-download"></i> Install the Sync app on your GitHub account
+              </a>
+            </li>
+          </ol>
+        </div>
         <button
           class="btn btn-link ps-0 mb-3"
           @click="showUserRemoteForm = !showUserRemoteForm"
-          :disabled="!installationStatus?.githubAccount"
+          :disabled="!canCreateUserRemote"
         >
           <i v-if="showUserRemoteForm" class="fas fa-minus"></i>
           <i v-else class="fas fa-plus"></i>
           Create a new repository
         </button>
         <GitHubRemoteCreateForm
-          v-if="showUserRemoteForm && githubUsername"
+          v-if="showUserRemoteForm && canCreateUserRemote"
           :codebase-identifier="codebaseIdentifier"
-          :owner="githubUsername"
+          :owner="githubUsername!"
           :default-repo-name="defaultRepoName"
           :is-user-repo="true"
           @success="fetchRemotes"
@@ -169,8 +195,14 @@ const props = defineProps<{
 
 const { list, getSubmitterInstallationStatus } = useGitRemotesAPI(props.codebaseIdentifier);
 
-const installationStatus = ref<GitHubAppInstallationStatus | null>(null);
-const githubUsername = computed(() => installationStatus.value?.githubAccount?.username);
+const installationStatus = ref<GitHubAppInstallationStatus>({
+  githubAccount: null,
+  installationUrl: null,
+  connectUrl: "",
+});
+const githubUsername = computed(() => installationStatus.value.githubAccount?.username);
+const githubAppInstalled = computed(() => !!installationStatus.value.githubAccount?.installationId);
+const canCreateUserRemote = computed(() => !!githubUsername.value && githubAppInstalled.value);
 
 const showOrgRemoteForm = ref(false);
 const showUserRemoteForm = ref(false);
