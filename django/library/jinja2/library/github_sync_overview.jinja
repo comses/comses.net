@@ -1,0 +1,236 @@
+{% extends "base.jinja" %}
+
+{% block introduction %}
+<h1>GitHub Sync Overview</h1>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10">
+            <p>
+                The <b>CoMSES Model Library GitHub Sync</b> feature allows you to connect your model in the library to a
+                GitHub repository, enabling either a one-way or bidirectional sync of model source code and metadata
+                between
+                the two platforms.
+            </p>
+            <p>
+                Get started by pressing <span class="btn btn-sm btn-outline-secondary p-0 disabled"><i
+                        class="fas fa-cog"></i> Configure</span>
+                under the <strong>GitHub Sync</strong> tab on one of your models in the CoMSES Model Library. Others
+                will be able to see any actively synced repositories here as well.
+            </p>
+        </div>
+    </div>
+    <hr />
+    <div class="row justify-content-center mb-5">
+        <div class="col-12 col-md-10">
+            <h2 class="text-center mb-3">Hosting Locations</h2>
+            <p class="text-center">
+                There are two options for where to host a synced repository, each with its own
+                advantages and limitations.
+            </p>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <h3 class="card-header">
+                    <i class="fas fa-university"></i> {{ github_model_library_org_name }} Organization
+                </h3>
+                <div class="card-body">
+                    <p>
+                        Synced repositories in the
+                        <a href="https://github.com/orgs/{{ github_model_library_org_name }}/repositories"
+                            target="_blank">
+                            <i class="fab fa-github"></i>
+                            {{ github_model_library_org_name }}</a>
+                        organization are <b><u>push-only</u></b> since they are intended as a read-only mirror of
+                        your model submission on CoMSES. This is a good way to enhance the accessibility of your
+                        model's source code without a GitHub account.
+                    </p>
+                    <h5>Ideal for</h5>
+                    <ul>
+                        <li>Adding a convenient, public-facing code browser for your model</li>
+                        <li>Those who don't need or want to develop code on GitHub</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <h3 class="card-header">
+                    <i class="fas fa-user"></i> Your GitHub Account
+                </h3>
+                <div class="card-body">
+                    <p>
+                        Since user-owned repositories give you full control and the ability to make changes, they
+                        can <b><u>push</u></b> new CML releases to GitHub, and <b><u>archive</u></b> new GitHub
+                        releases back to the CML. This lets you move your model development to GitHub while still
+                        keeping it accessible on CoMSES.
+                    </p>
+                    <h5>Ideal for</h5>
+                    <ul>
+                        <li>Taking advantage of tooling to improve your model software or speed up development</li>
+                        <li>Switching to active development on GitHub in order to benefit from the rich collaborative
+                            environment, whether you are a beginner or a seasoned pro</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center mb-5">
+        <div class="col-12 col-md-10">
+            <h2 class="text-center mb-3">Sync Modes</h2>
+            <p class="text-center">
+                Linked repositories can be set up to either <strong>Push</strong>, <strong>Archive</strong>, or
+                both (if user-owned).
+            </p>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h3 class="mb-0"><i class="fas fa-code-branch"></i> Push</h3>
+                    <span class="text-muted">(CoMSES → GitHub)</span>
+                </div>
+                <div class="card-body">
+                    <h5>How It Works</h5>
+                    <ul class="px-3">
+                        <li class="d-flex mb-2">
+                            <i class="fas fa-code-branch pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Published model releases are transformed into commits, branches,
+                                and releases on GitHub, preserving your project's history and versioning
+                            </div>
+                        </li>
+                        <li class="d-flex mb-2">
+                            <i class="fas fa-user pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                In order to maintain attribution, the original submitter is set as the commit
+                                author, and all other authors as co-authors
+                                <p class="text-muted small mb-0">
+                                    {% if not user.is_authenticated %}
+                                    We will use a connected Github account or your profile information to sign commits.
+                                    You can
+                                    connect
+                                    your Github account by editing your profile if you want it to appear as the author
+                                    of the
+                                    commits.
+                                    {% elif user.member_profile.github_username %}
+                                    Since you have a connected Github account, we will use it to sign commits:
+                                    <code>{{ user.member_profile.github_username }} &lt;{{ user.member_profile.github_username }}@users.noreply.github.com&gt;</code>
+                                    {% else %}
+                                    Since you do not have a github account connected we will use your profile
+                                    information:
+                                    <code>{{ user.member_profile.name }} &lt;{{ user.email }}&gt;</code>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </li>
+                        <li class="d-flex mb-2">
+                            <i class="fas fa-tags pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Metadata is preserved by adding to the GitHub repo where possible and stored in
+                                versioned
+                                <a href="https://codemeta.github.io/"><code>codemeta.json</code></a>,
+                                <a
+                                    href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository"><code>LICENSE</code></a>,
+                                and <a href="https://citation-file-format.github.io/"><code>CITATION.cff</code></a>
+                                files
+                            </div>
+                        </li>
+                        <li class="d-flex">
+                            <i class="fas fa-sync-alt pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Each time a new release is published on the Model Library, or metadata for an existing
+                                one is updated, the GitHub repository is
+                                updated automatically
+                            </div>
+                        </li>
+                    </ul>
+                    <hr />
+                    <h5>Considerations</h5>
+                    <ul class="px-3">
+                        <li class="d-flex mb-2">
+                            <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Changes made to any generated branches on GitHub will cause that branch to longer be
+                                automatically updated by the Model Library
+                            </div>
+                        </li>
+                        <li class="d-flex">
+                            <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Individual files cannot exceed 100MB
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h3 class="mb-0"><i class="fas fa-archive"></i> Archive</h3>
+                    <span class="text-muted">(GitHub → CoMSES)</span>
+                </div>
+                <div class="card-body">
+                    <h5>How It Works</h5>
+                    <ul class="px-3">
+                        <li class="d-flex mb-2">
+                            <i class="fas fa-rocket pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Whenever you <a
+                                    href="https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository">publish
+                                    a new release</a> on a linked GitHub repository with
+                                archiving enabled, the release is automatically imported as a new release of your model
+                                in the CoMSES Model Library
+                            </div>
+                        </li>
+                        <li class="d-flex mb-2">
+                            <i class="fas fa-file-archive pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                The release assets for the GitHub release are imported to the model library, and are
+                                available for download like any other release
+                            </div>
+                        </li>
+                        <li class="d-flex">
+                            <i class="fas fa-tags pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                A <code>codemeta.json</code> file in the root of the repository, along with any
+                                information GitHub has, will be used
+                                to populate the metadata for the release
+                            </div>
+                        </li>
+                    </ul>
+                    <hr />
+                    <h5>Considerations</h5>
+                    <ul class="px-3">
+                        <li class="d-flex mb-2">
+                            <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Metadata in <code>codemeta.json</code> must be
+                                well-formed to allow the system to properly ingest your GitHub release
+                            </div>
+                        </li>
+                        <li class="d-flex mb-2">
+                            <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Archived releases do not enforce a certain directory structure, instead pulling in the
+                                release assets as-is, so you must ensure this contains all of your source code,
+                                documentation, and other necessary files
+                            </div>
+                        </li>
+                        <li class="d-flex">
+                            <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Requires linking your personal GitHub account with CoMSES and
+                                installing the GitHub Sync app with permission to administer your repositories,
+                                though you can revoke these permissions or limit them to specific repositories
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
