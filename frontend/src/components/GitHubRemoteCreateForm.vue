@@ -1,8 +1,18 @@
 <template>
   <div>
-    <div class="input-group mb-3">
+    <label for="repo-name" class="form-label">Choose a repository name</label>
+    <div class="input-group">
       <span class="input-group-text"><i class="fab fa-github me-1"></i>{{ owner }}/</span>
-      <input type="text" class="form-control" placeholder="repository name" v-model="repoName" />
+      <input
+        type="text"
+        class="form-control"
+        placeholder="repository name"
+        v-model="repoName"
+        id="repo-name"
+      />
+    </div>
+    <div class="form-text mb-3">
+      The name can only contain letters, digits, and the characters ., -, and _
     </div>
     <button class="btn btn-primary" type="button" @click="setupRemote" :disabled="isLoading">
       Create
@@ -10,7 +20,11 @@
     <div v-if="isLoading" class="text-muted text-center p-3">
       <i class="fas fa-spinner fa-spin"></i>
     </div>
-    <FormAlert v-if="serverErrors" :validation-errors="[]" :server-errors="serverErrors" />
+    <FormAlert
+      v-if="serverErrors.length > 0"
+      :validation-errors="[]"
+      :server-errors="serverErrors"
+    />
     <div
       v-else-if="successMessage"
       class="alert alert-success alert-dismissible fade show mb-0 mt-3"
