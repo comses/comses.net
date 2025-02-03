@@ -536,6 +536,10 @@ class CodebaseQuerySet(models.QuerySet):
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
+    
+    Note: metadata is mirrored in CodeMeta format in codemeta_snapshot, which is updated on save().
+    Using update() on the queryset performs a direct SQL update and will result in codemeta_snapshot
+    and other derived fields or actions not being updated.
     """
 
     # shortname = models.CharField(max_length=128, unique=True)
@@ -652,7 +656,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def datacite(self):
         return DataCiteSchema.from_codebase(self)
 
-    # FIXME: replace the above datacite metadata generation with this
+    # FIXME: this is currently unused, should replace the above datacite property
     @property
     def datacite_temp(self):
         return DataCiteConverter.convert_codebase(
@@ -1181,6 +1185,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     * release tarballs or zipfiles located at /library/<codebase_identifier>/releases/<version_number>/<id>.(tar.gz|zip)
     * release bagits at /library/<codebase_identifier>/releases/<release_identifier>/sip
     * git repository in /repository/<codebase_identifier>/
+
+    Note: metadata is mirrored in CodeMeta format in codemeta_snapshot, which is updated on save().
+    Using update() on the queryset performs a direct SQL update and will result in codemeta_snapshot
+    and other derived fields or actions not being updated.
     """
 
     class Status(models.TextChoices):
@@ -1645,7 +1653,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             )
         return DataCiteSchema.from_release(self)
 
-    # FIXME: replace the above datacite metadata generation with this
+    # FIXME: this is currently unused, should replace the above datacite property
     @property
     def datacite_temp(self):
         if not self.live:
