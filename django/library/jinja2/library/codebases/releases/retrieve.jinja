@@ -290,7 +290,7 @@
 {% endwith %}
 
 
-{% with remotes = codebase.git_mirror.active_remotes if codebase.git_mirror else None %}
+{% with remotes = codebase.git_mirror.active_remotes_list if codebase.git_mirror else None %}
     {% if has_change_perm or remotes %}
     <div class="card-metadata">
         <div class="card-body">
@@ -311,16 +311,16 @@
                     <ul class="list-unstyled mb-2">
                         {% for remote in remotes %}
                             <li class="d-flex align-items-center mb-1">
-                                <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate" style="max-width: 70%;">
-                                    <strong>{{ remote.repo_name }}</strong>
+                                <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate badge bg-primary">
+                                    {{ remote.owner }}/{{ remote.repo_name }}
                                 </a>
-                                {% if remote.should_push and remote.should_archive %}
+                                {# {% if remote.should_push and remote.should_archive %}
                                     <i class="fas fa-exchange-alt text-primary" title="Pushing and Archiving"></i>
                                 {% elif remote.should_push %}
                                     <i class="fas fa-arrow-right text-success" title="Pushing Only"></i>
                                 {% elif remote.should_archive %}
                                     <i class="fas fa-arrow-left text-warning" title="Archiving Only"></i>
-                                {% endif %}
+                                {% endif %} #}
                             </li>
                         {% endfor %}
                     </ul>
