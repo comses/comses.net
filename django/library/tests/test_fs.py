@@ -112,7 +112,7 @@ class GitRepoApiTestCase(TestCase):
             self.release_1, self.release_1_dir, version_number="1.0.0"
         )
         self.release_1.publish()
-        public_release_count = self.codebase.public_releases().count()
+        public_release_count = self.codebase.releases.public().count()
         self.assertEqual(public_release_count, 1)
         api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
@@ -157,7 +157,7 @@ class GitRepoApiTestCase(TestCase):
         # check git stuff
         repo = Repo(api.repo_dir)
         self.assertFalse(repo.is_dirty())
-        public_release_count = self.codebase.public_releases().count()
+        public_release_count = self.codebase.releases.public().count()
         self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
         self.assertEqual(len(repo.tags), public_release_count)
         # check contents
@@ -208,7 +208,7 @@ class GitRepoApiTestCase(TestCase):
         # check git stuff
         repo = Repo(api.repo_dir)
         self.assertFalse(repo.is_dirty())
-        public_release_count = self.codebase.public_releases().count()
+        public_release_count = self.codebase.releases.public().count()
         self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
         self.assertEqual(len(repo.tags), public_release_count)
         # check contents
