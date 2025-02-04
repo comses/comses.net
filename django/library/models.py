@@ -584,6 +584,7 @@ class CodebaseGitRemote(models.Model):
         on_delete=models.CASCADE,
     )
     last_push_log = models.TextField(blank=True)
+    last_archive_log = models.TextField(blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -656,7 +657,7 @@ class CodebaseGitMirror(models.Model):
 
     @property
     def unbuilt_releases(self):
-        return self.codebase.public_releases().exclude(
+        return self.codebase.releases.internal().public().exclude(
             id__in=self.built_releases.values_list("id", flat=True)
         )
 
@@ -1007,20 +1008,20 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             release__codebase__id=self.id
         ).count()
 
-    def ordered_releases_list(self, has_change_perm=False, asc=True, **kwargs):
+    def ordered_releases_list(self, has_change_perm=False, asc=True, internal_only=False, **kwargs):
         """
-        list public releases (or all release if has_change_perm is True) in ascending (default) or descending order
+        list public releases (or all release if has_change_perm is True) in ascending (default) or descending order.
+        If internal_only is True, only return internal (directly uploaded) releases
         """
         if has_change_perm:
             releases = self.releases.filter(**kwargs)
         else:
-            releases = self.public_releases(**kwargs)
+            releases = self.releases.public(**kwargs)
+        if internal_only:
+            releases = releases.internal()
         releases_list = list(releases)
         releases_list.sort(key=lambda r: Version(r.version_number), reverse=not asc)
         return releases_list
-
-    def public_releases(self, **kwargs):
-        return self.releases.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
 
     @classmethod
     def get_list_url(cls):
@@ -1226,7 +1227,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     def save(self, rebuild_metadata=True, rebuild_release_metadata=True, **kwargs):
         """save the codebase and optionally rebuild metadata by updating codemeta_snapshot.
-        If rebuild_release_metadata is True, all releases will be saved to trigger metadata updates
+        If rebuild_release_metadata is True, all internal releases will be saved to trigger metadata updates
         """
         if rebuild_metadata:
             logger.debug("Building codemeta for codebase: %s", self)
@@ -1235,7 +1236,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         # saving releases will trigger metadata rebuilding and updating
         # the fs and git mirror if one exists
         if rebuild_metadata and rebuild_release_metadata:
-            for release in self.releases.all():
+            for release in self.releases.internal():
                 release.save(rebuild_metadata=True)
 
     @classmethod
@@ -1305,6 +1306,46 @@ class CodebasePublication(models.Model):
 """
 
 
+class ExternalReleasePackage(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    class Services(models.TextChoices):
+        GITHUB = "github", _("GitHub")
+
+    service = models.CharField(
+        max_length=32,
+        choices=Services.choices,
+        help_text="The external service where the release is hosted",
+    )
+    uid = models.CharField(
+        max_length=128,
+        unique=True,
+        help_text="Unique identifier for this external release e.g. github release id",
+    )
+    name = models.CharField(
+        max_length=255,
+        help_text="Name of the release, ideally the tag name if applicable",
+    )
+    display_name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="A human-readable name for the release, if different from the name",
+    )
+    html_url = models.URLField(
+        blank=True,
+        help_text="URL to the (browser-viewable) page for the release on the external service",
+    )
+    download_url = models.URLField(
+        blank=True,
+        help_text="URL to the downloadable package for the release on the external service, ideally a zipball such as in the case of github",
+    )
+    extra_data = models.JSONField(
+        default=dict,
+        help_text="Additional data for the external release, ideally the full object (e.g. github release) from the external service",
+    )
+
+
 class CodebaseReleaseQuerySet(models.QuerySet):
     def with_release_contributors(self, release_contributor_qs=None, user=None):
         if release_contributor_qs is None:
@@ -1333,6 +1374,14 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
     def with_submitter(self):
         return self.prefetch_related("submitter")
+
+    def internal(self, **kwargs):
+        """returns only releases that are locally uploaded and not archived from an external service"""
+        return self.filter(external_release_package__isnull=True, **kwargs)
+
+    def external(self, **kwargs):
+        """returns only releases that are archived from an external service such as GitHub"""
+        return self.filter(external_release_package__isnull=False, **kwargs)
 
     def public(self, **kwargs):
         return self.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
@@ -1421,6 +1470,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         default=Status.DRAFT,
         help_text=_("The current status of this codebase release."),
         max_length=32,
+    )
+
+    external_release_package = models.OneToOneField(
+        ExternalReleasePackage,
+        null=True,
+        on_delete=models.SET_NULL,
     )
 
     first_published_at = models.DateTimeField(null=True, blank=True)
@@ -1954,15 +2009,25 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         }
         return COLOR_MAP.get(self.status)
 
+    @property
+    def is_external_package(self):
+        return self.external_release_package is not None
+
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
 
     def get_fs_api(
         self, mimetype_mismatch_message_level=MessageLevels.error
     ) -> CodebaseReleaseFsApi:
-        return CodebaseReleaseFsApi.initialize(
-            self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
-        )
+        """Factory method to return the appropriate filesystem API for this release."""
+        if not self.is_external_package:
+            return CodebaseReleaseFsApi.initialize(
+                self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
+            )
+        # FIXME: what now?
+        # 2 options:
+        # 1. DummyFsApi (null obj pattern) that does noops for any fs operations
+        # 2. raise an exception and try/except in any calling code that needs to proceed but no noops for fs stuff
 
     def add_contributor(
         self,
@@ -2101,6 +2166,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             old_codemeta = self.codemeta_snapshot
             self.codemeta_snapshot = self.codemeta.dict(serialize=True)
             super().save(**kwargs)
+
+            if self.is_external_package:
+                # no filesystem to update
+                return
 
             if old_codemeta != self.codemeta_snapshot:
                 if defer_fs:
