@@ -630,12 +630,13 @@ class CodebaseGitRemoteViewSet(
             github_account = None
 
         if github_account:
-            if submitter.github_integration_app_installation:
-                github_account["installation_id"] = (
-                    submitter.github_integration_app_installation.installation_id
-                )
+            installation = getattr(
+                submitter, "github_integration_app_installation", None
+            )
+            if installation:
+                github_account["installation_id"] = installation.installation_id
             else:
-                installation_url = f"https://github.com/apps/{settings.GITHUB_INTEGRATION_APP_NAME}/installations/new?target_id={github_account['id']}"
+                installation_url = f"https://github.com/apps/{settings.GITHUB_INTEGRATION_APP_NAME}/installations/new/permissions?target_id={github_account['id']}"
 
         return Response(
             data={

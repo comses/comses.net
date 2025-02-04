@@ -838,7 +838,7 @@ class CodebaseGitRepositoryApi:
 
     @classmethod
     def check_file_sizes(cls, codebase):
-        releases = codebase.ordered_releases_list()
+        releases = codebase.ordered_releases_list(internal_only=True)
         for release in releases:
             release_fs_api = release.get_fs_api()
             sip_storage = release_fs_api.get_sip_storage()
@@ -1084,7 +1084,7 @@ class CodebaseGitRepositoryApi:
         mirror for the first time or need to rebuild the entire history
         """
         self.check_file_sizes(self.codebase)
-        releases = self.codebase.ordered_releases_list()
+        releases = self.codebase.ordered_releases_list(internal_only=True)
         if not releases:
             raise ValidationError("Must have at least one public release to build from")
         with self.use_temporary_repo():
