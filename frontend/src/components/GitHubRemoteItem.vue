@@ -6,7 +6,7 @@
     </a>
   </div>
   <div>
-    <div class="form-check form-switch">
+    <div v-if="!remote.isPreexisting" class="form-check form-switch">
       <input
         class="form-check-input"
         type="checkbox"
