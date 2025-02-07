@@ -3,7 +3,7 @@
     <button class="btn btn-link ps-0" @click="show = !show">
       <i v-if="show" class="fas fa-minus"></i>
       <i v-else class="fas fa-plus"></i>
-      Create a new repository
+      Sync to a new repository
     </button>
     <div v-if="show" class="card-body">
       <label for="repo-name" class="form-label">Choose a repository name</label>
@@ -57,7 +57,7 @@ const emit = defineEmits<{
   success: [];
 }>();
 
-const { isLoading, serverErrors, setupOrgGithubRemote } = useGitRemotesAPI(
+const { isLoading, serverErrors, data, setupOrgGithubRemote } = useGitRemotesAPI(
   props.codebaseIdentifier
 );
 const successMessage = ref<string | null>(null);
@@ -67,8 +67,7 @@ const show = ref(false);
 
 const setupRemote = async () => {
   const onSuccess = () => {
-    successMessage.value =
-      "Sync in progress. Refresh this page in a few seconds to check the status.";
+    successMessage.value = data.value;
     emit("success");
   };
   await setupOrgGithubRemote(repoName.value, { onSuccess });
