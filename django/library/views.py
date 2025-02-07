@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse
@@ -52,7 +52,7 @@ from core.views import (
 )
 from core.pagination import SmallResultSetPagination
 from core.serializers import RelatedMemberProfileSerializer
-from .github_integration import GithubRepoNameValidator
+from .github_integration import GitHubRepoValidator
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -601,6 +601,39 @@ class CodebaseGitRemoteViewSet(
         except Codebase.DoesNotExist:
             raise NotFound("Codebase not found.")
 
+    def _forward_integrity_error(self, e: IntegrityError):
+        msg = str(e)
+        if "single_pushable_user_repo" in msg:
+            raise ValidationError(
+                "There can only be one active user-owned repository."
+            )
+        if "single_pushable_org_repo" in msg:
+            raise ValidationError(
+                "There can only be one active organization-owned repository."
+            )
+        if "single_archivable_repo" in msg:
+            raise ValidationError(
+                "There can only be one repository that releases are being archived from."
+            )
+        if "org_repo_not_archivable" in msg:
+            raise ValidationError(
+                "Repositories in the CoMSES Model Library organization cannot be archived."
+            )
+        if "preexisting_repo_not_pushable" in msg:
+            raise ValidationError(
+                "Pre-existing linked repositories cannot be pushed to."
+            )
+        else:
+            raise ValidationError("A repository already exists at this location.")
+
+
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         if request.accepted_renderer.format == "html":
@@ -651,58 +684,104 @@ class CodebaseGitRemoteViewSet(
 
     @action(detail=False, methods=["post"])
     def setup_user_github_remote(self, request, *args, **kwargs):
-        # FIXME: this should no longer try to create the repo, instead we need to:
-        # - check that the repo name given is a bare repo that exists in the user's account
-        # - push
         codebase = self.get_codebase()
+        if not codebase.live:
+            raise ValidationError("This model does not have any published releases")
+
         installation = codebase.submitter.github_integration_app_installation
-        return self._setup_github_remote(
-            codebase=codebase,
-            repo_name=request.data.get("repo_name"),
-            owner=installation.github_login,
-            is_user_repo=True,
-            should_push=True,
-            should_archive=True,
-            installation=installation,
+        if not installation:
+            raise ValidationError(
+                "Installation of the Github integration app is required"
+            )
+
+        repo_name = request.data.get("repo_name")
+        if not repo_name:
+            raise ValidationError("Repository name is required")
+
+        validator = GitHubRepoValidator(repo_name)
+        try:
+            validator.validate_format()
+            validator.check_user_repo_empty(installation)
+        except ValueError as e:
+            raise ValidationError(str(e))
+
+        # create a mirror if it doesn't exist
+        if not codebase.git_mirror:
+            codebase.create_git_mirror()
+        # set up the user remote
+        try:
+            codebase.git_mirror.create_remote(
+                owner=installation.github_login,
+                repo_name=repo_name,
+                is_user_repo=True,
+                is_preexisting=False,
+                should_push=True,
+                should_archive=True,
+            )
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+        # trigger the build and push task
+        build_and_push_codebase_repo(codebase.id, private_repo=settings.DEBUG)
+        return Response(
+            status=status.HTTP_202_ACCEPTED,
+            data="Synchronization process started, this should take only a few seconds. Refresh this page to see the status.",
         )
 
     @action(detail=False, methods=["post"])
     def setup_user_existing_github_remote(self, request, *args, **kwargs):
-        # TODO: all this needs to do is setup a remote for archiving
-        pass
+        codebase = self.get_codebase()
+        installation = codebase.submitter.github_integration_app_installation
+        if not installation:
+            raise ValidationError(
+                "Installation of the Github integration app is required"
+            )
+
+        repo_name = request.data.get("repo_name")
+        if not repo_name:
+            raise ValidationError("Repository name is required")
+
+        validator = GitHubRepoValidator(repo_name)
+        try:
+            validator.validate_format()
+            repo_html_url = validator.get_existing_user_repo_url(installation)
+        except ValueError as e:
+            raise ValidationError(str(e))
+
+        # create a mirror if it doesn't exist
+        if not codebase.git_mirror:
+            codebase.create_git_mirror()
+        # set up the user remote
+        try:
+            codebase.git_mirror.create_remote(
+                owner=installation.github_login,
+                repo_name=repo_name,
+                is_user_repo=True,
+                is_preexisting=True,
+                should_push=False,
+                should_archive=True,
+                url=repo_html_url,
+            )
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+        return Response(
+            status=status.HTTP_200_OK,
+            data="Repository remote successfully set up.",
+        )
 
     @action(detail=False, methods=["post"])
     def setup_org_github_remote(self, request, *args, **kwargs):
         codebase = self.get_codebase()
-        return self._setup_github_remote(
-            codebase=codebase,
-            repo_name=request.data.get("repo_name"),
-            owner=settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
-            is_user_repo=False,
-            should_push=True,
-            should_archive=False,
-        )
-
-    def _setup_github_remote(
-        self,
-        codebase: Codebase,
-        repo_name: str,
-        owner: str,
-        is_user_repo: bool,
-        should_push: bool,
-        should_archive: bool,
-        installation=None,
-    ):
-        if is_user_repo and not installation:
-            raise ValidationError(
-                "Installation of the Github integration app is required"
-            )
         if not codebase.live:
             raise ValidationError("This model does not have any published releases")
+
+        repo_name = request.data.get("repo_name")
         if not repo_name:
             raise ValidationError("Repository name is required")
+
+        validator = GitHubRepoValidator(repo_name)
         try:
-            GithubRepoNameValidator.validate(repo_name, installation=installation)
+            validator.validate_format()
+            validator.check_org_repo_name_unused()
         except ValueError as e:
             raise ValidationError(str(e))
 
@@ -710,13 +789,18 @@ class CodebaseGitRemoteViewSet(
         if not codebase.git_mirror:
             codebase.create_git_mirror()
         # set up the org remote
-        codebase.git_mirror.create_remote(
-            owner=owner,
-            repo_name=repo_name,
-            should_push=should_push,
-            is_user_repo=is_user_repo,
-            should_archive=should_archive,
-        )
+        try:
+            codebase.git_mirror.create_remote(
+                owner=settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
+                repo_name=repo_name,
+                is_user_repo=False,
+                is_preeexisting=False,
+                should_push=True,
+                should_archive=False,
+            )
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+
         # trigger the build and push task
         build_and_push_codebase_repo(codebase.id, private_repo=settings.DEBUG)
         return Response(
@@ -754,7 +838,9 @@ def github_sync_webhook(request):
         sender = payload["sender"]
         # match based on the uid
         uid = sender["id"]
-        social_account = SocialAccount.objects.filter(provider="github", uid=str(uid)).first()
+        social_account = SocialAccount.objects.filter(
+            provider="github", uid=str(uid)
+        ).first()
         if social_account:
             repositories = [repo.get("name") for repo in payload["repositories"]]
             installation = GithubIntegrationAppInstallation.objects.update_or_create(
@@ -764,17 +850,21 @@ def github_sync_webhook(request):
                     "github_login": sender["login"],
                     "installation_id": payload["installation"]["id"],
                     "repositories": repositories,
-                }
+                },
             )
             return HttpResponse("OK", status=200)
 
     elif event == "release":
         payload = json.loads(request.body)
         logger.debug(payload)
-        if payload["action"] == "released": # release was published, or a pre-release was changed to a release
+        if (
+            payload["action"] == "released"
+        ):  # release was published, or a pre-release was changed to a release
             # TODO: create a new CodebaseRelease
             pass
-        if payload["action"] == "edited": # details of a release, pre-release, or draft were edited
+        if (
+            payload["action"] == "edited"
+        ):  # details of a release, pre-release, or draft were edited
             # TODO: check if it matches an existing CodebaseRelease that is not published/review_complete
             # if so, update the CodebaseRelease
             pass

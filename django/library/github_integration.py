@@ -1,8 +1,7 @@
 import re
 from github import GithubIntegration, Auth, Github
-from github.GithubException import UnknownObjectException
+from github.GithubException import GithubException, UnknownObjectException
 from github.Repository import Repository as GithubRepo
-from github.AuthenticatedUser import AuthenticatedUser
 from git import Repo as GitRepo
 from django.conf import settings
 from django.core.cache import cache
@@ -13,66 +12,63 @@ from .models import Codebase, CodebaseGitRemote, GithubIntegrationAppInstallatio
 INSTALLATION_ACCESS_TOKEN_REDIS_KEY = "github_installation_access_token"
 
 
-class GithubRepoNameValidator:
-    @classmethod
-    def validate(
-        cls,
-        repo_name: str,
-        installation: GithubIntegrationAppInstallation | None = None,
-    ):
-        cls._validate_format(repo_name)
-        if installation:
-            cls._check_user_repo_name_unused(repo_name, installation)
-        else:
-            cls._check_org_repo_name_unused(repo_name)
+class GitHubRepoValidator:
 
-    @staticmethod
-    def _validate_format(repo_name: str):
-        if not re.fullmatch(r"[A-Za-z0-9_.-]+", repo_name):
+    def __init__(self, repo_name: str):
+        self.repo_name = repo_name
+
+    def validate_format(self):
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", self.repo_name):
             raise ValueError(
                 "The repository name can only contain ASCII letters, digits, and the characters ., -, and _"
             )
-        if not (1 <= len(repo_name) <= 100):
+        if not (1 <= len(self.repo_name) <= 100):
             raise ValueError("Repository name is too long (maximum is 100 characters)")
-        if repo_name.endswith(".git"):
+        if self.repo_name.endswith(".git"):
             raise ValueError("Repository name cannot end with '.git'")
-        if "github" in repo_name:
+        if "github" in self.repo_name:
             raise ValueError("Repository name cannot contain 'github'")
 
-    @staticmethod
-    def _check_user_repo_name_unused(
-        repo_name: str, installation: GithubIntegrationAppInstallation
-    ):
-        username = installation.github_login
-        if username in repo_name:
-            raise ValueError(
-                f"Repository name cannot contain your username: '{username}'"
-            )
-        github = Github(GithubApi.get_user_installation_access_token(installation))
-        try:
-            github.get_user().get_repo(repo_name)
-            raise ValueError(
-                f"Repository name already exists at https://github.com/{username}/{repo_name}"
-            )
-        except UnknownObjectException:
-            return True
-
-    @staticmethod
-    def _check_org_repo_name_unused(repo_name: str):
-        if settings.GITHUB_MODEL_LIBRARY_ORG_NAME in repo_name:
+    def check_org_repo_name_unused(self):
+        if settings.GITHUB_MODEL_LIBRARY_ORG_NAME in self.repo_name:
             raise ValueError(
                 f"Repository name cannot contain the organization name: '{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}'"
             )
         github = Github(GithubApi.get_org_installation_access_token())
+        full_name = f"{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}/{self.repo_name}"
         try:
             github.get_organization(settings.GITHUB_MODEL_LIBRARY_ORG_NAME).get_repo(
-                repo_name
+                self.repo_name
             )
             raise ValueError(
-                f"Repository name already exists at https://github.com/{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}/{repo_name}"
+                f"Repository already exists at https://github.com/{full_name}"
             )
         except UnknownObjectException:
             return True
+
+    def get_existing_user_repo_url(self, installation: GithubIntegrationAppInstallation):
+        token = GithubApi.get_user_installation_access_token(installation)
+        full_name = f"{installation.github_login}/{self.repo_name}"
+        github_repo = GithubApi.get_existing_repo(token, full_name)
+        return github_repo.html_url
+
+    def check_user_repo_empty(self, installation: GithubIntegrationAppInstallation):
+        token = GithubApi.get_user_installation_access_token(installation)
+        full_name = f"{installation.github_login}/{self.repo_name}"
+        github_repo = GithubApi.get_existing_repo(
+            token,
+            full_name,
+        )
+        try:
+            # this should raise a 404 if the repository is empty
+            github_repo.get_contents("")
+            raise ValueError(
+                f"Repository at https://github.com/{full_name} is not empty"
+            )
+        except GithubException as e:
+            if e.status == 404:
+                return True
+            raise e
 
 
 class GithubApi:
@@ -106,10 +102,11 @@ class GithubApi:
     @property
     def github_repo(self) -> GithubRepo:
         if not self._github_repo:
-            try:
-                self._github_repo = self._get_existing_repo()
-            except:
-                raise ValueError("Github repository not created yet")
+            full_name = f"{self.repo_owner}/{self.repo_name}"
+            self._github_repo = self.get_existing_repo(
+                self.installation_access_token,
+                full_name,
+            )
         return self._github_repo
 
     @property
@@ -170,7 +167,7 @@ class GithubApi:
             return self.github_repo
         except:
             if self.is_user_repo:
-                self._github_repo = self._create_user_repo(private)
+                raise ValueError("User-owned repositories must be created beforehand")
             else:
                 self._github_repo = self._create_org_repo(private)
         return self._github_repo
@@ -198,24 +195,16 @@ class GithubApi:
                     prerelease=False,
                 )
 
-    def _get_existing_repo(self):
+    @staticmethod
+    def get_existing_repo(access_token: str, full_name: str) -> GithubRepo:
         """attempt to get an existing repository for the authenticated user or organization"""
-        github = Github(self.installation_access_token)
-        return github.get_repo(f"{self.repo_owner}/{self.repo_name}")
-
-    def _create_user_repo(self, private=False):
-        """create a new repository in the user's account
-
-        this function requires the `repo` scope for the installation access token
-        """
-        token = self.installation_access_token
-        github = Github(token)
-        repo = github.get_user().create_repo(
-            name=self.repo_name,
-            description=f"Mirror of {self.codebase.permanent_url}",
-            private=private,
-        )
-        return repo
+        github = Github(access_token)
+        try:
+            return github.get_repo(full_name)
+        except:
+            raise ValueError(
+                f"Github repository https://github.com/{full_name} does not exist or is inaccessible"
+            )
 
     def _create_org_repo(self, private=False):
         """create a new repository in the CoMSES model library organization
@@ -246,6 +235,8 @@ class GithubApi:
                 for info in result:
                     if info.summary:
                         summaries.append(info.summary)
+        # FIXME: gitpython summaries do not seem to be working as expected
+        # even when the push succeeds we always get "push failed entirely"
         if not summaries:
             return "push failed entirely"
         return "\n".join(summaries)
