@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import json
 from allauth.socialaccount.models import SocialAccount
 from django.forms import Form
@@ -11,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse
 from django.utils.translation import gettext_lazy as _
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
@@ -68,6 +71,7 @@ from .models import (
     CodebaseRelease,
     Contributor,
     CodebaseImage,
+    GithubIntegrationAppInstallation,
     License,
     PeerReview,
     PeerReviewer,
@@ -647,6 +651,9 @@ class CodebaseGitRemoteViewSet(
 
     @action(detail=False, methods=["post"])
     def setup_user_github_remote(self, request, *args, **kwargs):
+        # FIXME: this should no longer try to create the repo, instead we need to:
+        # - check that the repo name given is a bare repo that exists in the user's account
+        # - push
         codebase = self.get_codebase()
         installation = codebase.submitter.github_integration_app_installation
         return self._setup_github_remote(
@@ -658,6 +665,11 @@ class CodebaseGitRemoteViewSet(
             should_archive=True,
             installation=installation,
         )
+
+    @action(detail=False, methods=["post"])
+    def setup_user_existing_github_remote(self, request, *args, **kwargs):
+        # TODO: all this needs to do is setup a remote for archiving
+        pass
 
     @action(detail=False, methods=["post"])
     def setup_org_github_remote(self, request, *args, **kwargs):
@@ -711,6 +723,63 @@ class CodebaseGitRemoteViewSet(
             status=status.HTTP_202_ACCEPTED,
             data="Synchronization process started, this should take only a few seconds. Refresh this page to see the status.",
         )
+
+
+@csrf_exempt
+def github_sync_webhook(request):
+    """
+    Handle GitHub app webhook events:
+    - new installations (match to connected socialaccount and save the installation record)
+    - new releases (create a new CodebaseRelease)
+    """
+    # verify the request signature
+    signature_header = request.headers.get("X-Hub-Signature-256")
+    if not signature_header:
+        return HttpResponse("Missing signature header", status=403)
+    # FIXME:
+    secret = "use an actual secret token"
+    hash_object = hmac.new(
+        secret.encode("utf-8"),
+        msg=request.body,
+        digestmod=hashlib.sha256,
+    )
+    expected_signature = f"sha256={hash_object.hexdigest()}"
+    if not hmac.compare_digest(expected_signature, signature_header):
+        return HttpResponse("Invalid signature", status=403)
+
+    # parse the event
+    event = request.headers.get("X-GitHub-Event")
+    if event == "installation":
+        payload = json.loads(request.body)
+        sender = payload["sender"]
+        # match based on the uid
+        uid = sender["id"]
+        social_account = SocialAccount.objects.filter(provider="github", uid=str(uid)).first()
+        if social_account:
+            repositories = [repo.get("name") for repo in payload["repositories"]]
+            installation = GithubIntegrationAppInstallation.objects.update_or_create(
+                user=social_account.user,
+                defaults={
+                    "github_user_id": uid,
+                    "github_login": sender["login"],
+                    "installation_id": payload["installation"]["id"],
+                    "repositories": repositories,
+                }
+            )
+            return HttpResponse("OK", status=200)
+
+    elif event == "release":
+        payload = json.loads(request.body)
+        logger.debug(payload)
+        if payload["action"] == "released": # release was published, or a pre-release was changed to a release
+            # TODO: create a new CodebaseRelease
+            pass
+        if payload["action"] == "edited": # details of a release, pre-release, or draft were edited
+            # TODO: check if it matches an existing CodebaseRelease that is not published/review_complete
+            # if so, update the CodebaseRelease
+            pass
+
+    return HttpResponse("Unhandled event", status=202)
 
 
 class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -1028,6 +1097,17 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         - Create a new "under review" draft release if the release from which the request was made is published
         - Otherwise, update the existing draft release to be "under review"
         - Create a new peer review object and send an email to the author
+
+        FIXME: external release problem!!!!!!!!!!! ==========================
+        - always come in published (zipball is archived + locked)
+        - set to under_review status (zipball is unlocked, updates to release are allowed)
+        - if changes are requested, instruct submitter to make changes on github, re-tag, and update the release (v1.0.0 -> v1.0.0-pr1)
+        - peer review completes, zipball is locked, release is updated to published
+
+        * system MUST detect updates to release such as tag_name change and update record accordingly
+
+
+        =====================================================================
         """
         codebase_release = get_object_or_404(
             CodebaseRelease,

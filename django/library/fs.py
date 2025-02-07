@@ -801,6 +801,21 @@ class CodebaseReleaseFsApi:
         return msgs
 
 
+class ExternalCodebaseReleaseFsApi(CodebaseReleaseFsApi):
+    # TODO:
+    # extract archive and put in /library/slug/releases/id/
+    # extract codemeta and use to build release metadata, BUT replace with our own more complete/correct codemeta?
+    # set to unpublished at first which ensures checking metadata and allows requesting review
+    # upon publishing, build+lock the archive
+    @classmethod
+    def initialize(
+        cls,
+        codebase_release,
+    ):
+        raise NotImplementedError("ExternalCodebaseReleaseFsApi not implemented")
+
+
+
 class CodebaseGitRepositoryApi:
     """
     Manage a (local) git repository mirror of a codebase

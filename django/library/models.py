@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import yaml
 import logging
@@ -56,6 +57,7 @@ from core.view_helpers import get_search_queryset
 from .metadata import CodeMetaConverter, DataCiteConverter, CitationFileFormatConverter
 from .fs import (
     CodebaseReleaseFsApi,
+    ExternalCodebaseReleaseFsApi,
     StagingDirectories,
     FileCategoryDirectories,
     MessageLevels,
@@ -550,11 +552,14 @@ class GithubIntegrationAppInstallation(models.Model):
 class CodebaseGitRemote(models.Model):
     """Represents a remote repository that a local git mirror can push to"""
 
-    should_push = models.BooleanField(
-        default=True, help_text="Whether to push to this remote"
-    )
     is_user_repo = models.BooleanField(
         default=False, help_text="Whether this is a user-owned remote"
+    )
+    is_preexisting = models.BooleanField(
+        default=False, help_text="Whether this remote was pre-existing or based on a codebase git mirror"
+    )
+    should_push = models.BooleanField(
+        default=True, help_text="Whether to push to this remote"
     )
     should_archive = models.BooleanField(
         default=False, help_text="Whether to archive new releases from this remote"
@@ -617,6 +622,10 @@ class CodebaseGitRemote(models.Model):
                 check=models.Q(is_user_repo=True) | models.Q(should_archive=False),
                 name="org_repo_not_archivable",
             ),
+            models.CheckConstraint(
+                check=models.Q(is_preexisting=False) | models.Q(should_push=False),
+                name="preexisting_repo_not_pushable",
+            ),
         ]
 
 
@@ -647,8 +656,10 @@ class CodebaseGitMirror(models.Model):
 
     @property
     def unbuilt_releases(self):
-        return self.codebase.releases.internal().public().exclude(
-            id__in=self.built_releases.values_list("id", flat=True)
+        return (
+            self.codebase.releases.internal()
+            .public()
+            .exclude(id__in=self.built_releases.values_list("id", flat=True))
         )
 
     def mark_releases_built(self, new_releases: models.QuerySet | list):
@@ -690,6 +701,10 @@ class CodebaseGitMirror(models.Model):
             if "org_repo_not_archivable" in str(e):
                 raise ValidationError(
                     "Repositories in the CoMSES Model Library organization cannot be archived."
+                )
+            if "preexisting_repo_not_pushable" in str(e):
+                raise ValidationError(
+                    "Pre-existing linked repositories cannot be pushed to."
                 )
             else:
                 raise ValidationError("A repository already exists at this location.")
@@ -990,7 +1005,9 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             release__codebase__id=self.id
         ).count()
 
-    def ordered_releases_list(self, has_change_perm=False, asc=True, internal_only=False, **kwargs):
+    def ordered_releases_list(
+        self, has_change_perm=False, asc=True, internal_only=False, **kwargs
+    ):
         """
         list public releases (or all release if has_change_perm is True) in ascending (default) or descending order.
         If internal_only is True, only return internal (directly uploaded) releases
@@ -1134,8 +1151,11 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     @transaction.atomic
     def create_review_draft_from_release(self, source_release):
-        # create a new "under review" release from an existing release
-        # (should only be called from a publishable release)
+        """create a new "under review" release from an existing release
+
+        (should only be called from a publishable, non-external release)
+        """
+
         source_id = source_release.id
         review_draft = self.create_release(
             status=CodebaseRelease.Status.UNDER_REVIEW, source_release=source_release
@@ -1970,14 +1990,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         self, mimetype_mismatch_message_level=MessageLevels.error
     ) -> CodebaseReleaseFsApi:
         """Factory method to return the appropriate filesystem API for this release."""
-        if not self.is_external_package:
-            return CodebaseReleaseFsApi.initialize(
-                self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
-            )
-        # FIXME: what now?
-        # 2 options:
-        # 1. DummyFsApi (null obj pattern) that does noops for any fs operations
-        # 2. raise an exception and try/except in any calling code that needs to proceed but no noops for fs stuff
+        if self.is_external_package:
+            return ExternalCodebaseReleaseFsApi.initialize(self)
+        return CodebaseReleaseFsApi.initialize(
+            self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
+        )
 
     def add_contributor(self, contributor: Contributor, role=Role.AUTHOR, index=None):
         # Check if a ReleaseContributor with the same contributor already exists
@@ -2101,9 +2118,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self.codemeta_snapshot = self.codemeta.dict(serialize=True)
             super().save(**kwargs)
 
-            if self.is_external_package:
-                # no filesystem to update
-                return
 
             if old_codemeta != self.codemeta_snapshot:
                 if defer_fs:
