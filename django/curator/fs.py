@@ -8,6 +8,8 @@ from tempfile import TemporaryDirectory
 def fsck(queryset):
     results = OrderedDict()
     for release in queryset:
+        if release.is_external_package:
+            continue
         rfsc = CodebaseReleaseFileConsistencyChecker(release)
         errors = rfsc.check()
         if errors:
