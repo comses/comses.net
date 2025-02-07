@@ -51,6 +51,7 @@ if settings.DEPLOY_ENVIRONMENT.is_development:
     )
 
 urlpatterns = [
+    path("github-sync-webhook/", views.github_sync_webhook, name="github-sync-webhook"),
     path(
         "github/",
         TemplateView.as_view(
