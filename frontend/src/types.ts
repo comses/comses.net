@@ -393,8 +393,10 @@ export interface CodebaseGitRemote {
   shouldPush: boolean;
   shouldArchive: boolean;
   isUserRepo: boolean;
+  isPreexisting: boolean;
   isActive: boolean;
   lastPushLog: string;
+  lastArchiveLog: string;
 }
 
 export interface CodebaseGitRemoteForm {
