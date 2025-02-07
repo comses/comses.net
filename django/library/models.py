@@ -607,11 +607,7 @@ class CodebaseGitRemote(models.Model):
         return f"{self.owner}/{self.repo_name} (active={self.should_push}) (sync={self.should_archive})"
 
     class Meta:
-        unique_together = [
-            ("mirror", "owner"),
-            ("owner", "repo_name"),
-        ]
-        unique_together = ("mirror", "owner")
+        unique_together = ("owner", "repo_name")
         constraints = [
             models.UniqueConstraint(
                 fields=["mirror"],
@@ -679,47 +675,21 @@ class CodebaseGitMirror(models.Model):
     def create_remote(self, owner, repo_name, **kwargs):
         """create a new remote for this mirror, or get an existing one if there is a
         matching remote that failed to actually be created at the remote location"""
-        try:
-            existing_remote = CodebaseGitRemote.objects.filter(
-                mirror=self,
-                owner=owner,
-                repo_name=repo_name,
-                url__isnull=False,  # proxy for a successful remote creation
-            ).first()
-            if existing_remote:
-                return existing_remote
-            remote = CodebaseGitRemote.objects.create(
-                mirror=self,
-                owner=owner,
-                repo_name=repo_name,
-                **kwargs,
-            )
-            return remote
-        except IntegrityError as e:
-            if "single_pushable_user_repo" in str(e):
-                raise ValidationError(
-                    "There can only be one active user-owned repository."
-                )
-            if "single_pushable_org_repo" in str(e):
-                raise ValidationError(
-                    "There can only be one active organization-owned repository."
-                )
-            if "single_archivable_repo" in str(e):
-                raise ValidationError(
-                    "There can only be one repository that releases are being archived from."
-                )
-            if "org_repo_not_archivable" in str(e):
-                raise ValidationError(
-                    "Repositories in the CoMSES Model Library organization cannot be archived."
-                )
-            if "preexisting_repo_not_pushable" in str(e):
-                raise ValidationError(
-                    "Pre-existing linked repositories cannot be pushed to."
-                )
-            else:
-                raise ValidationError("A repository already exists at this location.")
-
-
+        existing_remote = CodebaseGitRemote.objects.filter(
+            mirror=self,
+            owner=owner,
+            repo_name=repo_name,
+            url__isnull=True,  # proxy for a successful remote creation
+        ).first()
+        if existing_remote:
+            return existing_remote
+        remote = CodebaseGitRemote.objects.create(
+            mirror=self,
+            owner=owner,
+            repo_name=repo_name,
+            **kwargs,
+        )
+        return remote
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """

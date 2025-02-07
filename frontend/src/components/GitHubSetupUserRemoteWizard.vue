@@ -3,22 +3,23 @@
     <button class="btn btn-link ps-0" @click="show = !show">
       <i v-if="show" class="fas fa-minus"></i>
       <i v-else class="fas fa-plus"></i>
-      Create a new repository
+      <span v-if="fromExisting"> Sync with an existing repository </span>
+      <span v-else> Sync with a new repository </span>
     </button>
     <div v-if="show" class="card-body">
       <ol class="mb-0">
-        <li v-if="githubUsername" class="text-decoration-line-through">
+        <li v-if="githubUsername" class="text-decoration-line-through mb-2">
           Connect your GitHub account
         </li>
-        <li v-else>
+        <li v-else class="mb-2">
           <a class="btn btn-link p-0" :href="installationStatus.connectUrl">
             <i class="fas fa-link"></i> Connect your GitHub account
           </a>
         </li>
-        <li v-if="githubAppInstalled" class="text-decoration-line-through">
+        <li v-if="githubAppInstalled" class="text-decoration-line-through mb-2">
           Install the Sync app on your GitHub account
         </li>
-        <li v-else>
+        <li v-else class="mb-2">
           <a
             class="btn btn-link p-0"
             :class="{ disabled: !installationStatus.installationUrl }"
@@ -27,18 +28,29 @@
             <i class="fas fa-download"></i> Install the Sync app on your GitHub account
           </a>
         </li>
-        <li v-if="!fromExisting">
-          <a
-            class="btn btn-link p-0"
-            :class="{ disabled: !githubAppInstalled }"
-            :href="newRepositoryUrl"
-            >Create an empty repository on GitHub</a
-          >
-        </li>
-        <li>
+        <li v-if="!fromExisting" class="mb-2">
           <div>
-            <label :for="`user-repo-name-${fromExisting}`" class="form-label"
+            <a
+              class="btn btn-link p-0"
+              :class="{ disabled: !githubAppInstalled }"
+              :href="newRepositoryUrl"
+              >Create an empty repository with your desired name on GitHub</a
+            >
+          </div>
+          <small class="text-muted">
+            <small>
+              <i class="fas fa-exclamation-triangle"></i> Do <b>not</b> initialize the repository
+              with any files such as a README or license
+            </small>
+          </small>
+        </li>
+        <li class="mb-2">
+          <div>
+            <label v-if="fromExisting" :for="`user-repo-name-${fromExisting}`" class="form-label"
               >Enter the name of your repository</label
+            >
+            <label v-else :for="`user-repo-name-${fromExisting}`" class="form-label"
+              >Enter the name of the repository you just created</label
             >
             <div class="input-group mb-3">
               <span class="input-group-text"
@@ -100,7 +112,7 @@ const emit = defineEmits<{
   success: [];
 }>();
 
-const { isLoading, serverErrors, setupUserGithubRemote, setupUserExistingGithubRemote } =
+const { isLoading, serverErrors, data, setupUserGithubRemote, setupUserExistingGithubRemote } =
   useGitRemotesAPI(props.codebaseIdentifier);
 const successMessage = ref<string | null>(null);
 const repoName = ref(props.defaultRepoName);
@@ -117,8 +129,7 @@ const newRepositoryUrl = computed(
 
 const setupRemote = async () => {
   const onSuccess = () => {
-    successMessage.value =
-      "Sync in progress. Refresh this page in a few seconds to check the status.";
+    successMessage.value = data.value;
     emit("success");
   };
   if (props.fromExisting) {
