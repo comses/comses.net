@@ -51,21 +51,12 @@
           </li>
         </ol>
       </div>
-      <div>
-        <button class="btn btn-link ps-0 mb-3" @click="showOrgRemoteForm = !showOrgRemoteForm">
-          <i v-if="showOrgRemoteForm" class="fas fa-minus"></i>
-          <i v-else class="fas fa-plus"></i>
-          Create a new repository
-        </button>
-        <GitHubRemoteCreateForm
-          v-if="showOrgRemoteForm"
-          :codebase-identifier="codebaseIdentifier"
-          :owner="githubOrgName"
-          :default-repo-name="defaultRepoName"
-          :is-user-repo="false"
-          @success="fetchRemotes"
-        />
-      </div>
+      <GitHubSetupOrgRemoteWizard
+        :codebase-identifier="codebaseIdentifier"
+        :owner="githubOrgName"
+        :default-repo-name="defaultRepoName"
+        @success="fetchRemotes"
+      />
     </div>
     <div class="col">
       <h3><i class="fas fa-user"></i> Repositories on your GitHub account</h3>
@@ -115,52 +106,21 @@
           </li>
         </ol>
       </div>
-      <div>
-        <div v-if="!canCreateUserRemote" class="alert alert-dark bg-gray show mt-4">
-          <div class="alert-heading mb-2">
-            <i class="fas fa-exclamation-triangle"></i> Before you can create a new repository:
-          </div>
-          <ol class="mb-0">
-            <li v-if="githubUsername" class="text-decoration-line-through">
-              Connect your GitHub account
-            </li>
-            <li v-else>
-              <a class="btn btn-link" :href="installationStatus.connectUrl">
-                <i class="fas fa-link"></i> Connect your GitHub account
-              </a>
-            </li>
-            <li v-if="githubAppInstalled" class="text-decoration-line-through">
-              Install the Sync app on your GitHub account
-            </li>
-            <li v-else>
-              <a
-                class="btn btn-link"
-                :class="{ disabled: !installationStatus.installationUrl }"
-                :href="installationStatus.installationUrl ?? ''"
-              >
-                <i class="fas fa-download"></i> Install the Sync app on your GitHub account
-              </a>
-            </li>
-          </ol>
-        </div>
-        <button
-          class="btn btn-link ps-0 mb-3"
-          @click="showUserRemoteForm = !showUserRemoteForm"
-          :disabled="!canCreateUserRemote"
-        >
-          <i v-if="showUserRemoteForm" class="fas fa-minus"></i>
-          <i v-else class="fas fa-plus"></i>
-          Create a new repository
-        </button>
-        <GitHubRemoteCreateForm
-          v-if="showUserRemoteForm && canCreateUserRemote"
-          :codebase-identifier="codebaseIdentifier"
-          :owner="githubUsername!"
-          :default-repo-name="defaultRepoName"
-          :is-user-repo="true"
-          @success="fetchRemotes"
-        />
-      </div>
+      <GitHubSetupUserRemoteWizard
+        class="mb-3"
+        :codebase-identifier="codebaseIdentifier"
+        :default-repo-name="defaultRepoName"
+        :installation-status="installationStatus"
+        :from-existing="false"
+        @success="fetchRemotes"
+      />
+      <GitHubSetupUserRemoteWizard
+        :codebase-identifier="codebaseIdentifier"
+        :default-repo-name="defaultRepoName"
+        :installation-status="installationStatus"
+        :from-existing="true"
+        @success="fetchRemotes"
+      />
     </div>
   </div>
 </template>
@@ -170,7 +130,8 @@ import { ref, computed, onMounted } from "vue";
 import { useGitRemotesAPI } from "@/composables/api/git";
 import type { GitHubAppInstallationStatus, CodebaseGitRemote } from "@/types";
 import GitHubRemoteItem from "@/components/GitHubRemoteItem.vue";
-import GitHubRemoteCreateForm from "./GitHubRemoteCreateForm.vue";
+import GitHubSetupOrgRemoteWizard from "@/components/GitHubSetupOrgRemoteWizard.vue";
+import GitHubSetupUserRemoteWizard from "@/components/GitHubSetupUserRemoteWizard.vue";
 
 const props = defineProps<{
   codebaseIdentifier: string;
@@ -185,12 +146,6 @@ const installationStatus = ref<GitHubAppInstallationStatus>({
   installationUrl: null,
   connectUrl: "",
 });
-const githubUsername = computed(() => installationStatus.value.githubAccount?.username);
-const githubAppInstalled = computed(() => !!installationStatus.value.githubAccount?.installationId);
-const canCreateUserRemote = computed(() => !!githubUsername.value && githubAppInstalled.value);
-
-const showOrgRemoteForm = ref(false);
-const showUserRemoteForm = ref(false);
 
 const remotesLoading = ref(true);
 const remotes = ref<CodebaseGitRemote[]>([]);
