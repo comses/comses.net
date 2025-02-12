@@ -3,8 +3,8 @@
     <button class="btn btn-link ps-0" @click="show = !show">
       <i v-if="show" class="fas fa-minus"></i>
       <i v-else class="fas fa-plus"></i>
-      <span v-if="fromExisting"> Sync with an existing repository </span>
-      <span v-else> Sync with a new repository </span>
+      <span v-if="fromExisting"> Sync with an <b>existing</b> repository </span>
+      <span v-else> Generate and sync with a <b>new</b> repository </span>
     </button>
     <div v-if="show" class="card-body">
       <ol class="mb-0">
