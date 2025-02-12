@@ -34,7 +34,7 @@ class GitHubRepoValidator:
             raise ValueError(
                 f"Repository name cannot contain the organization name: '{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}'"
             )
-        github = Github(GithubApi.get_org_installation_access_token())
+        github = Github(GitHubApi.get_org_installation_access_token())
         full_name = f"{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}/{self.repo_name}"
         try:
             github.get_organization(settings.GITHUB_MODEL_LIBRARY_ORG_NAME).get_repo(
@@ -47,15 +47,15 @@ class GitHubRepoValidator:
             return True
 
     def get_existing_user_repo_url(self, installation: GithubIntegrationAppInstallation):
-        token = GithubApi.get_user_installation_access_token(installation)
+        token = GitHubApi.get_user_installation_access_token(installation)
         full_name = f"{installation.github_login}/{self.repo_name}"
-        github_repo = GithubApi.get_existing_repo(token, full_name)
+        github_repo = GitHubApi.get_existing_repo(token, full_name)
         return github_repo.html_url
 
     def check_user_repo_empty(self, installation: GithubIntegrationAppInstallation):
-        token = GithubApi.get_user_installation_access_token(installation)
+        token = GitHubApi.get_user_installation_access_token(installation)
         full_name = f"{installation.github_login}/{self.repo_name}"
-        github_repo = GithubApi.get_existing_repo(
+        github_repo = GitHubApi.get_existing_repo(
             token,
             full_name,
         )
@@ -71,7 +71,7 @@ class GitHubRepoValidator:
             raise e
 
 
-class GithubApi:
+class GitHubApi:
     """Functionality for interacting with a remote Github repository
     and Github API
     """
