@@ -2,7 +2,7 @@ from huey.contrib.djhuey import db_task
 from django.conf import settings
 
 from .models import Codebase, CodebaseRelease
-from .github_integration import GithubApi
+from .github_integration import GitHubApi
 from .fs import CodebaseGitRepositoryApi
 
 import logging
@@ -21,7 +21,7 @@ def build_and_push_codebase_repo(codebase_id: int, private_repo=False):
     local_repo = git_fs_api.update_or_build()
 
     for remote in mirror.remotes.filter(should_push=True):
-        gh_api = GithubApi(
+        gh_api = GitHubApi(
             codebase=codebase,
             local_repo=local_repo,
             remote=remote,
@@ -45,7 +45,7 @@ def add_releases_and_push_codebase_repo(codebase_id: int):
     local_repo = git_fs_api.append_releases()
 
     for remote in mirror.remotes.filter(should_push=True):
-        gh_api = GithubApi(
+        gh_api = GitHubApi(
             codebase=codebase,
             local_repo=local_repo,
             remote=remote,
@@ -75,7 +75,7 @@ def update_release_branch_and_push_codebase_repo(release_id: int):
     # local_repo will be None if no changes were made
     if local_repo:
         for remote in mirror.remotes.filter(should_push=True):
-            gh_api = GithubApi(
+            gh_api = GitHubApi(
                 codebase=codebase,
                 local_repo=local_repo,
                 remote=remote,
