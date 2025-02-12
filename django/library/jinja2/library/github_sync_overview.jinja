@@ -25,64 +25,19 @@
     <hr />
     <div class="row justify-content-center mb-5">
         <div class="col-12 col-md-10">
-            <h2 class="text-center mb-3">Hosting Locations</h2>
+            <h2 class="text-center my-3">Sync Directions</h2>
             <p class="text-center">
-                There are two options for where to host a synced repository, each with its own
-                advantages and limitations.
-            </p>
-        </div>
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <h3 class="card-header">
-                    <i class="fas fa-university"></i> {{ github_model_library_org_name }} Organization
-                </h3>
-                <div class="card-body">
-                    <p>
-                        Synced repositories in the
-                        <a href="https://github.com/orgs/{{ github_model_library_org_name }}/repositories"
-                            target="_blank">
-                            <i class="fab fa-github"></i>
-                            {{ github_model_library_org_name }}</a>
-                        organization are <b><u>push-only</u></b> since they are intended as a read-only mirror of
-                        your model submission on CoMSES. This is a good way to enhance the accessibility of your
-                        model's source code without a GitHub account.
-                    </p>
-                    <h5>Ideal for</h5>
-                    <ul>
-                        <li>Adding a convenient, public-facing code browser for your model</li>
-                        <li>Those who don't need or want to develop code on GitHub</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <h3 class="card-header">
-                    <i class="fas fa-user"></i> Your GitHub Account
-                </h3>
-                <div class="card-body">
-                    <p>
-                        Since user-owned repositories give you full control and the ability to make changes, they
-                        can <b><u>push</u></b> new CML releases to GitHub, and <b><u>archive</u></b> new GitHub
-                        releases back to the CML. This lets you move your model development to GitHub while still
-                        keeping it accessible on CoMSES.
-                    </p>
-                    <h5>Ideal for</h5>
-                    <ul>
-                        <li>Taking advantage of tooling to improve your model software or speed up development</li>
-                        <li>Switching to active development on GitHub in order to benefit from the rich collaborative
-                            environment, whether you are a beginner or a seasoned pro</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row justify-content-center mb-5">
-        <div class="col-12 col-md-10">
-            <h2 class="text-center mb-3">Sync Modes</h2>
-            <p class="text-center">
-                Linked repositories can be set up to either <strong>Push</strong>, <strong>Archive</strong>, or
-                both (if user-owned).
+                The bidirectional sync between the CoMSES Model Library consists of two distinct processes, which can
+                both be toggled on or off.
+            <ul>
+                <li>
+                    Both processes will be enabled by default when generating a new repository from a model submission.
+                </li>
+                <li>
+                    Alternatively, you can link an existing repository with only archiving enabled to import
+                    new releases from GitHub, similarly to the <i>Zenodo</i> GitHub integration.
+                </li>
+            </ul>
             </p>
         </div>
         <div class="col-md-6">
@@ -186,6 +141,16 @@
                             </div>
                         </li>
                         <li class="d-flex mb-2">
+                            <i class="fas fa-lock pt-1" style="width: 1rem"></i>
+                            <div class="ps-3 flex-grow-1">
+                                Releases imported from GitHub are initially unpublished in the Model Library, allowing
+                                you to
+                                approve the extracted metadata, make any last-minute changes (by updating the
+                                corresponding GitHub release),
+                                and request peer review.
+                            </div>
+                        </li>
+                        <li class="d-flex mb-2">
                             <i class="fas fa-file-archive pt-1" style="width: 1rem"></i>
                             <div class="ps-3 flex-grow-1">
                                 The release assets for the GitHub release are imported to the model library, and are
@@ -195,9 +160,9 @@
                         <li class="d-flex">
                             <i class="fas fa-tags pt-1" style="width: 1rem"></i>
                             <div class="ps-3 flex-grow-1">
-                                A <code>codemeta.json</code> file in the root of the repository, along with any
-                                information GitHub has, will be used
-                                to populate the metadata for the release
+                                In order to populate metadata for the release record in the Model Library,
+                                <code>codemeta.json</code> and/or
+                                <code>CITATION.cff</code> files placed in the root of the repository will be parsed
                             </div>
                         </li>
                     </ul>
@@ -207,8 +172,8 @@
                         <li class="d-flex mb-2">
                             <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
                             <div class="ps-3 flex-grow-1">
-                                Metadata in <code>codemeta.json</code> must be
-                                well-formed to allow the system to properly ingest your GitHub release
+                                Metadata files describing the model software should be well-formed and kept up to date
+                                in the repository to ensure accurate information is imported
                             </div>
                         </li>
                         <li class="d-flex mb-2">
@@ -219,17 +184,59 @@
                                 documentation, and other necessary files
                             </div>
                         </li>
-                        <li class="d-flex">
-                            <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
-                            <div class="ps-3 flex-grow-1">
-                                Requires linking your personal GitHub account with CoMSES and
-                                installing the GitHub Sync app with permission to administer your repositories,
-                                though you can revoke these permissions or limit them to specific repositories
-                            </div>
-                        </li>
                     </ul>
                 </div>
             </div>
+        </div>
+    </div>
+    <hr />
+    {% set faq_entries = {
+    "What GitHub permissions do you request and why?": "We request read and write access to repository contents. You can
+    either select specific repositories or allow access to all current and future repositories (though we will not
+    attempt to access any repositories besides those synced). If you choose the selection option, ensure that the
+    repository you want to sync is included, which may require updating the selection after creating a blank repository
+    if you are setting up a new sync from scratch.",
+
+    "Can I sync with a private repository?": "Yes, there are no restrictions on syncing with private repositories.",
+
+    "Can releases imported to the Model Library from GitHub be peer reviewed?": "Yes. Imported releases will be
+    unpublished initially, allowing you to request a peer review or publish them. However, once a release is published,
+    you can no longer request a review. While under peer review, the release remains private. If changes are requested,
+    you must push changes to GitHub, create a new tag, and update the existing release to reference the new tag.",
+
+    "If I set up archiving for an existing repository, will my existing releases be imported?": "No, only future
+    releases will be imported. This is to prevent duplicate releases from being created.",
+
+    "I created a GitHub release but don't see it on the CoMSES Model Library side, what went wrong?": "Ensure that the
+    app is installed with the correct permissions. Also, check that the release is **published** (not a draft or in
+    pre-release mode). If everything seems correct and it's still not appearing, please contact us.",
+
+    "I set up a new synced repository or published a new release, but I don't see anything on the GitHub repository,
+    what went wrong?": "If changes were made to a branch on GitHub, the sync process will not overwrite them. Ensure
+    that the app is installed with the correct permissions. If issues persist, please contact us."
+    } %}
+    <div class="row justify-content-center">
+        <div class="col-12" role="tablist" aria-multiselectable="true">
+            <h2 class="text-center my-3">Frequently Asked Questions</h2>
+            {% for question, answer in faq_entries.items() %}
+            {% set entry_id = "entry_" ~ loop.index %}
+            {% set heading_id = "faqHeading_" ~ loop.index %}
+            <div class='card'>
+                <div class='card-header' role='tab' id='{{ heading_id }}'>
+                    <h5 class='mb-0'>
+                        <button class='btn btn-link' data-bs-toggle='collapse' data-bs-target='#{{entry_id}}'
+                            aria-expanded='false' aria-controls='{{entry_id}}'>
+                            {{ question }}
+                        </button>
+                    </h5>
+                </div>
+                <div id='{{entry_id}}' class='collapse' aria-labelledby='{{ heading_id }}'>
+                    <div class='card-body'>
+                        {{ answer }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
