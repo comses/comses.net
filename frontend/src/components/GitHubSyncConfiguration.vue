@@ -1,6 +1,7 @@
 <template>
-  <div class="row" style="min-height: 60vh">
-    <div class="col border-end">
+  <div style="min-height: 60vh">
+    <div class="row">
+      <!-- <div class="col border-end">
       <h3><i class="fas fa-university"></i> Repositories in the CoMSES organization</h3>
       <p>
         Synced repositories in the
@@ -57,70 +58,75 @@
         :default-repo-name="defaultRepoName"
         @success="fetchRemotes"
       />
-    </div>
-    <div class="col">
-      <h3><i class="fas fa-user"></i> Repositories on your GitHub account</h3>
-      <p>
-        Since user-owned repositories give you full control and the ability to make changes, they
-        can <b><u>push</u></b> new CML releases to GitHub, and <b><u>archive</u></b> new GitHub
-        releases back to the CML. This lets you move your model development to GitHub while still
-        keeping it accessible on CoMSES.
-      </p>
-      <div class="card mb-3">
-        <div class="card-header">
-          <ul class="nav nav-tabs card-header-tabs">
-            <li class="nav-item">
+    </div> -->
+      <div class="col-12">
+        <h3>Repositories linked with this model</h3>
+        <p>
+          Only one linked repository can be active at a time. A repository is considered active if
+          either pushing or archiving is turned on.
+        </p>
+        <div class="card mb-3">
+          <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs">
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  :class="{ active: selectedUserTab === 'active' }"
+                  @click="selectedUserTab = 'active'"
+                  >Active</a
+                >
+              </li>
               <a
                 class="nav-link"
-                :class="{ active: selectedUserTab === 'active' }"
-                @click="selectedUserTab = 'active'"
-                >Active</a
+                :class="{ active: selectedUserTab === 'inactive' }"
+                @click="selectedUserTab = 'inactive'"
+                >Inactive</a
               >
+            </ul>
+          </div>
+          <ol class="list-group list-group-flush">
+            <li v-if="remotesLoading" class="list-group-item text-muted text-center p-3">
+              <i class="fas fa-spinner fa-spin"></i>
             </li>
-            <a
-              class="nav-link"
-              :class="{ active: selectedUserTab === 'inactive' }"
-              @click="selectedUserTab = 'inactive'"
-              >Inactive</a
+            <li v-else-if="userRemotes.length === 0" class="list-group-item text-muted">
+              No {{ selectedUserTab }} repos.
+            </li>
+            <li
+              v-else
+              v-for="remote in userRemotes"
+              :key="remote.id"
+              class="list-group-item d-flex align-items-center justify-content-between"
             >
-          </ul>
+              <GitHubRemoteItem
+                :codebase-identifier="codebaseIdentifier"
+                :remote="remote"
+                @changed="fetchRemotes"
+              />
+            </li>
+          </ol>
         </div>
-        <ol class="list-group list-group-flush">
-          <li v-if="remotesLoading" class="list-group-item text-muted text-center p-3">
-            <i class="fas fa-spinner fa-spin"></i>
-          </li>
-          <li v-else-if="userRemotes.length === 0" class="list-group-item text-muted">
-            No {{ selectedUserTab }} repos.
-          </li>
-          <li
-            v-else
-            v-for="remote in userRemotes"
-            :key="remote.id"
-            class="list-group-item d-flex align-items-center justify-content-between"
-          >
-            <GitHubRemoteItem
-              :codebase-identifier="codebaseIdentifier"
-              :remote="remote"
-              @changed="fetchRemotes"
-            />
-          </li>
-        </ol>
       </div>
-      <GitHubSetupUserRemoteWizard
-        class="mb-3"
-        :codebase-identifier="codebaseIdentifier"
-        :default-repo-name="defaultRepoName"
-        :installation-status="installationStatus"
-        :from-existing="false"
-        @success="fetchRemotes"
-      />
-      <GitHubSetupUserRemoteWizard
-        :codebase-identifier="codebaseIdentifier"
-        :default-repo-name="defaultRepoName"
-        :installation-status="installationStatus"
-        :from-existing="true"
-        @success="fetchRemotes"
-      />
+    </div>
+    <div class="row">
+      <div class="col-12 col-md-6">
+        <GitHubSetupUserRemoteWizard
+          class="mb-3"
+          :codebase-identifier="codebaseIdentifier"
+          :default-repo-name="defaultRepoName"
+          :installation-status="installationStatus"
+          :from-existing="false"
+          @success="fetchRemotes"
+        />
+      </div>
+      <div class="col-12 col-md-6">
+        <GitHubSetupUserRemoteWizard
+          :codebase-identifier="codebaseIdentifier"
+          :default-repo-name="defaultRepoName"
+          :installation-status="installationStatus"
+          :from-existing="true"
+          @success="fetchRemotes"
+        />
+      </div>
     </div>
   </div>
 </template>
