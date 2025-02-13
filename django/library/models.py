@@ -561,8 +561,8 @@ class CodebaseGitRemote(models.Model):
     should_push = models.BooleanField(
         default=True, help_text="Whether to push to this remote"
     )
-    should_archive = models.BooleanField(
-        default=False, help_text="Whether to archive new releases from this remote"
+    should_import = models.BooleanField(
+        default=False, help_text="Whether to import new releases from this remote"
     )
     repo_name = models.CharField(max_length=100)
     owner = models.CharField(
@@ -585,7 +585,7 @@ class CodebaseGitRemote(models.Model):
 
     @property
     def is_active(self):
-        return self.should_push or self.should_archive
+        return self.should_push or self.should_import
 
     @property
     def installation(self) -> GithubIntegrationAppInstallation | None:
@@ -594,7 +594,7 @@ class CodebaseGitRemote(models.Model):
         return None
 
     def __str__(self):
-        return f"{self.owner}/{self.repo_name} (active={self.should_push}) (sync={self.should_archive})"
+        return f"{self.owner}/{self.repo_name} (active={self.should_push}) (sync={self.should_import})"
 
     class Meta:
         unique_together = ("owner", "repo_name")
@@ -611,11 +611,11 @@ class CodebaseGitRemote(models.Model):
             ),
             models.UniqueConstraint(
                 fields=["mirror"],
-                condition=models.Q(should_archive=True),
+                condition=models.Q(should_import=True),
                 name="single_archivable_repo",
             ),
             models.CheckConstraint(
-                check=models.Q(is_user_repo=True) | models.Q(should_archive=False),
+                check=models.Q(is_user_repo=True) | models.Q(should_import=False),
                 name="org_repo_not_archivable",
             ),
             models.CheckConstraint(
@@ -640,7 +640,7 @@ class CodebaseGitMirror(models.Model):
     def active_remotes_list(self) -> list[CodebaseGitRemote]:
         return list(
             self.remotes.filter(
-                models.Q(should_push=True) | models.Q(should_archive=True)
+                models.Q(should_push=True) | models.Q(should_import=True)
             )
         )
 
@@ -1278,7 +1278,7 @@ class CodebasePublication(models.Model):
 """
 
 
-class ExternalReleasePackage(models.Model):
+class ImportedReleasePackage(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -1349,11 +1349,11 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
     def internal(self, **kwargs):
         """returns only releases that are locally uploaded and not archived from an external service"""
-        return self.filter(external_release_package__isnull=True, **kwargs)
+        return self.filter(imported_release_package__isnull=True, **kwargs)
 
     def external(self, **kwargs):
         """returns only releases that are archived from an external service such as GitHub"""
-        return self.filter(external_release_package__isnull=False, **kwargs)
+        return self.filter(imported_release_package__isnull=False, **kwargs)
 
     def public(self, **kwargs):
         return self.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
@@ -1428,8 +1428,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         max_length=32,
     )
 
-    external_release_package = models.OneToOneField(
-        ExternalReleasePackage,
+    imported_release_package = models.OneToOneField(
+        ImportedReleasePackage,
         null=True,
         on_delete=models.SET_NULL,
     )
@@ -1950,8 +1950,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return COLOR_MAP.get(self.status)
 
     @property
-    def is_external_package(self):
-        return self.external_release_package is not None
+    def is_imported(self):
+        return self.imported_release_package is not None
 
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
@@ -1960,7 +1960,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         self, mimetype_mismatch_message_level=MessageLevels.error
     ) -> CodebaseReleaseFsApi:
         """Factory method to return the appropriate filesystem API for this release."""
-        if self.is_external_package:
+        if self.is_imported:
             return ExternalCodebaseReleaseFsApi.initialize(self)
         return CodebaseReleaseFsApi.initialize(
             self, mimetype_mismatch_message_level=mimetype_mismatch_message_level

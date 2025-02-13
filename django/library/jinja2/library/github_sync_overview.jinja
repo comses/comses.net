@@ -34,7 +34,7 @@
                     Both processes will be enabled by default when generating a new repository from a model submission.
                 </li>
                 <li>
-                    Alternatively, you can link an existing repository with only archiving enabled to import
+                    Alternatively, you can link an existing repository with only importing enabled to import
                     new releases from GitHub, similarly to the <i>Zenodo</i> GitHub integration.
                 </li>
             </ul>
@@ -43,7 +43,7 @@
         <div class="col-md-6">
             <div class="card mb-4">
                 <div class="card-header d-flex align-items-center justify-content-between">
-                    <h3 class="mb-0"><i class="fas fa-code-branch"></i> Push</h3>
+                    <h3 class="mb-0"><i class="fas fa-code-branch"></i> Pushing</h3>
                     <span class="text-muted">(CoMSES → GitHub)</span>
                 </div>
                 <div class="card-body">
@@ -124,7 +124,7 @@
         <div class="col-md-6">
             <div class="card mb-4">
                 <div class="card-header d-flex align-items-center justify-content-between">
-                    <h3 class="mb-0"><i class="fas fa-archive"></i> Archive</h3>
+                    <h3 class="mb-0"><i class="fas fa-archive"></i> Importing</h3>
                     <span class="text-muted">(GitHub → CoMSES)</span>
                 </div>
                 <div class="card-body">
@@ -136,7 +136,7 @@
                                 Whenever you <a
                                     href="https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository">publish
                                     a new release</a> on a linked GitHub repository with
-                                archiving enabled, the release is automatically imported as a new release of your model
+                                importing enabled, the release is automatically imported as a new release of your model
                                 in the CoMSES Model Library
                             </div>
                         </li>
@@ -179,7 +179,7 @@
                         <li class="d-flex mb-2">
                             <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
                             <div class="ps-3 flex-grow-1">
-                                Archived releases do not enforce a certain directory structure, instead pulling in the
+                                Releases imported from GitHub do not enforce a certain directory structure, instead pulling in the
                                 release assets as-is, so you must ensure this contains all of your source code,
                                 documentation, and other necessary files
                             </div>
@@ -204,7 +204,7 @@
     you can no longer request a review. While under peer review, the release remains private. If changes are requested,
     you must push changes to GitHub, create a new tag, and update the existing release to reference the new tag.",
 
-    "If I set up archiving for an existing repository, will my existing releases be imported?": "No, only future
+    "If I set up importing for an existing repository, will my existing releases be imported?": "No, only future
     releases will be imported. This is to prevent duplicate releases from being created.",
 
     "I created a GitHub release but don't see it on the CoMSES Model Library side, what went wrong?": "Ensure that the
