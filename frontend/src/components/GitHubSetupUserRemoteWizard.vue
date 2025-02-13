@@ -70,8 +70,8 @@
               @click="setupRemote"
               :disabled="isLoading || !canCreateUserRemote"
             >
-              <span v-if="fromExisting">Setup release archiving</span>
-              <span v-else>Push releases and setup archiving</span>
+              <span v-if="fromExisting">Setup release importing</span>
+              <span v-else>Push releases and setup importing</span>
             </button>
             <div v-if="isLoading" class="text-muted text-center p-3">
               <i class="fas fa-spinner fa-spin"></i>
@@ -115,7 +115,7 @@ const emit = defineEmits<{
 const { isLoading, serverErrors, data, setupUserGithubRemote, setupUserExistingGithubRemote } =
   useGitRemotesAPI(props.codebaseIdentifier);
 const successMessage = ref<string | null>(null);
-const repoName = ref(props.defaultRepoName);
+const repoName = ref("");
 
 const show = ref(false);
 

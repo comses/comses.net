@@ -314,12 +314,12 @@
                                 <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate badge bg-primary">
                                     {{ remote.owner }}/{{ remote.repo_name }}
                                 </a>
-                                {# {% if remote.should_push and remote.should_archive %}
-                                    <i class="fas fa-exchange-alt text-primary" title="Pushing and Archiving"></i>
+                                {# {% if remote.should_push and remote.should_import %}
+                                    <i class="fas fa-exchange-alt text-primary" title="Pushing and Importing"></i>
                                 {% elif remote.should_push %}
                                     <i class="fas fa-arrow-right text-success" title="Pushing Only"></i>
-                                {% elif remote.should_archive %}
-                                    <i class="fas fa-arrow-left text-warning" title="Archiving Only"></i>
+                                {% elif remote.should_import %}
+                                    <i class="fas fa-arrow-left text-warning" title="Importing Only"></i>
                                 {% endif %} #}
                             </li>
                         {% endfor %}
