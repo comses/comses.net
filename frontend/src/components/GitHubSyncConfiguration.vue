@@ -1,69 +1,11 @@
 <template>
   <div style="min-height: 60vh">
     <div class="row">
-      <!-- <div class="col border-end">
-      <h3><i class="fas fa-university"></i> Repositories in the CoMSES organization</h3>
-      <p>
-        Synced repositories in the
-        <a :href="`https://github.com/orgs/${githubOrgName}/repositories`"
-          ><i class="fab fa-github"></i>{{ githubOrgName }}</a
-        >
-        organization are <b><u>push-only</u></b> since they are intended as a read-only mirror of
-        your model submission on CoMSES. This is a good way to enhance the accessibility of your
-        model's source code without a GitHub account.
-      </p>
-      <div class="card mb-3">
-        <div class="card-header">
-          <ul class="nav nav-tabs card-header-tabs">
-            <li class="nav-item">
-              <a
-                class="nav-link"
-                :class="{ active: selectedOrgTab === 'active' }"
-                @click="selectedOrgTab = 'active'"
-                >Active</a
-              >
-            </li>
-            <a
-              class="nav-link"
-              :class="{ active: selectedOrgTab === 'inactive' }"
-              @click="selectedOrgTab = 'inactive'"
-              >Inactive</a
-            >
-          </ul>
-        </div>
-        <ol class="list-group list-group-flush">
-          <li v-if="remotesLoading" class="list-group-item text-muted text-center p-3">
-            <i class="fas fa-spinner fa-spin"></i>
-          </li>
-          <li v-else-if="orgRemotes.length === 0" class="list-group-item text-muted">
-            No {{ selectedOrgTab }} repos.
-          </li>
-          <li
-            v-else
-            v-for="remote in orgRemotes"
-            :key="remote.id"
-            class="list-group-item d-flex align-items-center justify-content-between"
-          >
-            <GitHubRemoteItem
-              :codebase-identifier="codebaseIdentifier"
-              :remote="remote"
-              @changed="fetchRemotes"
-            />
-          </li>
-        </ol>
-      </div>
-      <GitHubSetupOrgRemoteWizard
-        :codebase-identifier="codebaseIdentifier"
-        :owner="githubOrgName"
-        :default-repo-name="defaultRepoName"
-        @success="fetchRemotes"
-      />
-    </div> -->
       <div class="col-12">
         <h3>Repositories linked with this model</h3>
         <p>
           Only one linked repository can be active at a time. A repository is considered active if
-          either pushing or archiving is turned on.
+          either pushing or importing is turned on.
         </p>
         <div class="card mb-3">
           <div class="card-header">
@@ -136,7 +78,6 @@ import { ref, computed, onMounted } from "vue";
 import { useGitRemotesAPI } from "@/composables/api/git";
 import type { GitHubAppInstallationStatus, CodebaseGitRemote } from "@/types";
 import GitHubRemoteItem from "@/components/GitHubRemoteItem.vue";
-import GitHubSetupOrgRemoteWizard from "@/components/GitHubSetupOrgRemoteWizard.vue";
 import GitHubSetupUserRemoteWizard from "@/components/GitHubSetupUserRemoteWizard.vue";
 
 const props = defineProps<{
@@ -155,20 +96,10 @@ const installationStatus = ref<GitHubAppInstallationStatus>({
 
 const remotesLoading = ref(true);
 const remotes = ref<CodebaseGitRemote[]>([]);
-const activeOrgRemotes = computed(() => remotes.value.filter(r => !r.isUserRepo && r.isActive));
-const inactiveOrgRemotes = computed(() => remotes.value.filter(r => !r.isUserRepo && !r.isActive));
 const activeUserRemotes = computed(() => remotes.value.filter(r => r.isUserRepo && r.isActive));
 const inactiveUserRemotes = computed(() => remotes.value.filter(r => r.isUserRepo && !r.isActive));
 
-const selectedOrgTab = ref<"active" | "inactive">("active");
 const selectedUserTab = ref<"active" | "inactive">("active");
-const orgRemotes = computed(() => {
-  if (selectedOrgTab.value === "inactive") {
-    return inactiveOrgRemotes.value;
-  } else {
-    return activeOrgRemotes.value;
-  }
-});
 const userRemotes = computed(() => {
   if (selectedUserTab.value === "inactive") {
     return inactiveUserRemotes.value;

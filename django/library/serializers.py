@@ -490,7 +490,7 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "repo_name",
             "url",
             "should_push",
-            "should_archive",
+            "should_import",
             "is_user_repo",
             "is_preexisting",
             "is_active",
