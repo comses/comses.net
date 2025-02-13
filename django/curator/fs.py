@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 def fsck(queryset):
     results = OrderedDict()
     for release in queryset:
-        if release.is_external_package:
+        if release.is_imported:
             continue
         rfsc = CodebaseReleaseFileConsistencyChecker(release)
         errors = rfsc.check()
