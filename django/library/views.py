@@ -716,7 +716,7 @@ class CodebaseGitRemoteViewSet(
                 is_user_repo=True,
                 is_preexisting=False,
                 should_push=True,
-                should_archive=True,
+                should_import=True,
             )
         except IntegrityError as e:
             self._forward_integrity_error(e)
@@ -758,7 +758,7 @@ class CodebaseGitRemoteViewSet(
                 is_user_repo=True,
                 is_preexisting=True,
                 should_push=False,
-                should_archive=True,
+                should_import=True,
                 url=repo_html_url,
             )
         except IntegrityError as e:
@@ -796,7 +796,7 @@ class CodebaseGitRemoteViewSet(
                 is_user_repo=False,
                 is_preeexisting=False,
                 should_push=True,
-                should_archive=False,
+                should_import=False,
             )
         except IntegrityError as e:
             self._forward_integrity_error(e)

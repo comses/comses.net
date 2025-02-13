@@ -26,10 +26,10 @@
         class="form-check-input"
         type="checkbox"
         id="flexSwitchCheckDefault1"
-        :checked="remote.shouldArchive"
-        @change="confirmToggle('shouldArchive', remote.shouldArchive, $event)"
+        :checked="remote.shouldImport"
+        @change="confirmToggle('shouldImport', remote.shouldImport, $event)"
       />
-      <label class="form-check-label" for="flexSwitchCheckDefault1">Archiving</label>
+      <label class="form-check-label" for="flexSwitchCheckDefault1">Importing</label>
       <div>
         <small class="form-text text-muted"
           ><small><i class="fas fa-archive"></i> from GitHub</small></small
@@ -45,7 +45,7 @@
     >
       <template #body>
         Are you sure you want to {{ pendingToggleValue ? "enable" : "disable" }}
-        {{ toggleField === "shouldPush" ? "pushing to " : "archiving from " }}
+        {{ toggleField === "shouldPush" ? "pushing to " : "importing from " }}
         <a :href="remote.url" target="_blank">{{ remote.owner }}/{{ remote.repoName }}</a
         >?
         <FormAlert v-if="serverErrors" :validation-errors="[]" :server-errors="serverErrors" />
