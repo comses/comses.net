@@ -422,7 +422,7 @@ export interface CodebaseGitRemote {
   repoName: string;
   url: string;
   shouldPush: boolean;
-  shouldArchive: boolean;
+  shouldImport: boolean;
   isUserRepo: boolean;
   isPreexisting: boolean;
   isActive: boolean;
@@ -432,5 +432,5 @@ export interface CodebaseGitRemote {
 
 export interface CodebaseGitRemoteForm {
   shouldPush?: boolean;
-  shouldArchive?: boolean;
+  shouldImport?: boolean;
 }
