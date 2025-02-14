@@ -8,32 +8,25 @@
     </button>
     <div v-if="show" class="card-body">
       <ol class="mb-0">
-        <li v-if="githubUsername" class="text-decoration-line-through mb-2">
-          Connect your GitHub account
+        <li v-if="githubUsername" class="mb-2">
+          Signed in as
+          <a :href="`https://github.com/${githubUsername}`" target="_blank" class="badge bg-dark">
+            <i class="fab fa-github"></i> {{ githubUsername }}
+          </a>
+          <i class="fas fa-check text-success ms-2"></i>
         </li>
         <li v-else class="mb-2">
           <a class="btn btn-link p-0" :href="installationStatus.connectUrl">
-            <i class="fas fa-link"></i> Connect your GitHub account
-          </a>
-        </li>
-        <li v-if="githubAppInstalled" class="text-decoration-line-through mb-2">
-          Install the Sync app on your GitHub account
-        </li>
-        <li v-else class="mb-2">
-          <a
-            class="btn btn-link p-0"
-            :class="{ disabled: !installationStatus.installationUrl }"
-            :href="installationStatus.installationUrl ?? ''"
-          >
-            <i class="fas fa-download"></i> Install the Sync app on your GitHub account
+            <i class="fas fa-link"></i> Connect your GitHub account with CoMSES Net
           </a>
         </li>
         <li v-if="!fromExisting" class="mb-2">
           <div>
             <a
               class="btn btn-link p-0"
-              :class="{ disabled: !githubAppInstalled }"
+              :class="{ disabled: !githubUsername }"
               :href="newRepositoryUrl"
+              target="_blank"
               >Create an empty repository with your desired name on GitHub</a
             >
           </div>
@@ -41,6 +34,27 @@
             <small>
               <i class="fas fa-exclamation-triangle"></i> Do <b>not</b> initialize the repository
               with any files such as a README or license
+            </small>
+          </small>
+        </li>
+        <li class="mb-2">
+          <div>
+            <a
+              class="btn btn-link p-0"
+              :class="{ disabled: !githubUsername }"
+              :href="installationStatus.installationUrl ?? ''"
+              target="_blank"
+            >
+              <span v-if="githubAppInstalled"
+                >Ensure the Sync app has access to the repository</span
+              >
+              <span v-else>Install the Sync app on your GitHub account</span>
+            </a>
+          </div>
+          <small class="text-muted">
+            <small>
+              The app needs admin permissions for synced repos, you can restrict access by choosing
+              "Only select repositories" and selecting the repo you want to sync
             </small>
           </small>
         </li>
@@ -91,6 +105,14 @@
           </div>
         </li>
       </ol>
+      <div v-if="githubUsername" class="mt-3">
+        <small class="text-muted">
+          <small>
+            <i class="fas fa-question-circle"></i> Need help? Check the
+            <a href="/github/#faq" target="_blank">GitHub Sync FAQ</a>
+          </small>
+        </small>
+      </div>
     </div>
   </div>
 </template>

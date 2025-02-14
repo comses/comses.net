@@ -2,7 +2,7 @@ import re
 from github import GithubIntegration, Auth, Github
 from github.GithubException import GithubException, UnknownObjectException
 from github.Repository import Repository as GithubRepo
-from git import Repo as GitRepo
+from git import PushInfo, Repo as GitRepo
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
@@ -161,7 +161,7 @@ class GitHubApi:
         )
         return token
 
-    def get_or_create_repo(self, private=False) -> GithubRepo:
+    def get_or_create_repo(self) -> GithubRepo:
         """get or create the Github repository for a user or organization"""
         try:
             return self.github_repo
@@ -169,7 +169,7 @@ class GitHubApi:
             if self.is_user_repo:
                 raise ValueError("User-owned repositories must be created beforehand")
             else:
-                self._github_repo = self._create_org_repo(private)
+                self._github_repo = self._create_org_repo()
         return self._github_repo
 
     def push(self, local_repo: GitRepo) -> str:
@@ -206,7 +206,7 @@ class GitHubApi:
                 f"Github repository https://github.com/{full_name} does not exist or is inaccessible"
             )
 
-    def _create_org_repo(self, private=False):
+    def _create_org_repo(self):
         """create a new repository in the CoMSES model library organization
 
         this function requires the `repo` scope for the installation access token
@@ -217,7 +217,6 @@ class GitHubApi:
         repo = org.create_repo(
             name=self.repo_name,
             description=f"Mirror of {self.codebase.permanent_url}",
-            private=private,
         )
         return repo
 
@@ -227,16 +226,17 @@ class GitHubApi:
         else:
             local_repo.remotes["origin"].set_url(push_url)
         # https://gitpython.readthedocs.io/en/stable/reference.html#git.remote.PushInfo
-        result_all = local_repo.git.push(["--all"])
-        result_tags = local_repo.git.push(["--tags"])
+        remote = local_repo.remote(name="origin")
+        result_all = remote.push(all=True)
+        result_tags = remote.push(tags=True)
         summaries = []
-        for result in (result_all, result_tags):
-            if result:  # result will be None if the push failed entirely
-                for info in result:
-                    if info.summary:
-                        summaries.append(info.summary)
-        # FIXME: gitpython summaries do not seem to be working as expected
-        # even when the push succeeds we always get "push failed entirely"
+        success_mask = PushInfo.NEW_HEAD | PushInfo.FAST_FORWARD | PushInfo.UP_TO_DATE
+        for info in result_all:
+            if info:  # result will be None if the push failed entirely
+                if info.flags & success_mask:
+                    summaries.append(f"branch ({info.local_ref}): successfully pushed\n")
+                else:
+                    summaries.append(f"branch ({info.local_ref}): did not push, likely due to changes in GitHub repository\n")
         if not summaries:
             return "push failed entirely"
-        return "\n".join(summaries)
+        return "".join(summaries)

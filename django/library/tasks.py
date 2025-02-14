@@ -1,7 +1,7 @@
 from huey.contrib.djhuey import db_task, on_commit_task
 from django.conf import settings
 
-from .models import Codebase, CodebaseRelease
+from .models import Codebase, CodebaseGitRemote, CodebaseRelease
 from .github_integration import GitHubApi
 from .fs import CodebaseGitRepositoryApi
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @db_task(retries=3, retry_delay=30)
-def build_and_push_codebase_repo(codebase_id: int, private_repo=False):
+def build_and_push_codebase_repo(codebase_id: int):
     codebase = Codebase.objects.get(id=codebase_id)
     mirror = codebase.git_mirror
     if not mirror:
@@ -26,12 +26,35 @@ def build_and_push_codebase_repo(codebase_id: int, private_repo=False):
             local_repo=local_repo,
             remote=remote,
         )
-        repo = gh_api.get_or_create_repo(private=private_repo)
+        repo = gh_api.get_or_create_repo()
         remote.url = repo.html_url
         push_summary = gh_api.push(local_repo)
         remote.last_push_log = push_summary
         remote.save()
         gh_api.create_releases(local_repo)
+
+
+@db_task(retries=3, retry_delay=30)
+def build_and_push_single_remote(codebase_id: int, remote_id: int):
+    codebase = Codebase.objects.get(id=codebase_id)
+    try:
+        remote = CodebaseGitRemote.objects.get(
+            id=remote_id, should_push=True, mirror__codebase__id=codebase_id
+        )
+    except CodebaseGitRemote.DoesNotExist:
+        raise ValueError("Remote does not exist or is not set to push")
+    
+    git_fs_api = CodebaseGitRepositoryApi(codebase)
+    local_repo = git_fs_api.update_or_build()
+    gh_api = GitHubApi(
+        codebase=codebase,
+        local_repo=local_repo,
+        remote=remote,
+    )
+    push_summary = gh_api.push(local_repo)
+    remote.last_push_log = push_summary
+    remote.save()
+    gh_api.create_releases(local_repo)
 
 
 @db_task(retries=3, retry_delay=30)
