@@ -33,12 +33,7 @@
             <li v-else-if="userRemotes.length === 0" class="list-group-item text-muted">
               No {{ selectedUserTab }} repos.
             </li>
-            <li
-              v-else
-              v-for="remote in userRemotes"
-              :key="remote.id"
-              class="list-group-item d-flex align-items-center justify-content-between"
-            >
+            <li v-else v-for="remote in userRemotes" :key="remote.id" class="list-group-item">
               <GitHubRemoteItem
                 :codebase-identifier="codebaseIdentifier"
                 :remote="remote"
