@@ -94,7 +94,7 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
-from .tasks import build_and_push_codebase_repo
+from .tasks import build_and_push_codebase_repo, build_and_push_single_remote
 
 import logging
 import pathlib
@@ -632,7 +632,17 @@ class CodebaseGitRemoteViewSet(
 
     def update(self, request, *args, **kwargs):
         try:
-            return super().update(request, *args, **kwargs)
+            response = super().update(request, *args, **kwargs)
+            # if pushing was turned on, trigger a build and push task for this remote
+            if request.data.get("should_push") == True:
+                codebase_id = self.get_codebase().id
+                remote_id = kwargs["pk"]
+                build_and_push_single_remote(codebase_id, remote_id)
+                response = Response(
+                    status=status.HTTP_202_ACCEPTED,
+                    data="Pushing process started in the background, this should take only a few seconds.",
+                )
+            return response
         except IntegrityError as e:
             self._forward_integrity_error(e)
 
@@ -667,13 +677,12 @@ class CodebaseGitRemoteViewSet(
             github_account = None
 
         if github_account:
+            installation_url = f"https://github.com/apps/{settings.GITHUB_INTEGRATION_APP_NAME}/installations/new/permissions?target_id={github_account['id']}"
             installation = getattr(
                 submitter, "github_integration_app_installation", None
             )
             if installation:
                 github_account["installation_id"] = installation.installation_id
-            else:
-                installation_url = f"https://github.com/apps/{settings.GITHUB_INTEGRATION_APP_NAME}/installations/new/permissions?target_id={github_account['id']}"
 
         return Response(
             data={
@@ -723,10 +732,10 @@ class CodebaseGitRemoteViewSet(
         except IntegrityError as e:
             self._forward_integrity_error(e)
         # trigger the build and push task
-        build_and_push_codebase_repo(codebase.id, private_repo=settings.DEBUG)
+        build_and_push_codebase_repo(codebase.id)
         return Response(
             status=status.HTTP_202_ACCEPTED,
-            data="Synchronization process started, this should take only a few seconds. Refresh this page to see the status.",
+            data="Pushing process started in the background, this should take only a few seconds.",
         )
 
     @action(detail=False, methods=["post"])
@@ -767,7 +776,7 @@ class CodebaseGitRemoteViewSet(
             self._forward_integrity_error(e)
         return Response(
             status=status.HTTP_200_OK,
-            data="Repository remote successfully set up.",
+            data="Repository remote successfully set up. From now on, releases published on GitHub will be imported to the CoMSES Model Library.",
         )
 
     @action(detail=False, methods=["post"])
@@ -804,7 +813,7 @@ class CodebaseGitRemoteViewSet(
             self._forward_integrity_error(e)
 
         # trigger the build and push task
-        build_and_push_codebase_repo(codebase.id, private_repo=settings.DEBUG)
+        build_and_push_codebase_repo(codebase.id)
         return Response(
             status=status.HTTP_202_ACCEPTED,
             data="Synchronization process started, this should take only a few seconds. Refresh this page to see the status.",
@@ -844,19 +853,17 @@ def github_sync_webhook(request):
             provider="github", uid=str(uid)
         ).first()
         if social_account:
-            repositories = [repo.get("name") for repo in payload["repositories"]]
             installation = GithubIntegrationAppInstallation.objects.update_or_create(
                 user=social_account.user,
                 defaults={
                     "github_user_id": uid,
                     "github_login": sender["login"],
                     "installation_id": payload["installation"]["id"],
-                    "repositories": repositories,
                 },
             )
             return HttpResponse("OK", status=200)
-
     elif event == "release":
+        # FIXME: remember, releases we create hit this too, so ignore those (the sender will be the app bot in this case)
         payload = json.loads(request.body)
         logger.debug(payload)
         if (
