@@ -179,7 +179,8 @@
                         <li class="d-flex mb-2">
                             <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
                             <div class="ps-3 flex-grow-1">
-                                Releases imported from GitHub do not enforce a certain directory structure, instead pulling in the
+                                Releases imported from GitHub do not enforce a certain directory structure, instead
+                                pulling in the
                                 release assets as-is, so you must ensure this contains all of your source code,
                                 documentation, and other necessary files
                             </div>
@@ -209,13 +210,18 @@
 
     "I created a GitHub release but don't see it on the CoMSES Model Library side, what went wrong?": "Ensure that the
     app is installed with the correct permissions. Also, check that the release is **published** (not a draft or in
-    pre-release mode). If everything seems correct and it's still not appearing, please contact us.",
+    pre-release mode) and has a unique version number. In the unlikely event of a network error, you can try setting the
+    release on github as a pre-release and then back to alert the importing system again. If issues persist, please
+    contact us.",
 
     "I set up a new synced repository or published a new release, but I don't see anything on the GitHub repository,
     what went wrong?": "If changes were made to a branch on GitHub, the sync process will not overwrite them. Ensure
-    that the app is installed with the correct permissions. If issues persist, please contact us."
+    that the Sync app is installed with the correct permissions. In the unlikely event of a network error, you can
+    manually trigger a push by toggling 'Pushing' off and on again. Sometimes, uninstalling and reinstalling the Sync
+    app on GitHub can help if the system failed to recognize the installation previously. If issues persist, please
+    contact us."
     } %}
-    <div class="row justify-content-center">
+    <div class="row justify-content-center" id="faq">
         <div class="col-12" role="tablist" aria-multiselectable="true">
             <h2 class="text-center my-3">Frequently Asked Questions</h2>
             {% for question, answer in faq_entries.items() %}
