@@ -228,10 +228,10 @@ class ModeratedContent(models.Model):
 class SocialMediaSettings(BaseSiteSetting):
     facebook_url = models.URLField(help_text=_("Facebook URL"), blank=True)
     youtube_url = models.URLField(help_text=_("CoMSES Net YouTube Channel"), blank=True)
-    twitter_account = models.CharField(
+    social_account = models.CharField(
         max_length=128,
         default="comses",
-        help_text=_("CoMSES Net official Twitter account"),
+        help_text=_("CoMSES Net official socials account username (assumed focus on a single platform)"),
         blank=True,
     )
     github_account = models.CharField(
