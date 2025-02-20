@@ -377,6 +377,20 @@ class DataCiteConverter:
         )
 
 
+class ReleaseConverter:
+    @classmethod
+    def convert_codemeta(cls, codemeta: CodeMeta | dict):
+        raise NotImplementedError
+    
+    @classmethod
+    def convert_cff(cls, cff: CitationFileFormat | dict):
+        raise NotImplementedError
+
+    @classmethod
+    def convert_github_repo(cls, github_repo: dict):
+        raise NotImplementedError
+
+
 def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> CodeMeta:
     """make sure that codemeta is a CodeMeta object. If we didn't receive anything,
     try to re-generate it"""

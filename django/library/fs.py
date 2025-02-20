@@ -801,18 +801,19 @@ class CodebaseReleaseFsApi:
         return msgs
 
 
-class ExternalCodebaseReleaseFsApi(CodebaseReleaseFsApi):
+class ImportedCodebaseReleaseFsApi(CodebaseReleaseFsApi):
     # TODO:
     # extract archive and put in /library/slug/releases/id/
     # extract codemeta and use to build release metadata, BUT replace with our own more complete/correct codemeta?
     # set to unpublished at first which ensures checking metadata and allows requesting review
     # upon publishing, build+lock the archive
-    @classmethod
-    def initialize(
-        cls,
-        codebase_release,
-    ):
-        raise NotImplementedError("ExternalCodebaseReleaseFsApi not implemented")
+
+    # methods that stay the same:
+    # init/initialize()
+
+    def download_archive(self, url):
+        """Download 
+        """
 
 
 

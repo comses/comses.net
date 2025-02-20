@@ -74,11 +74,11 @@
         </small>
       </pre>
     </div>
-    <div v-if="remote.lastArchiveLog" class="card p-2">
+    <div v-if="remote.lastImportLog" class="card p-2">
       <b><u>Push</u></b>
       <pre class="mb-0" style="white-space: pre-line; text-align: left">
         <small>
-          {{ remote.lastArchiveLog }}
+          {{ remote.lastImportLog }}
         </small>
       </pre>
     </div>
