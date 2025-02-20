@@ -353,3 +353,35 @@ export interface ReviewerFilterParams {
   name?: string;
   programmingLanguages?: string[];
 }
+
+export interface GithubAccount {
+  id: number;
+  username: string;
+  profileUrl: string;
+  installationId?: number;
+}
+
+export interface GitHubAppInstallationStatus {
+  githubAccount: GithubAccount | null;
+  connectUrl: string;
+  installationUrl: string | null;
+}
+
+export interface CodebaseGitRemote {
+  id: number;
+  owner: string;
+  repoName: string;
+  url: string;
+  shouldPush: boolean;
+  shouldImport: boolean;
+  isUserRepo: boolean;
+  isPreexisting: boolean;
+  isActive: boolean;
+  lastPushLog: string;
+  lastImportLog: string;
+}
+
+export interface CodebaseGitRemoteForm {
+  shouldPush?: boolean;
+  shouldImport?: boolean;
+}

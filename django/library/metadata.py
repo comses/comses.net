@@ -136,7 +136,13 @@ class CodeMetaConverter:
         return dict(
             type_="SoftwareSourceCode",
             name=codebase.title,
-            codeRepository=codebase.repository_url or None,
+            codeRepository=(
+                codebase.git_mirror.remotes.first().url
+                # FIXME: coderepository can be one url, how do we determine priority?
+                if codebase.git_mirror and codebase.git_mirror.remotes.first()
+                else codebase.repository_url
+            )
+            or None,
             applicationCategory="Computational Model",
             citation=[
                 cls.to_textual_creative_work(text)
@@ -369,6 +375,20 @@ class DataCiteConverter:
             descriptions=cls.get_codebase_descriptions(codebase),
             relatedIdentifiers=cls.get_codebase_related_identifiers(codebase),
         )
+
+
+class ReleaseConverter:
+    @classmethod
+    def convert_codemeta(cls, codemeta: CodeMeta | dict):
+        raise NotImplementedError
+    
+    @classmethod
+    def convert_cff(cls, cff: CitationFileFormat | dict):
+        raise NotImplementedError
+
+    @classmethod
+    def convert_github_repo(cls, github_repo: dict):
+        raise NotImplementedError
 
 
 def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> CodeMeta:
