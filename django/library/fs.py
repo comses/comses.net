@@ -44,7 +44,7 @@ class StagingDirectories(Enum):
     aip = 3
 
 
-class FileCategoryDirectories(Enum):
+class FileCategories(Enum):
     code = 1
     data = 2
     docs = 3
@@ -79,25 +79,25 @@ mimetypes.add_type("text/x-r-source", ".r")
 ACCEPT_ALL_REGEX = re.compile(r".*")
 
 MIMETYPE_MATCHER = {
-    FileCategoryDirectories.code: ACCEPT_ALL_REGEX,
-    FileCategoryDirectories.data: ACCEPT_ALL_REGEX,
-    FileCategoryDirectories.docs: re.compile(
+    FileCategories.code: ACCEPT_ALL_REGEX,
+    FileCategories.data: ACCEPT_ALL_REGEX,
+    FileCategories.docs: re.compile(
         r"text/markdown|application/pdf|text/plain|text/x-rtf|application/vnd.oasis.opendocument.text"
     ),
-    FileCategoryDirectories.media: re.compile(r"image/.*|video/.*"),
-    FileCategoryDirectories.originals: ACCEPT_ALL_REGEX,
-    FileCategoryDirectories.results: ACCEPT_ALL_REGEX,
+    FileCategories.media: re.compile(r"image/.*|video/.*"),
+    FileCategories.originals: ACCEPT_ALL_REGEX,
+    FileCategories.results: ACCEPT_ALL_REGEX,
 }
 
 
-def get_category(name) -> FileCategoryDirectories:
+def get_category(name) -> FileCategories:
     category_name = Path(name).parts[0]
     try:
-        return FileCategoryDirectories[category_name]
+        return FileCategories[category_name]
     except KeyError:
         raise ValidationError(
             "Target folder name {} invalid. Must be one of {}".format(
-                category_name, list(d.name for d in FileCategoryDirectories)
+                category_name, list(d.name for d in FileCategories)
             )
         )
 
@@ -229,7 +229,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
                 msgs.append(self.validate_file(filename, content))
         return msgs
 
-    def list(self, category: Optional[FileCategoryDirectories] = None, absolute=False):
+    def list(self, category: Optional[FileCategories] = None, absolute=False):
         path = Path(self.location)
         if category is not None:
             path = path.joinpath(category.name)
@@ -272,7 +272,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
             msgs.append(self.error(e))
         return msgs
 
-    def clear_category(self, category: FileCategoryDirectories):
+    def clear_category(self, category: FileCategories):
         shutil.rmtree(os.path.join(self.location, category.name), ignore_errors=True)
 
     def clear(self):
@@ -291,7 +291,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
 class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
     stage = StagingDirectories.originals
 
-    def get_existing_archive_name(self, category: FileCategoryDirectories):
+    def get_existing_archive_name(self, category: FileCategories):
         for p in self.list(category):
             if p.is_file() and fs.is_archive(p):
                 return str(p)
@@ -467,7 +467,7 @@ class CodebaseReleaseFsApi:
         else:
             raise ValueError(f"StageDirectories values {stage} not valid")
 
-    def get_sip_list_url(self, category: FileCategoryDirectories):
+    def get_sip_list_url(self, category: FileCategories):
         return reverse(
             "library:codebaserelease-sip-files-list",
             kwargs={
@@ -477,7 +477,7 @@ class CodebaseReleaseFsApi:
             },
         )
 
-    def get_originals_list_url(self, category: FileCategoryDirectories):
+    def get_originals_list_url(self, category: FileCategories):
         return reverse(
             "library:codebaserelease-original-files-list",
             kwargs={
@@ -487,7 +487,7 @@ class CodebaseReleaseFsApi:
             },
         )
 
-    def get_absolute_url(self, category: FileCategoryDirectories, relpath: Path):
+    def get_absolute_url(self, category: FileCategories, relpath: Path):
         return reverse(
             "library:codebaserelease-original-files-detail",
             kwargs={
@@ -614,14 +614,14 @@ class CodebaseReleaseFsApi:
     def review_archive_size(self):
         return self.review_archivepath.stat().st_size
 
-    def clear_category(self, category: FileCategoryDirectories):
+    def clear_category(self, category: FileCategories):
         originals_storage = self.get_originals_storage()
         originals_storage.clear_category(category)
         sip_storage = self.get_sip_storage()
         sip_storage.clear_category(category)
 
     def list(
-        self, stage: StagingDirectories, category: Optional[FileCategoryDirectories]
+        self, stage: StagingDirectories, category: Optional[FileCategories]
     ):
         stage_storage = self.get_stage_storage(stage)
         return [str(p) for p in stage_storage.list(category)]
@@ -643,14 +643,14 @@ class CodebaseReleaseFsApi:
     def retrieve(
         self,
         stage: StagingDirectories,
-        category: FileCategoryDirectories,
+        category: FileCategories,
         relpath: Path,
     ):
         stage_storage = self.get_stage_storage(stage)
         relpath = Path(category.name, relpath)
         return stage_storage.open(str(relpath))
 
-    def delete(self, category: FileCategoryDirectories, relpath: Path):
+    def delete(self, category: FileCategories, relpath: Path):
         originals_storage = self.get_originals_storage()
         sip_storage = self.get_sip_storage()
         relpath = Path(category.name, relpath)
@@ -671,7 +671,7 @@ class CodebaseReleaseFsApi:
             logs.append(originals_storage.log_delete(str(relpath)))
         return logs
 
-    def _add_to_sip(self, name, content, category: FileCategoryDirectories):
+    def _add_to_sip(self, name, content, category: FileCategories):
         sip_storage = self.get_sip_storage()
         filename = self.originals_dir.joinpath(name)
         if fs.is_archive(name):
@@ -680,7 +680,7 @@ class CodebaseReleaseFsApi:
         else:
             return sip_storage.log_save(name=name, content=content)
 
-    def add_category(self, category: FileCategoryDirectories, src):
+    def add_category(self, category: FileCategories, src):
         logger.info("adding category %s", category.name)
         originals_storage = self.get_originals_storage()
         msgs = self._create_msg_group()
@@ -693,7 +693,7 @@ class CodebaseReleaseFsApi:
                     msgs.append(originals_storage.log_save(name, content))
         return msgs
 
-    def add(self, category: FileCategoryDirectories, content, name=None):
+    def add(self, category: FileCategories, content, name=None):
         if name is None:
             name = os.path.join(category.name, content.name)
         else:
@@ -719,7 +719,7 @@ class CodebaseReleaseFsApi:
             self.identifier,
         )
         source_fs_api = source_release.get_fs_api()
-        for category in FileCategoryDirectories:
+        for category in FileCategories:
             source_files = source_fs_api.list(StagingDirectories.originals, category)
             for relpath in source_files:
                 with source_fs_api.retrieve(
@@ -801,18 +801,61 @@ class CodebaseReleaseFsApi:
         return msgs
 
 
-class ExternalCodebaseReleaseFsApi(CodebaseReleaseFsApi):
+
+"""
+METHODS THAT USE CATEGORY FOR FILE ACCESS:
+
+get_category
+
+CodebaseReleaseStorage:
+clear_category
+list
+
+CodebaseReleaseOriginalStorage:
+validate_file
+has_existing_archive
+is_archive_directory
+get_existing_archive_name
+
+CodebaseReleaseFsApi:
+_add_to_sip
+list
+retrieve
+add
+delete
+add_category
+clear_category
+
+views: What do these call?
+get_absolute_url 
+get_originals_list_url
+get_sip_list_url
+
+ArchiveExtractor
+process
+"""
+
+class ImportedCodebaseReleaseFsApi(CodebaseReleaseFsApi):
     # TODO:
     # extract archive and put in /library/slug/releases/id/
     # extract codemeta and use to build release metadata, BUT replace with our own more complete/correct codemeta?
     # set to unpublished at first which ensures checking metadata and allows requesting review
     # upon publishing, build+lock the archive
-    @classmethod
-    def initialize(
-        cls,
-        codebase_release,
-    ):
-        raise NotImplementedError("ExternalCodebaseReleaseFsApi not implemented")
+
+    # methods that stay the same:
+    # init/initialize()
+
+    # methods that aren't supported
+
+
+    def import_release_package():
+        pass
+
+    def read_codemeta():
+        pass
+
+    def read_cff():
+        pass
 
 
 
@@ -1182,7 +1225,7 @@ class ArchiveExtractor:
             if len(dirnames) != 1 or len(filenames) != 0:
                 return dirpath
 
-    def process(self, category: FileCategoryDirectories, filename: str):
+    def process(self, category: FileCategories, filename: str):
         msgs = MessageGroup()
         try:
             with TemporaryDirectory() as d:
@@ -1233,6 +1276,6 @@ def import_archive(codebase_release, nested_code_folder_name, fs_api=None):
     shutil.make_archive(nested_code_folder_name, "zip", nested_code_folder_name)
     with open(archive_name, "rb") as f:
         msgs = fs_api.add(
-            FileCategoryDirectories.code, content=f, name="nestedcode.zip"
+            FileCategories.code, content=f, name="nestedcode.zip"
         )
     return msgs
