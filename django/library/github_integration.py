@@ -1,13 +1,25 @@
+import logging
 import re
+import uuid
 from github import GithubIntegration, Auth, Github
 from github.GithubException import GithubException, UnknownObjectException
 from github.Repository import Repository as GithubRepo
 from git import PushInfo, Repo as GitRepo
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 from django.utils import timezone
 
-from .models import Codebase, CodebaseGitRemote, GithubIntegrationAppInstallation
+from .metadata import ReleaseMetadataConverter
+from .models import (
+    Codebase,
+    CodebaseGitRemote,
+    CodebaseRelease,
+    GithubIntegrationAppInstallation,
+    ImportedReleasePackage,
+)
+
+logger = logging.getLogger(__name__)
 
 INSTALLATION_ACCESS_TOKEN_REDIS_KEY = "github_installation_access_token"
 
@@ -46,7 +58,9 @@ class GitHubRepoValidator:
         except UnknownObjectException:
             return True
 
-    def get_existing_user_repo_url(self, installation: GithubIntegrationAppInstallation):
+    def get_existing_user_repo_url(
+        self, installation: GithubIntegrationAppInstallation
+    ):
         token = GitHubApi.get_user_installation_access_token(installation)
         full_name = f"{installation.github_login}/{self.repo_name}"
         github_repo = GitHubApi.get_existing_repo(token, full_name)
@@ -229,14 +243,184 @@ class GitHubApi:
         remote = local_repo.remote(name="origin")
         result_all = remote.push(all=True)
         result_tags = remote.push(tags=True)
+        timestamp = f"[{timezone.now().isoformat()}]:\n"
         summaries = []
         success_mask = PushInfo.NEW_HEAD | PushInfo.FAST_FORWARD | PushInfo.UP_TO_DATE
         for info in result_all:
             if info:  # result will be None if the push failed entirely
                 if info.flags & success_mask:
-                    summaries.append(f"branch ({info.local_ref}): successfully pushed\n")
+                    summaries.append(f"branch ({info.local_ref}): successfully pushed")
                 else:
-                    summaries.append(f"branch ({info.local_ref}): did not push, likely due to changes in GitHub repository\n")
+                    summaries.append(
+                        f"branch ({info.local_ref}): did not push, likely due to changes in GitHub repository"
+                    )
         if not summaries:
-            return "push failed entirely"
-        return "".join(summaries)
+            return timestamp + "push failed entirely"
+        return timestamp + "\n".join(summaries)
+
+
+class GitHubReleaseImporter:
+    def __init__(self, payload: dict):
+        # https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=released#release
+        github_action = payload.get("action")
+        if github_action == "released":
+            # release was published, or a pre-release was changed to a release
+            self.is_new_release = True
+        elif github_action == "edited":
+            # details of a release, pre-release, or draft were edited
+            self.is_new_release = False
+        else:
+            raise ValueError("Unhandled action type")
+
+        self.github_release = payload.get("release")
+        self.installation = payload.get("installation")
+        self.repository = payload.get("repository")
+        if not (self.github_release and self.installation and self.repository):
+            raise ValueError("Payload is missing required fields")
+
+        if self.github_release.get("draft") or self.github_release.get("prerelease"):
+            raise ValueError("Draft or pre-release, ignoring")
+
+        self.github_release_id = str(self.github_release.get("id"))
+
+        try:
+            self.remote = CodebaseGitRemote.objects.get(
+                should_import=True,
+                owner=self.repository["owner"]["login"],
+                repo_name=self.repository["name"],
+            )
+            self.codebase = self.remote.mirror.codebase
+        except CodebaseGitRemote.DoesNotExist:
+            raise ValueError("Remote does not exist")
+
+    def import_or_reimport(self) -> bool:
+        if not self.github_release.get("zipball_url"):
+            return self.log_failure("No zipball found in the github release")
+        try:
+            if self.is_new_release:
+                return self.import_new_release()
+            else:
+                return self.reimport_release()
+        except Exception as e:
+            logger.exception(
+                f"Error importing GitHub release with id {self.github_release_id}): {e}"
+            )
+            return self.log_failure("An unexpected error occurred")
+
+    def import_new_release(self) -> bool:
+        # make sure the release doesn't already exist as imported release
+        if self.codebase.releases.filter(
+            imported_package__uid=self.github_release_id
+        ).exists():
+            return self.log_failure("Release already exists")
+
+        # determine version number, make sure it doesn't already exist
+        version_number = self.extract_semver(self.github_release.get("tag_name", ""))
+        if not version_number:
+            version_number = self.extract_semver(self.github_release.get("name", ""))
+        if not version_number:
+            return self.log_failure(
+                "Missing a semantic version number (X.X.X) in the release tag or name"
+            )
+        if self.codebase.releases.filter(version=version_number).exists():
+            return self.log_failure(
+                f"Release with version {version_number} already exists"
+            )
+
+        # create a new imported codebase release
+        with transaction.atomic():
+            package = ImportedReleasePackage.objects.create(
+                uid=self.github_release_id,
+                service=ImportedReleasePackage.Services.GITHUB,
+                name=self.github_release.get("tag_name"),
+                display_name=self.github_release.get("name", ""),
+                html_url=self.github_release.get("html_url", ""),
+                download_url=self.github_release.get("zipball_url", ""),
+                extra_data=self.github_release,
+            )
+            release = CodebaseRelease.objects.create(
+                codebase=self.codebase,
+                submitter=self.codebase.submitter,
+                status=CodebaseRelease.Status.UNPUBLISHED,
+                share_uuid=uuid.uuid4(),
+                version_number=version_number,
+                imported_release_package=package,
+            )
+
+        # download the release package
+        fs_api = release.get_fs_api()
+        fs_api.import_release_package()  # TODO: Needs to re-download as well!
+
+        # extract metadata from the release package and save it to the release
+        codemeta = fs_api.read_codemeta()  # TODO:
+        cff = fs_api.read_cff()  # TODO:
+        # FIXME: do this a little differently, need a more indepth merge
+        # for example, if we get languages [a, b] from codemeta and [b, c] from github
+        # we should get [a, b, c] in the end
+        # might be easier to just have like a function that goes through
+        # all the release fields and tries to pull them from the different sources
+        # each with their own priority
+        # for an api here this would look like:
+        release_fields = ReleaseMetadataConverter(codemeta, cff).convert() # TODO:
+        for attr, value in release_fields.items():
+            setattr(release, attr, value)
+        release.save()
+
+        return self.log_success()
+
+    def reimport_release(self) -> bool:
+        # find the existing release, make sure its unpublished/under review
+        try:
+            release = CodebaseRelease.objects.get(
+                codebase=self.codebase,
+                imported_release_package__uid=self.github_release_id,
+                status__in=[
+                    CodebaseRelease.Status.UNPUBLISHED,
+                    CodebaseRelease.Status.UNDER_REVIEW,
+                ],
+            )
+        except CodebaseRelease.DoesNotExist:
+            return self.log_failure("Release not found or is already published")
+
+        # ignore request if the release package hasn't changed
+        if release.imported_release_package.download_url == self.github_release.get(
+            "zipball_url"
+        ):
+            return False
+
+        # re-import the release package
+        fs_api = release.get_fs_api()
+        fs_api.import_release_package()
+
+        # extract metadata from the release package and save it to the release
+        codemeta = fs_api.read_codemeta()
+        cff = fs_api.read_cff()
+        release_fields = ReleaseMetadataConverter.convert_codemeta(codemeta)
+        release_fields.update(ReleaseMetadataConverter.convert_cff(cff))
+        release_fields.update(ReleaseMetadataConverter.convert_github_repo(self.repository))
+        for attr, value in release_fields.items():
+            setattr(release, attr, value)
+        release.save()
+
+        return self.log_success()
+
+    def extract_semver(self, value) -> str | None:
+        match = re.search(r"v?(\d+\.\d+\.\d+)", value)
+        return match.group(1) if match else None
+
+    def log_failure(self, message: str):
+        self._log(
+            f"Failed to {'' if self.is_new_release else 're-'}import release {self.github_release.get('name')}:\n{message}"
+        )
+        return False
+
+    def log_success(self):
+        self._log(
+            f"Successfully {'' if self.is_new_release else 're-'}imported release {self.github_release.get('name')}"
+        )
+        return True
+
+    def _log(self, message: str):
+        timestamp = f"[{timezone.now().isoformat()}]:\n"
+        self.remote.last_push_log = timestamp + message
+        self.remote.save()
