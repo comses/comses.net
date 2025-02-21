@@ -11,7 +11,9 @@ from django.db import transaction, IntegrityError
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.text import slugify
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView
@@ -52,7 +54,7 @@ from core.views import (
 )
 from core.pagination import SmallResultSetPagination
 from core.serializers import RelatedMemberProfileSerializer
-from .github_integration import GitHubRepoValidator
+from .github_integration import GitHubReleaseImporter, GitHubRepoValidator
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -61,7 +63,7 @@ from .forms import (
     PeerReviewFilterForm,
 )
 from .fs import (
-    FileCategoryDirectories,
+    FileCategories,
     StagingDirectories,
     MessageLevels,
 )
@@ -606,9 +608,7 @@ class CodebaseGitRemoteViewSet(
     def _forward_integrity_error(self, e: IntegrityError):
         msg = str(e)
         if "single_pushable_user_repo" in msg:
-            raise ValidationError(
-                "There can only be one active user-owned repository."
-            )
+            raise ValidationError("There can only be one active user-owned repository.")
         if "single_pushable_org_repo" in msg:
             raise ValidationError(
                 "There can only be one active organization-owned repository."
@@ -627,8 +627,6 @@ class CodebaseGitRemoteViewSet(
             )
         else:
             raise ValidationError("A repository already exists at this location.")
-
-
 
     def update(self, request, *args, **kwargs):
         try:
@@ -677,7 +675,7 @@ class CodebaseGitRemoteViewSet(
             github_account = None
 
         if github_account:
-            installation_url = f"https://github.com/apps/{settings.GITHUB_INTEGRATION_APP_NAME}/installations/new/permissions?target_id={github_account['id']}"
+            installation_url = f"https://github.com/apps/{slugify(settings.GITHUB_INTEGRATION_APP_NAME)}/installations/new/permissions?target_id={github_account['id']}"
             installation = getattr(
                 submitter, "github_integration_app_installation", None
             )
@@ -863,22 +861,19 @@ def github_sync_webhook(request):
             )
             return HttpResponse("OK", status=200)
     elif event == "release":
-        # FIXME: remember, releases we create hit this too, so ignore those (the sender will be the app bot in this case)
+        # always ignore releases created by the integration app
+        if slugify(settings.GITHUB_INTEGRATION_APP_NAME) in payload["sender"]["login"]:
+            return HttpResponse(status=202)
         payload = json.loads(request.body)
-        logger.debug(payload)
-        if (
-            payload["action"] == "released"
-        ):  # release was published, or a pre-release was changed to a release
-            # TODO: create a new CodebaseRelease
-            pass
-        if (
-            payload["action"] == "edited"
-        ):  # details of a release, pre-release, or draft were edited
-            # TODO: check if it matches an existing CodebaseRelease that is not published/review_complete
-            # if so, update the CodebaseRelease
+        try:
+            importer = GitHubReleaseImporter(payload)
+            success = importer.import_or_reimport()
+            if success:
+                return HttpResponse("OK", status=200)
+        except:
             pass
 
-    return HttpResponse("Unhandled event", status=202)
+    return HttpResponse(status=202)
 
 
 class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -1345,7 +1340,7 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
                 r"codebases/(?P<identifier>[\w\-.]+)",
                 r"/releases/(?P<version_number>\d+\.\d+\.\d+)",
                 r"/files/{}/(?P<category>{})".format(
-                    cls.stage.name, "|".join(c.name for c in FileCategoryDirectories)
+                    cls.stage.name, "|".join(c.name for c in FileCategories)
                 ),
             ]
         )
@@ -1356,14 +1351,14 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
         queryset = self.queryset.filter(codebase__identifier=identifier)
         return queryset.accessible(user=self.request.user)
 
-    def get_category(self) -> FileCategoryDirectories:
+    def get_category(self) -> FileCategories:
         category = self.get_parser_context(self.request)["kwargs"]["category"]
         try:
-            return FileCategoryDirectories[category]
+            return FileCategories[category]
         except KeyError:
             raise ValidationError(
                 "Target folder name {} invalid. Must be one of {}".format(
-                    category, list(d.name for d in FileCategoryDirectories)
+                    category, list(d.name for d in FileCategories)
                 )
             )
 

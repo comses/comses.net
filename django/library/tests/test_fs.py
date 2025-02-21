@@ -11,7 +11,7 @@ from core.tests.base import (
     clear_test_shared_folder,
 )
 from library.fs import (
-    FileCategoryDirectories,
+    FileCategories,
     StagingDirectories,
     MessageLevels,
     import_archive,
@@ -52,25 +52,25 @@ class ArchiveExtractorTestCase(TestCase):
         self.assertEqual(len(logs), 2)
         self.assertEqual(
             set(
-                fs_api.list(StagingDirectories.originals, FileCategoryDirectories.code)
+                fs_api.list(StagingDirectories.originals, FileCategories.code)
             ),
             {"nestedcode.zip"},
         )
         # Notice that .DS_Store and .svn folder file are eliminated
         self.assertEqual(
-            set(fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)),
+            set(fs_api.list(StagingDirectories.sip, FileCategories.code)),
             {"src/ex.py", "README.md"},
         )
         fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
-        fs_api.clear_category(FileCategoryDirectories.code)
+        fs_api.clear_category(FileCategories.code)
         self.assertEqual(
             set(
-                fs_api.list(StagingDirectories.originals, FileCategoryDirectories.code)
+                fs_api.list(StagingDirectories.originals, FileCategories.code)
             ),
             set(),
         )
         self.assertEqual(
-            set(fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)),
+            set(fs_api.list(StagingDirectories.sip, FileCategories.code)),
             set(),
         )
 
@@ -79,7 +79,7 @@ class ArchiveExtractorTestCase(TestCase):
         fs_api = self.codebase_release.get_fs_api()
         with open(archive_name, "rb") as f:
             msgs = fs_api.add(
-                FileCategoryDirectories.code, content=f, name="invalid.zip"
+                FileCategories.code, content=f, name="invalid.zip"
             )
         logs, level = msgs.serialize()
         self.assertEqual(level, MessageLevels.error)
@@ -130,7 +130,7 @@ class GitRepoApiTestCase(TestCase):
         self.assertTrue(os.path.exists(api.repo_dir / "CITATION.cff"))
         self.assertTrue(os.path.exists(api.repo_dir / "LICENSE"))
         fs_api = self.release_1.get_fs_api()
-        fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)
+        fs_api.list(StagingDirectories.sip, FileCategories.code)
         for category in ["code", "data", "docs"]:
             self.assertTrue(
                 api.dirs_equal(
@@ -165,7 +165,7 @@ class GitRepoApiTestCase(TestCase):
         self.assertTrue(os.path.exists(api.repo_dir / "CITATION.cff"))
         self.assertTrue(os.path.exists(api.repo_dir / "LICENSE"))
         fs_api = self.release_2.get_fs_api()
-        fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)
+        fs_api.list(StagingDirectories.sip, FileCategories.code)
         for category in ["code", "data", "docs"]:
             self.assertTrue(
                 api.dirs_equal(
@@ -216,7 +216,7 @@ class GitRepoApiTestCase(TestCase):
         self.assertTrue(os.path.exists(api.repo_dir / "CITATION.cff"))
         self.assertTrue(os.path.exists(api.repo_dir / "LICENSE"))
         fs_api = self.release_2.get_fs_api()
-        fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)
+        fs_api.list(StagingDirectories.sip, FileCategories.code)
         for category in ["code", "data", "docs"]:
             self.assertTrue(
                 api.dirs_equal(
@@ -240,7 +240,7 @@ def upload_category(fs_api, release_dir: Path, category: str):
             with filepath.open("rb") as f:
                 relpath = filepath.relative_to(category_path)
                 file_name = str(relpath)
-                fs_api.add(FileCategoryDirectories[category], content=f, name=file_name)
+                fs_api.add(FileCategories[category], content=f, name=file_name)
 
 
 def update_release_from_sample(release, sample_dir, version_number):
