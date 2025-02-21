@@ -6,7 +6,6 @@ import logging
 import os
 import pathlib
 from string import Template
-import uuid
 import semver
 import uuid
 from datetime import timedelta
@@ -57,9 +56,9 @@ from core.view_helpers import get_search_queryset
 from .metadata import CodeMetaConverter, DataCiteConverter, CitationFileFormatConverter
 from .fs import (
     CodebaseReleaseFsApi,
-    ExternalCodebaseReleaseFsApi,
+    ImportedCodebaseReleaseFsApi,
     StagingDirectories,
-    FileCategoryDirectories,
+    FileCategories,
     MessageLevels,
 )
 
@@ -556,7 +555,8 @@ class CodebaseGitRemote(models.Model):
         default=False, help_text="Whether this is a user-owned remote"
     )
     is_preexisting = models.BooleanField(
-        default=False, help_text="Whether this remote was pre-existing or based on a codebase git mirror"
+        default=False,
+        help_text="Whether this remote was pre-existing or based on a codebase git mirror",
     )
     should_push = models.BooleanField(
         default=True, help_text="Whether to push to this remote"
@@ -579,7 +579,7 @@ class CodebaseGitRemote(models.Model):
         on_delete=models.CASCADE,
     )
     last_push_log = models.TextField(blank=True)
-    last_archive_log = models.TextField(blank=True)
+    last_import_log = models.TextField(blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -680,6 +680,8 @@ class CodebaseGitMirror(models.Model):
             **kwargs,
         )
         return remote
+
+
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
@@ -1281,6 +1283,10 @@ class CodebasePublication(models.Model):
 class ImportedReleasePackage(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+    category_manifest = models.JSONField(
+        default=dict,
+        help_text="Maps file paths to categories (code, docs, data, results)",
+    )
 
     class Services(models.TextChoices):
         GITHUB = "github", _("GitHub")
@@ -1351,8 +1357,8 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         """returns only releases that are locally uploaded and not archived from an external service"""
         return self.filter(imported_release_package__isnull=True, **kwargs)
 
-    def external(self, **kwargs):
-        """returns only releases that are archived from an external service such as GitHub"""
+    def imported(self, **kwargs):
+        """returns only releases that are imported from an external service such as GitHub"""
         return self.filter(imported_release_package__isnull=False, **kwargs)
 
     def public(self, **kwargs):
@@ -1673,15 +1679,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def validate_uploaded_files(self):
         fs_api = self.get_fs_api()
         storage = fs_api.get_stage_storage(StagingDirectories.sip)
-        code_msg = self.check_files(storage, FileCategoryDirectories.code)
-        docs_msg = self.check_files(storage, FileCategoryDirectories.docs)
+        code_msg = self.check_files(storage, FileCategories.code)
+        docs_msg = self.check_files(storage, FileCategories.docs)
         msg = " ".join(m for m in [code_msg, docs_msg] if m)
         if msg:
             raise ValidationError(msg)
         return True
 
     @staticmethod
-    def check_files(storage, category: FileCategoryDirectories):
+    def check_files(storage, category: FileCategories):
         # FIXME: document and/or refactor this API, should raise an exception or ...
         # currently returns an error message or ""
         uploaded_files = []
@@ -1961,7 +1967,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     ) -> CodebaseReleaseFsApi:
         """Factory method to return the appropriate filesystem API for this release."""
         if self.is_imported:
-            return ExternalCodebaseReleaseFsApi.initialize(self)
+            return ImportedCodebaseReleaseFsApi.initialize(self)
         return CodebaseReleaseFsApi.initialize(
             self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
         )
@@ -2087,7 +2093,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             old_codemeta = self.codemeta_snapshot
             self.codemeta_snapshot = self.codemeta.dict(serialize=True)
             super().save(**kwargs)
-
 
             if old_codemeta != self.codemeta_snapshot:
                 if defer_fs:
