@@ -495,7 +495,7 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "is_preexisting",
             "is_active",
             "last_push_log",
-            "last_archive_log",
+            "last_import_log",
         )
         read_only_fields = (
             "id",
@@ -506,7 +506,7 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "is_preexisting",
             "is_active",
             "last_push_log",
-            "last_archive_log",
+            "last_import_log",
         )
 
 

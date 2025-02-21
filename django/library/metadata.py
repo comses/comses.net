@@ -382,6 +382,22 @@ class DataCiteConverter:
         )
 
 
+class ReleaseMetadataConverter:
+    """Extract CoMSES CodebaseRelease metadata from various sources."""
+    def __init__(
+        self,
+        codemeta: CodeMeta | dict = None,
+        cff: CitationFileFormat | dict = None,
+    ):
+        self.codemeta = coerce_codemeta(codemeta)
+        self.cff = coerce_cff(cff)
+
+    def convert(self) -> dict:
+        """return a dictionary with the metadata fields for a codebase release from
+        given sources"""
+        raise NotImplementedError
+
+
 def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> CodeMeta:
     """make sure that codemeta is a CodeMeta object. If we didn't receive anything,
     try to re-generate it from whichever object is given (codebase or release)"""
@@ -398,3 +414,17 @@ def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> C
         except Exception as e:
             raise ValueError("Invalid codemeta dictionary") from e
     raise TypeError("codemeta must be a valid dictionary or CodeMeta instance")
+
+
+def coerce_cff(cff: dict | CitationFileFormat, release=None) -> CitationFileFormat:
+    """make sure that cff is a CitationFileFormat object. If we didn't receive anything,
+    try to re-generate it"""
+    if not cff:
+        if release:
+            cff = CitationFileFormatConverter.convert_release(release)
+    elif isinstance(cff, dict):
+        try:
+            cff = CitationFileFormat(**cff)
+        except:
+            cff = None
+    return cff

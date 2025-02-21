@@ -421,7 +421,7 @@ export interface CodebaseGitRemote {
   isPreexisting: boolean;
   isActive: boolean;
   lastPushLog: string;
-  lastArchiveLog: string;
+  lastImportLog: string;
 }
 
 export interface CodebaseGitRemoteForm {

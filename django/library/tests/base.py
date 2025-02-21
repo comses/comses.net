@@ -5,7 +5,7 @@ import random
 from uuid import UUID
 
 from core.tests.base import ContentModelFactory, UserFactory
-from library.fs import FileCategoryDirectories
+from library.fs import FileCategories
 from library.models import (
     Codebase,
     CodebaseRelease,
@@ -197,8 +197,8 @@ class ReleaseSetup:
             docs_file = io.BytesIO(b"# Documentation")
             docs_file.name = "some_doc_file.md"
             fs_api = draft_release.get_fs_api()
-            fs_api.add(content=code_file, category=FileCategoryDirectories.code)
-            fs_api.add(content=docs_file, category=FileCategoryDirectories.docs)
+            fs_api.add(content=code_file, category=FileCategories.code)
+            fs_api.add(content=docs_file, category=FileCategories.docs)
 
         draft_release.save()
         return draft_release
