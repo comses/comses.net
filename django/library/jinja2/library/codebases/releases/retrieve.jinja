@@ -14,7 +14,7 @@
 
 {%- block head -%}
   <script type="application/ld+json">
-    {{ release.codemeta_json|safe }}
+    {{ release.codemeta_json_str|safe }}
   </script>
   <link id='discourseEmbedUrl' rel='canonical' href='{{release.comses_permanent_url}}'>
   {% if release.live %}
@@ -22,7 +22,7 @@
         https://scholar.google.com/intl/en/scholar/inclusion.html#indexing 
     #}
     <meta name='citation_title' content='{{ release.title }}'>
-    {% for c in codebase.all_contributors -%}
+    {% for c in codebase.all_citable_contributors -%}
     <meta name='citation_author' content='{{ c.name }}'>
         {% if c.email -%}
     <meta name='citation_author_email' content='{{ c.email }}'>
@@ -504,7 +504,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                    {% for related_release in codebase.ordered_releases(has_change_perm) %}
+                    {% for related_release in codebase.ordered_releases_list(has_change_perm, asc=False) %}
                         <tr>
                             <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a></td>
                             <td>
