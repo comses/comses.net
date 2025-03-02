@@ -52,6 +52,25 @@ div.activity {
   padding: 10px 5px 10px 5px;
 }
 
+.latest-peer-reviewed-models{
+  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5),
+    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
+  background-color: #ffffff;
+  background: url("../assets/images/background-featured-content.png") repeat top center;
+  overflow: hidden;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  vertical-align: middle;
+  margin-top: 85px;
+  font-family: "Open Sans", sans-serif;
+  color: $white;
+  font-weight: 300;
+
+  h1 {
+    text-align: center;
+  }
+}
+
 .featured-content {
   box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5),
     inset 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
@@ -97,19 +116,38 @@ div.activity {
 }
 
 .community {
-  padding-top: $default-padding;
-  padding-bottom: $default-padding;
+  padding: 50px 0;
+  background-color: #f9f9f9;
 
-  h1 {
-    text-align: center;
-    padding-bottom: 1.5rem;
-  }
-
-  .row {
-    padding-top: 30px;
-    padding-bottom: 30px;
+  h1{
+    font-size: 2.5rem;
   }
 }
+
+.container-fluid .row {
+  justify-content: center;
+  gap: 100px; /* gap between columns */
+}
+
+.community-box {
+  max-width: 500px; 
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+.activity h4 {
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.activity p, .activity small {
+  font-size: 0.85rem;
+  color: #666;
+}
+
 
 #search-dropdown {
   .dropdown-toggle::after {
@@ -174,5 +212,51 @@ footer.footer {
       color: $link-color;
       text-decoration: none;
     }
+  }
+}
+
+/* left half of featured models section*/
+.left-section {
+  //background-color: #f8f9fa; 
+  padding: 20px;
+}
+
+/* buttons on homepage */
+.btn-outline-dark {
+  width: 80%; 
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.btn-outline-light {
+  width: 80%; 
+  padding: 30px;
+  font-size: 1rem;
+}
+
+.latest-peer-reviewed-description {
+  font-size: 0.85rem;
+}
+
+.latest-peer-reviewed-image {
+  object-fit: contain; 
+}
+
+.extra-resources {
+  
+  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5),
+    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
+  background: url("../assets/images/background-introduction.png") repeat top center;
+  overflow: hidden;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  vertical-align: middle;
+  margin-top: 85px;
+  font-family: "Open Sans", sans-serif;
+  color: $white;
+  font-weight: 300;
+
+  h1{
+    text-align: center;
   }
 }
