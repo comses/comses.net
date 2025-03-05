@@ -349,19 +349,11 @@ class GitHubReleaseImporter:
 
         # download the release package
         fs_api = release.get_fs_api()
-        fs_api.import_release_package()  # TODO: Needs to re-download as well!
-
+        fs_api.import_release_package()
         # extract metadata from the release package and save it to the release
-        codemeta = fs_api.read_codemeta()  # TODO:
-        cff = fs_api.read_cff()  # TODO:
-        # FIXME: do this a little differently, need a more indepth merge
-        # for example, if we get languages [a, b] from codemeta and [b, c] from github
-        # we should get [a, b, c] in the end
-        # might be easier to just have like a function that goes through
-        # all the release fields and tries to pull them from the different sources
-        # each with their own priority
-        # for an api here this would look like:
-        release_fields = ReleaseMetadataConverter(codemeta, cff).convert() # TODO:
+        codemeta = fs_api.read_codemeta()
+        cff = fs_api.read_cff()
+        release_fields = ReleaseMetadataConverter(codemeta, cff).convert()
         for attr, value in release_fields.items():
             setattr(release, attr, value)
         release.save()
