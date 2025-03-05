@@ -1,4 +1,6 @@
+from abc import ABC, abstractmethod
 import json
+import requests
 import yaml
 import logging
 import mimetypes
@@ -51,6 +53,7 @@ class FileCategories(Enum):
     media = 4
     originals = 5
     results = 6
+    metadata = 7
 
 
 @total_ordering
@@ -347,11 +350,13 @@ class CodebaseReleaseSipStorage(CodebaseReleaseStorage):
 class CodebaseReleaseAipStorage(CodebaseReleaseStorage):
     """Places files from the sip folder into aip"""
 
+    stage = StagingDirectories.aip
+
     def import_sip(self, sip_storage: CodebaseReleaseSipStorage):
         shutil.copytree(sip_storage.location, self.location)
 
 
-class CodebaseReleaseFsApi:
+class BaseCodebaseReleaseFsApi(ABC):
     """
     Interface to maintain files associated with a codebase
 
@@ -571,9 +576,6 @@ class CodebaseReleaseFsApi:
         return False
 
     def build_published_archive(self, force=False):
-        """
-        FIXME: some of this should be moved to an async processing task.
-        """
         self.create_or_update_codemeta(force=force)
         self.create_or_update_citation_cff(force=force)
         self.create_or_update_license(force=force)
@@ -614,19 +616,97 @@ class CodebaseReleaseFsApi:
     def review_archive_size(self):
         return self.review_archivepath.stat().st_size
 
-    def clear_category(self, category: FileCategories):
-        originals_storage = self.get_originals_storage()
-        originals_storage.clear_category(category)
-        sip_storage = self.get_sip_storage()
-        sip_storage.clear_category(category)
-
+    @abstractmethod
     def list(
         self, stage: StagingDirectories, category: Optional[FileCategories]
+    ) -> list[str]:
+        pass
+
+    @abstractmethod
+    def list_sip_contents(self, path=None) -> dict:
+        pass
+
+    @abstractmethod
+    def retrieve(
+        self,
+        stage: StagingDirectories,
+        category: FileCategories,
+        relpath: Path,
     ):
+        pass
+
+    def get_or_create_sip_bag(self, bagit_info=None):
+        sip_dir = str(self.sip_dir)
+        logger.info("creating bagit metadata at %s", sip_dir)
+        bag = fs.make_bag(sip_dir, bagit_info)
+        bag.save(manifests=True)
+        return bag
+
+    def build_aip(self, sip_dir: Optional[str] = None):
+        logger.info("building aip")
+        if sip_dir is None:
+            sip_dir = str(self.sip_dir)
+        shutil.rmtree(str(self.aip_dir), ignore_errors=True)
+        shutil.copytree(sip_dir, str(self.aip_dir))
+
+    def build_archive_at_dest(self, dest):
+        logger.info("building archive")
+        self.build_aip()
+        if self.aip_contents_dir.exists():
+            with zipfile.ZipFile(dest, "w") as archive:
+                for root_path, dirs, file_paths in os.walk(str(self.aip_contents_dir)):
+                    for file_path in file_paths:
+                        path = Path(root_path, file_path)
+                        archive.write(
+                            str(path),
+                            arcname=str(path.relative_to(self.aip_contents_dir)),
+                        )
+            logger.info("building archive succeeded")
+            return True
+        else:
+            logger.error("building archive failed - no aip directory")
+            return False
+
+    def build_archive(self, force=False):
+        if not self.archivepath.exists() or force:
+            self.build_archive_at_dest(dest=str(self.archivepath))
+
+    def create_or_update_metadata_files(self, force=False):
+        self.create_or_update_codemeta(force=force)
+        self.create_or_update_citation_cff(force=force)
+        self.create_or_update_license(force=force)
+
+    def rebuild_metadata(self):
+        self.create_or_update_metadata_files(force=True)
+        # only rebuild the archive package if it already exists
+        if self.aip_dir.exists():
+            self.build_archive(force=True)
+
+
+class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
+
+    def __init__(
+        self,
+        codebase_release,
+        system_file_presence_message_level=MessageLevels.error,
+        mimetype_mismatch_message_level=MessageLevels.error,
+    ):
+        if codebase_release.codebase.is_imported:
+            raise ValueError("CodebaseRelease must be a non-imported release")
+        super().__init__(
+            codebase_release,
+            system_file_presence_message_level,
+            mimetype_mismatch_message_level,
+        )
+
+    def list(self, stage, category):
         stage_storage = self.get_stage_storage(stage)
         return [str(p) for p in stage_storage.list(category)]
 
     def list_sip_contents(self, path=None):
+        """recursively build a tree representing the SIP contents.
+        Each node includes a label (file name), path (relative to sip contents), and category
+        """
         if path is None:
             path = self.sip_contents_dir
             name = "archive-project-root"
@@ -637,39 +717,29 @@ class CodebaseReleaseFsApi:
             if p.is_dir():
                 contents["contents"].append(self.list_sip_contents(p))
             else:
-                contents["contents"].append({"label": p.name})
+                try:
+                    rel_parent = p.parent.relative_to(self.sip_contents_dir)
+                    category_str = (
+                        str(rel_parent)
+                        if rel_parent != Path(".")
+                        else FileCategories.metadata.name
+                    )
+                except ValueError:
+                    # parent is not a subdirectory of sip_contents_dir
+                    category_str = FileCategories.metadata.name
+                contents["contents"].append(
+                    {
+                        "label": p.name,
+                        "path": str(p.relative_to(self.sip_contents_dir)),
+                        "category": category_str,
+                    }
+                )
         return contents
 
-    def retrieve(
-        self,
-        stage: StagingDirectories,
-        category: FileCategories,
-        relpath: Path,
-    ):
+    def retrieve(self, stage, category, relpath):
         stage_storage = self.get_stage_storage(stage)
         relpath = Path(category.name, relpath)
         return stage_storage.open(str(relpath))
-
-    def delete(self, category: FileCategories, relpath: Path):
-        originals_storage = self.get_originals_storage()
-        sip_storage = self.get_sip_storage()
-        relpath = Path(category.name, relpath)
-        logs = MessageGroup()
-        if originals_storage.is_archive_directory(category):
-            self.clear_category(category)
-        else:
-            if not originals_storage.exists(str(relpath)):
-                logs.append(
-                    create_fs_message(
-                        f"No file at path {relpath} to delete",
-                        StagingDirectories.originals,
-                        MessageLevels.error,
-                    )
-                )
-                return logs
-            logs.append(sip_storage.log_delete(str(relpath)))
-            logs.append(originals_storage.log_delete(str(relpath)))
-        return logs
 
     def _add_to_sip(self, name, content, category: FileCategories):
         sip_storage = self.get_sip_storage()
@@ -680,18 +750,38 @@ class CodebaseReleaseFsApi:
         else:
             return sip_storage.log_save(name=name, content=content)
 
-    def add_category(self, category: FileCategories, src):
-        logger.info("adding category %s", category.name)
-        originals_storage = self.get_originals_storage()
+    def build_sip(self) -> MessageGroup:
+        logger.info("building sip")
+        originals_storage = self.get_originals_storage(self.originals_dir)
+        sip_storage = self.get_sip_storage()
+        sip_storage.clear()
+
         msgs = self._create_msg_group()
-        for dirpath, dirnames, filenames in os.walk(src):
-            for filename in filenames:
-                filename = os.path.join(dirpath, filename)
-                name = os.path.join(category.name, str(Path(filename).relative_to(src)))
-                logger.debug("adding file %s", name)
-                with open(filename, "rb") as content:
-                    msgs.append(originals_storage.log_save(name, content))
+        for name in originals_storage.list():
+            path = self.originals_dir.joinpath(name)
+            logger.debug("adding file: %s", path.relative_to(self.originals_dir))
+            category = get_category(Path(name).parts[0])
+            with File(path.open("rb")) as f:
+                msgs.append(
+                    self._add_to_sip(name=str(name), content=f, category=category)
+                )
+
         return msgs
+
+    def rebuild(self) -> MessageGroup:
+        """rebuild the submission package and archive if it already exists"""
+        msgs = self.build_sip()
+        self.create_or_update_metadata_files(force=True)
+        # only rebuild the archive package if it already exists
+        if self.aip_dir.exists():
+            self.build_archive(force=True)
+        return msgs
+
+    def clear_category(self, category: FileCategories):
+        originals_storage = self.get_originals_storage()
+        originals_storage.clear_category(category)
+        sip_storage = self.get_sip_storage()
+        sip_storage.clear_category(category)
 
     def add(self, category: FileCategories, content, name=None):
         if name is None:
@@ -727,136 +817,184 @@ class CodebaseReleaseFsApi:
                 ) as file_content:
                     self.add(category, file_content, name=relpath)
 
-    def get_or_create_sip_bag(self, bagit_info=None):
-        sip_dir = str(self.sip_dir)
-        logger.info("creating bagit metadata at %s", sip_dir)
-        bag = fs.make_bag(sip_dir, bagit_info)
-        bag.save(manifests=True)
-        return bag
+    def delete(self, category: FileCategories, relpath: Path):
+        originals_storage = self.get_originals_storage()
+        sip_storage = self.get_sip_storage()
+        relpath = Path(category.name, relpath)
+        logs = MessageGroup()
+        if originals_storage.is_archive_directory(category):
+            self.clear_category(category)
+        else:
+            if not originals_storage.exists(str(relpath)):
+                logs.append(
+                    create_fs_message(
+                        f"No file at path {relpath} to delete",
+                        StagingDirectories.originals,
+                        MessageLevels.error,
+                    )
+                )
+                return logs
+            logs.append(sip_storage.log_delete(str(relpath)))
+            logs.append(originals_storage.log_delete(str(relpath)))
+        return logs
 
-    def build_sip(self, originals_dir: Optional[str] = None):
-        logger.info("building sip")
-        if originals_dir is None:
-            originals_dir = self.originals_dir
-        originals_storage = self.get_originals_storage(originals_dir)
+
+class CategoryManifestManager:
+    def __init__(self, imported_release_package):
+        self.imported_release_package = imported_release_package
+        if not self.data:
+            self.initialize_manifest()
+
+    @property
+    def data(self) -> dict:
+        return self.imported_release_package.category_manifest
+
+    def build(self, file_list: list[Path]):
+        manifest = {}
+        for name in file_list:
+            if name.suffix == ".pdf":
+                manifest[str(name)] = FileCategories.docs.name
+            else:
+                manifest[str(name)] = FileCategories.code.name
+        self.update(manifest)
+
+    def update(self, manifest):
+        self.imported_release_package.category_manifest = manifest
+        self.imported_release_package.save()
+
+    def update_file_category(self, name, category: FileCategories):
+        manifest = self.data
+        manifest[name] = category.name
+        self.update(manifest)
+
+    def remove_file(self, name):
+        manifest = self.data
+        del manifest[name]
+        self.update(manifest)
+
+    def add_file(self, name, category: FileCategories = FileCategories.code):
+        manifest = self.data
+        manifest[name] = category.name
+        self.update(manifest)
+
+
+class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
+
+    def __init__(
+        self,
+        codebase_release,
+        system_file_presence_message_level=MessageLevels.error,
+        mimetype_mismatch_message_level=MessageLevels.error,
+    ):
+        self.imported_release_package = codebase_release.imported_release_package
+        if not self.imported_release_package:
+            raise ValueError("CodebaseRelease must be an imported release")
+        super().__init__(
+            codebase_release,
+            system_file_presence_message_level,
+            mimetype_mismatch_message_level,
+        )
+        self.imported_release_package = codebase_release.imported_release_package
+        self.manifest = CategoryManifestManager(self.imported_release_package)
+
+    def list(self, stage=StagingDirectories.sip, category=None):
+        if category is not None:
+            return [
+                str(relpath)
+                for relpath, cat in self.manifest.data.items()
+                if cat == category.name
+            ]
+        else:
+            return list(self.manifest.data.keys())
+
+    def list_sip_contents(self, path=None):
+        """recursively build a tree representing the SIP contents.
+        Each node includes a label (file name), path (relative to sip contents), and category
+        """
+        if path is None:
+            path = self.sip_contents_dir
+            name = "archive-project-root"
+        else:
+            name = path.name
+        contents = {"label": name, "contents": []}
+        for p in path.iterdir():
+            if p.is_dir():
+                contents["contents"].append(self.list_sip_contents(p))
+            else:
+                relpath = p.relative_to(self.sip_contents_dir)
+                category_str = self.manifest.data.get(
+                    str(relpath), FileCategories.metadata.name
+                )
+                contents["contents"].append(
+                    {
+                        "label": p.name,
+                        "path": str(p.relative_to(self.sip_contents_dir)),
+                        "category": category_str,
+                    }
+                )
+        return contents
+
+    def create_or_update_codemeta(self, force=False):
+        created = super().create_or_update_codemeta(force=force)
+        if created:
+            name = str(self.codemeta_path.relative_to(settings.LIBRARY_ROOT))
+            self.manifest.add_file(name, FileCategories.metadata)
+
+    def create_or_update_citation_cff(self, force=False):
+        created = super().create_or_update_citation_cff(force)
+        if created:
+            name = str(self.cff_path.relative_to(settings.LIBRARY_ROOT))
+            self.manifest.add_file(name, FileCategories.metadata)
+
+    def create_or_update_license(self, force=False):
+        created = super().create_or_update_license(force)
+        if created:
+            name = str(self.license_path.relative_to(settings.LIBRARY_ROOT))
+            self.manifest.add_file(name, FileCategories.metadata)
+
+    def download_archive(self, download_url: str) -> Path:
+        """Download a release package archive from a remote URL and
+        places it in the originals stage directory"""
+        originals_storage = self.get_originals_storage()
+        originals_storage.clear()
+        response = requests.get(download_url, stream=True)
+        response.raise_for_status()
+        filename = download_url.split("/")[-1]
+        if not filename.endswith(".zip"):
+            raise ValueError("Downloaded file must be a zip archive")
+        file_path = Path(originals_storage.location) / filename
+        with file_path.open("wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+        logger.info(f"downloaded imported release archive to {file_path}")
+        return file_path
+
+    def extract_to_sip(self, archive_path: Path):
+        """Extract the downloaded release package archive into the SIP storage"""
         sip_storage = self.get_sip_storage()
         sip_storage.clear()
+        if not zipfile.is_zipfile(str(archive_path)):
+            raise ValueError("Archive file must be a zip archive")
+        with zipfile.ZipFile(archive_path, "r") as z:
+            z.extractall(sip_storage.location)
+        logger.info(f"extracted imported release archive to {sip_storage.location}")
 
-        msgs = self._create_msg_group()
-        for name in originals_storage.list():
-            path = self.originals_dir.joinpath(name)
-            logger.debug("adding file: %s", path.relative_to(self.originals_dir))
-            category = get_category(Path(name).parts[0])
-            with File(path.open("rb")) as f:
-                msgs.append(
-                    self._add_to_sip(name=str(name), content=f, category=category)
-                )
+    def import_release_package(self) -> list[str]:
+        download_url = self.imported_release_package.download_url
+        if not download_url:
+            raise ValueError("Imported release package must have a download URL")
+        archive_path = self.download_archive(download_url)
+        self.extract_to_sip(archive_path)
+        sip_contents = list(self.get_sip_storage().list())
+        self.manifest.build(sip_contents)
+        return sip_contents
 
-        return msgs
-
-    def build_aip(self, sip_dir: Optional[str] = None):
-        logger.info("building aip")
-        if sip_dir is None:
-            sip_dir = str(self.sip_dir)
-        shutil.rmtree(str(self.aip_dir), ignore_errors=True)
-        shutil.copytree(sip_dir, str(self.aip_dir))
-
-    def build_archive_at_dest(self, dest):
-        logger.info("building archive")
-        self.build_aip()
-        if self.aip_contents_dir.exists():
-            with zipfile.ZipFile(dest, "w") as archive:
-                for root_path, dirs, file_paths in os.walk(str(self.aip_contents_dir)):
-                    for file_path in file_paths:
-                        path = Path(root_path, file_path)
-                        archive.write(
-                            str(path),
-                            arcname=str(path.relative_to(self.aip_contents_dir)),
-                        )
-            logger.info("building archive succeeded")
-            return True
-        else:
-            logger.error("building archive failed - no aip directory")
-            return False
-
-    def build_archive(self, force=False):
-        if not self.archivepath.exists() or force:
-            self.build_archive_at_dest(dest=str(self.archivepath))
-
-    def rebuild(self, metadata_only=False) -> MessageGroup:
-        """rebuild the submission package and archive if it already exists
-
-        if metadata_only is True, only the metadata files are rebuilt, not the entire package
-        """
-        if not metadata_only:
-            msgs = self.build_sip()
-        else:
-            msgs = self._create_msg_group()
-        self.create_or_update_codemeta(force=True)
-        self.create_or_update_citation_cff(force=True)
-        self.create_or_update_license(force=True)
-        # only rebuild the archive package if it already exists
-        if self.aip_dir.exists():
-            self.build_archive(force=True)
-        return msgs
-
-
-
-"""
-METHODS THAT USE CATEGORY FOR FILE ACCESS:
-
-get_category
-
-CodebaseReleaseStorage:
-clear_category
-list
-
-CodebaseReleaseOriginalStorage:
-validate_file
-has_existing_archive
-is_archive_directory
-get_existing_archive_name
-
-CodebaseReleaseFsApi:
-_add_to_sip
-list
-retrieve
-add
-delete
-add_category
-clear_category
-
-views: What do these call?
-get_absolute_url 
-get_originals_list_url
-get_sip_list_url
-
-ArchiveExtractor
-process
-"""
-
-class ImportedCodebaseReleaseFsApi(CodebaseReleaseFsApi):
-    # TODO:
-    # extract archive and put in /library/slug/releases/id/
-    # extract codemeta and use to build release metadata, BUT replace with our own more complete/correct codemeta?
-    # set to unpublished at first which ensures checking metadata and allows requesting review
-    # upon publishing, build+lock the archive
-
-    # methods that stay the same:
-    # init/initialize()
-
-    # methods that aren't supported
-
-
-    def import_release_package():
+    def read_codemeta(self):
         pass
 
-    def read_codemeta():
+    def read_cff(self):
         pass
-
-    def read_cff():
-        pass
-
 
 
 class CodebaseGitRepositoryApi:
@@ -1275,7 +1413,5 @@ def import_archive(codebase_release, nested_code_folder_name, fs_api=None):
     archive_name = f"{nested_code_folder_name}.zip"
     shutil.make_archive(nested_code_folder_name, "zip", nested_code_folder_name)
     with open(archive_name, "rb") as f:
-        msgs = fs_api.add(
-            FileCategories.code, content=f, name="nestedcode.zip"
-        )
+        msgs = fs_api.add(FileCategories.code, content=f, name="nestedcode.zip")
     return msgs
