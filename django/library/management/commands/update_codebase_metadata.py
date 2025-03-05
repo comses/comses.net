@@ -54,7 +54,7 @@ class Command(BaseCommand):
         for release in releases:
             try:
                 fs_api = release.get_fs_api()
-                fs_api.rebuild(metadata_only=True)
+                fs_api.rebuild_metadata()
             except Exception as e:
                 errors.append((release, e))
         if errors:

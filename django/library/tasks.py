@@ -115,7 +115,7 @@ def update_fs_release_metadata(release_id: int):
     release = CodebaseRelease.objects.get(id=release_id)
     codebase = release.codebase
     fs_api = release.get_fs_api()
-    fs_api.rebuild(metadata_only=True)
+    fs_api.rebuild_metadata()
     # if the release is published and the codebase has a git mirror,
     # update the metadata in the git repository
     if release.is_published and codebase.git_mirror:
