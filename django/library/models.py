@@ -1964,7 +1964,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def get_fs_api(
         self, mimetype_mismatch_message_level=MessageLevels.error
-    ) -> CodebaseReleaseFsApi:
+    ) -> CodebaseReleaseFsApi | ImportedCodebaseReleaseFsApi:
         """Factory method to return the appropriate filesystem API for this release."""
         if self.is_imported:
             return ImportedCodebaseReleaseFsApi.initialize(self)
@@ -2100,7 +2100,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
                     update_fs_release_metadata(self.id)
                 else:
-                    self.get_fs_api().rebuild(metadata_only=True)
+                    self.get_fs_api().rebuild_metadata()
 
     @classmethod
     def get_indexed_objects(cls):
