@@ -30,6 +30,7 @@ from core.serializers import (
     RelatedUserSerializer,
 )
 from .models import (
+    CodebaseGitRemote,
     PeerReviewer,
     ReleaseContributor,
     Codebase,
@@ -475,6 +476,37 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
             "live",
             "peer_reviewed",
             "repository_url",
+        )
+
+
+class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
+    is_active = serializers.ReadOnlyField()
+
+    class Meta:
+        model = CodebaseGitRemote
+        fields = (
+            "id",
+            "owner",
+            "repo_name",
+            "url",
+            "should_push",
+            "should_import",
+            "is_user_repo",
+            "is_preexisting",
+            "is_active",
+            "last_push_log",
+            "last_import_log",
+        )
+        read_only_fields = (
+            "id",
+            "owner",
+            "repo_name",
+            "url",
+            "is_user_repo",
+            "is_preexisting",
+            "is_active",
+            "last_push_log",
+            "last_import_log",
         )
 
 

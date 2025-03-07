@@ -136,7 +136,13 @@ class CodeMetaConverter:
         return dict(
             type_="SoftwareSourceCode",
             name=codebase.title,
-            codeRepository=codebase.repository_url or None,
+            codeRepository=(
+                codebase.git_mirror.remotes.first().url
+                # FIXME: coderepository can be one url, how do we determine priority?
+                if codebase.git_mirror and codebase.git_mirror.remotes.first()
+                else codebase.repository_url
+            )
+            or None,
             applicationCategory="Computational Model",
             citation=[
                 cls.to_textual_creative_work(text)
@@ -371,6 +377,22 @@ class DataCiteConverter:
         )
 
 
+class ReleaseMetadataConverter:
+    """Extract CoMSES CodebaseRelease metadata from various sources."""
+    def __init__(
+        self,
+        codemeta: CodeMeta | dict = None,
+        cff: CitationFileFormat | dict = None,
+    ):
+        self.codemeta = coerce_codemeta(codemeta)
+        self.cff = coerce_cff(cff)
+
+    def convert(self) -> dict:
+        """return a dictionary with the metadata fields for a codebase release from
+        given sources"""
+        raise NotImplementedError
+
+
 def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> CodeMeta:
     """make sure that codemeta is a CodeMeta object. If we didn't receive anything,
     try to re-generate it"""
@@ -385,3 +407,17 @@ def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> C
         except:
             codemeta = None
     return codemeta
+
+
+def coerce_cff(cff: dict | CitationFileFormat, release=None) -> CitationFileFormat:
+    """make sure that cff is a CitationFileFormat object. If we didn't receive anything,
+    try to re-generate it"""
+    if not cff:
+        if release:
+            cff = CitationFileFormatConverter.convert_release(release)
+    elif isinstance(cff, dict):
+        try:
+            cff = CitationFileFormat(**cff)
+        except:
+            cff = None
+    return cff

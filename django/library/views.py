@@ -1,14 +1,21 @@
+import hashlib
+import hmac
 import json
+from allauth.socialaccount.models import SocialAccount
 from django.forms import Form
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.text import slugify
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
@@ -27,6 +34,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import (
     PermissionDenied as DrfPermissionDenied,
     ValidationError,
+    NotFound,
 )
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -46,6 +54,7 @@ from core.views import (
 )
 from core.pagination import SmallResultSetPagination
 from core.serializers import RelatedMemberProfileSerializer
+from .github_integration import GitHubReleaseImporter, GitHubRepoValidator
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -53,12 +62,18 @@ from .forms import (
     PeerReviewerFeedbackEditorForm,
     PeerReviewFilterForm,
 )
-from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
+from .fs import (
+    FileCategories,
+    StagingDirectories,
+    MessageLevels,
+)
 from .models import (
     Codebase,
+    CodebaseGitRemote,
     CodebaseRelease,
     Contributor,
     CodebaseImage,
+    GithubIntegrationAppInstallation,
     License,
     PeerReview,
     PeerReviewer,
@@ -68,6 +83,7 @@ from .models import (
 )
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (
+    CodebaseGitRemoteSerializer,
     CodebaseSerializer,
     CodebaseReleaseSerializer,
     ContributorSerializer,
@@ -80,6 +96,7 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
+from .tasks import build_and_push_codebase_repo, build_and_push_single_remote
 
 import logging
 import pathlib
@@ -561,10 +578,300 @@ class CodebaseVersionRedirectView(RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
-class CodebaseImagePermission(permissions.BasePermission):
+class CanChangeCodebase(permissions.BasePermission):
     def has_permission(self, request, view):
         codebase = get_object_or_404(Codebase, identifier=view.kwargs["identifier"])
         return request.user.has_perm("library.change_codebase", codebase)
+
+
+class CodebaseGitRemoteViewSet(
+    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
+):
+    queryset = CodebaseGitRemote.objects.all()
+    permission_classes = (CanChangeCodebase,)
+    pagination_class = None
+    serializer_class = CodebaseGitRemoteSerializer
+
+    def get_queryset(self):
+        resolved = resolve(self.request.path)
+        identifier = resolved.kwargs["identifier"]
+        return self.queryset.filter(mirror__codebase__identifier=identifier)
+
+    def get_codebase(self):
+        try:
+            return Codebase.objects.get(identifier=self.kwargs.get("identifier"))
+        except Codebase.DoesNotExist:
+            raise NotFound("Codebase not found.")
+
+    def _forward_integrity_error(self, e: IntegrityError):
+        msg = str(e)
+        if "single_pushable_user_repo" in msg:
+            raise ValidationError("There can only be one active user-owned repository.")
+        if "single_pushable_org_repo" in msg:
+            raise ValidationError(
+                "There can only be one active organization-owned repository."
+            )
+        if "single_archivable_repo" in msg:
+            raise ValidationError(
+                "There can only be one repository that releases are being archived from."
+            )
+        if "org_repo_not_archivable" in msg:
+            raise ValidationError(
+                "Repositories in the CoMSES Model Library organization cannot be archived."
+            )
+        if "preexisting_repo_not_pushable" in msg:
+            raise ValidationError(
+                "Pre-existing linked repositories cannot be pushed to."
+            )
+        else:
+            raise ValidationError("A repository already exists at this location.")
+
+    def update(self, request, *args, **kwargs):
+        try:
+            response = super().update(request, *args, **kwargs)
+            # if pushing was turned on, trigger a build and push task for this remote
+            if request.data.get("should_push") == True:
+                codebase_id = self.get_codebase().id
+                remote_id = kwargs["pk"]
+                build_and_push_single_remote(codebase_id, remote_id)
+                response = Response(
+                    status=status.HTTP_202_ACCEPTED,
+                    data="Pushing process started in the background, this should take only a few seconds.",
+                )
+            return response
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if request.accepted_renderer.format == "html":
+            context = {
+                "codebase": self.get_codebase(),
+                "remotes": queryset,
+                "github_org_name": settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
+            }
+            return Response(
+                context,
+                template_name="library/codebases/git.jinja",
+            )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def submitter_installation_status(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        submitter = codebase.submitter
+        installation_url = None
+        social_account = submitter.member_profile.get_social_account("github")
+        if social_account:
+            github_account = {
+                "id": social_account.uid,
+                "username": social_account.extra_data.get("login"),
+                "profile_url": social_account.get_profile_url(),
+            }
+        else:
+            github_account = None
+
+        if github_account:
+            installation_url = f"https://github.com/apps/{slugify(settings.GITHUB_INTEGRATION_APP_NAME)}/installations/new/permissions?target_id={github_account['id']}"
+            installation = getattr(
+                submitter, "github_integration_app_installation", None
+            )
+            if installation:
+                github_account["installation_id"] = installation.installation_id
+
+        return Response(
+            data={
+                "github_account": github_account,
+                "connect_url": reverse("socialaccount_connections"),
+                "installation_url": installation_url,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["post"])
+    def setup_user_github_remote(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        if not codebase.live:
+            raise ValidationError("This model does not have any published releases")
+
+        installation = codebase.submitter.github_integration_app_installation
+        if not installation:
+            raise ValidationError(
+                "Installation of the Github integration app is required"
+            )
+
+        repo_name = request.data.get("repo_name")
+        if not repo_name:
+            raise ValidationError("Repository name is required")
+
+        validator = GitHubRepoValidator(repo_name)
+        try:
+            validator.validate_format()
+            validator.check_user_repo_empty(installation)
+        except ValueError as e:
+            raise ValidationError(str(e))
+
+        # create a mirror if it doesn't exist
+        if not codebase.git_mirror:
+            codebase.create_git_mirror()
+        # set up the user remote
+        try:
+            codebase.git_mirror.create_remote(
+                owner=installation.github_login,
+                repo_name=repo_name,
+                is_user_repo=True,
+                is_preexisting=False,
+                should_push=True,
+                should_import=True,
+            )
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+        # trigger the build and push task
+        build_and_push_codebase_repo(codebase.id)
+        return Response(
+            status=status.HTTP_202_ACCEPTED,
+            data="Pushing process started in the background, this should take only a few seconds.",
+        )
+
+    @action(detail=False, methods=["post"])
+    def setup_user_existing_github_remote(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        installation = codebase.submitter.github_integration_app_installation
+        if not installation:
+            raise ValidationError(
+                "Installation of the Github integration app is required"
+            )
+
+        repo_name = request.data.get("repo_name")
+        if not repo_name:
+            raise ValidationError("Repository name is required")
+
+        validator = GitHubRepoValidator(repo_name)
+        try:
+            validator.validate_format()
+            repo_html_url = validator.get_existing_user_repo_url(installation)
+        except ValueError as e:
+            raise ValidationError(str(e))
+
+        # create a mirror if it doesn't exist
+        if not codebase.git_mirror:
+            codebase.create_git_mirror()
+        # set up the user remote
+        try:
+            codebase.git_mirror.create_remote(
+                owner=installation.github_login,
+                repo_name=repo_name,
+                is_user_repo=True,
+                is_preexisting=True,
+                should_push=False,
+                should_import=True,
+                url=repo_html_url,
+            )
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+        return Response(
+            status=status.HTTP_200_OK,
+            data="Repository remote successfully set up. From now on, releases published on GitHub will be imported to the CoMSES Model Library.",
+        )
+
+    @action(detail=False, methods=["post"])
+    def setup_org_github_remote(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        if not codebase.live:
+            raise ValidationError("This model does not have any published releases")
+
+        repo_name = request.data.get("repo_name")
+        if not repo_name:
+            raise ValidationError("Repository name is required")
+
+        validator = GitHubRepoValidator(repo_name)
+        try:
+            validator.validate_format()
+            validator.check_org_repo_name_unused()
+        except ValueError as e:
+            raise ValidationError(str(e))
+
+        # create a mirror if it doesn't exist
+        if not codebase.git_mirror:
+            codebase.create_git_mirror()
+        # set up the org remote
+        try:
+            codebase.git_mirror.create_remote(
+                owner=settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
+                repo_name=repo_name,
+                is_user_repo=False,
+                is_preeexisting=False,
+                should_push=True,
+                should_import=False,
+            )
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+
+        # trigger the build and push task
+        build_and_push_codebase_repo(codebase.id)
+        return Response(
+            status=status.HTTP_202_ACCEPTED,
+            data="Synchronization process started, this should take only a few seconds. Refresh this page to see the status.",
+        )
+
+
+@csrf_exempt
+def github_sync_webhook(request):
+    """
+    Handle GitHub app webhook events:
+    - new installations (match to connected socialaccount and save the installation record)
+    - new releases (create a new CodebaseRelease)
+    """
+    # verify the request signature
+    signature_header = request.headers.get("X-Hub-Signature-256")
+    if not signature_header:
+        return HttpResponse("Missing signature header", status=403)
+    # FIXME:
+    secret = "use an actual secret token"
+    hash_object = hmac.new(
+        secret.encode("utf-8"),
+        msg=request.body,
+        digestmod=hashlib.sha256,
+    )
+    expected_signature = f"sha256={hash_object.hexdigest()}"
+    if not hmac.compare_digest(expected_signature, signature_header):
+        return HttpResponse("Invalid signature", status=403)
+
+    # parse the event
+    event = request.headers.get("X-GitHub-Event")
+    if event == "installation":
+        payload = json.loads(request.body)
+        sender = payload["sender"]
+        # match based on the uid
+        uid = sender["id"]
+        social_account = SocialAccount.objects.filter(
+            provider="github", uid=str(uid)
+        ).first()
+        if social_account:
+            installation = GithubIntegrationAppInstallation.objects.update_or_create(
+                user=social_account.user,
+                defaults={
+                    "github_user_id": uid,
+                    "github_login": sender["login"],
+                    "installation_id": payload["installation"]["id"],
+                },
+            )
+            return HttpResponse("OK", status=200)
+    elif event == "release":
+        payload = json.loads(request.body)
+        # always ignore releases created by the integration app
+        if slugify(settings.GITHUB_INTEGRATION_APP_NAME) in payload["sender"]["login"]:
+            return HttpResponse(status=202)
+        try:
+            importer = GitHubReleaseImporter(payload)
+            success = importer.import_or_reimport()
+            if success:
+                return HttpResponse("OK", status=200)
+        except:
+            pass
+
+    return HttpResponse(status=202)
 
 
 class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -572,7 +879,7 @@ class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_value_regex = r"\d+"
     queryset = CodebaseImage.objects.all()
     serializer_class = CodebaseImageSerializer
-    permission_classes = (CodebaseImagePermission,)
+    permission_classes = (CanChangeCodebase,)
 
     def get_queryset(self):
         resolved = resolve(self.request.path)
@@ -882,6 +1189,17 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         - Create a new "under review" draft release if the release from which the request was made is published
         - Otherwise, update the existing draft release to be "under review"
         - Create a new peer review object and send an email to the author
+
+        FIXME: external release problem!!!!!!!!!!! ==========================
+        - always come in published (zipball is archived + locked)
+        - set to under_review status (zipball is unlocked, updates to release are allowed)
+        - if changes are requested, instruct submitter to make changes on github, re-tag, and update the release (v1.0.0 -> v1.0.0-pr1)
+        - peer review completes, zipball is locked, release is updated to published
+
+        * system MUST detect updates to release such as tag_name change and update record accordingly
+
+
+        =====================================================================
         """
         codebase_release = get_object_or_404(
             CodebaseRelease,
@@ -1020,7 +1338,7 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
                 r"codebases/(?P<identifier>[\w\-.]+)",
                 r"/releases/(?P<version_number>\d+\.\d+\.\d+)",
                 r"/files/{}/(?P<category>{})".format(
-                    cls.stage.name, "|".join(c.name for c in FileCategoryDirectories)
+                    cls.stage.name, "|".join(c.name for c in FileCategories)
                 ),
             ]
         )
@@ -1031,14 +1349,14 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
         queryset = self.queryset.filter(codebase__identifier=identifier)
         return queryset.accessible(user=self.request.user)
 
-    def get_category(self) -> FileCategoryDirectories:
+    def get_category(self) -> FileCategories:
         category = self.get_parser_context(self.request)["kwargs"]["category"]
         try:
-            return FileCategoryDirectories[category]
+            return FileCategories[category]
         except KeyError:
             raise ValidationError(
                 "Target folder name {} invalid. Must be one of {}".format(
-                    category, list(d.name for d in FileCategoryDirectories)
+                    category, list(d.name for d in FileCategories)
                 )
             )
 
