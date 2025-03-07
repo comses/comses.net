@@ -358,11 +358,7 @@ class CodebaseReleaseAipStorage(CodebaseReleaseStorage):
 
 class BaseCodebaseReleaseFsApi(ABC):
     """
-    Interface to maintain files associated with a codebase
-
-    FIXME: This is not currently protected against concurrent file access but only the submitter can edit files
-    associated with a codebase release at the moment. Will need to implement file locks if/when this assumption fails to
-    hold
+    Base interface to maintain files associated with a codebase release
     """
 
     def __init__(
@@ -524,7 +520,10 @@ class BaseCodebaseReleaseFsApi(ABC):
         mimetype_mismatch_message_level=MessageLevels.error,
         bagit_info=None,
     ):
-        fs_api = CodebaseReleaseFsApi(
+        """Initialize a new FS Api instance for a codebase release, including creating
+        the SIP directory and bagging the contents if it does not already exist
+        """
+        fs_api = cls(
             codebase_release,
             system_file_presence_message_level=system_file_presence_message_level,
             mimetype_mismatch_message_level=mimetype_mismatch_message_level,
@@ -617,9 +616,7 @@ class BaseCodebaseReleaseFsApi(ABC):
         return self.review_archivepath.stat().st_size
 
     @abstractmethod
-    def list(
-        self, stage: StagingDirectories, category: Optional[FileCategories]
-    ) -> list[str]:
+    def list(self, stage: StagingDirectories, category: Optional[FileCategories]):
         pass
 
     @abstractmethod
@@ -627,12 +624,10 @@ class BaseCodebaseReleaseFsApi(ABC):
         pass
 
     @abstractmethod
-    def retrieve(
-        self,
-        stage: StagingDirectories,
-        category: FileCategories,
-        relpath: Path,
-    ):
+    def check_category_file_exists(self, category: FileCategories) -> bool:
+        """returns True if at least one file with the given category exists
+        in the sip storage, False otherwise
+        """
         pass
 
     def get_or_create_sip_bag(self, bagit_info=None):
@@ -684,6 +679,13 @@ class BaseCodebaseReleaseFsApi(ABC):
 
 
 class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
+    """
+    File system API for managing a non-imported (regular, directly uploaded) codebase release.
+
+    NOTE: This is not currently protected against concurrent file access but only the submitter can edit files
+    associated with a codebase release at the moment. Will need to implement file locks if/when this assumption fails to
+    hold
+    """
 
     def __init__(
         self,
@@ -691,7 +693,7 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         system_file_presence_message_level=MessageLevels.error,
         mimetype_mismatch_message_level=MessageLevels.error,
     ):
-        if codebase_release.codebase.is_imported:
+        if codebase_release.is_imported:
             raise ValueError("CodebaseRelease must be a non-imported release")
         super().__init__(
             codebase_release,
@@ -736,7 +738,18 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
                 )
         return contents
 
-    def retrieve(self, stage, category, relpath):
+    def check_category_file_exists(self, category):
+        sip_storage = self.get_sip_storage()
+        category_dir_exists = sip_storage.exists(category.name)
+        category_dir_list = list(sip_storage.list(category))
+        return category_dir_exists and bool(category_dir_list)
+
+    def retrieve(
+        self,
+        stage: StagingDirectories,
+        category: FileCategories,
+        relpath: Path,
+    ):
         stage_storage = self.get_stage_storage(stage)
         relpath = Path(category.name, relpath)
         return stage_storage.open(str(relpath))
@@ -842,8 +855,6 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
 class CategoryManifestManager:
     def __init__(self, imported_release_package):
         self.imported_release_package = imported_release_package
-        if not self.data:
-            self.initialize_manifest()
 
     @property
     def data(self) -> dict:
@@ -879,6 +890,13 @@ class CategoryManifestManager:
 
 
 class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
+    """
+    File system API for managing an imported (i.e. from a GitHub release) codebase release.
+
+    NOTE: This is not currently protected against concurrent file access but only the submitter can edit files
+    associated with a codebase release at the moment. Will need to implement file locks if/when this assumption fails to
+    hold
+    """
 
     def __init__(
         self,
@@ -934,34 +952,45 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
                 )
         return contents
 
+    def check_category_file_exists(self, category):
+        return category.name in set(self.manifest.data.values())
+
     def create_or_update_codemeta(self, force=False):
         created = super().create_or_update_codemeta(force=force)
         if created:
-            name = str(self.codemeta_path.relative_to(settings.LIBRARY_ROOT))
+            name = str(self.codemeta_path.relative_to(self.sip_contents_dir))
             self.manifest.add_file(name, FileCategories.metadata)
 
     def create_or_update_citation_cff(self, force=False):
         created = super().create_or_update_citation_cff(force)
         if created:
-            name = str(self.cff_path.relative_to(settings.LIBRARY_ROOT))
+            name = str(self.cff_path.relative_to(self.sip_contents_dir))
             self.manifest.add_file(name, FileCategories.metadata)
 
     def create_or_update_license(self, force=False):
         created = super().create_or_update_license(force)
         if created:
-            name = str(self.license_path.relative_to(settings.LIBRARY_ROOT))
+            name = str(self.license_path.relative_to(self.sip_contents_dir))
             self.manifest.add_file(name, FileCategories.metadata)
 
-    def download_archive(self, download_url: str) -> Path:
+    def download_archive(self, download_url: str, installation_token: str) -> Path:
         """Download a release package archive from a remote URL and
         places it in the originals stage directory"""
         originals_storage = self.get_originals_storage()
+        if not os.path.exists(originals_storage.location):
+            os.makedirs(originals_storage.location, exist_ok=True)
         originals_storage.clear()
-        response = requests.get(download_url, stream=True)
+        headers = {
+            "Authorization": f"Bearer {installation_token}",
+        }
+        response = requests.get(download_url, headers=headers, stream=True)
         response.raise_for_status()
-        filename = download_url.split("/")[-1]
-        if not filename.endswith(".zip"):
-            raise ValueError("Downloaded file must be a zip archive")
+        cd = response.headers.get("content-disposition")
+        if cd and "filename=" in cd:
+            filename = re.findall("filename=(.+)", cd)[0]
+        else:
+            tag_name = self.imported_release_package.tag_name
+            filename = f"{tag_name}.zip"
         file_path = Path(originals_storage.location) / filename
         with file_path.open("wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
@@ -976,25 +1005,24 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         sip_storage.clear()
         if not zipfile.is_zipfile(str(archive_path)):
             raise ValueError("Archive file must be a zip archive")
-        with zipfile.ZipFile(archive_path, "r") as z:
-            z.extractall(sip_storage.location)
+        extract_zip_without_top_dir(archive_path, Path(sip_storage.location))
         logger.info(f"extracted imported release archive to {sip_storage.location}")
 
-    def import_release_package(self) -> list[str]:
+    def import_release_package(self, installation_token: str):
         download_url = self.imported_release_package.download_url
         if not download_url:
             raise ValueError("Imported release package must have a download URL")
-        archive_path = self.download_archive(download_url)
+        archive_path = self.download_archive(download_url, installation_token)
         self.extract_to_sip(archive_path)
         sip_contents = list(self.get_sip_storage().list())
         self.manifest.build(sip_contents)
         return sip_contents
 
-    def read_codemeta(self):
-        pass
+    def read_codemeta(self) -> dict:
+        return {}
 
-    def read_cff(self):
-        pass
+    def read_cff(self) -> dict:
+        return {}
 
 
 class CodebaseGitRepositoryApi:
@@ -1415,3 +1443,22 @@ def import_archive(codebase_release, nested_code_folder_name, fs_api=None):
     with open(archive_name, "rb") as f:
         msgs = fs_api.add(FileCategories.code, content=f, name="nestedcode.zip")
     return msgs
+
+
+def extract_zip_without_top_dir(zip_path: Path, extract_to: Path):
+    """extract a zip archive to a directory, removing the top-level directory"""
+    with zipfile.ZipFile(zip_path, "r") as z:
+        all_names = [m.filename for m in z.infolist()]
+        top_level = os.path.commonprefix(all_names).rstrip("/")
+        # remove the top-level dir from each path and extract
+        for member in z.infolist():
+            relative_path = os.path.relpath(member.filename, top_level)
+            if relative_path == ".":  # skip top-level dir
+                continue
+            target_path = extract_to / relative_path
+            if member.is_dir():
+                target_path.mkdir(parents=True, exist_ok=True)
+            else:
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                with target_path.open("wb") as f:
+                    f.write(z.read(member))
