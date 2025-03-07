@@ -66,7 +66,7 @@
     </div>
   </div>
   <div v-if="showLog" class="mt-3 d-flex">
-    <div v-if="remote.lastPushLog" class="card p-2">
+    <div v-if="remote.lastPushLog" class="card p-2 flex-fill">
       <b><u>Push</u></b>
       <pre class="mb-0" style="white-space: pre-line; text-align: left">
         <small>
@@ -74,8 +74,8 @@
         </small>
       </pre>
     </div>
-    <div v-if="remote.lastImportLog" class="card p-2">
-      <b><u>Push</u></b>
+    <div v-if="remote.lastImportLog" class="card p-2 flex-fill">
+      <b><u>Import</u></b>
       <pre class="mb-0" style="white-space: pre-line; text-align: left">
         <small>
           {{ remote.lastImportLog }}
