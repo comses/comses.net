@@ -859,10 +859,10 @@ def github_sync_webhook(request):
             )
             return HttpResponse("OK", status=200)
     elif event == "release":
+        payload = json.loads(request.body)
         # always ignore releases created by the integration app
         if slugify(settings.GITHUB_INTEGRATION_APP_NAME) in payload["sender"]["login"]:
             return HttpResponse(status=202)
-        payload = json.loads(request.body)
         try:
             importer = GitHubReleaseImporter(payload)
             success = importer.import_or_reimport()
