@@ -265,10 +265,10 @@ class GitHubReleaseImporter:
         github_action = payload.get("action")
         if github_action == "released":
             # release was published, or a pre-release was changed to a release
-            self.is_new_release = True
+            self.is_new_github_release = True
         elif github_action == "edited":
             # details of a release, pre-release, or draft were edited
-            self.is_new_release = False
+            self.is_new_github_release = False
         else:
             raise ValueError("Unhandled action type")
 
@@ -293,14 +293,28 @@ class GitHubReleaseImporter:
         except CodebaseGitRemote.DoesNotExist:
             raise ValueError("Remote does not exist")
 
+    @property
+    def installation_token(self):
+        installation = self.codebase.submitter.github_integration_app_installation
+        return GitHubApi.get_user_installation_access_token(installation)
+
     def import_or_reimport(self) -> bool:
         if not self.github_release.get("zipball_url"):
             return self.log_failure("No zipball found in the github release")
+
         try:
-            if self.is_new_release:
-                return self.import_new_release()
+            existing_release = self.codebase.releases.filter(
+                codebase=self.codebase,
+                imported_release_package__uid=self.github_release_id,
+                status__in=[
+                    CodebaseRelease.Status.UNPUBLISHED,
+                    CodebaseRelease.Status.UNDER_REVIEW,
+                ],
+            ).first()
+            if existing_release:
+                return self.reimport_release(existing_release)
             else:
-                return self.reimport_release()
+                return self.import_new_release()
         except Exception as e:
             logger.exception(
                 f"Error importing GitHub release with id {self.github_release_id}): {e}"
@@ -310,7 +324,7 @@ class GitHubReleaseImporter:
     def import_new_release(self) -> bool:
         # make sure the release doesn't already exist as imported release
         if self.codebase.releases.filter(
-            imported_package__uid=self.github_release_id
+            imported_release_package__uid=self.github_release_id
         ).exists():
             return self.log_failure("Release already exists")
 
@@ -322,7 +336,7 @@ class GitHubReleaseImporter:
             return self.log_failure(
                 "Missing a semantic version number (X.X.X) in the release tag or name"
             )
-        if self.codebase.releases.filter(version=version_number).exists():
+        if self.codebase.releases.filter(version_number=version_number).exists():
             return self.log_failure(
                 f"Release with version {version_number} already exists"
             )
@@ -349,50 +363,38 @@ class GitHubReleaseImporter:
 
         # download the release package
         fs_api = release.get_fs_api()
-        fs_api.import_release_package()
+        fs_api.import_release_package(self.installation_token)
+
         # extract metadata from the release package and save it to the release
-        codemeta = fs_api.read_codemeta()
-        cff = fs_api.read_cff()
-        release_fields = ReleaseMetadataConverter(codemeta, cff).convert()
-        for attr, value in release_fields.items():
-            setattr(release, attr, value)
-        release.save()
+        # codemeta = fs_api.read_codemeta()
+        # cff = fs_api.read_cff()
+        # release_fields = ReleaseMetadataConverter(codemeta, cff).convert()
+        # for attr, value in release_fields.items():
+        #     setattr(release, attr, value)
+        # release.save()
 
         return self.log_success()
 
-    def reimport_release(self) -> bool:
-        # find the existing release, make sure its unpublished/under review
-        try:
-            release = CodebaseRelease.objects.get(
-                codebase=self.codebase,
-                imported_release_package__uid=self.github_release_id,
-                status__in=[
-                    CodebaseRelease.Status.UNPUBLISHED,
-                    CodebaseRelease.Status.UNDER_REVIEW,
-                ],
-            )
-        except CodebaseRelease.DoesNotExist:
-            return self.log_failure("Release not found or is already published")
-
+    def reimport_release(self, release) -> bool:
         # ignore request if the release package hasn't changed
-        if release.imported_release_package.download_url == self.github_release.get(
-            "zipball_url"
-        ):
-            return False
+        # unless the release is newly released on github
+        if not self.is_new_github_release:
+            if release.imported_release_package.download_url == self.github_release.get(
+                "zipball_url"
+            ):
+                return False
 
         # re-import the release package
         fs_api = release.get_fs_api()
-        fs_api.import_release_package()
+        fs_api.import_release_package(self.installation_token)
 
         # extract metadata from the release package and save it to the release
-        codemeta = fs_api.read_codemeta()
-        cff = fs_api.read_cff()
-        release_fields = ReleaseMetadataConverter.convert_codemeta(codemeta)
-        release_fields.update(ReleaseMetadataConverter.convert_cff(cff))
-        release_fields.update(ReleaseMetadataConverter.convert_github_repo(self.repository))
-        for attr, value in release_fields.items():
-            setattr(release, attr, value)
-        release.save()
+        # codemeta = fs_api.read_codemeta()
+        # cff = fs_api.read_cff()
+        # release_fields = ReleaseMetadataConverter(codemeta, cff).convert()
+        # for attr, value in release_fields.items():
+        #     setattr(release, attr, value)
+        # release.save()
 
         return self.log_success()
 
@@ -402,17 +404,17 @@ class GitHubReleaseImporter:
 
     def log_failure(self, message: str):
         self._log(
-            f"Failed to {'' if self.is_new_release else 're-'}import release {self.github_release.get('name')}:\n{message}"
+            f"Failed to {'' if self.is_new_github_release else 're-'}import release {self.github_release.get('name')}:\n{message}"
         )
         return False
 
     def log_success(self):
         self._log(
-            f"Successfully {'' if self.is_new_release else 're-'}imported release {self.github_release.get('name')}"
+            f"Successfully {'' if self.is_new_github_release else 're-'}imported release {self.github_release.get('name')}"
         )
         return True
 
     def _log(self, message: str):
         timestamp = f"[{timezone.now().isoformat()}]:\n"
-        self.remote.last_push_log = timestamp + message
+        self.remote.last_import_log = timestamp + message
         self.remote.save()
