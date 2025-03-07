@@ -1678,25 +1678,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def validate_uploaded_files(self):
         fs_api = self.get_fs_api()
-        storage = fs_api.get_stage_storage(StagingDirectories.sip)
-        code_msg = self.check_files(storage, FileCategories.code)
-        docs_msg = self.check_files(storage, FileCategories.docs)
-        msg = " ".join(m for m in [code_msg, docs_msg] if m)
-        if msg:
-            raise ValidationError(msg)
+        missing_categories = []
+        if not fs_api.check_category_file_exists(FileCategories.code):
+            missing_categories.append(FileCategories.code.name)
+        if not fs_api.check_category_file_exists(FileCategories.docs):
+            missing_categories.append(FileCategories.docs.name)
+        if missing_categories:
+            missing_str = " and ".join(missing_categories)
+            raise ValidationError(f"Must have at least one {missing_str} file.")
         return True
-
-    @staticmethod
-    def check_files(storage, category: FileCategories):
-        # FIXME: document and/or refactor this API, should raise an exception or ...
-        # currently returns an error message or ""
-        uploaded_files = []
-        if storage.exists(category.name):
-            uploaded_files = list(storage.list(category))
-        if uploaded_files:
-            return ""
-        else:
-            return f"Must have at least one {category.name} file."
 
     @property
     def version_info(self):
@@ -2089,18 +2079,23 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         if not rebuild_metadata:
             super().save(**kwargs)
         else:
-            logger.debug("Building codemeta for release: %s", self)
-            old_codemeta = self.codemeta_snapshot
-            self.codemeta_snapshot = self.codemeta.dict(serialize=True)
-            super().save(**kwargs)
+            if not self.pk:
+                # do not mess with the filesystem if this is a new release
+                self.codemeta_snapshot = self.codemeta.dict(serialize=True)
+                super().save(**kwargs)
+            else:
+                logger.debug("Building codemeta for release: %s", self)
+                old_codemeta = self.codemeta_snapshot
+                self.codemeta_snapshot = self.codemeta.dict(serialize=True)
+                super().save(**kwargs)
 
-            if old_codemeta != self.codemeta_snapshot:
-                if defer_fs:
-                    from .tasks import update_fs_release_metadata
+                if old_codemeta != self.codemeta_snapshot:
+                    if defer_fs:
+                        from .tasks import update_fs_release_metadata
 
-                    update_fs_release_metadata(self.id)
-                else:
-                    self.get_fs_api().rebuild_metadata()
+                        update_fs_release_metadata(self.id)
+                    else:
+                        self.get_fs_api().rebuild_metadata()
 
     @classmethod
     def get_indexed_objects(cls):
