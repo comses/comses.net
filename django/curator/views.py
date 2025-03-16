@@ -1,15 +1,34 @@
-from django.contrib.auth.decorators import permission_required
+import bleach
 from django.contrib import messages
+from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.http import require_POST
+from djangorestframework_camel_case.render import CamelCaseJSONRenderer
+from rest_framework import status
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+    renderer_classes,
+)
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from wagtail_modeladmin.helpers import AdminURLHelper
 
+from core.models import SpamModeration
+from curator.auth import APIKeyAuthentication
 from curator.models import TagCleanup
 from curator.wagtail_hooks import TagCleanupAction
-from core.models import SpamModeration
-
-import bleach
+from .serializers import (
+    MinimalCodebaseSerializer,
+    MinimalEventSerializer,
+    MinimalJobSerializer,
+    MinimalMemberProfileSerializer,
+    SpamModerationSerializer,
+    SpamUpdateSerializer,
+)
 
 TAG_CLEANUP_ACTIONS = {
     TagCleanupAction.process.name: TagCleanup.objects.process,
@@ -60,3 +79,96 @@ def reject_spam_view(request, instance_id):
     spam_moderation.save()
     messages.success(request, "Content marked as not spam.")
     return HttpResponseRedirect(AdminURLHelper(SpamModeration).index_url)
+
+
+@api_view(["GET"])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([AllowAny])
+@renderer_classes([CamelCaseJSONRenderer])
+def get_latest_spam_batch(request):
+
+    # Get SpamModeration records with status SCHEDULED_FOR_CHECK
+    latest_spam_batch = (
+        SpamModeration.objects.filter(status=SpamModeration.Status.SCHEDULED_FOR_CHECK)
+        .select_related("content_type")
+        .prefetch_related("content_object")[:100]
+    )
+
+    # Serialize the data needed for the spam check
+    serialized_data = []
+    for spam_moderation in latest_spam_batch:
+        content_object = spam_moderation.content_object
+        content_type = spam_moderation.content_type.model
+
+        if content_type == "job":
+            content_serializer = MinimalJobSerializer(content_object)
+        elif content_type == "event":
+            content_serializer = MinimalEventSerializer(content_object)
+        elif content_type == "codebase":
+            content_serializer = MinimalCodebaseSerializer(content_object)
+        elif content_type == "memberprofile":
+            content_serializer = MinimalMemberProfileSerializer(content_object)
+        else:
+            continue
+
+        spam_content_to_check = SpamModerationSerializer(spam_moderation).data
+        spam_content_to_check["content_object"] = content_serializer.data
+
+        serialized_data.append(spam_content_to_check)
+
+    return Response(serialized_data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@authentication_classes([APIKeyAuthentication])
+@permission_classes([AllowAny])
+@renderer_classes([CamelCaseJSONRenderer])
+def update_spam_moderation(request):
+    serializer = SpamUpdateSerializer(data=request.data)
+    if serializer.is_valid():
+        data = serializer.validated_data
+        try:
+            spam_moderation = SpamModeration.objects.get(
+                id=data["id"],
+            )
+        except ObjectDoesNotExist:
+            return Response(
+                {"error": "SpamModeration object not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Update SpamModeration object
+        spam_moderation.status = (
+            SpamModeration.Status.SPAM_LIKELY
+            if data["is_spam"]
+            else SpamModeration.Status.NOT_SPAM_LIKELY
+        )
+        spam_moderation.detection_method = "LLM"
+
+        current_details = (
+            spam_moderation.detection_details
+            if spam_moderation.detection_details
+            else {}
+        )
+        new_details = {
+            "spam_indicators": data.get("spam_indicators", []),
+            "reasoning": data.get("reasoning", ""),
+            "confidence": data.get("confidence", None),
+        }
+        current_details.update(new_details)
+        spam_moderation.detection_details = current_details
+
+        spam_moderation.save()
+
+        # Update the related content object
+        content_object = spam_moderation.content_object
+        if hasattr(content_object, "is_marked_spam"):
+            content_object.is_marked_spam = data["is_spam"]
+            content_object.save()
+
+        return Response(
+            {"message": "SpamModeration updated successfully"},
+            status=status.HTTP_200_OK,
+        )
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

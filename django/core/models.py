@@ -8,9 +8,9 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
-from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
@@ -134,13 +134,15 @@ class SiteSettings(BaseSiteSetting):
 
 class SpamModeration(models.Model):
     class Status(models.TextChoices):
-        UNREVIEWED = "unreviewed", _("Unreviewed")
         SPAM = "spam", _("Confirmed spam")
         NOT_SPAM = "not_spam", _("Confirmed not spam")
+        SCHEDULED_FOR_CHECK = "scheduled_for_check", _("Scheduled for check by LLM")
+        SPAM_LIKELY = "spam_likely", _("Automatically marked as spam")
+        NOT_SPAM_LIKELY = "not_spam_likely", _("Automatically marked as not spam")
 
     status = models.CharField(
         choices=Status.choices,
-        default=Status.UNREVIEWED,
+        default=Status.SCHEDULED_FOR_CHECK,
         max_length=32,
     )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -166,6 +168,16 @@ class SpamModeration(models.Model):
         blank=True,
     )
 
+    # detection_details is a JSON field
+    def mark_as_spam_by_llm(self, status: Status, detection_details=None):
+        logger.info("Marking %s as %s by LLM", self, status)
+        self.reviewer = None
+        self.status = status
+        self.detection_method = "LLM"
+        if detection_details:
+            self.detection_details = detection_details
+        self.save()
+
     def mark_not_spam(self, reviewer: User, detection_details=None):
         logger.info("user %s marking %s as not spam", reviewer, self)
         self.status = self.Status.NOT_SPAM
@@ -182,7 +194,10 @@ class SpamModeration(models.Model):
         related_object = self.content_object
         if hasattr(related_object, "is_marked_spam"):
             related_object.spam_moderation = self
-            related_object.is_marked_spam = self.status != self.Status.NOT_SPAM
+            related_object.is_marked_spam = self.status in {
+                self.Status.SPAM,
+                self.Status.SPAM_LIKELY,
+            }
             related_object.save()
 
     def __str__(self):
@@ -343,7 +358,7 @@ class MemberProfileQuerySet(models.QuerySet):
 
 @add_to_comses_permission_whitelist
 @register_snippet
-class MemberProfile(index.Indexed, ClusterableModel):
+class MemberProfile(index.Indexed, ModeratedContent, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """

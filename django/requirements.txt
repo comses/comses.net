@@ -54,3 +54,4 @@ wagtail-modeladmin==2.1.0
 invoke
 ipython
 pgcli
+openstacksdk==4.0.1

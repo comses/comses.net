@@ -12,7 +12,9 @@ SECRETS_DIR=${BUILD_DIR}/secrets
 DB_PASSWORD_PATH=${SECRETS_DIR}/db_password
 PGPASS_PATH=${SECRETS_DIR}/.pgpass
 SECRET_KEY_PATH=${SECRETS_DIR}/django_secret_key
-EXT_SECRETS=hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret mail_api_key datacite_api_password
+EXT_SECRETS=hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret mail_api_key datacite_api_password \
+			llm_spam_check_api_key llm_spam_check_jetstream_os_application_credential_secret llm_spam_check_jetstream_os_application_credential_id
+
 GENERATED_SECRETS=$(DB_PASSWORD_PATH) $(PGPASS_PATH) $(SECRET_KEY_PATH)
 
 ENVREPLACE := deploy/scripts/envreplace
