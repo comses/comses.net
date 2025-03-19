@@ -31,6 +31,7 @@ from core.serializers import (
 )
 from .models import (
     CodebaseGitRemote,
+    ImportedReleasePackage,
     PeerReviewer,
     ReleaseContributor,
     Codebase,
@@ -572,6 +573,18 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
         )
 
 
+class ImportedReleasePackageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImportedReleasePackage
+        fields = (
+            "service",
+            "uid",
+            "name",
+            "display_name",
+            "html_url",
+        )
+
+
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
     absolute_url = serializers.URLField(
         source="get_absolute_url",
@@ -601,6 +614,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     release_notes = MarkdownField(max_length=2048)
     urls = serializers.SerializerMethodField()
     review_status = serializers.SerializerMethodField()
+    imported_release_package = ImportedReleasePackageSerializer(read_only=True)
 
     def get_urls(self, instance):
         request_peer_review_url = instance.get_request_peer_review_url()
@@ -649,6 +663,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
             "output_data_url",
             "version_number",
             "id",
+            "imported_release_package",
             "share_url",
             "urls",
         )
