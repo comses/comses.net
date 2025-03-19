@@ -6,9 +6,9 @@
           <span
             v-if="!isLive"
             title="This release is currently private and unpublished."
-            class="disabled btn btn-warning"
+            class="badge bg-gray"
           >
-            <i class="fas fa-lock"></i> Private
+            <small><i class="fas fa-lock"></i> Private</small>
           </span>
           {{ store.release.codebase.title }}
           <span class="badge bg-gray pt-1 px-2">
@@ -48,7 +48,22 @@
     <hr />
     <div class="row mt-3">
       <div class="col-md-3">
-        <ProgressSidebar :showUpload="canEditOriginals" />
+        <ProgressSidebar
+          v-if="isImported"
+          show-files
+          files-route="/package"
+          files-title="Review archive"
+          metadata-title="Review metadata"
+          contributors-title="Review contributors"
+        />
+        <ProgressSidebar
+          v-else
+          :show-files="canEditOriginals"
+          files-route="/upload"
+          files-title="Upload files"
+          metadata-title="Add metadata"
+          contributors-title="Add contributors"
+        />
       </div>
       <div class="col-md-9">
         <div>
@@ -78,6 +93,7 @@ const props = defineProps<{
   reviewStatus: string;
   isLive: boolean;
   canEditOriginals: boolean;
+  isImported: boolean;
   showPublishModal: boolean;
 }>();
 
