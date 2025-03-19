@@ -1714,6 +1714,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return True
 
     def validate_uploaded_files(self):
+        """Validates that this CodebaseRelease has the required files to be publish()-able
+        - at least one code file
+        - at least one documentation file
+        """
         fs_api = self.get_fs_api()
         missing_categories = []
         if not fs_api.check_category_file_exists(FileCategories.code):

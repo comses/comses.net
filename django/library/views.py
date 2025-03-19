@@ -824,6 +824,9 @@ def github_sync_webhook(request):
     Handle GitHub app webhook events:
     - new installations (match to connected socialaccount and save the installation record)
     - new releases (create a new CodebaseRelease)
+
+    for local testing, use smee.io or similar to forward webhooks:
+    https://docs.github.com/en/webhooks/using-webhooks/handling-webhook-deliveries#setup
     """
     # verify the request signature
     signature_header = request.headers.get("X-Hub-Signature-256")
@@ -1357,13 +1360,10 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
             return FileCategories[category]
         except KeyError:
             raise ValidationError(
-                "Target folder name {} invalid. Must be one of {}".format(
+                "Target category name {} invalid. Must be one of {}".format(
                     category, list(d.name for d in FileCategories)
                 )
             )
-
-    def get_list_url(self, api):
-        raise NotImplementedError
 
     def list(self, request, *args, **kwargs):
         codebase_release = self.get_object()
@@ -1400,15 +1400,37 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
 class CodebaseReleaseFilesSipViewSet(BaseCodebaseReleaseFilesViewSet):
     stage = StagingDirectories.sip
 
-    def get_list_url(self, api):
-        return api.get_sip_list_url
+    @action(detail=False, methods=["post"])
+    def update_category(self, request, **kwargs):
+        """update a file's category, currently only for imported releases
+
+        Note: the category given in the request data is the new category for the file
+        and the category in the URL is the current category of the file (or anything,
+        it is ignored here)
+        """
+        codebase_release = self.get_object()
+        if not codebase_release.is_imported:
+            raise ValidationError("Cannot update file category on non-imported release")
+        fs_api = codebase_release.get_fs_api()
+        file_path = request.data.get("path")
+        new_category_str = request.data.get("category")
+        if not file_path or not new_category_str:
+            raise ValidationError("Both a file 'path' and 'category' are required")
+        try:
+            new_category = FileCategories[new_category_str]
+        except KeyError:
+            raise ValidationError(
+                f"Target category name {new_category_str} invalid. Must be one of {[c.name for c in FileCategories]}"
+            )
+        try:
+            fs_api.manifest.update_file_category(file_path, new_category)
+        except ValueError as e:
+            raise ValidationError(str(e))
+        return Response(status=status.HTTP_200_OK)
 
 
 class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
     stage = StagingDirectories.originals
-
-    def get_list_url(self, api):
-        return api.get_originals_list_url
 
     def create(self, request, *args, **kwargs):
         codebase_release = self.get_object()
