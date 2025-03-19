@@ -468,26 +468,6 @@ class BaseCodebaseReleaseFsApi(ABC):
         else:
             raise ValueError(f"StageDirectories values {stage} not valid")
 
-    def get_sip_list_url(self, category: FileCategories):
-        return reverse(
-            "library:codebaserelease-sip-files-list",
-            kwargs={
-                "identifier": str(self.identifier),
-                "version_number": self.version_number,
-                "category": category.name,
-            },
-        )
-
-    def get_originals_list_url(self, category: FileCategories):
-        return reverse(
-            "library:codebaserelease-original-files-list",
-            kwargs={
-                "identifier": str(self.identifier),
-                "version_number": self.version_number,
-                "category": category.name,
-            },
-        )
-
     def get_absolute_url(self, category: FileCategories, relpath: Path):
         return reverse(
             "library:codebaserelease-original-files-detail",
@@ -861,20 +841,31 @@ class CategoryManifestManager:
         return self.imported_release_package.category_manifest
 
     def build(self, file_list: list[Path]):
+        """generate a manifest from scratch from a list of files (normally sip.list()).
+        This overwrites the existing manifest
+        """
         manifest = {}
         for name in file_list:
-            if name.suffix == ".pdf":
-                manifest[str(name)] = FileCategories.docs.name
-            else:
-                manifest[str(name)] = FileCategories.code.name
+            manifest[str(name)] = self._guess_file_category(name)
         self.update(manifest)
 
+    def _guess_file_category(self, name: Path) -> str:
+        """return an appropriate category name for a file based on its extension.
+        currently defaults to code for all files except pdfs, which can be reasonably assumed to be docs
+        """
+        if name.suffix == ".pdf":
+            return FileCategories.docs.name
+        return FileCategories.code.name
+
     def update(self, manifest):
+        """save the manifest to the imported release package"""
         self.imported_release_package.category_manifest = manifest
         self.imported_release_package.save()
 
     def update_file_category(self, name, category: FileCategories):
         manifest = self.data
+        if name not in manifest:
+            raise ValueError(f"file {name} not in manifest")
         manifest[name] = category.name
         self.update(manifest)
 
@@ -886,6 +877,19 @@ class CategoryManifestManager:
     def add_file(self, name, category: FileCategories = FileCategories.code):
         manifest = self.data
         manifest[name] = category.name
+        self.update(manifest)
+
+    def fix_from_list(self, file_list: list[Path]):
+        """update the manifest to match the file list. This will add any files in the file list that are not in the
+        manifest, and remove any files in the manifest that are not in the file list
+        """
+        manifest = self.data
+        for name in file_list:
+            if name not in manifest:
+                manifest[name] = self._guess_file_category(name)
+        for name in list(manifest.keys()):
+            if name not in file_list:
+                del manifest[name]
         self.update(manifest)
 
 

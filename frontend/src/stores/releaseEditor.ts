@@ -144,6 +144,7 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
       data: [],
       docs: [],
       results: [],
+      metadata: [],
     },
     media: [],
   },

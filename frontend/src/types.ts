@@ -209,6 +209,7 @@ export interface CodebaseReleaseFiles {
     docs: FileInfo[];
     code: FileInfo[];
     results: FileInfo[];
+    metadata: FileInfo[];
   };
   media: FileInfo[];
 }
@@ -281,6 +282,14 @@ export interface RelatedUser {
   memberProfile: RelatedMemberProfile;
 }
 
+export interface ImportedReleasePackage {
+  service: string;
+  uid: string;
+  name: string;
+  displayName: string;
+  htmlUrl: string;
+}
+
 export interface CodebaseRelease {
   absoluteUrl: string;
   canEditOriginals: boolean;
@@ -293,6 +302,7 @@ export interface CodebaseRelease {
   embargoEndDate: Date | null;
   firstPublishedAt: Date | null;
   identifier: string;
+  importedReleasePackage?: ImportedReleasePackage;
   lastModified: Date | null;
   lastPublishedOn: Date | null;
   license: License | null;
@@ -366,6 +376,9 @@ export interface UploadFailure {
 
 export interface File {
   label: string;
+  category: FileCategory;
+  pendingCategory?: FileCategory;
+  path: string;
 }
 
 export interface Folder {
