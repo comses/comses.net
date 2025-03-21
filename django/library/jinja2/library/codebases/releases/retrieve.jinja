@@ -301,7 +301,7 @@
                         Github Sync
                     </b>
                     {% if has_change_perm %} 
-                        <a class="btn btn-sm btn-outline-secondary {{ 'disabled' if not codebase.live else '' }}"
+                        <a class="btn btn-sm btn-outline-secondary"
                             href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
                             <i class="fas fa-cog"></i> Configure
                         </a>
@@ -314,20 +314,9 @@
                                 <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate badge bg-primary">
                                     {{ remote.owner }}/{{ remote.repo_name }}
                                 </a>
-                                {# {% if remote.should_push and remote.should_import %}
-                                    <i class="fas fa-exchange-alt text-primary" title="Pushing and Importing"></i>
-                                {% elif remote.should_push %}
-                                    <i class="fas fa-arrow-right text-success" title="Pushing Only"></i>
-                                {% elif remote.should_import %}
-                                    <i class="fas fa-arrow-left text-warning" title="Importing Only"></i>
-                                {% endif %} #}
                             </li>
                         {% endfor %}
                     </ul>
-                {% elif has_change_perm and not codebase.live %}
-                    <div class="card-text">
-                        Only available for published models
-                    </div>
                 {% endif %}
                 <div class="card-text">
                     <a class="small" href="/github/" target="_blank">
