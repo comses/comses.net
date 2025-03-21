@@ -15,6 +15,8 @@ from .models import (
     Codebase,
     CodebaseGitRemote,
     CodebaseRelease,
+    Contributor,
+    License,
     GithubIntegrationAppInstallation,
     ImportedReleasePackage,
 )
@@ -360,41 +362,46 @@ class GitHubReleaseImporter:
                 version_number=version_number,
                 imported_release_package=package,
             )
+            # add submitter as a release contributor automatically
+            contributor, created = Contributor.from_user(self.codebase.submitter)
+            release.add_contributor(contributor)
 
-        # download the release package
-        fs_api = release.get_fs_api()
-        fs_api.import_release_package(self.installation_token)
-
-        # extract metadata from the release package and save it to the release
-        # codemeta = fs_api.read_codemeta()
-        # cff = fs_api.read_cff()
-        # release_fields = ReleaseMetadataConverter(codemeta, cff).convert()
-        # for attr, value in release_fields.items():
-        #     setattr(release, attr, value)
-        # release.save()
-
-        return self.log_success()
+        return self._import_package_and_metadata(release)
 
     def reimport_release(self, release) -> bool:
         # ignore request if the release package hasn't changed
         # unless the release is newly released on github
         if not self.is_new_github_release:
-            if release.imported_release_package.download_url == self.github_release.get(
-                "zipball_url"
+            if (
+                release.imported_release_package.download_url
+                == self.github_release.get("zipball_url")
             ):
                 return False
 
-        # re-import the release package
+        return self._import_package_and_metadata(release)
+
+    def _import_package_and_metadata(self, release) -> bool:
+        # import the release package
         fs_api = release.get_fs_api()
-        fs_api.import_release_package(self.installation_token)
+        codemeta, cff = fs_api.import_release_package(self.installation_token)
 
         # extract metadata from the release package and save it to the release
-        # codemeta = fs_api.read_codemeta()
-        # cff = fs_api.read_cff()
-        # release_fields = ReleaseMetadataConverter(codemeta, cff).convert()
-        # for attr, value in release_fields.items():
-        #     setattr(release, attr, value)
-        # release.save()
+        release_fields = ReleaseMetadataConverter(
+            codemeta, cff, self.repository, self.github_release
+        ).convert()
+        license_spdx_id = release_fields.pop("license_spdx_id", None)
+        platforms = release_fields.pop("platforms", [])
+        programming_languages = release_fields.pop("programming_languages", [])
+        for key, value in release_fields.items():
+            setattr(release, key, value)
+        license = License.objects.filter(name=license_spdx_id).first()
+        if license:
+            release.license = license
+        if platforms:
+            release.platform_tags.add(*platforms)
+        if programming_languages:
+            release.programming_languages.add(*programming_languages)
+        release.save()
 
         return self.log_success()
 
