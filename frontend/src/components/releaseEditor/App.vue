@@ -25,7 +25,7 @@
             Review Status:
             <span class="fw-bold">{{ reviewStatus }}</span>
           </span>
-          <ReviewModal button-class="btn btn-sm btn-outline-danger py-0 mb-1" />
+          <ReviewModal button-class="btn btn-sm btn-primary py-0 mb-1" />
         </span>
         <a href="//forum.comses.net/t/archiving-your-model-1-getting-started/7377">
           <i class="fas fa-question-circle"></i> Need help? Check out our archiving tutorial
@@ -35,14 +35,17 @@
     <div class="row">
       <div class="col d-flex justify-content-between">
         <span>
-          <CommonMetadataModal button-class="btn btn-primary me-2" :identifier="identifier" />
+          <CommonMetadataModal
+            button-class="btn btn-sm btn-secondary me-2"
+            :identifier="identifier"
+          />
           <CommonImagesModal
-            button-class="btn btn-primary me-2"
+            button-class="btn btn-sm btn-secondary me-2"
             :identifier="identifier"
             :files="store.files.media"
           />
         </span>
-        <PublishModal :show="showPublishModal" button-class="btn btn-danger" />
+        <PublishModal :show="showPublishModal" button-class="btn btn-primary" />
       </div>
     </div>
     <hr />

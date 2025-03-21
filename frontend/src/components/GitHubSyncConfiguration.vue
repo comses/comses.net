@@ -52,8 +52,12 @@
           :default-repo-name="defaultRepoName"
           :installation-status="installationStatus"
           :from-existing="false"
+          :disabled="!isCodebaseLive"
           @success="fetchRemotes"
         />
+        <p class="text-muted" v-if="!isCodebaseLive">
+          <small>* Must have at least one published release to generate a new repository. </small>
+        </p>
       </div>
       <div class="col-12 col-md-6">
         <GitHubSetupUserRemoteWizard
@@ -79,6 +83,7 @@ const props = defineProps<{
   codebaseIdentifier: string;
   githubOrgName: string;
   defaultRepoName: string;
+  isCodebaseLive: boolean;
 }>();
 
 const { list, getSubmitterInstallationStatus } = useGitRemotesAPI(props.codebaseIdentifier);

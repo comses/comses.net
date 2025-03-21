@@ -1012,21 +1012,69 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         extract_zip_without_top_dir(archive_path, Path(sip_storage.location))
         logger.info(f"extracted imported release archive to {sip_storage.location}")
 
-    def import_release_package(self, installation_token: str):
-        download_url = self.imported_release_package.download_url
-        if not download_url:
-            raise ValueError("Imported release package must have a download URL")
+    def import_release_package(
+        self, installation_token: str, download_url: str | None = None
+    ) -> tuple[dict, dict]:
+        """import a release archive from a remote URL (imported_release_package.download_url by default)
+        by downloading into the originals storage and extracting into the SIP storage.
+
+        returns a tuple of dicts representing extracted metadata from known metadata files found in the archive,
+        currently: (codemeta.json, CITATION.cff)
+
+        NOTE: currently only supports zip archives
+        """
+        if download_url is None:
+            download_url = self.imported_release_package.download_url
         archive_path = self.download_archive(download_url, installation_token)
         self.extract_to_sip(archive_path)
         sip_contents = list(self.get_sip_storage().list())
         self.manifest.build(sip_contents)
-        return sip_contents
+        return self._extract_metadata_files(sip_contents)
 
-    def read_codemeta(self) -> dict:
-        return {}
+    def _extract_metadata_files(self, sip_contents) -> tuple[dict, dict]:
+        """searches the extracted archive for known metadata files and returns their contents
 
-    def read_cff(self) -> dict:
-        return {}
+        returns a tuple of dicts, currently: (codemeta.json, CITATION.cff)
+        """
+
+        def find_file(file_list, target: str) -> Path | None:
+            """
+            search for a target file in the provided list of paths.
+            target is case-insensitive
+            """
+            # check files in the root first
+            for f in file_list:
+                if len(f.parts) == 1 and f.name.lower() == target.lower():
+                    return f
+            for f in file_list:
+                if f.name.lower() == target.lower():
+                    return f
+            return None
+
+        codemeta_path = find_file(sip_contents, "codemeta.json")
+        cff_path = find_file(sip_contents, "CITATION.cff")
+        codemeta = None
+        cff = None
+
+        if codemeta_path:
+            try:
+                with self.get_sip_storage().open(str(codemeta_path), mode="r") as f:
+                    file_content = f.read()
+                parsed = json.loads(file_content)
+                codemeta = parsed if isinstance(parsed, dict) else None
+            except Exception:
+                codemeta = None
+
+        if cff_path:
+            try:
+                with self.get_sip_storage().open(str(cff_path), mode="r") as f:
+                    file_content = f.read()
+                parsed = yaml.safe_load(file_content)
+                cff = parsed if isinstance(parsed, dict) else None
+            except Exception:
+                cff = None
+
+        return codemeta, cff
 
 
 class CodebaseGitRepositoryApi:

@@ -32,7 +32,7 @@
     <a href="{{ url('library:github-sync-overview') }}">Learn more about how it works <i class="fas fa-chevron-right"></i></a>
 </p>
 <hr />
-<div class='my-3' id="github-sync" data-codebase-identifier="{{ codebase.identifier }}"
+<div class='my-3' id="github-sync" data-codebase-identifier="{{ codebase.identifier }}" data-is-codebase-live="{{ codebase.live }}"
     data-github-org-name="{{ github_org_name }}" data-default-repo-name="{{ slugify(codebase.title) }}"></div>
 {% endblock %}
 

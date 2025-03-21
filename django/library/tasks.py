@@ -16,6 +16,9 @@ def build_and_push_codebase_repo(codebase_id: int):
     mirror = codebase.git_mirror
     if not mirror:
         raise ValueError("Codebase does not have a git mirror")
+    if not mirror.remotes.filter(should_push=True).exists():
+        logger.info("No remotes set to push. Nothing to build or push.")
+        return
 
     git_fs_api = CodebaseGitRepositoryApi(codebase)
     local_repo = git_fs_api.update_or_build()
@@ -63,6 +66,9 @@ def add_releases_and_push_codebase_repo(codebase_id: int):
     mirror = codebase.git_mirror
     if not mirror:
         raise ValueError("Codebase does not have a git mirror")
+    if not mirror.remotes.filter(should_push=True).exists():
+        logger.info("No remotes set to push. Nothing to build or push.")
+        return
 
     git_fs_api = CodebaseGitRepositoryApi(codebase)
     local_repo = git_fs_api.append_releases()
@@ -91,6 +97,9 @@ def update_release_branch_and_push_codebase_repo(release_id: int):
     mirror = codebase.git_mirror
     if not mirror:
         raise ValueError("Codebase does not have a git mirror")
+    if not mirror.remotes.filter(should_push=True).exists():
+        logger.info("No remotes set to push. Nothing to build or push.")
+        return
 
     git_fs_api = CodebaseGitRepositoryApi(codebase)
     local_repo = git_fs_api.update_release_branch(release)
