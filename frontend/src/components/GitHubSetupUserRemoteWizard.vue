@@ -1,6 +1,6 @@
 <template>
   <div class="card bg-light">
-    <button class="btn btn-link ps-0" @click="show = !show">
+    <button class="btn btn-link ps-0" @click="show = !show" :disabled="disabled">
       <i v-if="show" class="fas fa-minus"></i>
       <i v-else class="fas fa-plus"></i>
       <span v-if="fromExisting"> Sync with an <b>existing</b> repository </span>
@@ -123,12 +123,17 @@ import { useGitRemotesAPI } from "@/composables/api/git";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { GitHubAppInstallationStatus } from "@/types";
 
-const props = defineProps<{
+export interface GitHubSetupUserRemoteWizardProps {
   codebaseIdentifier: string;
   defaultRepoName: string;
   fromExisting: boolean;
   installationStatus: GitHubAppInstallationStatus;
-}>();
+  disabled: boolean;
+}
+
+const props = withDefaults(defineProps<GitHubSetupUserRemoteWizardProps>(), {
+  disabled: false,
+});
 
 const emit = defineEmits<{
   success: [];
