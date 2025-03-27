@@ -87,7 +87,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import Modal from "bootstrap/js/dist/modal";
+import type Modal from "bootstrap/js/dist/modal";
 import type { CodebaseGitRemote } from "@/types";
 import { useGitRemotesAPI } from "@/composables/api/git";
 import FormAlert from "@/components/form/FormAlert.vue";

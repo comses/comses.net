@@ -68,6 +68,7 @@ services:
       - github_client_secret
       - orcid_client_secret
       - github_integration_app_private_key
+      - github_integration_app_webhook_secret
       - hcaptcha_secret
       - mail_api_key
       - youtube_api_key
@@ -102,6 +103,8 @@ secrets:
     file: ./build/secrets/github_client_secret
   github_integration_app_private_key:
     file: ./build/secrets/github_integration_app_private_key
+  github_integration_app_webhook_secret:
+    file: ./build/secrets/github_integration_app_webhook_secret
   hcaptcha_secret:
     file: ./build/secrets/hcaptcha_secret
   mail_api_key:
