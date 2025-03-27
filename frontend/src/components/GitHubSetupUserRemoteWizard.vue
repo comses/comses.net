@@ -121,7 +121,7 @@
 import { computed, ref } from "vue";
 import { useGitRemotesAPI } from "@/composables/api/git";
 import FormAlert from "@/components/form/FormAlert.vue";
-import { GitHubAppInstallationStatus } from "@/types";
+import type { GitHubAppInstallationStatus } from "@/types";
 
 export interface GitHubSetupUserRemoteWizardProps {
   codebaseIdentifier: string;

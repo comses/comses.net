@@ -832,8 +832,7 @@ def github_sync_webhook(request):
     signature_header = request.headers.get("X-Hub-Signature-256")
     if not signature_header:
         return HttpResponse("Missing signature header", status=403)
-    # FIXME:
-    secret = "use an actual secret token"
+    secret = settings.GITHUB_INTEGRATION_APP_WEBHOOK_SECRET
     hash_object = hmac.new(
         secret.encode("utf-8"),
         msg=request.body,
