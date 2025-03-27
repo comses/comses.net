@@ -50,7 +50,7 @@ const props = withDefaults(defineProps<FileTreeProps>(), {
   categorizable: false,
 });
 
-const { updateFileCategory } = props.categorizable ? useReleaseEditorAPI() : {};
+const { updateFileCategory } = useReleaseEditorAPI();
 
 const store = useReleaseEditorStore();
 
@@ -62,7 +62,7 @@ function isFile(item: File | Folder): item is File {
 
 async function handleUpdateFileCategory(file: File, newCategory: string) {
   file.pendingCategory = newCategory as FileCategory;
-  if (updateFileCategory) {
+  if (props.categorizable) {
     const response = await updateFileCategory(
       store.identifier,
       store.versionNumber,

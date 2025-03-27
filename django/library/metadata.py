@@ -441,17 +441,17 @@ class ReleaseMetadataConverter:
         body = self._get_field(self.github_release, "body")
         return body if isinstance(body, str) else None
 
-    def extract_os(self) -> str | None:
+    def extract_os(self) -> str:
         # priority: codemeta.operatingSystem
         codemeta_os = self._get_field(self.codemeta, "operatingSystem")
         if not codemeta_os:
-            return None
+            return ""
         if isinstance(codemeta_os, list):
             os_str = codemeta_os[0]
         elif isinstance(codemeta_os, str):
             os_str = codemeta_os
         else:
-            return None
+            return ""
         if os_str:
             normalized = os_str.lower()
             # attempt to match the given os string to a known platform
@@ -465,6 +465,7 @@ class ReleaseMetadataConverter:
                 return "platform_independent"
             else:
                 return "other"
+        return ""
 
     def extract_programming_languages(self) -> list[str] | None:
         # priority: codemeta.programmingLanguage > [github_repository.language]
