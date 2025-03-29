@@ -47,3 +47,55 @@
     padding: 20px;
   }
 }
+
+.navbar {
+  background-color: transparent;
+  color: white;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: fixed;
+  top: 0;
+  width: 100%;
+
+  .nav-link {
+    color: rgb(255, 255, 255) !important;
+  }
+
+}
+
+.navbar.scrolled {
+  background-color: white !important;
+  color: black;
+
+  .nav-link {
+    color: rgb(91, 91, 91) !important;
+  }
+}
+
+
+.landing-page-introduction {
+  height: 100vh; 
+  background: url("../assets/images/background-introduction.png") repeat top center;
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+
+.landing-page-introduction h1, 
+.landing-page-introduction p {
+  color: white;
+}
+
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100%;
+}
