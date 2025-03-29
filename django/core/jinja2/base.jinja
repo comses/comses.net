@@ -10,8 +10,7 @@
 {% set profile_url = url('core:profile-detail', pk=user.id) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-    <div class="fixed-top bg-light">
-        <nav class="navbar navbar-expand-md navbar-light bg-light pt-0 px-3 mt-0 mx-1">
+    <nav class="navbar fixed-top navbar-expand-md pt-0 mt-0 w-100">
             {# logos #}
             <div class='navbar-brand'>
                 <a href="/"><span class="logo">CoMSES Network</span></a>
@@ -269,6 +268,10 @@
         {# Override this in templates to add extra stylesheets #}
     {% endblock %}
     {# JS section #}
+    <script src="/static/js/navbar-scroll.js">
+        //navbar transition
+         
+    </script>
     <script src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
     {% if is_production() %}
         {% script async=False %}
@@ -353,13 +356,15 @@
         be heavily degraded without it.
     </div>
 </noscript>
-{% if not is_production() %}
+
+<!--{% if not is_production() %}
     <div class='alert alert-danger m-0'>
         <i class='fas fa-flask me-2'></i>
         You are currently accessing a <b>test version of the comses.net website</b>. Information that you
         view or store here will <b>not be preserved</b> and may not be consistent.
     </div>
 {% endif %}
+-->
 {% block page %}
     <section class='messages'>
         {% for message in get_messages(request) %}

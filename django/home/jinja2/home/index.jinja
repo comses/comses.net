@@ -13,7 +13,8 @@
                     <h3 class='text-white'>CoMSES Net is an international network of researchers,
                      educators and professionals with the common goal of improving the way we develop, share, and use computational
                       modeling in the social and ecological sciences.</h3>
-                      <a href='{{ slugurl("about") }}'>Learn more</a>
+                      <button class="btn btn-primary my-2">Browse the Model Library</button>
+                      <!--<a href='{{ slugurl("about") }}'>Learn more</a>-->
                 </div>
             </div>
         </div>
@@ -47,51 +48,52 @@
     -->
 {% endblock %}
 {% block page %}
-<div class='container'>
-    {# FIXME: this should be extracted and moved into the DB as well like CategoryIndexPage callouts #}
-    <section class='callouts'>
-        <div class='row'>
-            <div class='col text-center'>
-                <a href='{{ url("library:codebase-add") }}'>
-                    <img src='{{ static("images/icons/submit.png") }}' alt='Publish your code'>
-                    <br>
-                    <h2>Model Library</h2>
-                </a>
-                <div class='caption'>
-                    A digital repository for model software supporting FAIR principles                </div>
-            </div>
-            <div class='col text-center'>
-                <a href='{{ slugurl("resources") }}'>
-                    <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers'>
-                    <br>
-                    <h2>Community</h2>
-                </a>
-                <div class='caption'>
-                    <ul class="mb-0">
-                        Share jobs, events, and discussions with an international network of modeling scientists
-                    </ul>
+<section class="callout-cards">
+    <div class='container'>
+        <section class='callouts'>
+            <div class='row justify-content-center'>
+                <!-- Model Library -->
+                <div class='col-md-4'>
+                    <div class="callout-card text-center">
+                        <a href='{{ url("library:codebase-add") }}'>
+                            <img src='{{ static("images/icons/submit.png") }}' alt='Publish your code' class="callout-icon">
+                            <h2>Model Library</h2>
+                        </a>
+                        <p class='caption'>A digital repository for model software supporting FAIR principles</p>
+                    </div>
+                </div>
+
+                <!-- Community -->
+                <div class='col-md-4'>
+                    <div class="callout-card text-center">
+                        <a href='{{ slugurl("resources") }}'>
+                            <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers' class="callout-icon">
+                            <h2>Community</h2>
+                        </a>
+                        <p class='caption'>Share jobs, events, and discussions with an international network of modeling scientists</p>
+                    </div>
+                </div>
+
+                <!-- Resources -->
+                <div class='col-md-4'>
+                    <div class="callout-card text-center">
+                        <a href='{{ url("core:event-list") }}'>
+                            <img src='{{ static("images/icons/groups.png") }}' alt='Community Events and Jobs' class="callout-icon">
+                            <h2>Resources</h2>
+                        </a>
+                        <p class='caption'>Explore curated educational content, standards, etc</p>
+                    </div>
                 </div>
             </div>
-            <div class='col text-center'>
-                <a href='{{ url("core:event-list") }}'>
-                    <img src='{{ static("images/icons/groups.png") }}' alt='Community Events and Jobs'>
-                    <br>
-                    <h2>Resources</h2>
-                </a>
-                <div class='caption'>
-                    Explore curated educational content, standards, etc
-                </div>
-            </div>
-        </div>
-    </section>
-</div>
+        </section>
+    </div>
+</section>
 <section class="latest-peer-reviewed-models">
     <div class="container">
         <div class="row">
             <!-- left half -->
             <div class="col-md-6 d-flex flex-column justify-content-center text-center left-section">
-                <button class="btn btn-outline-light my-2" href='{{ url("library:codebase-list") }}'>Browse the model library</button>
-                <button class="btn btn-outline-light my-2">Publish your model code</button>
+                <button class="btn btn-outline-light my-2" href='{{ url("library:codebase-list") }}'>Upload your own model</button>
             </div>
 
             <!-- right half -->
@@ -179,50 +181,74 @@
     <div class="container">
         <h1>Extra resources</h1>
         <div class="row">
-            <!-- buttons section -->
-            <div class="col-md-6 d-flex flex-column justify-content-center left-section">
-                <div class="row">
-                    <div class="col-md-6 text-center">
-                        <button class="btn btn-primary my-2 w-100">Education</button>
-                        <button class="btn btn-primary my-2 w-100">Frameworks</button>
-                    </div>
-                    <div class="col-md-6 text-center">
-                        <button class="btn btn-primary my-2 w-100">Standards</button>
-                        <button class="btn btn-primary my-2 w-100">Journals</button>
-                    </div>
-                </div>
-                <div class="text-center mt-3">
-                    <button class="btn btn-primary my-2 w-75">More resources</button>
+    <!-- Left Section: Redesigned Resource Boxes -->
+    <div class="col-md-6 d-flex flex-column justify-content-center left-section">
+        <div class="row">
+            <!-- Education -->
+            <div class="col-md-6">
+                <div class="resource-box text-center">
+                    <h3>Education</h3>
+                    <p class="resource-desc">Access learning materials and guides for computational modeling.</p>
+                    <button class="btn btn-primary w-100">Explore</button>
                 </div>
             </div>
-
-            <!-- yt content -->
-            <div class="col-md-6 right-section">
-                <h1 class="text-center">Latest Video Content</h1>
-                <div class="row">
-                    <!-- thumbnails placeholder -->
-                    <div class="col-md-6 mb-3 text-center">
-                        <div class="video-thumbnail"></div>
-                        <p><a href="#">video title</a></p>
-                    </div>
-                    <div class="col-md-6 mb-3 text-center">
-                        <div class="video-thumbnail"></div>
-                        <p><a href="#">video title</a></p>
-                    </div>
-                    <div class="col-md-6 mb-3 text-center">
-                        <div class="video-thumbnail"></div>
-                        <p><a href="#">video title</a></p>
-                    </div>
-                    <div class="col-md-6 mb-3 text-center">
-                        <div class="video-thumbnail"></div>
-                        <p><a href="#">video title</a></p>
-                    </div>
+            <!-- Standards -->
+            <div class="col-md-6">
+                <div class="resource-box text-center">
+                    <h3>Standards</h3>
+                    <p class="resource-desc">Learn about best practices and industry standards.</p>
+                    <button class="btn btn-primary w-100">Explore</button>
                 </div>
-                <div class="text-center mt-3">
-                    <button class="btn btn-outline-light my-2 w-75">CoMSES Youtube Channel</button>
+            </div>
+            <!-- Frameworks -->
+            <div class="col-md-6 mt-3">
+                <div class="resource-box text-center">
+                    <h3>Frameworks</h3>
+                    <p class="resource-desc">Discover powerful frameworks for modeling and simulation.</p>
+                    <button class="btn btn-primary w-100">Explore</button>
+                </div>
+            </div>
+            <!-- Journals -->
+            <div class="col-md-6 mt-3">
+                <div class="resource-box text-center">
+                    <h3>Journals</h3>
+                    <p class="resource-desc">Find academic papers and research publications.</p>
+                    <button class="btn btn-primary w-100">Explore</button>
                 </div>
             </div>
         </div>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-primary w-75">More Resources</button>
+        </div>
+    </div>
+
+    <!-- Right Section: YouTube Content -->
+    <div class="col-md-6 right-section">
+        <h1 class="text-center">Latest Video Content</h1>
+        <div class="row">
+            <div class="col-md-6 mb-3 text-center">
+                <div class="video-thumbnail"></div>
+                <p><a href="#">video title</a></p>
+            </div>
+            <div class="col-md-6 mb-3 text-center">
+                <div class="video-thumbnail"></div>
+                <p><a href="#">video title</a></p>
+            </div>
+            <div class="col-md-6 mb-3 text-center">
+                <div class="video-thumbnail"></div>
+                <p><a href="#">video title</a></p>
+            </div>
+            <div class="col-md-6 mb-3 text-center">
+                <div class="video-thumbnail"></div>
+                <p><a href="#">video title</a></p>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <button class="btn btn-outline-light w-75">CoMSES Youtube Channel</button>
+        </div>
+    </div>
+</div>
     </div>
 </section>
 

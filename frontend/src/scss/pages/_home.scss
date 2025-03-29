@@ -12,6 +12,40 @@
   padding-bottom: $default-padding;
 }
 
+.callout-cards {
+  padding: 50px 0;
+  background: url("../assets/images/background-introduction.png") repeat top center;
+}
+
+
+.callout-card {
+  background-color: #d3eafd; 
+  padding: 20px;
+  border-radius: 15px; 
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); 
+  transition: transform 0.2s ease-in-out;
+}
+
+
+.callout-card:hover {
+  transform: scale(1.03); 
+}
+
+
+.callout-icon {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 10px;
+}
+
+
+.caption {
+  font-size: 1rem;
+  color: #333;
+  margin-top: 10px;
+}
+
+
 .landing-page-introduction {
   box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.3),
     inset 0 -10px 10px -10px rgba(0, 0, 0, 0.3);
@@ -65,6 +99,9 @@ div.activity {
   font-family: "Open Sans", sans-serif;
   color: $white;
   font-weight: 300;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 
   h1 {
     text-align: center;
@@ -216,12 +253,10 @@ footer.footer {
 }
 
 /* left half of featured models section*/
-.left-section {
-  //background-color: #f8f9fa; 
+.left-section { 
   padding: 20px;
 }
 
-/* buttons on homepage */
 .btn-outline-dark {
   width: 80%; 
   padding: 10px;
@@ -255,8 +290,35 @@ footer.footer {
   font-family: "Open Sans", sans-serif;
   color: $white;
   font-weight: 300;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 
   h1{
     text-align: center;
   }
+}
+
+.resource-box {
+  background-color:#ffffff; 
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
+  transition: transform 0.2s ease-in-out;
+
+  h3{
+    color:#22b1e6;
+  }
+}
+
+
+.resource-box:hover {
+  transform: scale(1.02); 
+}
+
+
+.resource-desc {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 10px;
 }
