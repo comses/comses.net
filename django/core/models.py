@@ -490,6 +490,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def profile_url(self):
         return self.get_absolute_url()
 
+    @property
+    def comses_profile_url(self):
+        """returns a comses.net based URL to this user's profile"""
+        return f"{settings.BASE_URL}{self.get_absolute_url()}"
+
     def get_absolute_url(self):
         return reverse("core:profile-detail", kwargs={"pk": self.user.id})
 

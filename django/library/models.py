@@ -265,6 +265,12 @@ class Contributor(index.Indexed, ClusterableModel):
         return None
 
     @property
+    def comses_member_profile_url(self):
+        if self.user:
+            return self.user.member_profile.comses_profile_url
+        return None
+
+    @property
     def member_profile_url(self):
         if self.user:
             return self.user.member_profile.get_absolute_url()

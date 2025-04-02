@@ -562,7 +562,6 @@ class CodebaseReleasePublishTestCase(TestCase):
         self.assertRaises(ValidationError, lambda: self.codebase_release.publish())
 
         self.codebase_release.programming_languages.add("Java")
-        self.codebase_release.save()
         self.codebase_release.publish()
 
         download_response = self.client.get(

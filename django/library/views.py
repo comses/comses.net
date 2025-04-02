@@ -822,8 +822,8 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         )
         crs.is_valid(raise_exception=True)
         crs.save()
-        # re-generate codemeta
-        codebase_release.codebase.save(rebuild_metadata=False)
+        # re-generate codemeta for the parent codebase and only this release
+        codebase_release.codebase.save(rebuild_release_metadata=False)
         codebase_release.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

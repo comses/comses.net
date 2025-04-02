@@ -49,7 +49,11 @@ class CodeMetaConverter:
         cls, contributor, actor_type: Literal["author", "contributor"], index: int
     ) -> Person | Organization:
         # https://www.w3.org/TR/json-ld11/#identifying-blank-nodes
-        actor_id = contributor.orcid_url or f"_:{actor_type}_{index + 1}"
+        actor_id = (
+            contributor.orcid_url
+            or contributor.comses_member_profile_url
+            or f"_:{actor_type}_{index + 1}"
+        )
         if contributor.is_organization:
             return Organization(
                 id_=actor_id,
@@ -373,15 +377,19 @@ class DataCiteConverter:
 
 def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> CodeMeta:
     """make sure that codemeta is a CodeMeta object. If we didn't receive anything,
-    try to re-generate it"""
-    if not codemeta:
+    try to re-generate it from whichever object is given (codebase or release)"""
+    if isinstance(codemeta, CodeMeta):
+        return codemeta
+    if codebase is None:
         if codebase:
-            codemeta = CodeMetaConverter.convert_codebase(codebase)
+            return CodeMetaConverter.convert_codebase(codebase)
         elif release:
-            codemeta = CodeMetaConverter.convert_release(release)
-    elif isinstance(codemeta, dict):
+            return CodeMetaConverter.convert_release(release)
+    if isinstance(codemeta, dict):
         try:
-            codemeta = CodeMeta(**codemeta)
-        except:
-            codemeta = None
-    return codemeta
+            return CodeMeta(**codemeta)
+        except Exception as e:
+            raise ValueError("Invalid codemeta dictionary") from e
+    raise TypeError("codemeta must be a valid dictionary or CodeMeta instance")
+
+
