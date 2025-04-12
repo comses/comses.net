@@ -11,6 +11,7 @@
 
 {% macro navbar() %}
     <nav class="navbar fixed-top navbar-expand-md pt-0 mt-0 w-100">
+        <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
             {# logos #}
             <div class='navbar-brand'>
                 <a href="/"><span class="logo">CoMSES Network</span></a>
@@ -27,7 +28,7 @@
             {# end hamburger collapse menu #}
 
             {# hamburger menu links #}
-            <div class="navbar-collapse collapse" id="navbarLinks">
+            <div class="navbar-collapse collapse justify-content-end" id="navbarLinks">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item py-0">
                         <a href="/about/" class="nav-link">About</a>
@@ -138,7 +139,9 @@
                 </ul>
             </div>
             {# end hamburger menu content #}
+            </div>
         </nav>
+
     </div>
 {% endmacro %}
 

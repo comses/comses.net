@@ -14,30 +14,41 @@
 
 .callout-cards {
   padding: 50px 0;
-  background: url("../assets/images/background-introduction.png") repeat top center;
 }
 
 
 .callout-card {
-  background-color: #d3eafd; 
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  background-color: white; 
+  color: #444;             
   padding: 20px;
   border-radius: 15px; 
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); 
   transition: transform 0.2s ease-in-out;
-}
+  font-family: "Open Sans", sans-serif;
+  font-weight: 300;
 
+  h3{
+    color:#22b1e6;
+  }
+
+  p{
+    color: #444; 
+  }
+}
 
 .callout-card:hover {
   transform: scale(1.03); 
 }
-
 
 .callout-icon {
   width: 50px;
   height: 50px;
   margin-bottom: 10px;
 }
-
 
 .caption {
   font-size: 1rem;
@@ -100,7 +111,7 @@ div.activity {
   color: $white;
   font-weight: 300;
   margin: 0 !important;
-  padding-top: 0 !important;
+  padding-top: 1rem !important;
   padding-bottom: 0 !important;
 
   h1 {
@@ -291,7 +302,7 @@ footer.footer {
   color: $white;
   font-weight: 300;
   margin: 0 !important;
-  padding-top: 0 !important;
+  padding-top: 1rem !important;
   padding-bottom: 0 !important;
 
   h1{
