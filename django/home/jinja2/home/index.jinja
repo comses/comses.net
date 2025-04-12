@@ -1,93 +1,58 @@
 {% extends "base.jinja" %}
 
 {% block introduction_section %}
-    <section class='landing-page-introduction'>
-        <div class='container'>
-            <div class='row'>
-                <div class='col'>
-                    <h1 class='text-white'>A growing collection of resources for computational model-based science.</h1>
+<section class='landing-page-introduction'>
+    <div class='container text-center'>
+        <div class='row'>
+            <div class='col'>
+                <h1 class='text-white'>
+                    A growing collection of resources for computational model-based science.
+                </h1>
+                <h3 class='text-white mt-4'>
+                    CoMSES Net is an international network of researchers,
+                    educators and professionals with the common goal of improving the way we develop, share,
+                    and use computational modeling in the social and ecological sciences.
+                </h3>
+                <button class="btn btn-primary my-4">Browse the Model Library</button>
+            </div>
+        </div>
+
+        <div class='row justify-content-center mt-5'>
+            <div class='col-md-4'>
+                <div class="callout-card text-center">
+                    <a href='{{ url("library:codebase-add") }}'>
+                        <img src='{{ static("images/icons/submit.png") }}' alt='Publish your code' class="callout-icon">
+                        <h2>Model Library</h2>
+                    </a>
+                    <p class='caption'>A digital repository for model software supporting FAIR principles</p>
                 </div>
             </div>
-            <div class='row'>
-                <div class='col'>
-                    <h3 class='text-white'>CoMSES Net is an international network of researchers,
-                     educators and professionals with the common goal of improving the way we develop, share, and use computational
-                      modeling in the social and ecological sciences.</h3>
-                      <button class="btn btn-primary my-2">Browse the Model Library</button>
-                      <!--<a href='{{ slugurl("about") }}'>Learn more</a>-->
+
+            <div class='col-md-4'>
+                <div class="callout-card text-center">
+                    <a href='{{ slugurl("resources") }}'>
+                        <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers' class="callout-icon">
+                        <h2>Community</h2>
+                    </a>
+                    <p class='caption'>Share jobs, events, and discussions with an international network of modeling scientists</p>
+                </div>
+            </div>
+
+            <div class='col-md-4'>
+                <div class="callout-card text-center">
+                    <a href='{{ url("core:event-list") }}'>
+                        <img src='{{ static("images/icons/groups.png") }}' alt='Community Events and Jobs' class="callout-icon">
+                        <h2>Resources</h2>
+                    </a>
+                    <p class='caption'>Explore curated educational content, standards, etc</p>
                 </div>
             </div>
         </div>
-    </section>
-    <!--
-    {% with site_settings=settings("core.SiteSettings", use_default_site=True) %}
-        {% if site_settings.has_banner %}
-            <section class='banner'>
-                <div class='alert alert-warning' role='alert'>
-                    <h1 class='alert-heading text-center'>
-                        <a href='{{ site_settings.banner_destination_url }}'>
-                            <i class='fas fa-bullhorn'>
-                            </i>
-                            {{ site_settings.banner_message_title }}
-                            <i class='fas fa-bullhorn'></i>
-                        </a>
-                    </h1>
-
-                    <div class='mx-5'>
-                        <em>Posted {{ site_settings.last_modified.strftime('%B %-d, %Y') }}</em>
-                        <div class='text-start fw-bold my-2'>
-                            {% autoescape off %}
-                                {{ site_settings.banner_message }}
-                            {% endautoescape %}
-                        </div>
-                    </div>
-                </div>
-            </section>
-        {% endif %}
-    {% endwith %}
-    -->
-{% endblock %}
-{% block page %}
-<section class="callout-cards">
-    <div class='container'>
-        <section class='callouts'>
-            <div class='row justify-content-center'>
-                <!-- Model Library -->
-                <div class='col-md-4'>
-                    <div class="callout-card text-center">
-                        <a href='{{ url("library:codebase-add") }}'>
-                            <img src='{{ static("images/icons/submit.png") }}' alt='Publish your code' class="callout-icon">
-                            <h2>Model Library</h2>
-                        </a>
-                        <p class='caption'>A digital repository for model software supporting FAIR principles</p>
-                    </div>
-                </div>
-
-                <!-- Community -->
-                <div class='col-md-4'>
-                    <div class="callout-card text-center">
-                        <a href='{{ slugurl("resources") }}'>
-                            <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers' class="callout-icon">
-                            <h2>Community</h2>
-                        </a>
-                        <p class='caption'>Share jobs, events, and discussions with an international network of modeling scientists</p>
-                    </div>
-                </div>
-
-                <!-- Resources -->
-                <div class='col-md-4'>
-                    <div class="callout-card text-center">
-                        <a href='{{ url("core:event-list") }}'>
-                            <img src='{{ static("images/icons/groups.png") }}' alt='Community Events and Jobs' class="callout-icon">
-                            <h2>Resources</h2>
-                        </a>
-                        <p class='caption'>Explore curated educational content, standards, etc</p>
-                    </div>
-                </div>
-            </div>
-        </section>
     </div>
 </section>
+{% endblock %}
+{% block page %}
+
 <section class="latest-peer-reviewed-models">
     <div class="container">
         <div class="row">
@@ -181,10 +146,8 @@
     <div class="container">
         <h1>Extra resources</h1>
         <div class="row">
-    <!-- Left Section: Redesigned Resource Boxes -->
     <div class="col-md-6 d-flex flex-column justify-content-center left-section">
         <div class="row">
-            <!-- Education -->
             <div class="col-md-6">
                 <div class="resource-box text-center">
                     <h3>Education</h3>
@@ -192,7 +155,6 @@
                     <button class="btn btn-primary w-100">Explore</button>
                 </div>
             </div>
-            <!-- Standards -->
             <div class="col-md-6">
                 <div class="resource-box text-center">
                     <h3>Standards</h3>
@@ -200,7 +162,6 @@
                     <button class="btn btn-primary w-100">Explore</button>
                 </div>
             </div>
-            <!-- Frameworks -->
             <div class="col-md-6 mt-3">
                 <div class="resource-box text-center">
                     <h3>Frameworks</h3>
@@ -208,7 +169,6 @@
                     <button class="btn btn-primary w-100">Explore</button>
                 </div>
             </div>
-            <!-- Journals -->
             <div class="col-md-6 mt-3">
                 <div class="resource-box text-center">
                     <h3>Journals</h3>

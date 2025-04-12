@@ -24,7 +24,8 @@
     inset 0 -10px 10px -10px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   margin-top: 85px;
-  background: url("../assets/images/background-introduction-200.png") repeat top center;
+  background: url("../assets/images/background-introduction-200.png") no repeat center center;
+  background-size: cover;
   text-align: left;
   vertical-align: middle;
   height: 125px;
@@ -55,11 +56,24 @@
   position: fixed;
   top: 0;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  
+  
 
   .nav-link {
     color: rgb(255, 255, 255) !important;
   }
 
+}
+
+.navbar-brand {
+  padding-left: 0.01rem; // move logo away from edge
+}
+
+.navbar .container {
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .navbar.scrolled {
@@ -73,7 +87,8 @@
 
 
 .landing-page-introduction {
-  height: 100vh; 
+  min-height: 70vh; 
+  padding-bottom: 40px; 
   background: url("../assets/images/background-introduction.png") repeat top center;
   background-size: cover;
   display: flex;
@@ -83,8 +98,10 @@
   position: relative;
   z-index: 1;
   margin: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+  padding-top: 2rem !important;
+  margin-top: 40px;
+  
+  
 }
 
 
