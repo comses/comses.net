@@ -231,7 +231,9 @@ class SocialMediaSettings(BaseSiteSetting):
     social_account = models.CharField(
         max_length=128,
         default="comses",
-        help_text=_("CoMSES Net official socials account username (assumed focus on a single platform)"),
+        help_text=_(
+            "CoMSES Net official socials account username (assumed focus on a single platform)"
+        ),
         blank=True,
     )
     github_account = models.CharField(

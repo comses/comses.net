@@ -1,4 +1,3 @@
-import json
 import logging
 import mimetypes
 import os
@@ -360,11 +359,11 @@ class CodebaseReleaseFsApi:
         system_file_presence_message_level=MessageLevels.error,
         mimetype_mismatch_message_level=MessageLevels.error,
     ):
+        self.release = codebase_release
         self.uuid = str(codebase_release.codebase.uuid)
         self.identifier = codebase_release.codebase.identifier
         self.version_number = codebase_release.version_number
         self.release_id = codebase_release.id
-        self.codemeta = codebase_release.codemeta
         self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
@@ -406,8 +405,24 @@ class CodebaseReleaseFsApi:
         return self.rootdir.joinpath("sip")
 
     @property
+    def codemeta_contents(self) -> str:
+        return self.release.codemeta_json_str
+
+    @property
     def codemeta_path(self):
         return self.sip_contents_dir.joinpath("codemeta.json")
+
+    @property
+    def cff_contents(self) -> str:
+        return self.release.cff_yaml_str
+
+    @property
+    def cff_path(self):
+        return self.sip_contents_dir.joinpath("CITATION.cff")
+
+    @property
+    def license_path(self):
+        return self.sip_contents_dir.joinpath("LICENSE")
 
     @property
     def sip_contents_dir(self):
@@ -511,30 +526,58 @@ class CodebaseReleaseFsApi:
     def create_or_update_codemeta(self, force=False):
         """
         Returns True if a codemeta.json file was created, False otherwise
-        :param metadata: an optional dictionary with codemeta properties
-        :return:
         """
         path = self.codemeta_path
         if force or not path.exists():
             with path.open(mode="w", encoding="utf-8") as codemeta_out:
-                json.dump(self.codemeta.to_dict(), codemeta_out)
+                codemeta_out.write(self.codemeta_contents)
             return True
         return False
 
-    def get_codemeta_json(self):
-        return self.codemeta.to_json()
+    def create_or_update_citation_cff(self, force=False):
+        """
+        Returns True if a CITATION.cff file was created, False otherwise
+        """
+        path = self.cff_path
+        try:
+            cff_contents = self.cff_contents
+        except Exception as e:
+            logger.exception(
+                f"error generating CITATION.cff for release {self.release}: {e}"
+            )
+            return False
+        if force or not path.exists():
+            with path.open(mode="w", encoding="utf-8") as cff_out:
+                cff_out.write(cff_contents)
+            return True
+        return False
+
+    def create_or_update_license(self, force=False):
+        """
+        Returns True if a LICENSE file was created, False otherwise
+        """
+        path = self.license_path
+        if self.release.license and (force or not path.exists()):
+            with path.open(mode="w", encoding="utf-8") as license_out:
+                license_out.write(self.release.license_text)
+            return True
+        return False
 
     def build_published_archive(self, force=False):
         """
         FIXME: some of this should be moved to an async processing task.
         """
         self.create_or_update_codemeta(force=force)
+        self.create_or_update_citation_cff(force=force)
+        self.create_or_update_license(force=force)
         bag = self.get_or_create_sip_bag(self.bagit_info)
         self.validate_bagit(bag)
         self.build_archive(force=force)
 
     def build_review_archive(self):
         self.create_or_update_codemeta(force=True)
+        self.create_or_update_citation_cff(force=True)
+        self.create_or_update_license(force=True)
         shutil.make_archive(
             str(self.review_archivepath.with_suffix("")),
             format="zip",
@@ -733,10 +776,21 @@ class CodebaseReleaseFsApi:
         if not self.archivepath.exists() or force:
             self.build_archive_at_dest(dest=str(self.archivepath))
 
-    def rebuild(self):
-        msgs = self.build_sip()
+    def rebuild(self, metadata_only=False) -> MessageGroup:
+        """rebuild the submission package and archive if it already exists
+
+        if metadata_only is True, only the metadata files are rebuilt, not the entire package
+        """
+        if not metadata_only:
+            msgs = self.build_sip()
+        else:
+            msgs = self._create_msg_group()
         self.create_or_update_codemeta(force=True)
-        self.build_archive(force=True)
+        self.create_or_update_citation_cff(force=True)
+        self.create_or_update_license(force=True)
+        # only rebuild the archive package if it already exists
+        if self.aip_dir.exists():
+            self.build_archive(force=True)
         return msgs
 
 
