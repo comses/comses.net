@@ -231,7 +231,9 @@ class SocialMediaSettings(BaseSiteSetting):
     social_account = models.CharField(
         max_length=128,
         default="comses",
-        help_text=_("CoMSES Net official socials account username (assumed focus on a single platform)"),
+        help_text=_(
+            "CoMSES Net official socials account username (assumed focus on a single platform)"
+        ),
         blank=True,
     )
     github_account = models.CharField(
@@ -489,11 +491,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
     @property
     def profile_url(self):
         return self.get_absolute_url()
-
-    @property
-    def comses_profile_url(self):
-        """returns a comses.net based URL to this user's profile"""
-        return f"{settings.BASE_URL}{self.get_absolute_url()}"
 
     def get_absolute_url(self):
         return reverse("core:profile-detail", kwargs={"pk": self.user.id})

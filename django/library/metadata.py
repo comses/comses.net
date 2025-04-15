@@ -48,10 +48,10 @@ class CodeMetaConverter:
     def _convert_actor(
         cls, contributor, actor_type: Literal["author", "contributor"], index: int
     ) -> Person | Organization:
-        # https://www.w3.org/TR/json-ld11/#identifying-blank-nodes
+        # fallback to a blank node: https://www.w3.org/TR/json-ld11/#identifying-blank-nodes
         actor_id = (
             contributor.orcid_url
-            or contributor.comses_member_profile_url
+            or contributor.member_profile_url(include_base_url=True)
             or f"_:{actor_type}_{index + 1}"
         )
         if contributor.is_organization:
@@ -391,5 +391,3 @@ def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> C
         except Exception as e:
             raise ValueError("Invalid codemeta dictionary") from e
     raise TypeError("codemeta must be a valid dictionary or CodeMeta instance")
-
-

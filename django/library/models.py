@@ -264,20 +264,16 @@ class Contributor(index.Indexed, ClusterableModel):
             return self.user.member_profile.orcid_url
         return None
 
-    @property
-    def comses_member_profile_url(self):
+    def member_profile_url(self, include_base_url=False):
         if self.user:
-            return self.user.member_profile.comses_profile_url
-        return None
-
-    @property
-    def member_profile_url(self):
-        if self.user:
-            return self.user.member_profile.get_absolute_url()
+            profile_url = self.user.member_profile.get_absolute_url()
+            return (
+                f"{settings.BASE_URL}{profile_url}" if include_base_url else profile_url
+            )
         return None
 
     def get_profile_url(self):
-        profile_url = self.member_profile_url
+        profile_url = self.member_profile_url()
         if not profile_url:
             return "{0}?{1}".format(
                 reverse("core:profile-list"), urlencode({"query": self.name})
@@ -285,7 +281,7 @@ class Contributor(index.Indexed, ClusterableModel):
         return profile_url
 
     def get_markdown_link(self):
-        return f"[{self.get_full_name()}]({self.member_profile_url})"
+        return f"[{self.get_full_name()}]({self.member_profile_url()})"
 
     def get_aggregated_search_fields(self):
         return " ".join(
@@ -542,7 +538,7 @@ class CodebaseQuerySet(models.QuerySet):
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
-    
+
     Note: metadata is mirrored in CodeMeta format in codemeta_snapshot, which is updated on save().
     Using update() on the queryset performs a direct SQL update and will result in codemeta_snapshot
     and other derived fields or actions not being updated.
@@ -1040,7 +1036,8 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     def save(self, rebuild_metadata=True, rebuild_release_metadata=True, **kwargs):
         """save the codebase and optionally rebuild metadata by updating codemeta_snapshot.
-        If rebuild_release_metadata is True, all releases will be saved to trigger metadata updates"""
+        If rebuild_release_metadata is True, all releases will be saved to trigger metadata updates
+        """
         if rebuild_metadata:
             logger.debug("Building codemeta for codebase: %s", self)
             self.codemeta_snapshot = self.codemeta.dict(serialize=True)
