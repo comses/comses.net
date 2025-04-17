@@ -243,6 +243,9 @@ TAGGIT_CASE_INSENSITIVE = True
 # max number of items to include in rss or atom feeds
 DEFAULT_FEED_MAX_ITEMS = 120
 
+# max number of items to include in each homepage feed
+DEFAULT_HOMEPAGE_FEED_MAX_ITEMS = 5
+
 # admin dashboard defaults
 # max number of items to include in each admin dashboard recent activity category
 ADMIN_DASHBOARD_MAX_ITEMS = 15
@@ -555,6 +558,10 @@ DISCOURSE_BASE_URL = os.getenv(
 DISCOURSE_SSO_SECRET = read_secret("discourse_sso_secret", "unconfigured")
 DISCOURSE_API_KEY = read_secret("discourse_api_key", "unconfigured")
 DISCOURSE_API_USERNAME = os.getenv("DISCOURSE_API_USERNAME", "unconfigured")
+
+YOUTUBE_API_KEY = read_secret("youtube_api_key", "unconfigured")
+YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3"
+YOUTUBE_CHANNEL_ID = os.getenv("YOUTUBE_CHANNEL_ID", "UCF71Bt4eDubxf0wbA7fXPfg")
 
 # https://docs.djangoproject.com/en/4.2/ref/settings/#templates
 TEMPLATES = [

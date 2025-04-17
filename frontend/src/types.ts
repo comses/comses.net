@@ -353,3 +353,11 @@ export interface ReviewerFilterParams {
   name?: string;
   programmingLanguages?: string[];
 }
+
+export interface HomepageFeedItem {
+  title: string;
+  summary?: string;
+  author?: string;
+  link: string;
+  date?: Date;
+}
