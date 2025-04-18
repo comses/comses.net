@@ -3,8 +3,9 @@ FROM comses/base:noble
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
 ARG UBUNTU_MIRROR=archive.ubuntu.com
-ENV VIRTUAL_ENV=/home/comses/virtualenvs/comses.venv
-ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+ENV VIRTUAL_ENV "/home/comses/virtualenvs/comses.venv"
+# FIXME: this gets overridden by values in .env
+ENV PATH "${VIRTUAL_ENV}/bin:$PATH"
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -53,7 +54,7 @@ COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 
 # FIXME: change to container user
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    pip3 install -r /tmp/${REQUIREMENTS_FILE}
+    pip install -r /tmp/${REQUIREMENTS_FILE}
 
 COPY ./deploy/cron.daily/* /etc/cron.daily/
 COPY ./deploy/cron.hourly/* /etc/cron.hourly/
@@ -63,11 +64,5 @@ COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${RUN_SCRIPT} /etc/service/django/run
 COPY ./deploy/huey.sh /etc/service/huey/run
 COPY . /code
-
-# FIXME: replace with install from pypi
-# upgrading pip because of some bug with the debian patched version
-RUN python3 -m pip install --upgrade pip
-RUN pip3 install git+https://github.com/sgfost/codemeticulous.git
-RUN pip3 install -r /tmp/requirements.txt
 
 CMD ["/sbin/my_init"]
