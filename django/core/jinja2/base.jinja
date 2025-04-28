@@ -10,25 +10,11 @@
 {% set profile_url = url('core:profile-detail', pk=user.id) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-    <nav class="navbar fixed-top navbar-expand-md pt-0 mt-0 w-100">
-        <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
-            {# logos #}
-            <div class='navbar-brand'>
-                <a href="/"><span class="logo">CoMSES Network</span></a>
-            </div>
-            {# hamburger collapse menu #}
-            <button class='navbar-toggler'
-                    data-bs-toggle='collapse'
-                    data-bs-target='#navbarLinks'
-                    aria-controls='navbarLinks'
-                    aria-expanded='false'
-                    aria-label='Toggle navigation'>
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            {# end hamburger collapse menu #}
+    <nav class="navbar fixed-top navbar-expand-md">
+        <div class="container-fluid d-flex flex-grow-1 justify-content-start">
 
             {# hamburger menu links #}
-            <div class="navbar-collapse collapse justify-content-end" id="navbarLinks">
+            <div class="navbar-collapse collapse justify-content-start" id="navbarLinks">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item py-0">
                         <a href="/about/" class="nav-link">About</a>
@@ -53,7 +39,23 @@
                             Forums
                         </a>
                     </li>
-
+            
+            {# hamburger collapse menu #}
+            <button class='navbar-toggler'
+                    data-bs-toggle='collapse'
+                    data-bs-target='#navbarLinks'
+                    aria-controls='navbarLinks'
+                    aria-expanded='false'
+                    aria-label='Toggle navigation'>
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            {# end hamburger collapse menu #}
+            
+            {# logos #}
+            <div class="navbar-brand mx-auto d-none d-md-block">
+                <a href="/"><span class="logo">CoMSES Network</span></a>
+            </div>
+        
                     {# login #}
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown py-0 pe-2">
@@ -271,10 +273,6 @@
         {# Override this in templates to add extra stylesheets #}
     {% endblock %}
     {# JS section #}
-    <script src="/static/js/navbar-scroll.js">
-        //navbar transition
-         
-    </script>
     <script src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
     {% if is_production() %}
         {% script async=False %}

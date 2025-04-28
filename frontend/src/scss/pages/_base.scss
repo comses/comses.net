@@ -50,7 +50,7 @@
 }
 
 .navbar {
-  background-color: transparent;
+  background-color: white;
   color: white;
   transition: background-color 0.3s ease, color 0.3s ease;
   position: fixed;
@@ -59,16 +59,14 @@
   margin: 0;
   padding: 0;
   
-  
-
   .nav-link {
-    color: rgb(255, 255, 255) !important;
+    color: grey !important;
   }
 
 }
 
 .navbar-brand {
-  padding-left: 0.01rem; // move logo away from edge
+  padding-left: 0.01rem; 
 }
 
 .navbar .container {
@@ -76,14 +74,6 @@
   padding-right: 1rem;
 }
 
-.navbar.scrolled {
-  background-color: white !important;
-  color: black;
-
-  .nav-link {
-    color: rgb(91, 91, 91) !important;
-  }
-}
 
 
 .landing-page-introduction {
