@@ -16,27 +16,49 @@
   padding: 50px 0;
 }
 
+.landing-card {
+  background-color: white;
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  margin-top: 4rem;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+
 
 .callout-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  background-color: white; 
-  color: #444;             
-  padding: 20px;
-  border-radius: 15px; 
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); 
-  transition: transform 0.2s ease-in-out;
-  font-family: "Open Sans", sans-serif;
-  font-weight: 300;
+  align-items: center;
+  justify-content: center;
 
-  h3{
-    color:#22b1e6;
+  .callout-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
   }
 
-  p{
-    color: #444; 
+  .callout-title {
+    font-size: 1.1rem;
+    color: #22b1e6;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .callout-description {
+    font-size: 0.9rem;
+    color: #555;
+    margin: 0;
   }
 }
 
@@ -44,11 +66,6 @@
   transform: scale(1.03); 
 }
 
-.callout-icon {
-  width: 50px;
-  height: 50px;
-  margin-bottom: 10px;
-}
 
 .caption {
   font-size: 1rem;
@@ -56,24 +73,30 @@
   margin-top: 10px;
 }
 
-
 .landing-page-introduction {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.3),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  width: 100%;
+  height: 100vh;
   overflow: hidden;
-  margin-top: 85px;
-  background: url("../assets/images/background-introduction.png") repeat top center;
-  padding-top: 40px;
-  padding-bottom: 60px;
-  text-align: center;
-  height: 480px;
+  border: 10px solid white; 
+  border-radius: 20px;
+  
+  .background-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(0deg, rgba(164, 212, 235, 1) 0%, rgba(100, 160, 200, 1) 100%);
+  }
 
-  h1,
-  h2,
-  h3,
-  h4 {
+  h1, h2, h3, h4 {
     font-family: "Alte-DIN-1451-Mittelschrift", "Open Sans", sans-serif;
     font-weight: 400;
+    z-index: 1;
+    position: relative;
   }
 
   h1 {
@@ -91,23 +114,26 @@
     text-transform: uppercase;
     padding-bottom: 30px;
   }
+  
+  .container {
+    position: relative;
+    z-index: 1;
+    padding-top: 6rem; 
+  }
 }
+
 
 div.activity {
   padding: 10px 5px 10px 5px;
 }
 
 .latest-peer-reviewed-models{
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
   background-color: #ffffff;
-  background: url("../assets/images/background-featured-content.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
   vertical-align: middle;
   margin-top: 85px;
-  font-family: "Open Sans", sans-serif;
   color: $white;
   font-weight: 300;
   margin: 0 !important;
@@ -116,19 +142,17 @@ div.activity {
 
   h1 {
     text-align: center;
+    color: black;
   }
 }
 
 .featured-content {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
   background: url("../assets/images/background-featured-content.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
   vertical-align: middle;
   margin-top: 85px;
-  font-family: "Open Sans", sans-serif;
   color: $white;
   font-weight: 300;
 
@@ -165,7 +189,7 @@ div.activity {
 
 .community {
   padding: 50px 0;
-  background-color: #f9f9f9;
+  background-color: #fff;
 
   h1{
     font-size: 2.5rem;
@@ -174,15 +198,15 @@ div.activity {
 
 .container-fluid .row {
   justify-content: center;
-  gap: 100px; /* gap between columns */
+  gap: 100px; 
 }
 
 .community-box {
   max-width: 500px; 
   padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  border-radius: 15px;
+  border: #ececea 1px solid;
 }
 
 
@@ -263,9 +287,8 @@ footer.footer {
   }
 }
 
-/* left half of featured models section*/
 .left-section { 
-  padding: 20px;
+  transform: translateX(-100px);
 }
 
 .btn-outline-dark {
@@ -290,15 +313,12 @@ footer.footer {
 
 .extra-resources {
   
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
-  background: url("../assets/images/background-introduction.png") repeat top center;
+  background: white;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
   vertical-align: middle;
   margin-top: 85px;
-  font-family: "Open Sans", sans-serif;
   color: $white;
   font-weight: 300;
   margin: 0 !important;
@@ -307,6 +327,7 @@ footer.footer {
 
   h1{
     text-align: center;
+    color: black;
   }
 }
 
@@ -314,7 +335,6 @@ footer.footer {
   background-color:#ffffff; 
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
   transition: transform 0.2s ease-in-out;
 
   h3{

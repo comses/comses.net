@@ -1,67 +1,74 @@
 {% extends "base.jinja" %}
 
 {% block introduction_section %}
-<section class='landing-page-introduction'>
-    <div class='container text-center'>
-        <div class='row'>
-            <div class='col'>
-                <h1 class='text-white'>
-                    A growing collection of resources for computational model-based science.
-                </h1>
-                <h3 class='text-white mt-4'>
-                    CoMSES Net is an international network of researchers,
-                    educators and professionals with the common goal of improving the way we develop, share,
-                    and use computational modeling in the social and ecological sciences.
-                </h3>
-                <button class="btn btn-primary my-4">Browse the Model Library</button>
+<section class="landing-page-introduction position-relative overflow-hidden">
+  <canvas id="backgroundCanvas" class="background-canvas"></canvas>
+  <div class="container position-relative z-1 text-center">
+    <div class="row">
+        <div class="col text-center">
+            <h1 class="text-white mb-3">A growing collection of resources for computational model-based science.</h1>
+            <h3 class="text-white mb-5">CoMSES Net is an international network of researchers,
+                educators and professionals improving computational modeling in the social and ecological sciences.</h3>
+        </div>
+    </div>
+    <div class="row justify-content-center my-4">
+        <div class="col-md-8">
+            <form method="get" action="/search/">
+            <div class="input-group">
+                <input type="text" name="query" class="form-control rounded-start" placeholder="Search the Model Library" style="height: 50px;">
+                <button class="btn btn-primary rounded-end" type="submit" style="height: 50px;">Go</button>
+            </div>
+            </form>
+        </div>
+    </div>
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-4 d-flex">
+            <div class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4">
+            <img src="{{ static('images/icons/submit.png') }}" alt="Model Library Icon" class="callout-icon mb-2">
+            <h3 class="callout-title">Model Library</h3>
+            <p class="callout-description">A digital repository for model software supporting FAIR principles</p>
             </div>
         </div>
-
-        <div class='row justify-content-center mt-5'>
-            <div class='col-md-4'>
-                <div class="callout-card text-center">
-                    <a href='{{ url("library:codebase-add") }}'>
-                        <img src='{{ static("images/icons/submit.png") }}' alt='Publish your code' class="callout-icon">
-                        <h2>Model Library</h2>
-                    </a>
-                    <p class='caption'>A digital repository for model software supporting FAIR principles</p>
-                </div>
+        <div class="col-md-4 d-flex">
+            <div class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4">
+            <img src="{{ static('images/icons/search.png') }}" alt="Community Icon" class="callout-icon mb-2">
+            <h3 class="callout-title">Community</h3>
+            <p class="callout-description">Share jobs, events, and discussions with an international network of modeling scientists</p>
             </div>
-
-            <div class='col-md-4'>
-                <div class="callout-card text-center">
-                    <a href='{{ slugurl("resources") }}'>
-                        <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers' class="callout-icon">
-                        <h2>Community</h2>
-                    </a>
-                    <p class='caption'>Share jobs, events, and discussions with an international network of modeling scientists</p>
-                </div>
-            </div>
-
-            <div class='col-md-4'>
-                <div class="callout-card text-center">
-                    <a href='{{ url("core:event-list") }}'>
-                        <img src='{{ static("images/icons/groups.png") }}' alt='Community Events and Jobs' class="callout-icon">
-                        <h2>Resources</h2>
-                    </a>
-                    <p class='caption'>Explore curated educational content, standards, etc</p>
-                </div>
+        </div>
+        <div class="col-md-4 d-flex">
+            <div class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4">
+            <img src="{{ static('images/icons/groups.png') }}" alt="Resources Icon" class="callout-icon mb-2">
+            <h3 class="callout-title">Resources</h3>
+            <p class="callout-description">Explore curated educational content, standards, etc</p>
             </div>
         </div>
     </div>
+  </div>
 </section>
 {% endblock %}
+
+
+
 {% block page %}
 
 <section class="latest-peer-reviewed-models">
     <div class="container">
         <div class="row">
-            <!-- left half -->
-            <div class="col-md-6 d-flex flex-column justify-content-center text-center left-section">
-                <button class="btn btn-outline-light my-2" href='{{ url("library:codebase-list") }}'>Upload your own model</button>
+            <div class="col-md-6 d-flex flex-column justify-content-center text-start left-section text-dark" style="margin-left: -50px;">
+                <h2 class="text-start fw-bold mb-3">The CoMSES Model Library</h2>
+                <p class="text-start">
+                    Preserve the <a href="#">digital artifacts and context</a> used to derive a published research finding in an open digital repository that supports 
+                    <a href="#">FAIR practices for Research Software</a>, software artifacts, supporting data, and models.
+                </p>
+                <p class="text-start">
+                    <a href="#">Promote good practices</a> for developing, documenting, and publishing computational models.
+                </p>
+                <div class="d-flex flex-column align-items-start">
+                    <a href="{{ url('library:codebase-list') }}" class="btn btn-primary mb-2">Browse the model library</a>
+                    <a href="{{ url('library:codebase-list') }}" class="btn btn-primary">Publish your code</a>
+                </div>
             </div>
-
-            <!-- right half -->
             <div class="col-md-6 right-section">
                 <h1>Latest Peer Reviewed Models</h1>
                 <div class="row">
@@ -95,7 +102,6 @@
     <h1 class="text-center">Our Community</h1>
     <div class='container-fluid'>
         <div class='row justify-content-center mt-4'>
-            <!-- jobs and appointments -->
             <div class='col-md-5 community-box'>
                 <h3 class="text-center">Jobs and Appointments</h3>
                 {% for item in latest_jobs[:3] %}
@@ -144,46 +150,25 @@
 </section>
 <section class="extra-resources">
     <div class="container">
-        <h1>Extra resources</h1>
         <div class="row">
-    <div class="col-md-6 d-flex flex-column justify-content-center left-section">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="resource-box text-center">
-                    <h3>Education</h3>
-                    <p class="resource-desc">Access learning materials and guides for computational modeling.</p>
-                    <button class="btn btn-primary w-100">Explore</button>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="resource-box text-center">
-                    <h3>Standards</h3>
-                    <p class="resource-desc">Learn about best practices and industry standards.</p>
-                    <button class="btn btn-primary w-100">Explore</button>
-                </div>
-            </div>
-            <div class="col-md-6 mt-3">
-                <div class="resource-box text-center">
-                    <h3>Frameworks</h3>
-                    <p class="resource-desc">Discover powerful frameworks for modeling and simulation.</p>
-                    <button class="btn btn-primary w-100">Explore</button>
-                </div>
-            </div>
-            <div class="col-md-6 mt-3">
-                <div class="resource-box text-center">
-                    <h3>Journals</h3>
-                    <p class="resource-desc">Find academic papers and research publications.</p>
-                    <button class="btn btn-primary w-100">Explore</button>
-                </div>
+        <div class="col-md-6 d-flex flex-column justify-content-center text-start left-section text-dark">
+            <h2 class="text-start fw-bold mb-4">Resources</h2>
+            <p class="text-start mb-4">
+                We maintain these community curated resources to help new and experienced computational modelers adopt 
+                <a href="#">FAIR principles</a> for digital data management and improve the 
+                <a href="#">discoverability, reusability, and reproducibility</a> of their computational models.
+            </p>
+            <ul class="list-unstyled mb-4">
+                <li class="mb-2"><a href="#">Education and training</a></li>
+                <li class="mb-2"><a href="#">Best practices</a></li>
+                <li class="mb-2"><a href="#">Modeling frameworks</a></li>
+                <li class="mb-2"><a href="#">Journals</a></li>
+            </ul>
+            <div class="mt-3 mb-5">
+                <a href="#" class="btn btn-primary">All resources</a>
             </div>
         </div>
 
-        <div class="text-center mt-4">
-            <button class="btn btn-primary w-75">More Resources</button>
-        </div>
-    </div>
-
-    <!-- Right Section: YouTube Content -->
     <div class="col-md-6 right-section">
         <h1 class="text-center">Latest Video Content</h1>
         <div class="row">
@@ -211,9 +196,9 @@
 </div>
     </div>
 </section>
-
 {% endblock %}
 
 {% block js %}
 {{ vite_asset('apps/homepage_feeds.ts') }}
+<script src="{{ static('js/background-animation.js') }}" defer></script>
 {% endblock %}
