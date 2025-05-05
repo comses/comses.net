@@ -10,52 +10,34 @@
 {% set profile_url = url('core:profile-detail', pk=user.id) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-    <nav class="navbar fixed-top navbar-expand-md">
-        <div class="container-fluid d-flex flex-grow-1 justify-content-start">
+<nav class="navbar navbar-expand-md navbar-light bg-white fixed-top">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
 
-            {# hamburger menu links #}
-            <div class="navbar-collapse collapse justify-content-start" id="navbarLinks">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item py-0">
-                        <a href="/about/" class="nav-link">About</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('library:codebase-list') }}" class="nav-link">Model Library</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href='{{ slugurl("education") }}' class='nav-link'>Education</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('core:event-list') }}" class="nav-link">Events</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('core:job-list') }}" class="nav-link">Jobs</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/resources/" class="nav-link">Resources</a>
-                    </li>
-                    <li class="nav-item py-0">
-                        <a href="{{ constants.DISCOURSE_BASE_URL }}" target="_blank" class="nav-link">
-                            Forums
-                        </a>
-                    </li>
-            
-            {# hamburger collapse menu #}
-            <button class='navbar-toggler'
-                    data-bs-toggle='collapse'
-                    data-bs-target='#navbarLinks'
-                    aria-controls='navbarLinks'
-                    aria-expanded='false'
-                    aria-label='Toggle navigation'>
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            {# end hamburger collapse menu #}
-            
-            {# logos #}
-            <div class="navbar-brand mx-auto d-none d-md-block">
-                <a href="/"><span class="logo">CoMSES Network</span></a>
-            </div>
-        
+    <div class="d-flex align-items-center">
+      <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+              aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="/about/">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url('library:codebase-list') }}">Model Library</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ slugurl('education') }}">Education</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url('core:event-list') }}">Events</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url('core:job-list') }}">Jobs</a></li>
+          <li class="nav-item"><a class="nav-link" href="/resources/">Resources</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ constants.DISCOURSE_BASE_URL }}" target="_blank">Forums</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mx-auto order-0">
+      <a class="navbar-brand" href="/">
+        <span class="logo">CoMSES Network</span>
+      </a>
+    </div>
+
                     {# login #}
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown py-0 pe-2">
