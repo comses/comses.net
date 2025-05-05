@@ -65,6 +65,19 @@
 
 }
 
+.navbar .logo {
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+@media (max-width: 767px) {
+  .navbar-brand.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+    display: block !important;
+  }
+}
+
 .navbar-brand {
   padding-left: 0.01rem; 
 }
