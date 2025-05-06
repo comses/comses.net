@@ -58,3 +58,4 @@ ipython
 pgcli
 # replace with pypi install eventually (and transfer to OMF?)
 git+https://github.com/comses/codemeticulous.git
+setuptools>=78.1.1 # not directly required, pinned by Snyk to avoid a vulnerability
