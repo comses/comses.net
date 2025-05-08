@@ -24,7 +24,7 @@ django-vite==3.0.5  # latest is 3.0.5
 django-waffle==4.2.0
 djangorestframework==3.15.2
 djangorestframework-camel-case==1.4.2
-Django==4.2.20
+Django==4.2.21
 elasticsearch-dsl>=7.0.0,<8.0.0
 elasticsearch>=7.0.0,<8.0.0
 html2text>=2016.9.19
