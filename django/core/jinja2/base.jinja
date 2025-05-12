@@ -37,35 +37,35 @@
         <span class="logo">CoMSES Network</span>
       </a>
     </div>
-
-                    {# login #}
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown py-0 pe-2">
-                            <a class="pe-0 nav-link dropdown-toggle"
-                               id="userDropdownMenuLink"
-                               data-bs-toggle="dropdown"
-                               role="button"
-                               href="#"
-                               aria-haspopup="true"
-                               aria-expanded="false"
-                            >
-                                <span class="fas fa-user"></span>
-                                {{ user.username }}
-                                {# FIXME: this should be cached instead #}
-                                {% if user.emailaddress_set.filter(verified=False).exists() %}
-                                    <span class="badge bg-warning">Email Unverified</span>
-                                    <span class="sr-only">Email Unverified</span>
-                                {% endif %}
+    <div class="d-flex align-items-center">
+        {# login #}
+            {% if user.is_authenticated %}
+            <li class="ms-2 nav-item d-flex align-items-center">
+              <a class="pe-0 nav-link dropdown-toggle"
+                 id="userDropdownMenuLink"
+                 data-bs-toggle="dropdown"
+                 role="button"
+                 href="#"
+                   aria-haspopup="true"
+                   aria-expanded="false"
+                >
+                <span class="fas fa-user"></span>
+                {{ user.username }}
+                {# FIXME: this should be cached instead #}
+                {% if user.emailaddress_set.filter(verified=False).exists() %}
+                    <span class="badge bg-warning">Email Unverified</span>
+                        <span class="sr-only">Email Unverified</span>
+                    {% endif %}
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end"
+                        aria-labeledby="userDropdownMenuLink">
+                        <a class="dropdown-item" href="{{ profile_url }}">
+                            <i class="fas fa-user-edit"></i>
+                                Your Account
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end"
-                                aria-labeledby="userDropdownMenuLink">
-                                <a class="dropdown-item" href="{{ profile_url }}">
-                                    <i class="fas fa-user-edit"></i>
-                                    Your Account
-                                </a>
-                                {% if user.has_perm('library.change_peerreview') %}
-                                <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
-                                    <i class="fas fa-flask"></i>
+                            {% if user.has_perm('library.change_peerreview') %}
+                            <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
+                                <i class="fas fa-flask"></i>
                                     Manage Peer Reviews
                                 </a>
                                 {% endif %}
@@ -125,7 +125,7 @@
             {# end hamburger menu content #}
             </div>
         </nav>
-
+    </div>
     </div>
 {% endmacro %}
 
