@@ -1,7 +1,7 @@
 {% extends "base.jinja" %}
 
 {% block introduction_section %}
-<section class="landing-page-introduction pt-5 pt-md-4 position-relative overflow-hidden"">
+<section class="landing-page-introduction pt-5 pt-md-4 position-relative overflow-hidden">
   <canvas id="backgroundCanvas" class="background-canvas"></canvas>
   <div class="container position-relative z-1 text-center">
     <div class="row">
@@ -22,21 +22,21 @@
         </div>
     </div>
     <div class="row justify-content-center mt-4">
-        <div class="col-md-4 d-flex">
+        <div class="col-md-4 d-flex mb-3">
             <div class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4">
             <img src="{{ static('images/icons/submit.png') }}" alt="Model Library Icon" class="callout-icon mb-2">
             <h3 class="callout-title">Model Library</h3>
             <p class="callout-description">A digital repository for model software supporting FAIR principles</p>
             </div>
         </div>
-        <div class="col-md-4 d-flex">
+        <div class="col-md-4 d-flex mb-3">
             <div class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4">
             <img src="{{ static('images/icons/search.png') }}" alt="Community Icon" class="callout-icon mb-2">
             <h3 class="callout-title">Community</h3>
             <p class="callout-description">Share jobs, events, and discussions with an international network of modeling scientists</p>
             </div>
         </div>
-        <div class="col-md-4 d-flex">
+        <div class="col-md-4 d-flex mb-3">
             <div class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4">
             <img src="{{ static('images/icons/groups.png') }}" alt="Resources Icon" class="callout-icon mb-2">
             <h3 class="callout-title">Resources</h3>
@@ -47,15 +47,12 @@
   </div>
 </section>
 {% endblock %}
-
-
-
 {% block page %}
-
 <section class="latest-peer-reviewed-models">
     <div class="container">
         <div class="row">
-            <div class="col-md-6 d-flex flex-column justify-content-center text-start left-section text-dark" style="margin-left: -50px;">
+            <div class="col-md-6 d-flex flex-column justify-content-center text-start text-dark">
+            <div class="library-intro-inner">
                 <h2 class="text-start fw-bold mb-3">The CoMSES Model Library</h2>
                 <p class="text-start">
                     Preserve the <a href="#">digital artifacts and context</a> used to derive a published research finding in an open digital repository that supports 
@@ -69,7 +66,8 @@
                     <a href="{{ url('library:codebase-list') }}" class="btn btn-primary">Publish your code</a>
                 </div>
             </div>
-            <div class="col-md-6 right-section">
+        </div>
+            <div class="col-md-6 mt-5 mt-md-0">
                 <h1>Latest Peer Reviewed Models</h1>
                 <div class="row">
                     {% for item in featured_content[:3] %}
@@ -97,7 +95,6 @@
             <div class='col' data-title="Latest Jobs & Appointments" data-link="/jobs/" data-feed="Jobs" id="jobs-feed"></div>
         </div>
 </section>
-
 <section class='community'>
     <h1 class="text-center">Our Community</h1>
     <div class='container-fluid'>
@@ -111,7 +108,7 @@
                     </div>
                 {% endfor %}
                 <div class="text-center mt-3">
-                    <button class="btn btn-outline-dark community-btn">Browse more jobs</button>
+                    <button class="btn btn-primary">Browse more jobs</button>
                 </div>
             </div>
 
@@ -124,7 +121,7 @@
                     </div>
                 {% endfor %}
                 <div class="text-center mt-3">
-                    <button class="btn btn-outline-dark community-btn">Browse more events</button>
+                    <button class="btn btn-primary">Browse more events</button>
                 </div>
             </div>
             <div class='col-md-5 community-box'>
@@ -142,7 +139,7 @@
                     </div>
                 {% endfor %}
                 <div class="text-center mt-3">
-                    <button class="btn btn-outline-dark community-btn">CoMSES Net Forums</button>
+                    <button class="btn btn-primary">CoMSES Net Forums</button>
                 </div>
             </div>
         </div>

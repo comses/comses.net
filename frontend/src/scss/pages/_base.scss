@@ -10,12 +10,12 @@
   text-shadow: none;
   background-color: transparent;
   border: 0;
-  background-image: url("@/assets/images/comses-logo.png");
+  background-image: url("/static/favicon/android-chrome-144x144.png");
   background-position: center;
   background-repeat: no-repeat;
-  background-size: 181px 70px;
+  background-size: 75px 75px;
   display: inline-block;
-  height: 70px !important;
+  height: 100px !important;
   width: 181px !important;
 }
 
@@ -70,7 +70,13 @@
   font-size: 1.25rem;
 }
 
-@media (max-width: 767px) {
+@media (min-width: 768px) {
+  .logo{
+    transform: translateX(-150px);
+  }
+}
+
+@media (max-width: 100px) {
   .navbar-brand.mx-auto {
     margin-left: auto;
     margin-right: auto;
@@ -101,11 +107,31 @@
   position: relative;
   z-index: 1;
   margin: 0 !important;
-  padding-top: 2rem !important;
+  padding-top: 10px !important;
   margin-top: 40px;
   
   
 }
+
+@media (max-width: 768px) {
+  .landing-page-introduction {
+    padding-top: 520px !important;
+    padding-bottom: 60px !important;
+    min-height: 100vh !important;
+    overflow: auto !important;
+  }
+
+  .latest-peer-reviewed-models {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .latest-peer-reviewed-models .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
 
 
 .landing-page-introduction h1, 

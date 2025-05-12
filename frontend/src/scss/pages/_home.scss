@@ -288,8 +288,14 @@ footer.footer {
   }
 }
 
-.left-section { 
-  transform: translateX(-100px);
+
+@media (min-width: 768px) {
+  .library-intro-inner {
+    margin-left: 1rem;
+    margin-right: auto;
+    width: 100%;
+    transform: translateX(-110px);
+  }
 }
 
 .btn-outline-dark {
