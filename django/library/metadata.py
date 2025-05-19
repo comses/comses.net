@@ -214,6 +214,7 @@ class CodeMetaConverter:
                 if release.output_data_url
                 else None
             ),
+            # FIXME: need better guidance on author vs contributor fields in CodeMeta
             author=cls.convert_contributors(
                 release.author_release_contributors, "author"
             )

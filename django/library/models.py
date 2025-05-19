@@ -759,37 +759,41 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     @property
     def all_contributors(self):
-        return Contributor.objects.filter(
-            id__in=ReleaseContributor.objects.for_codebase(self).values(
-                "contributor_id"
-            )
-        )
+        """
+        Return all contributors for this Codebase across all releases in an unordered fashion.
+        There should not be any duplicates.
+        FIXME: do not use for citation generation at the moment as the set of contributors is unordered
+        """
+        return self._get_unique_contributors(ReleaseContributor.objects)
 
     @property
     def all_author_contributors(self):
-        return Contributor.objects.filter(
-            id__in=ReleaseContributor.objects.authors()
-            .for_codebase(self)
-            .values("contributor_id")
-        )
+        return self._get_unique_contributors(ReleaseContributor.objects.authors())
 
     @property
     def all_nonauthor_contributors(self):
-        return self.all_contributors.exclude(
-            id__in=self.all_author_contributors.values("id")
-        )
+        return self._get_unique_contributors(ReleaseContributor.objects.nonauthors())
 
     @property
     def all_citable_contributors(self):
-        return Contributor.objects.filter(
-            id__in=ReleaseContributor.objects.citable()
-            .for_codebase(self)
-            .values("contributor_id")
-        )
+        """
+        Returns all citable Contributors for this codebase, across all releases.
+        FIXME: currently unordered, but could impose total ordering by earliest release and then individual Release ordering
+        or some other heuristic
+        """
+        return self._get_unique_contributors(ReleaseContributor.objects.citable())
 
     @property
     def citable_names(self):
         return [c.get_full_name() for c in self.all_citable_contributors if c.has_name]
+
+    def _get_unique_contributors(self, release_contributors):
+        """
+        Returns a unique, unordered set of Contributor objects given an initial filtered set of ReleaseContributors for this Codebase.
+        """
+        return Contributor.objects.filter(
+            id__in=release_contributors.for_codebase(self).values("contributor_id")
+        )
 
     def get_all_contributors_search_fields(self):
         return " ".join(
@@ -1566,16 +1570,22 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def nonauthor_release_contributors(self):
         return ReleaseContributor.objects.nonauthors().for_release(self)
 
+    @property
+    def citable_release_contributors(self):
+        return ReleaseContributor.objects.citable().for_release(self)
+
     @cached_property
     def citation_authors(self):
         authors = self.submitter.member_profile.name
-        citable_names = self.codebase.citable_names
-        if citable_names:
-            authors = ", ".join(citable_names)
+        citable_contributors = self.citable_release_contributors
+        if citable_contributors:
+            authors = ", ".join(
+                [rc.get_full_name() for rc in citable_contributors if rc.has_name]
+            )
         else:
             logger.warning(
                 "No authors found for release when building citation text, using default submitter name: %s",
-                self.submitter,
+                authors,
             )
         return authors
 
@@ -1647,6 +1657,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             "DOI": str(self.doi),
             # FIXME: check codemeta for additional metadata
         }
+
+    @cached_property
+    def common_metadata(self):
+        """
+        FIXME: remove when we fully migrate to codemeticulous
+        """
+        return CommonMetadata(self)
 
     @cached_property
     def datacite(self):
@@ -1746,7 +1763,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
         )
 
-    def add_contributor(self, contributor: Contributor, role=Role.AUTHOR, index=None):
+    def add_contributor(
+        self,
+        contributor: Contributor,
+        role=Role.AUTHOR,
+        index=None,
+        include_in_citation=True,
+    ):
         # Check if a ReleaseContributor with the same contributor already exists
         logger.debug("Adding contributor with role: %s, %s", contributor, role)
         existing_release_contributor = self.codebase_contributors.filter(
@@ -1758,7 +1781,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 index = self.codebase_contributors.all().count()
             # Create a new ReleaseContributor instance if the contributor is not already associated
             new_release_contributor = self.codebase_contributors.create(
-                contributor=contributor, roles=[role], index=index
+                contributor=contributor,
+                roles=[role],
+                index=index,
+                include_in_citation=include_in_citation,
             )
             return new_release_contributor
         else:
@@ -1909,7 +1935,7 @@ class ReleaseContributorQuerySet(models.QuerySet):
 
     def citable(self):
         """release contributors that should be included in a citation"""
-        return self.filter(include_in_citation=True)
+        return self.filter(include_in_citation=True).order_by("index")
 
     def copy_to(self, release: CodebaseRelease):
         release_contributors = list(self)
@@ -1944,8 +1970,11 @@ class ReleaseContributor(models.Model):
 
     objects = ReleaseContributorQuerySet.as_manager()
 
-    def __getattribute__(self, name):
-        if name in [
+    def __getattribute__(self, attribute_name):
+        """
+        Proxy to the underlying Contributor object for the given properties.
+        """
+        if attribute_name in [
             "family_name",
             "given_name",
             "has_name",
@@ -1960,8 +1989,8 @@ class ReleaseContributor(models.Model):
             "type",
             "user",
         ]:
-            return getattr(self.contributor, name)
-        return object.__getattribute__(self, name)
+            return getattr(self.contributor, attribute_name)
+        return object.__getattribute__(self, attribute_name)
 
     def __str__(self):
         return f"[release_contributor] (release:{self.release}, contributor:{self.contributor})"
