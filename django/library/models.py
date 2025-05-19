@@ -1649,6 +1649,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         }
 
     @cached_property
+    def common_metadata(self):
+        """Returns a CommonMetadata object used to build specific metadata objects: for example CodeMeta or DataCite"""
+        return CommonMetadata(self) 
+
+    @cached_property
     def datacite(self):
         if not self.live:
             logger.warning(
