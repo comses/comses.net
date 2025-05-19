@@ -21,7 +21,7 @@ from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
-from django.db.models import Prefetch, Q, Count, Max
+from django.db.models import Prefetch, Q, Count, Max, Case, When
 from django.utils.functional import cached_property
 from django.urls import reverse
 from django.utils import timezone
@@ -757,34 +757,41 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             self.last_published_on.year if self.last_published_on else date.today().year
         )
 
+    def _get_ordered_contributors_from_release_contributors(self, release_contributors_qs):
+        """
+        takes a queryset of ordered ReleaseContributor objects and returns a queryset of
+        Contributor objects, preserving that order
+        """
+        ordered_contributor_ids = list(release_contributors_qs.values_list("contributor_id", flat=True).distinct())
+
+        if not ordered_contributor_ids:
+            return Contributor.objects.none()
+
+        preserved_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ordered_contributor_ids)])
+        return Contributor.objects.filter(id__in=ordered_contributor_ids).order_by(preserved_order)
+
     @property
     def all_contributors(self):
-        return Contributor.objects.filter(
-            id__in=ReleaseContributor.objects.for_codebase(self).values(
-                "contributor_id"
-            )
+        return self._get_ordered_contributors_from_release_contributors(
+            ReleaseContributor.objects.for_codebase(self)
         )
 
     @property
     def all_author_contributors(self):
-        return Contributor.objects.filter(
-            id__in=ReleaseContributor.objects.authors()
-            .for_codebase(self)
-            .values("contributor_id")
+        return self._get_ordered_contributors_from_release_contributors(
+            ReleaseContributor.objects.authors().for_codebase(self)
         )
 
     @property
     def all_nonauthor_contributors(self):
         return self.all_contributors.exclude(
-            id__in=self.all_author_contributors.values("id")
+            id__in=self.all_author_contributors.values_list("id", flat=True)
         )
 
     @property
     def all_citable_contributors(self):
-        return Contributor.objects.filter(
-            id__in=ReleaseContributor.objects.citable()
-            .for_codebase(self)
-            .values("contributor_id")
+        return self._get_ordered_contributors_from_release_contributors(
+            ReleaseContributor.objects.citable().for_codebase(self)
         )
 
     @property
