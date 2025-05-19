@@ -27,8 +27,6 @@
   border: 1px solid #e0e0e0;
 }
 
-
-
 .callout-card {
   background: white;
   border-radius: 10px;
@@ -63,9 +61,8 @@
 }
 
 .callout-card:hover {
-  transform: scale(1.03); 
+  transform: scale(1.03);
 }
-
 
 .caption {
   font-size: 1rem;
@@ -78,10 +75,9 @@
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  border: 10px solid white; 
+  border: 10px solid white;
   border-radius: 20px;
 
-  
   .background-canvas {
     position: absolute;
     top: 0;
@@ -93,7 +89,10 @@
     background: linear-gradient(0deg, rgba(164, 212, 235, 1) 0%, rgba(100, 160, 200, 1) 100%);
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: "Alte-DIN-1451-Mittelschrift", "Open Sans", sans-serif;
     font-weight: 400;
     z-index: 1;
@@ -115,20 +114,19 @@
     text-transform: uppercase;
     padding-bottom: 30px;
   }
-  
+
   .container {
     position: relative;
     z-index: 1;
-    padding-top: 6rem; 
+    padding-top: 6rem;
   }
 }
-
 
 div.activity {
   padding: 10px 5px 10px 5px;
 }
 
-.latest-peer-reviewed-models{
+.latest-peer-reviewed-models {
   background-color: #ffffff;
   overflow: hidden;
   padding-top: 40px;
@@ -192,35 +190,34 @@ div.activity {
   padding: 50px 0;
   background-color: #fff;
 
-  h1{
+  h1 {
     font-size: 2.5rem;
   }
 }
 
 .container-fluid .row {
   justify-content: center;
-  gap: 100px; 
+  gap: 100px;
 }
 
 .community-box {
-  max-width: 500px; 
+  max-width: 500px;
   padding: 20px;
   background: #fff;
   border-radius: 15px;
   border: #ececea 1px solid;
 }
 
-
 .activity h4 {
   font-size: 1rem;
   margin-bottom: 5px;
 }
 
-.activity p, .activity small {
+.activity p,
+.activity small {
   font-size: 0.85rem;
   color: #666;
 }
-
 
 #search-dropdown {
   .dropdown-toggle::after {
@@ -288,7 +285,6 @@ footer.footer {
   }
 }
 
-
 @media (min-width: 768px) {
   .library-intro-inner {
     margin-left: 1rem;
@@ -299,13 +295,13 @@ footer.footer {
 }
 
 .btn-outline-dark {
-  width: 80%; 
+  width: 80%;
   padding: 10px;
   font-size: 1rem;
 }
 
 .btn-outline-light {
-  width: 80%; 
+  width: 80%;
   padding: 30px;
   font-size: 1rem;
 }
@@ -315,11 +311,10 @@ footer.footer {
 }
 
 .latest-peer-reviewed-image {
-  object-fit: contain; 
+  object-fit: contain;
 }
 
 .extra-resources {
-  
   background: white;
   overflow: hidden;
   padding-top: 40px;
@@ -332,28 +327,26 @@ footer.footer {
   padding-top: 1rem !important;
   padding-bottom: 0 !important;
 
-  h1{
+  h1 {
     text-align: center;
     color: black;
   }
 }
 
 .resource-box {
-  background-color:#ffffff; 
+  background-color: #ffffff;
   padding: 20px;
   border-radius: 8px;
   transition: transform 0.2s ease-in-out;
 
-  h3{
-    color:#22b1e6;
+  h3 {
+    color: #22b1e6;
   }
 }
 
-
 .resource-box:hover {
-  transform: scale(1.02); 
+  transform: scale(1.02);
 }
-
 
 .resource-desc {
   font-size: 0.9rem;

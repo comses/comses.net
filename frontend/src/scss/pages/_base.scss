@@ -58,11 +58,10 @@
   width: 100%;
   margin: 0;
   padding: 0;
-  
+
   .nav-link {
     color: grey !important;
   }
-
 }
 
 .navbar .logo {
@@ -71,7 +70,7 @@
 }
 
 @media (min-width: 768px) {
-  .logo{
+  .logo {
     transform: translateX(-150px);
   }
 }
@@ -85,7 +84,7 @@
 }
 
 .navbar-brand {
-  padding-left: 0.01rem; 
+  padding-left: 0.01rem;
 }
 
 .navbar .container {
@@ -93,11 +92,9 @@
   padding-right: 1rem;
 }
 
-
-
 .landing-page-introduction {
-  min-height: 70vh; 
-  padding-bottom: 40px; 
+  min-height: 70vh;
+  padding-bottom: 40px;
   background: url("../assets/images/background-introduction.png") repeat top center;
   background-size: cover;
   display: flex;
@@ -109,8 +106,6 @@
   margin: 0 !important;
   padding-top: 10px !important;
   margin-top: 40px;
-  
-  
 }
 
 @media (max-width: 768px) {
@@ -132,15 +127,13 @@
   }
 }
 
-
-
-.landing-page-introduction h1, 
+.landing-page-introduction h1,
 .landing-page-introduction p {
   color: white;
 }
 
-
-html, body {
+html,
+body {
   margin: 0 !important;
   padding: 0 !important;
   height: 100%;
