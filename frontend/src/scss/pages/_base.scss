@@ -10,12 +10,12 @@
   text-shadow: none;
   background-color: transparent;
   border: 0;
-  background-image: url("@/assets/images/comses-logo.png");
+  background-image: url("/static/favicon/android-chrome-144x144.png");
   background-position: center;
   background-repeat: no-repeat;
-  background-size: 181px 70px;
+  background-size: 75px 75px;
   display: inline-block;
-  height: 70px !important;
+  height: 100px !important;
   width: 181px !important;
 }
 
@@ -24,7 +24,8 @@
     inset 0 -10px 10px -10px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   margin-top: 85px;
-  background: url("../assets/images/background-introduction-200.png") repeat top center;
+  background: url("../assets/images/background-introduction-200.png") no repeat center center;
+  background-size: cover;
   text-align: left;
   vertical-align: middle;
   height: 125px;
@@ -46,4 +47,94 @@
   a {
     padding: 20px;
   }
+}
+
+.navbar {
+  background-color: white;
+  color: white;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+
+  .nav-link {
+    color: grey !important;
+  }
+}
+
+.navbar .logo {
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .logo {
+    transform: translateX(-150px);
+  }
+}
+
+@media (max-width: 100px) {
+  .navbar-brand.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+    display: block !important;
+  }
+}
+
+.navbar-brand {
+  padding-left: 0.01rem;
+}
+
+.navbar .container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.landing-page-introduction {
+  min-height: 70vh;
+  padding-bottom: 40px;
+  background: url("../assets/images/background-introduction.png") repeat top center;
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  margin: 0 !important;
+  padding-top: 10px !important;
+  margin-top: 40px;
+}
+
+@media (max-width: 768px) {
+  .landing-page-introduction {
+    padding-top: 520px !important;
+    padding-bottom: 60px !important;
+    min-height: 100vh !important;
+    overflow: auto !important;
+  }
+
+  .latest-peer-reviewed-models {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .latest-peer-reviewed-models .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.landing-page-introduction h1,
+.landing-page-introduction p {
+  color: white;
+}
+
+html,
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100%;
 }
