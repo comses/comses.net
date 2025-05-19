@@ -1659,6 +1659,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         }
 
     @cached_property
+    def common_metadata(self):
+        """
+        FIXME: remove when we fully migrate to codemeticulous
+        """
+        return CommonMetadata(self)
+
+    @cached_property
     def datacite(self):
         if not self.live:
             logger.warning(
@@ -1756,7 +1763,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
         )
 
-    def add_contributor(self, contributor: Contributor, role=Role.AUTHOR, index=None):
+    def add_contributor(
+        self,
+        contributor: Contributor,
+        role=Role.AUTHOR,
+        index=None,
+        include_in_citation=True,
+    ):
         # Check if a ReleaseContributor with the same contributor already exists
         logger.debug("Adding contributor with role: %s, %s", contributor, role)
         existing_release_contributor = self.codebase_contributors.filter(
@@ -1768,7 +1781,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 index = self.codebase_contributors.all().count()
             # Create a new ReleaseContributor instance if the contributor is not already associated
             new_release_contributor = self.codebase_contributors.create(
-                contributor=contributor, roles=[role], index=index
+                contributor=contributor,
+                roles=[role],
+                index=index,
+                include_in_citation=include_in_citation,
             )
             return new_release_contributor
         else:

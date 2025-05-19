@@ -198,11 +198,34 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.assertEqual(other_codebase_release.version_number, "1.0.1")
 
     def test_create_codebase_release_share_uuid(self):
-        """Ensure we can create a second codebase release an it hasa different share uuid"""
+        """Ensure we can create a second codebase release and it has a different share uuid"""
         self.codebase_release.share_uuid = uuid.uuid4()
         self.codebase_release.save()
         cr = self.codebase.create_release(initialize=False)
         self.assertNotEqual(self.codebase_release.share_uuid, cr.share_uuid)
+
+    def test_citation_author_ordering(self):
+        release_contributor_factory = ReleaseContributorFactory(self.codebase_release)
+        contributor_factory = ContributorFactory(user=self.submitter)
+        release_contributors = []
+        for contributor in contributor_factory.create_unique_contributors(10):
+            # create a release contributor with the same index as the contributor
+            # to ensure that the ordering is correct
+            release_contributors.append(
+                release_contributor_factory.create(contributor, randomize_role=True)
+            )
+            logger.debug(
+                "XXX: created release contributor [%s] with roles: %s",
+                release_contributors[-1].contributor,
+                release_contributors[-1].roles,
+            )
+        # check that ordering is correct
+        for crc, rc in zip(
+            self.codebase_release.citable_release_contributors, release_contributors
+        ):
+            self.assertEqual(crc.contributor, rc.contributor)
+            self.assertEqual(crc.index, rc.index)
+            self.assertEqual(crc.roles, rc.roles)
 
     def test_metadata_completeness(self):
         # make sure release contributors are empty since we currently automatically add the submitter as an author

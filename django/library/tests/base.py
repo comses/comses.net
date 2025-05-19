@@ -62,6 +62,7 @@ class CodebaseFactory(ContentModelFactory):
 class ContributorFactory:
     def __init__(self, user):
         self.user = user
+        self.user_factory = UserFactory()
 
     def get_default_data(self, user):
         if user is None:
@@ -83,6 +84,15 @@ class ContributorFactory:
         )
         return contributor
 
+    def create_unique_contributors(
+        self,
+        number_of_contributors=5,
+    ) -> list[Contributor]:
+        return [
+            self.create(user=self.user_factory.create())
+            for _ in range(number_of_contributors)
+        ]
+
 
 class ReleaseContributorFactory:
     def __init__(self, codebase_release):
@@ -94,8 +104,13 @@ class ReleaseContributorFactory:
         self.index += 1
         return defaults
 
-    def create(self, contributor: Contributor, **overrides):
+    def get_random_role(self):
+        return random.choice(Role.values)
+
+    def create(self, contributor: Contributor, randomize_role=False, **overrides):
         kwargs = self.get_default_data()
+        if randomize_role:
+            overrides["role"] = self.get_random_role()
         kwargs.update(overrides)
         return self.codebase_release.add_contributor(contributor, **kwargs)
 
