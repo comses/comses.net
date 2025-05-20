@@ -55,7 +55,7 @@
                 <ul>
                     {% for presentation in theme.presentations.all() %}
                         <li>{% for contributor in presentation.contributors.all() -%}
-                                <a class='badge bg-success contributor' href='{{contributor.member_profile_url}}'>{{ contributor.get_full_name() }}</a>
+                                <a class='badge bg-success contributor' href='{{contributor.member_profile_url()}}'>{{ contributor.get_full_name() }}</a>
                             {% endfor -%}
                             <a class='text-gray' href='{{ presentation.external_url }}'><em>{{ presentation.title }}</em></a></li>
                     {% endfor %}

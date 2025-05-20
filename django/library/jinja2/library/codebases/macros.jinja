@@ -72,7 +72,7 @@
                         {% for codebase_contributor in codebase.all_contributors %}
                             {% set contributor_name=codebase_contributor.name %}
                             {% if codebase_contributor.user %}
-                                <a class='badge bg-success contributor' href="{{ codebase_contributor.member_profile_url }}">
+                                <a class='badge bg-success contributor' href="{{ codebase_contributor.member_profile_url() }}">
                                     {{ contributor_name }}
                                 </a>
                             {% else %}
