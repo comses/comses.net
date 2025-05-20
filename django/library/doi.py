@@ -540,31 +540,32 @@ class DataCiteApi:
             codebase_doi = codebase.doi
 
             """
-            Mint DOI for codebase(parent) if it doesn't exist.
+            Mint DOI for parent codebase if it doesn't already exist
             """
-            if codebase_doi:
-                continue
-            # request to DataCite API
-            log, ok = self.mint_public_doi(codebase)
-            if not ok:
-                logger.error(
-                    "Could not mint DOI for parent codebase %s. Skipping release %s.",
-                    codebase.pk,
-                    release.pk,
-                )
-                invalid_releases.append(
-                    (release, log, "Unable to mint DOI for parent codebase")
-                )
-                continue
+            if not codebase_doi:
+                mint_codebase_doi_log, ok = self.mint_public_doi(codebase)
+                if not ok:
+                    logger.error(
+                        "Could not mint DOI for parent codebase %s. Skipping release %s.",
+                        codebase.pk,
+                        release.pk,
+                    )
+                    invalid_releases.append(
+                        (
+                            release,
+                            mint_codebase_doi_log,
+                            "Unable to mint DOI for parent codebase",
+                        )
+                    )
 
             """
             Mint DOI for release
             """
-            log, ok = self.mint_public_doi(release)
+            mint_release_doi_log, ok = self.mint_public_doi(release)
             if not ok:
                 logger.error("Could not mint DOI for release %s. Skipping.", release.pk)
                 invalid_releases.append(
-                    (release, log, "Unable to mint DOI for release")
+                    (release, mint_release_doi_log, "Unable to mint DOI for release")
                 )
                 continue
 
@@ -576,11 +577,15 @@ class DataCiteApi:
             """
             codebase.refresh_from_db()
             release.refresh_from_db()
-            log, ok = self.update_doi_metadata(codebase)
+            update_codebase_doi_log, ok = self.update_doi_metadata(codebase)
             if not ok:
                 logger.error("Failed to update metadata for codebase %s", codebase.pk)
                 invalid_releases.append(
-                    (release, log, "Failed to update codebase metadata")
+                    (
+                        release,
+                        update_codebase_doi_log,
+                        "Failed to update codebase metadata",
+                    )
                 )
 
             """
@@ -592,7 +597,9 @@ class DataCiteApi:
             next_release = release.get_next_release()
 
             if previous_release and previous_release.doi:
-                log, ok = self.update_doi_metadata(previous_release)
+                update_previous_release_doi_log, ok = self.update_doi_metadata(
+                    previous_release
+                )
                 if not ok:
                     logger.error(
                         "Failed to update metadata for previous_release %s",
@@ -601,13 +608,13 @@ class DataCiteApi:
                     invalid_releases.append(
                         (
                             release,
-                            log.http_status,
-                            f"Unable to update previous release id {previous_release.pk} metadata {log.message}",
+                            update_previous_release_doi_log.http_status,
+                            f"Unable to update previous release id {previous_release.pk} metadata {update_previous_release_doi_log.message}",
                         )
                     )
 
             if next_release and next_release.doi:
-                log, ok = self.update_doi_metadata(next_release)
+                update_next_release_doi_log, ok = self.update_doi_metadata(next_release)
                 if not ok:
                     logger.error(
                         "Failed to update metadata for next_release %s", next_release.pk
@@ -615,8 +622,8 @@ class DataCiteApi:
                     invalid_releases.append(
                         (
                             release,
-                            log.http_status,
-                            f"Unable to update next release id {next_release.pk} metadata {log.message}",
+                            mint_codebase_doi_log.http_status,
+                            f"Unable to update next release id {next_release.pk} metadata {update_next_release_doi_log.message}",
                         )
                     )
 
@@ -632,7 +639,7 @@ class DataCiteApi:
                     writer.writerow([release.pk, status_code, message])
 
         """
-        assert correctness
+        sanity check for all peer reviewed releases without DOIs and their parent codebases have valid DOIs
         """
         if not self.dry_run:
             print(VERIFICATION_MESSAGE)
