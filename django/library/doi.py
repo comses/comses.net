@@ -40,7 +40,7 @@ DOI_PATTERN = re.compile(f"{DATACITE_PREFIX}/[-._;()/:a-zA-Z0-9]+")
 
 MAX_DATACITE_API_WORKERS = 25
 
-VERIFICATION_MESSAGE = """
+VERIFICATION_MESSAGE = r"""
                 _  __       _                         
                (_)/ _|     (_)                        
 __   _____ _ __ _| |_ _   _ _ _ __   __ _             
@@ -55,14 +55,14 @@ __   _____ _ __ _| |_ _   _ _ _ __   __ _
 def get_welcome_message(dry_run: bool):
     ENV_MESSAGE = ""
     if IS_DEVELOPMENT:
-        ENV_MESSAGE = """
+        ENV_MESSAGE = r"""
         +-+-+-+-+-+-+-+-+-+-+-+
         |D|E|V|E|L|O|P|M|E|N|T|
         +-+-+-+-+-+-+-+-+-+-+-+
         Development Mode
         """
     if IS_STAGING:
-        ENV_MESSAGE = """
+        ENV_MESSAGE = r"""
         (                             (        )          
         )\ )  *   )    (      (       )\ )  ( /(  (       
         (()/(` )  /(    )\     )\ )   (()/(  )\()) )\ )    
@@ -75,7 +75,7 @@ def get_welcome_message(dry_run: bool):
         Staging Mode
         """
     if IS_PRODUCTION:
-        ENV_MESSAGE = """
+        ENV_MESSAGE = r"""
         (   (       ) (                       (       )     ) 
         )\ ))\ ) ( /( )\ )          (    *   ))\ ) ( /(  ( /( 
         (()/(()/( )\()|()/(     (    )\ ` )  /(()/( )\()) )\())
