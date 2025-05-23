@@ -24,6 +24,26 @@ def build_discourse_url(uri):
     return f"{settings.DISCOURSE_BASE_URL}/{uri}"
 
 
+def get_latest_posts(number_of_posts=5):
+    url = build_discourse_url("posts.json")
+    logger.debug(
+        "fetching posts from %s with deploy environment %s",
+        url,
+        settings.DEPLOY_ENVIRONMENT,
+    )
+    response = requests.get(
+        url,
+        headers={
+            "Content-Type": "application/json",
+            "Api-Key": settings.DISCOURSE_API_KEY,
+            "Api-Username": settings.DISCOURSE_API_USERNAME,
+        },
+    )
+    if response.status_code == 200:
+        return response.json()["latest_posts"][:number_of_posts]
+    return []
+
+
 def create_discourse_user(user):
     response = requests.post(
         build_discourse_url("users"),

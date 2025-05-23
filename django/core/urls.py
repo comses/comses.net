@@ -11,7 +11,7 @@ from wagtail.contrib.sitemaps.views import sitemap
 from curator import urls as curator_urls
 from home import urls as home_urls
 from library import urls as library_urls
-from . import feeds, homepage_feeds, views
+from . import feeds, views
 
 schema_view = get_swagger_view(title="CoMSES.net API")
 
@@ -90,7 +90,6 @@ urlpatterns = [
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += feeds.urlpatterns()
-urlpatterns += homepage_feeds.urlpatterns()
 
 if not settings.DEPLOY_ENVIRONMENT.is_production:
     import debug_toolbar

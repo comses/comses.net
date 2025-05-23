@@ -76,7 +76,7 @@ def test(ctx, tests=None, coverage=False):
     else:
         coverage_cmd = env["python"]
     ctx.run(
-        f"{coverage_cmd} manage.py test {apps}",
+        f"{coverage_cmd} manage.py test {apps} --settings=core.settings.test",
         env={"DJANGO_SETTINGS_MODULE": "core.settings.test"},
     )
 
