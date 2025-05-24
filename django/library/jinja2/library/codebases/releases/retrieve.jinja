@@ -289,6 +289,46 @@
     {% endif %}
 {% endwith %}
 
+
+{% with remotes = codebase.git_mirror.active_remotes_list if codebase.git_mirror else None %}
+    {% if has_change_perm or remotes %}
+    <div class="card-metadata">
+        <div class="card-body">
+            <div class="section mb-0">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <b class="card-title mb-0">
+                        <i class="fab fa-github"></i>
+                        Github Sync
+                    </b>
+                    {% if has_change_perm %} 
+                        <a class="btn btn-sm btn-outline-secondary"
+                            href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
+                            <i class="fas fa-cog"></i> Configure
+                        </a>
+                    {% endif %}
+                </div>
+                {% if remotes %}
+                    <ul class="list-unstyled mb-2">
+                        {% for remote in remotes %}
+                            <li class="d-flex align-items-center mb-1">
+                                <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate badge bg-primary">
+                                    {{ remote.owner }}/{{ remote.repo_name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <div class="card-text">
+                    <a class="small" href="/github/" target="_blank">
+                        <i class="fas fa-question-circle"></i> What is this?
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
 <div class="card-metadata">
     <div class="card-body">
         <div class="section">
