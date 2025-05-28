@@ -10,78 +10,62 @@
 {% set profile_url = url('core:profile-detail', pk=user.id) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-    <div class="fixed-top bg-light">
-        <nav class="navbar navbar-expand-md navbar-light bg-light pt-0 px-3 mt-0 mx-1">
-            {# logos #}
-            <div class='navbar-brand'>
-                <a href="/"><span class="logo">CoMSES Network</span></a>
-            </div>
-            {# hamburger collapse menu #}
-            <button class='navbar-toggler'
-                    data-bs-toggle='collapse'
-                    data-bs-target='#navbarLinks'
-                    aria-controls='navbarLinks'
-                    aria-expanded='false'
-                    aria-label='Toggle navigation'>
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            {# end hamburger collapse menu #}
+<nav class="navbar navbar-expand-md navbar-light bg-white fixed-top">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
 
-            {# hamburger menu links #}
-            <div class="navbar-collapse collapse" id="navbarLinks">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item py-0">
-                        <a href="/about/" class="nav-link">About</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('library:codebase-list') }}" class="nav-link">Model Library</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href='{{ slugurl("education") }}' class='nav-link'>Education</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('core:event-list') }}" class="nav-link">Events</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('core:job-list') }}" class="nav-link">Jobs</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/resources/" class="nav-link">Resources</a>
-                    </li>
-                    <li class="nav-item py-0">
-                        <a href="{{ constants.DISCOURSE_BASE_URL }}" target="_blank" class="nav-link">
-                            Forums
-                        </a>
-                    </li>
+    <div class="d-flex align-items-center">
+      <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+              aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
-                    {# login #}
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown py-0 pe-2">
-                            <a class="pe-0 nav-link dropdown-toggle"
-                               id="userDropdownMenuLink"
-                               data-bs-toggle="dropdown"
-                               role="button"
-                               href="#"
-                               aria-haspopup="true"
-                               aria-expanded="false"
-                            >
-                                <span class="fas fa-user"></span>
-                                {{ user.username }}
-                                {# FIXME: this should be cached instead #}
-                                {% if user.emailaddress_set.filter(verified=False).exists() %}
-                                    <span class="badge bg-warning">Email Unverified</span>
-                                    <span class="sr-only">Email Unverified</span>
-                                {% endif %}
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="/about/">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url('library:codebase-list') }}">Model Library</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ slugurl('education') }}">Education</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url('core:event-list') }}">Events</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url('core:job-list') }}">Jobs</a></li>
+          <li class="nav-item"><a class="nav-link" href="/resources/">Resources</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ constants.DISCOURSE_BASE_URL }}" target="_blank">Forums</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mx-auto order-0">
+      <a class="navbar-brand" href="/">
+        <span class="logo">CoMSES Network</span>
+      </a>
+    </div>
+    <div class="d-flex align-items-center">
+        {# login #}
+            {% if user.is_authenticated %}
+            <li class="ms-2 nav-item d-flex align-items-center">
+              <a class="pe-0 nav-link dropdown-toggle"
+                 id="userDropdownMenuLink"
+                 data-bs-toggle="dropdown"
+                 role="button"
+                 href="#"
+                   aria-haspopup="true"
+                   aria-expanded="false"
+                >
+                <span class="fas fa-user"></span>
+                {{ user.username }}
+                {# FIXME: this should be cached instead #}
+                {% if user.emailaddress_set.filter(verified=False).exists() %}
+                    <span class="badge bg-warning">Email Unverified</span>
+                        <span class="sr-only">Email Unverified</span>
+                    {% endif %}
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end"
+                        aria-labeledby="userDropdownMenuLink">
+                        <a class="dropdown-item" href="{{ profile_url }}">
+                            <i class="fas fa-user-edit"></i>
+                                Your Account
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end"
-                                aria-labeledby="userDropdownMenuLink">
-                                <a class="dropdown-item" href="{{ profile_url }}">
-                                    <i class="fas fa-user-edit"></i>
-                                    Your Account
-                                </a>
-                                {% if user.has_perm('library.change_peerreview') %}
-                                <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
-                                    <i class="fas fa-flask"></i>
+                            {% if user.has_perm('library.change_peerreview') %}
+                            <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
+                                <i class="fas fa-flask"></i>
                                     Manage Peer Reviews
                                 </a>
                                 {% endif %}
@@ -139,7 +123,9 @@
                 </ul>
             </div>
             {# end hamburger menu content #}
+            </div>
         </nav>
+    </div>
     </div>
 {% endmacro %}
 
@@ -353,13 +339,15 @@
         be heavily degraded without it.
     </div>
 </noscript>
-{% if not is_production() %}
+
+<!--{% if not is_production() %}
     <div class='alert alert-danger m-0'>
         <i class='fas fa-flask me-2'></i>
         You are currently accessing a <b>test version of the comses.net website</b>. Information that you
         view or store here will <b>not be preserved</b> and may not be consistent.
     </div>
 {% endif %}
+-->
 {% block page %}
     <section class='messages'>
         {% for message in get_messages(request) %}

@@ -12,16 +12,82 @@
   padding-bottom: $default-padding;
 }
 
-.landing-page-introduction {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.3),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  margin-top: 85px;
-  background: url("../assets/images/background-introduction.png") repeat top center;
-  padding-top: 40px;
-  padding-bottom: 60px;
+.callout-cards {
+  padding: 50px 0;
+}
+
+.landing-card {
+  background-color: white;
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  margin-top: 4rem;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.callout-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
-  height: 480px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .callout-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
+  }
+
+  .callout-title {
+    font-size: 1.1rem;
+    color: #22b1e6;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .callout-description {
+    font-size: 0.9rem;
+    color: #555;
+    margin: 0;
+  }
+}
+
+.callout-card:hover {
+  transform: scale(1.03);
+}
+
+.caption {
+  font-size: 1rem;
+  color: #333;
+  margin-top: 10px;
+}
+
+.landing-page-introduction {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  border: 10px solid white;
+  border-radius: 20px;
+
+  .background-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(0deg, rgba(164, 212, 235, 1) 0%, rgba(100, 160, 200, 1) 100%);
+  }
 
   h1,
   h2,
@@ -29,6 +95,8 @@
   h4 {
     font-family: "Alte-DIN-1451-Mittelschrift", "Open Sans", sans-serif;
     font-weight: 400;
+    z-index: 1;
+    position: relative;
   }
 
   h1 {
@@ -46,22 +114,44 @@
     text-transform: uppercase;
     padding-bottom: 30px;
   }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    padding-top: 6rem;
+  }
 }
 
 div.activity {
   padding: 10px 5px 10px 5px;
 }
 
+.latest-peer-reviewed-models {
+  background-color: #ffffff;
+  overflow: hidden;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  vertical-align: middle;
+  margin-top: 85px;
+  color: $white;
+  font-weight: 300;
+  margin: 0 !important;
+  padding-top: 1rem !important;
+  padding-bottom: 0 !important;
+
+  h1 {
+    text-align: center;
+    color: black;
+  }
+}
+
 .featured-content {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
   background: url("../assets/images/background-featured-content.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
   vertical-align: middle;
   margin-top: 85px;
-  font-family: "Open Sans", sans-serif;
   color: $white;
   font-weight: 300;
 
@@ -97,18 +187,36 @@ div.activity {
 }
 
 .community {
-  padding-top: $default-padding;
-  padding-bottom: $default-padding;
+  padding: 50px 0;
+  background-color: #fff;
 
   h1 {
-    text-align: center;
-    padding-bottom: 1.5rem;
+    font-size: 2.5rem;
   }
+}
 
-  .row {
-    padding-top: 30px;
-    padding-bottom: 30px;
-  }
+.container-fluid .row {
+  justify-content: center;
+  gap: 100px;
+}
+
+.community-box {
+  max-width: 500px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 15px;
+  border: #ececea 1px solid;
+}
+
+.activity h4 {
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.activity p,
+.activity small {
+  font-size: 0.85rem;
+  color: #666;
 }
 
 #search-dropdown {
@@ -175,4 +283,73 @@ footer.footer {
       text-decoration: none;
     }
   }
+}
+
+@media (min-width: 768px) {
+  .library-intro-inner {
+    margin-left: 1rem;
+    margin-right: auto;
+    width: 100%;
+    transform: translateX(-110px);
+  }
+}
+
+.btn-outline-dark {
+  width: 80%;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.btn-outline-light {
+  width: 80%;
+  padding: 30px;
+  font-size: 1rem;
+}
+
+.latest-peer-reviewed-description {
+  font-size: 0.85rem;
+}
+
+.latest-peer-reviewed-image {
+  object-fit: contain;
+}
+
+.extra-resources {
+  background: white;
+  overflow: hidden;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  vertical-align: middle;
+  margin-top: 85px;
+  color: $white;
+  font-weight: 300;
+  margin: 0 !important;
+  padding-top: 1rem !important;
+  padding-bottom: 0 !important;
+
+  h1 {
+    text-align: center;
+    color: black;
+  }
+}
+
+.resource-box {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  transition: transform 0.2s ease-in-out;
+
+  h3 {
+    color: #22b1e6;
+  }
+}
+
+.resource-box:hover {
+  transform: scale(1.02);
+}
+
+.resource-desc {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 10px;
 }
