@@ -2,14 +2,14 @@ import { toRefs } from "vue";
 import { useAxios } from "@/composables/api";
 import { parseDates } from "@/util";
 
-export function useHomepageFeedAPI() {
+export function useFeedAPI() {
   /**
    * Composable function for making requests to the homepage feed API
    *
    * @returns - An object containing reactive state of the request and helper functions for API requests
    */
 
-  const baseUrl = "/homepage-feeds/";
+  const baseUrl = "/api/feeds/";
   const { state, get, detailUrl } = useAxios(baseUrl);
 
   function getCodebases() {

@@ -196,7 +196,6 @@ class FeedItem:
     author: str = ""
     # a relevant date for the item (date published, event start date, etc.)
     date: datetime = None
-    featured_image: str = ""
     thumbnail: str = ""
 
 
@@ -262,7 +261,7 @@ class CodebaseFeed(AbstractFeed):
         )
         featured_image = codebase.get_featured_image()
         if featured_image:
-            feed_item.featured_image = featured_image.get_rendition("width-480").url
+            feed_item.thumbnail = featured_image.get_rendition("width-480").url
         return feed_item
 
 
@@ -335,6 +334,9 @@ class YouTubeFeed(AbstractFeed):
         return []
 
     def to_feed_item(self, item):
+        """
+        Convert YouTube API JSON into a FeedItem.
+        """
         return FeedItem(
             title=item["snippet"]["title"],
             summary=item["snippet"]["description"],
@@ -401,12 +403,12 @@ def urlpatterns():
         path("feeds/code/rss/", RssCodebaseFeed(), name="rss-codebases"),
         path("feeds/all/", AllFeed(), name="all"),
         path(
-            "homepage-feeds/code/",
+            "api/feeds/code/",
             CodebaseFeedView.as_view(),
             name="codebase-feed",
         ),
-        path("homepage-feeds/events/", EventFeedView.as_view(), name="event-feed"),
-        path("homepage-feeds/forum/", ForumFeedView.as_view(), name="forum-feed"),
-        path("homepage-feeds/jobs/", JobFeedView.as_view(), name="job-feed"),
-        path("homepage-feeds/yt/", YouTubeFeedView.as_view(), name="youtube-feed"),
+        path("api/feeds/events/", EventFeedView.as_view(), name="event-feed"),
+        path("api/feeds/forum/", ForumFeedView.as_view(), name="forum-feed"),
+        path("api/feeds/jobs/", JobFeedView.as_view(), name="job-feed"),
+        path("api/feeds/yt/", YouTubeFeedView.as_view(), name="youtube-feed"),
     ]

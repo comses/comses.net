@@ -24,12 +24,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { useHomepageFeedAPI } from "@/composables/api";
-import type { HomepageFeedItem } from "@/types";
+import { useFeedAPI } from "@/composables/api";
+import type { FeedItem } from "@/types";
 
-const items = ref<HomepageFeedItem[]>([]);
+const items = ref<FeedItem[]>([]);
 
-const homepageFeedAPI = useHomepageFeedAPI();
+const feedAPI = useFeedAPI();
 
 const props = defineProps<{
   title: string;
@@ -38,7 +38,7 @@ const props = defineProps<{
 }>();
 
 onMounted(async () => {
-  const response = await homepageFeedAPI[`get${props.feed}`]();
+  const response = await feedAPI[`get${props.feed}`]();
   // TODO error handling
   if (response.data.items) {
     items.value = response.data.items;
