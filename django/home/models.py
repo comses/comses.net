@@ -29,14 +29,13 @@ from wagtail.images.blocks import ImageChooserBlock
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
-from core.discourse import build_discourse_url
 from core.fields import MarkdownField, TutorialMarkdownField
 from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
 from core.widgets import MarkdownTextarea
 
 # FIXME: should these models be pushed into core..
-from library.models import Codebase, CodebaseRelease, Contributor
+from library.models import CodebaseRelease, Contributor
 
 logger = logging.getLogger(__name__)
 

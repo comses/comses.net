@@ -12,9 +12,9 @@ from django.views import View
 from itertools import chain
 from operator import attrgetter
 
-from library.models import CodebaseRelease
-from .discourse import build_discourse_url, get_latest_posts
-from .models import Event, Job
+from library.models import Codebase, CodebaseRelease
+from core.discourse import build_discourse_url, get_latest_posts
+from core.models import Event, Job
 
 import logging
 import re
@@ -22,11 +22,15 @@ import requests
 import sys
 
 
-FEED_MAX_ITEMS = settings.DEFAULT_HOMEPAGE_FEED_MAX_ITEMS
+DEFAULT_HOMEPAGE_FEED_MAX_ITEMS = settings.DEFAULT_HOMEPAGE_FEED_MAX_ITEMS
 DEFAULT_CACHE_TIMEOUT = 3600  # 1 hour cache timeout
 
 logger = logging.getLogger(__name__)
 
+
+"""
+FIXME: should probably be moved to home to prevent potential circular imports with core importing from library
+"""
 
 # invalid xml characters regex pulled from
 # https://stackoverflow.com/questions/1707890/fast-way-to-filter-illegal-xml-unicode-chars-in-python
@@ -179,6 +183,11 @@ class AtomJobFeed(RssJobFeed):
     subtitle = RssJobFeed.description
 
 
+"""
+Support classes for generic content feeds currently included in the landing page.
+"""
+
+
 @dataclass
 class FeedItem:
     title: str
@@ -192,6 +201,7 @@ class FeedItem:
 
 
 class AbstractFeed(ABC):
+    max_number_of_items = DEFAULT_HOMEPAGE_FEED_MAX_ITEMS
     _cache_key = None  # subclasses can define a custom cache key if needed
     cache_timeout = DEFAULT_CACHE_TIMEOUT
 
@@ -237,17 +247,20 @@ class AbstractFeed(ABC):
 
 class CodebaseFeed(AbstractFeed):
     def _get_feed_source_data(self):
-        return CodebaseRelease.objects.latest_for_feed(FEED_MAX_ITEMS)
+        return Codebase.objects.latest_for_feed(self.max_number_of_items)
 
-    def to_feed_item(self, release):
+    def to_feed_item(self, codebase):
+        release = codebase.latest_version
         feed_item = FeedItem(
-            title=release.codebase.title,
-            summary=release.summary,
+            title=codebase.title,
+            summary=release.release_notes.raw
+            or codebase.summary
+            or codebase.description.raw,
             link=release.get_absolute_url(),
             author=release.submitter.get_full_name(),
             date=release.date_created,
         )
-        featured_image = release.codebase.get_featured_image()
+        featured_image = codebase.get_featured_image()
         if featured_image:
             feed_item.featured_image = featured_image.get_rendition("width-480").url
         return feed_item
@@ -255,7 +268,7 @@ class CodebaseFeed(AbstractFeed):
 
 class EventFeed(AbstractFeed):
     def _get_feed_source_data(self):
-        return Event.objects.latest_for_feed(FEED_MAX_ITEMS)
+        return Event.objects.latest_for_feed(self.max_number_of_items)
 
     def to_feed_item(self, event):
         return FeedItem(
@@ -268,8 +281,16 @@ class EventFeed(AbstractFeed):
 
 
 class ForumFeed(AbstractFeed):
+    mock = False  # set to True for testing with mock data
+
+    def __init__(self, mock=False):
+        self.mock = mock
+        super().__init__()
+
     def _get_feed_source_data(self):
-        return get_latest_posts(FEED_MAX_ITEMS)
+        if self.mock:
+            logger.info("Using mock data for forum feed")
+        return get_latest_posts(self.max_number_of_items, mock=self.mock)
 
     def to_feed_item(self, post):
         return FeedItem(
@@ -283,7 +304,7 @@ class ForumFeed(AbstractFeed):
 
 class JobFeed(AbstractFeed):
     def _get_feed_source_data(self):
-        return Job.objects.latest_for_feed(FEED_MAX_ITEMS)
+        return Job.objects.latest_for_feed(self.max_number_of_items)
 
     def to_feed_item(self, job):
         return FeedItem(
@@ -301,14 +322,16 @@ class YouTubeFeed(AbstractFeed):
         params = {
             "part": "snippet",
             "channelId": settings.YOUTUBE_CHANNEL_ID,
-            "maxResults": 6,
+            "maxResults": self.max_number_of_items,
             "order": "date",
             "key": settings.YOUTUBE_API_KEY,
         }
 
         response = requests.get(yt_api_url, params=params)
         if response.status_code == 200:
-            return response.json()
+            yt_response = response.json()["items"]
+            logger.debug("YouTube API response: %s", yt_response)
+            return yt_response
         return []
 
     def to_feed_item(self, item):

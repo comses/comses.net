@@ -3,6 +3,8 @@ import re
 import requests
 import shortuuid
 
+from datetime import datetime
+from django.contrib.auth import get_user_model
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -24,7 +26,31 @@ def build_discourse_url(uri):
     return f"{settings.DISCOURSE_BASE_URL}/{uri}"
 
 
-def get_latest_posts(number_of_posts=5):
+def get_mock_forum_posts(user=None, number_of_posts=5):
+    """
+    Returns a canned response for forum activity.
+    This is used to mock the response from the Discourse API.
+    """
+    User = get_user_model()
+    if user is None:
+        user = User.objects.last()
+    member_profile = user.member_profile
+    return [
+        # adhere to discourse API response structure
+        {
+            "topic_title": f"Generated Test Forum Post {i}",
+            "excerpt": f"Summary of generated test forum post {i}",
+            "post_url": f"https://staging-discourse.comses.net/t/topic/{i}",
+            "username": member_profile.discourse_username,
+            "created_at": datetime.now(),
+        }
+        for i in range(number_of_posts)
+    ]
+
+
+def get_latest_posts(number_of_posts=5, mock=False):
+    if mock:
+        return get_mock_forum_posts(number_of_posts=number_of_posts)
     url = build_discourse_url("posts.json")
     logger.debug(
         "fetching posts from %s with deploy environment %s",

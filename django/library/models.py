@@ -490,6 +490,16 @@ class CodebaseQuerySet(models.QuerySet):
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
 
+    def latest_for_feed(self, number=10, include_all=False):
+        qs = (
+            self.public()
+            .select_related("submitter__member_profile")
+            .order_by("-date_created")
+        )
+        if include_all:
+            return qs
+        return qs[:number]
+
     def updated_after(self, start_date, end_date=None, **kwargs):
         """
         copy pasted and then refactored from the curator_statistics.py management command
