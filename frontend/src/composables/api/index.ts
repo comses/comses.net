@@ -2,6 +2,7 @@ export * from "./axios";
 export * from "./codebase";
 export * from "./contributor";
 export * from "./event";
+export * from "./homepage_feeds";
 export * from "./job";
 export * from "./profile";
 export * from "./releaseEditor";

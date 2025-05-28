@@ -1,7 +1,7 @@
 from django.urls import path, re_path
 from wagtail.images.views.serve import ServeView
 
-from . import views
+from . import views, feeds
 
 app_name = "home"
 
@@ -21,3 +21,5 @@ urlpatterns = [
     ),
     path("about/contact/sent/", views.ContactSentView.as_view(), name="contact-sent"),
 ]
+
+urlpatterns += feeds.urlpatterns()
