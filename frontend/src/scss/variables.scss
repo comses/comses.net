@@ -45,18 +45,6 @@ $h4-font-size: 1.2rem;
 $h5-font-size: 1.1rem;
 $h6-font-size: 1rem;
 
-// Include Alte DIN 1451 Mittelschrift
-@font-face {
-  font-family: "Alte-DIN-1451-Mittelschrift";
-  src: url("@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.woff") format("woff"),
-    url("@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift")
-      format("svg"),
-    url("@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot"),
-    url("@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix") format("embedded-opentype");
-  font-weight: normal;
-  font-style: normal;
-}
-
 // Include font-awesome
 $fa-font-path: "@fortawesome/fontawesome-free/webfonts";
 @import "@fortawesome/fontawesome-free/scss/fontawesome.scss";
@@ -65,7 +53,7 @@ $fa-font-path: "@fortawesome/fontawesome-free/webfonts";
 @import "@fortawesome/fontawesome-free/scss/brands.scss";
 
 // Use Open Sans as base font
-@import url("https://fonts.googleapis.com/css?family=Open+Sans");
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800");
 $font-family-base: "Open Sans", Roboto, "Helvetica Neue", sans-serif;
 
 // Links
@@ -90,3 +78,6 @@ $min-contrast-ratio: 2;
 
 // enable negative margin utilities
 $enable-negative-margins: true;
+
+// global navbar height
+$navbar-height: 85px;

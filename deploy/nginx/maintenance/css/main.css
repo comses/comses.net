@@ -423,7 +423,7 @@ p {
 .lead {
   margin-bottom: 27px;
   font-size: 18px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.4;
 }
 
@@ -2113,7 +2113,7 @@ input[type="button"].btn-block {
 }
 
 body {
-  font-weight: 300;
+  font-weight: 400;
 }
 
 img {

@@ -123,7 +123,7 @@ class SiteSettings(BaseSiteSetting):
 
     @property
     def has_banner(self):
-        return bool(self.banner_message.raw.strip())
+        return bool(self.banner_message_title)
 
     def is_production(self):
         return settings.DEPLOY_ENVIRONMENT.is_production
