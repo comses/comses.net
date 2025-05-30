@@ -1,7 +1,7 @@
 {% from "common.jinja" import render_ogp_tags %}
 
 {% if not user %}
-    {% set user = request.user %}
+{% set user = request.user %}
 {% endif %}
 {% set login_url = url("account_login") %}
 {% set logout_url = url("account_logout") %}
@@ -10,225 +10,271 @@
 {% set profile_url = url('core:profile-detail', pk=user.id) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-<nav class="navbar navbar-expand-md navbar-light bg-white fixed-top">
-  <div class="container-fluid d-flex justify-content-between align-items-center">
+<nav class="navbar navbar-expand-md bg-white fixed-top">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
 
-    <div class="d-flex align-items-center">
-      <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
-              aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+        <div class="d-flex align-items-center">
+            <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-      <div class="collapse navbar-collapse" id="navbarContent">
-        <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="/about/">About</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url('library:codebase-list') }}">Model Library</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ slugurl('education') }}">Education</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url('core:event-list') }}">Events</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url('core:job-list') }}">Jobs</a></li>
-          <li class="nav-item"><a class="nav-link" href="/resources/">Resources</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ constants.DISCOURSE_BASE_URL }}" target="_blank">Forums</a></li>
-        </ul>
-      </div>
-    </div>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <a class="navbar-brand p-0 me-0" href="/">
+                    <span class="logo">CoMSES Network</span>
+                </a>
 
-    <div class="mx-auto order-0">
-      <a class="navbar-brand" href="/">
-        <span class="logo">CoMSES Network</span>
-      </a>
-    </div>
-    <div class="d-flex align-items-center">
-        {# login #}
-            {% if user.is_authenticated %}
-            <li class="ms-2 nav-item d-flex align-items-center">
-              <a class="pe-0 nav-link dropdown-toggle"
-                 id="userDropdownMenuLink"
-                 data-bs-toggle="dropdown"
-                 role="button"
-                 href="#"
-                   aria-haspopup="true"
-                   aria-expanded="false"
-                >
-                <span class="fas fa-user"></span>
-                {{ user.username }}
-                {# FIXME: this should be cached instead #}
-                {% if user.emailaddress_set.filter(verified=False).exists() %}
-                    <span class="badge bg-warning">Email Unverified</span>
-                        <span class="sr-only">Email Unverified</span>
-                    {% endif %}
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end"
-                        aria-labeledby="userDropdownMenuLink">
-                        <a class="dropdown-item" href="{{ profile_url }}">
-                            <i class="fas fa-user-edit"></i>
-                                Your Account
-                            </a>
-                            {% if user.has_perm('library.change_peerreview') %}
-                            <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
-                                <i class="fas fa-flask"></i>
-                                    Manage Peer Reviews
-                                </a>
-                                {% endif %}
-                                {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
-                                <form id="logoutForm" method="post" action="{{ logout_url }}">
-                                    {{ csrf_input }}
-                                    {% if redirect_field_value %}
-                                        <input type="hidden"
-                                                name="{{ redirect_field_name }}"
-                                                value="{{ redirect_field_value }}" />
-                                    {% endif %}
-                                <input type="submit" style="display: none">
-                                </form>
-                                <a class="dropdown-item"
-                                   onclick='return submitLogout();'
-                                   href="{{ logout_url }}">
-                                    <i class='fas fa-sign-out-alt'></i>
-                                    Sign Out
-                                </a>
-                            </div>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link"
-                                href="{{ login_url }}?next={{ request.path }}">
-                                <i class="fas fa-sign-in-alt"></i>
-                                Sign In
-                            </a>
-                        </li>
-                    {% endif %}
-                    {# end login #}
-                    {# search #}
-                    <li id="search-dropdown" class="ms-2 my-auto nav-item dropdown show">
-                        <a id="search-button"
-                           onclick="focusSearch()"
-                           href="#"
-                           class="dropdown-toggle"
-                           data-bs-toggle="dropdown"
-                           aria-expanded="false"
-                           aria-haspopup="true">
-                            <i class="fas fa-search"></i>
-                        </a>
-                        <div id="header-search-form" class="p-2 dropdown-menu dropdown-menu-right" aria-labelledby="search-button">
-                            <form method="get" action="/search/">
-                                <input id="header-search-input" type="text" name="query" class="p-2 form-control"
-                                       placeholder="search entire site">
-                                {# FIXME: put back when advanced search is implemented
-                                <div class="float-end">
-                                    <small><a href="/search/advanced/">options</a></small>
-                                </div>
-                                #}
-                            </form>
-                        </div>
+                {# desktop navigation with dropdowns #}
+                <ul class="navbar-nav d-none d-md-flex">
+                    <li class="nav-item"><a class="nav-link" href="/about/">About</a></li>
+                    <li class="nav-item dropdown me-2">
+                        <button class="nav-dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/about/people/">People</a></li>
+                            <li><a class="dropdown-item" href="/about/faq/">FAQ</a></li>
+                            <li><a class="dropdown-item" href="/digest/">Digest archive</a></li>
+                            <li><a class="dropdown-item" href="/about/contact/">Contact us</a></li>
+                        </ul>
                     </li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url('library:codebase-list') }}">Model Library</a>
+                    </li>
+                    <li class="nav-item dropdown me-2">
+                        <button class="nav-dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url('library:codebase-add') }}"><b>Publish a
+                                        model</b></a></li>
+                            <li><a class="dropdown-item" href="/reviews/">Peer review</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="/resources/">Resources</a></li>
+                    <li class="nav-item dropdown me-2">
+                        <button class="nav-dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/education/"><b>Education</b></a></li>
+                            <li><a class="dropdown-item" href="/resources/modeling-frameworks/">Modeling frameworks</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/resources/journals/">Journals</a></li>
+                            <li><a class="dropdown-item" href="/resources/standards/">Standards</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="/community/">Community</a></li>
+                    <li class="nav-item dropdown me-2">
+                        <button class="nav-dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url('core:event-list') }}"><b>Events</b></a></li>
+                            <li><a class="dropdown-item" href="{{ url('core:job-list') }}"><b>Jobs</b></a></li>
+                            <li><a class="dropdown-item" href="{{ url('core:profile-list') }}">Members</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{{ constants.DISCOURSE_BASE_URL }}"
+                            target="_blank">Forums</a></li>
+                </ul>
+
+                {# flat mobile navigation #}
+                <ul class="navbar-nav d-md-none">
+                    <li class="nav-item"><a class="nav-link" href="/about/">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/about/contact/">Contact us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url('library:codebase-list') }}">Model Library</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="/education/">Education</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/resources/">Resources</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/community/">Community</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url('core:event-list') }}">Events</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url('core:job-list') }}">Jobs</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url('core:profile-list') }}">Members</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ constants.DISCOURSE_BASE_URL }}"
+                            target="_blank">Forums</a></li>
                 </ul>
             </div>
-            {# end hamburger menu content #}
-            </div>
-        </nav>
+        </div>
+
+        <div class="d-flex align-items-center">
+            {# search #}
+            <li id="search-dropdown" class="mx-3 my-auto nav-item dropdown show">
+                <a id="search-button" onclick="focusSearch()" href="#" class="dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false" aria-haspopup="true">
+                    <i class="fas fa-search"></i>
+                </a>
+                <div id="header-search-form" class="p-2 dropdown-menu dropdown-menu-right"
+                    aria-labelledby="search-button">
+                    <form method="get" action="/search/">
+                        <input id="header-search-input" type="text" name="query" class="p-2 form-control"
+                            placeholder="search entire site">
+                        {# FIXME: put back when advanced search is implemented
+                        <div class="float-end">
+                            <small><a href="/search/advanced/">options</a></small>
+                        </div>
+                        #}
+                    </form>
+                </div>
+            </li>
+            {# login #}
+            {% if user.is_authenticated %}
+            <li class="nav-item dropdown">
+                <button class="nav-link nav-dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <span class="fas fa-user"></span>
+                    {{ user.username }}
+                    {# FIXME: this should be cached instead #}
+                    {% if user.emailaddress_set.filter(verified=False).exists() %}
+                    <span class="badge bg-warning">Email Unverified</span>
+                    <span class="sr-only">Email Unverified</span>
+                    {% endif %}
+                    <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end">
+                    <a class="dropdown-item" href="{{ profile_url }}">
+                        <i class="fas fa-user-edit"></i>
+                        Your Account
+                    </a>
+                    {% if user.has_perm('library.change_peerreview') %}
+                    <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
+                        <i class="fas fa-flask"></i>
+                        Manage Peer Reviews
+                    </a>
+                    {% endif %}
+                    {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout
+                    #}
+                    <form id="logoutForm" method="post" action="{{ logout_url }}">
+                        {{ csrf_input }}
+                        {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                        {% endif %}
+                        <input type="submit" style="display: none">
+                    </form>
+                    <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}">
+                        <i class='fas fa-sign-out-alt'></i>
+                        Sign Out
+                    </a>
+                </div>
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ login_url }}?next={{ request.path }}">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </a>
+            </li>
+            {% endif %}
+            {# end login #}
+            </ul>
+        </div>
+        {# end hamburger menu content #}
     </div>
-    </div>
+</nav>
+</div>
+</div>
 {% endmacro %}
 
 {% macro footer() %}
-    {% autoescape off %}
-        {{ cookielaw(request) }}
-    {% endautoescape %}
-    {% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
-        <footer class="footer">
-            <div class="container">
-                <div class="row mb-4">
-                    <div class="col-8 col-md-2 mb-3">
-                        <h4><b>Quick Links</b></h4>
-                        <ul class="nav flex-column">
-                            {% if not user.is_authenticated or not user.member_profile.full_member %}
-                            <li class="nav-item mb-2">
-                                {% if user.is_authenticated %}
-                                <a href="{{ profile_url }}">
-                                    Become a CoMSES Full Member
-                                </a>
-                                {% else %}
-                                <a href='{{ signup_url }}'>
-                                    Join CoMSES
-                                </a>
-                                {% endif %}
-                            </li>
-                            {% endif %}
-                            <li class="nav-item mb-2">
-                                <a href="{{ contact_url }}">Contact Us</a>
-                            </li>
-                            <li class="nav-item mb-2">
-                                <a href="/about/data-privacy">Privacy Policy</a>
-                            </li>
-                            <li class="nav-item mb-2">
-                                <a href="/about/faq">FAQ</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="col-4 col-md-2 order-md-3 mb-3 text-end">
-                        <h4><b>Follow Us</b></h4>
-                        <ul class="nav flex-column">
-                            <li class="nav-item mb-2">
-                                <a href="{{ social_settings.youtube_url }}" title="YouTube Channel" target="_blank">
-                                    YouTube <i class="fab fa-youtube me-2"></i>
-                                </a>
-                            </li>
-                            <li class="nav-item mb-2">
-                                <a href="//bsky.app/profile/{{ social_settings.social_account }}"
-                                   title="Follow us @{{ social_settings.social_account }}" target="_blank">
-                                    BlueSky <i class="fab fa-bluesky me-2"></i>
-                                </a>
-                            </li>
-                            <li class="nav-item mb-2">
-                                <a href="{{ url('home:rss') }}" title="RSS Feed">
-                                    RSS Feed <i class="fas fa-rss me-2"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="col-12 col-md-8 order-md-2 mb-3 text-center">
-                        <div class="d-flex flex-wrap justify-content-center">
-                            <a class="logo-footer-primary" href="//www.nsf.gov/" target="_blank">
-                                <img src="{{ static('images/logo-nsf-2.png') }}" alt="National Science Foundation">
-                            </a>
-                            <a class="logo-footer-secondary" href="//www.asu.edu/" target="_blank">
-                                <img src="{{ static('images/logo-asu.png') }}" alt="Arizona State University">
-                            </a>
-                            <a class="logo-footer-secondary" href="//alliancecan.ca/en" target="_blank">
-                                <img src="{{ static('images/logo-drac-small.png') }}" alt="Digital Research Alliance of Canada">
-                            </a>
-                            <a class="logo-footer-secondary" href="//datacite.org" target="_blank">
-                                <img height="100" src="{{ static('images/logo-datacite.svg') }}" alt="DataCite member">
-                            </a>
-                            <a class="logo-footer-secondary" href="//sciencegateways.org" target="_blank">
-                                <img src="{{ static('images/logo-sgci.png') }}" alt="Science Gateways Community Institute">
-                            </a>
-                            <a class="logo-footer-secondary" href="//orcid.org/" target="_blank">
-                                <img src="{{ static('images/logo-orcid-white.png') }}" alt="ORCID Member">
-                            </a>
-                            <a class="logo-footer-secondary" href="//westbigdatahub.org/" target="_blank">
-                                <img src="{{ static('images/logo-westhub-white.png') }}" alt="US NSF West Big Data Hub">
-                            </a>
-                        </div>
-                    </div>
+{% autoescape off %}
+{{ cookielaw(request) }}
+{% endautoescape %}
+{% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
+<footer class="footer">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-8 col-md-2 mb-3">
+                <h4><b>Quick Links</b></h4>
+                <ul class="nav flex-column">
+                    {% if not user.is_authenticated or not user.member_profile.full_member %}
+                    <li class="nav-item mb-2">
+                        {% if user.is_authenticated %}
+                        <a href="{{ profile_url }}">
+                            Become a CoMSES Full Member
+                        </a>
+                        {% else %}
+                        <a href='{{ signup_url }}'>
+                            Join CoMSES
+                        </a>
+                        {% endif %}
+                    </li>
+                    {% endif %}
+                    <li class="nav-item mb-2">
+                        <a href="{{ contact_url }}">Contact Us</a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="/about/data-privacy">Privacy Policy</a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="/about/faq">FAQ</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-4 col-md-2 order-md-3 mb-3 text-end">
+                <h4><b>Follow Us</b></h4>
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-2">
+                        <a href="{{ social_settings.youtube_url }}" title="YouTube Channel" target="_blank">
+                            YouTube <i class="fab fa-youtube me-2"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="//bsky.app/profile/{{ social_settings.social_account }}"
+                            title="Follow us @{{ social_settings.social_account }}" target="_blank">
+                            BlueSky <i class="fab fa-bluesky me-2"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="{{ url('home:rss') }}" title="RSS Feed">
+                            RSS Feed <i class="fas fa-rss me-2"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-12 col-md-8 order-md-2 mb-3 text-center">
+                <div class="d-flex flex-wrap justify-content-center">
+                    <a class="logo-footer-primary" href="//www.nsf.gov/" target="_blank">
+                        <img src="{{ static('images/logo-nsf-2.png') }}" alt="National Science Foundation">
+                    </a>
+                    <a class="logo-footer-secondary" href="//www.asu.edu/" target="_blank">
+                        <img src="{{ static('images/logo-asu.png') }}" alt="Arizona State University">
+                    </a>
+                    <a class="logo-footer-secondary" href="//alliancecan.ca/en" target="_blank">
+                        <img src="{{ static('images/logo-drac-small.png') }}" alt="Digital Research Alliance of Canada">
+                    </a>
+                    <a class="logo-footer-secondary" href="//datacite.org" target="_blank">
+                        <img height="100" src="{{ static('images/logo-datacite.svg') }}" alt="DataCite member">
+                    </a>
+                    <a class="logo-footer-secondary" href="//sciencegateways.org" target="_blank">
+                        <img src="{{ static('images/logo-sgci.png') }}" alt="Science Gateways Community Institute">
+                    </a>
+                    <a class="logo-footer-secondary" href="//orcid.org/" target="_blank">
+                        <img src="{{ static('images/logo-orcid-white.png') }}" alt="ORCID Member">
+                    </a>
+                    <a class="logo-footer-secondary" href="//westbigdatahub.org/" target="_blank">
+                        <img src="{{ static('images/logo-westhub-white.png') }}" alt="US NSF West Big Data Hub">
+                    </a>
                 </div>
             </div>
-            <p class="copyright text-center"><small>
-                <b>&copy; 2007 - {{ now('Y') }} CoMSES Net</b> |
-                <a href="//github.com/{{ social_settings.github_account }}" title="CoMSES Net on GitHub" target="_blank">
-                    <i class="fab fa-github me-2"></i>{{ constants.RELEASE_VERSION }}
-                </a>
-            </small></p>
-        </footer>
-    {% endwith %}
+        </div>
+    </div>
+    <p class="copyright text-center"><small>
+            <b>&copy; 2007 - {{ now('Y') }} CoMSES Net</b> |
+            <a href="//github.com/{{ social_settings.github_account }}" title="CoMSES Net on GitHub" target="_blank">
+                <i class="fab fa-github me-2"></i>{{ constants.RELEASE_VERSION }}
+            </a>
+        </small></p>
+</footer>
+{% endwith %}
 {% endmacro %}
 
 <!DOCTYPE html>
 <html lang="en" class="no-js" prefix="og: http://ogp.me/ns#">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     {%- if not is_production() %}
-        <meta name='robots' content='noindex'>
+    <meta name='robots' content='noindex'>
     {%- endif %}
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <link rel="apple-touch-icon" sizes="144x144" href="{{ static('favicon/apple-touch-icon.png') }}">
@@ -239,27 +285,30 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     {% block ogp_tags %}
-        {{ render_ogp_tags(request) }}
+    {{ render_ogp_tags(request) }}
     {% endblock ogp_tags %}
     <title>
         {% block title %}CoMSES Net{% endblock %}
     </title>
     {% block meta_description %}
-        <meta name="description" content="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.">
+    <meta name="description"
+        content="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.">
     {% endblock %}
     {% block head %}
-        {# override in templates to add extra meta tags or anything else within the <head></head> #}
+    {# override in templates to add extra meta tags or anything else within the
+
+    <head></head> #}
     {% endblock %}
     {# Global stylesheets #}
     {% block extra_css %}
-        {# Override this in templates to add extra stylesheets #}
+    {# Override this in templates to add extra stylesheets #}
     {% endblock %}
     {# JS section #}
     <script src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
     {% if is_production() %}
-        {% script async=False %}
-        <!-- Google Tag Manager -->
-        <script>(function (w, d, s, l, i) {
+    {% script async=False %}
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
             w[l] = w[l] || [];
             w[l].push({
                 'gtm.start':
@@ -272,27 +321,25 @@
                 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
             f.parentNode.insertBefore(j, f);
         })(window, document, 'script', 'dataLayer', 'GTM-TLNSSCJ');</script>
-        <!-- End Google Tag Manager -->
-        {% endscript %}
+    <!-- End Google Tag Manager -->
+    {% endscript %}
     {% endif %}
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.8/holder.min.js"></script>
     {% if constants.DEPLOY_ENVIRONMENT.is_staging_or_production %}
 
-        {% with SENTRYJS_VERSION='7.104.0' %}
-            <script
-                src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.tracing.min.js"
-                integrity="sha384-GIGwRJTameecYX7D86H2eXPQAhZ2erxGcgL3f906+a9BFv0Z88R524eZzamYbll0"
-                crossorigin="anonymous">
-            </script>
-            {% script defer=True %}
-            <script>
-                Sentry.init({
-                    dsn: "{{ constants.SENTRY_DSN }}",
-                    release: "{{ constants.RELEASE_VERSION }}"
-                })
-            </script>
-            {% endscript %}
-        {% endwith %}
+    {% with SENTRYJS_VERSION='7.104.0' %}
+    <script src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.tracing.min.js"
+        integrity="sha384-GIGwRJTameecYX7D86H2eXPQAhZ2erxGcgL3f906+a9BFv0Z88R524eZzamYbll0" crossorigin="anonymous">
+        </script>
+    {% script defer=True %}
+    <script>
+        Sentry.init({
+            dsn: "{{ constants.SENTRY_DSN }}",
+            release: "{{ constants.RELEASE_VERSION }}"
+        })
+    </script>
+    {% endscript %}
+    {% endwith %}
     {% endif %}
     {{ vite_hmr_client() }}
     {{ vite_asset('apps/main.ts') }}
@@ -311,36 +358,35 @@
     </script>
     {% endscript %}
     {% block js %}
-        {# Override this in templates to add extra javascript #}
+    {# Override this in templates to add extra javascript #}
     {% endblock %}
 </head>
+
 <body class="{% block body_class %}{% endblock %}">
-<!-- Google Tag Manager (noscript) -->
-<noscript>
-    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TLNSSCJ"
-            height="0"
-            width="0"
+    <!-- Google Tag Manager (noscript) -->
+    <noscript>
+        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TLNSSCJ" height="0" width="0"
             style="display:none;visibility:hidden"></iframe>
-</noscript>
-<!-- End Google Tag Manager (noscript) -->
-{{ navbar() }}
-{% block introduction_section %}
+    </noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    {{ navbar() }}
+    {% block introduction_section %}
     <section class='introduction'>
         <div class="container">
             {% block introduction %}
             {% endblock %}
         </div>
     </section>
-{% endblock introduction_section %}
-<noscript>
-    <div class='alert alert-danger mt-3'>
-        <i class='fas fa-exclamation-triangle me-2'></i>
-        Javascript is disabled in your browser. Some of this site's functionality <b>will not work</b> or
-        be heavily degraded without it.
-    </div>
-</noscript>
+    {% endblock introduction_section %}
+    <noscript>
+        <div class='alert alert-danger mt-3'>
+            <i class='fas fa-exclamation-triangle me-2'></i>
+            Javascript is disabled in your browser. Some of this site's functionality <b>will not work</b> or
+            be heavily degraded without it.
+        </div>
+    </noscript>
 
-<!--{% if not is_production() %}
+    <!--{% if not is_production() %}
     <div class='alert alert-danger m-0'>
         <i class='fas fa-flask me-2'></i>
         You are currently accessing a <b>test version of the comses.net website</b>. Information that you
@@ -348,12 +394,12 @@
     </div>
 {% endif %}
 -->
-{% block page %}
+    {% block page %}
     <section class='messages'>
         {% for message in get_messages(request) %}
-            <div class='{{ message.tags }}'>
-                <i class='fas fa-info-circle'></i> {{ message }}
-            </div>
+        <div class='{{ message.tags }}'>
+            <i class='fas fa-info-circle'></i> {{ message }}
+        </div>
         {% endfor %}
     </section>
     <section class='page'>
@@ -361,12 +407,13 @@
             {% block breadcrumb %}
             {% endblock %}
             {% block content %}
-                <div class="row">
-                </div>
+            <div class="row">
+            </div>
             {% endblock content %}
         </div>
     </section>
-{% endblock page %}
-{{ footer() }}
+    {% endblock page %}
+    {{ footer() }}
 </body>
+
 </html>

@@ -3,40 +3,16 @@
 $homepage-introduction-margin: 20px;
 $homepage-banner-height: 48px;
 
-.homepage-banner {
-  height: $homepage-banner-height;
-  background-color: $button-color-primary;
-  color: white;
-  text-align: center;
-  padding: 12px 15px;
-  margin-top: $navbar-height; // start right below the fixed navbar
-  
-  .homepage-banner-link {
-    color: white;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95rem;
-    display: block;
-    
-    &:hover {
-      color: white;
-      text-decoration: underline;
-    }
-  }
-}
-
-/* adjust landing page margins and height when banner is present */
-.homepage-banner + .homepage-introduction {
-  margin-top: $homepage-introduction-margin;
-  min-height: calc(100vh - $navbar-height - $homepage-banner-height - $homepage-introduction-margin * 2);
-}
-
 .homepage-introduction {
   /* default height with no banner */
   min-height: calc(100vh - $navbar-height - $homepage-introduction-margin * 2);
   overflow: hidden;
   margin: $homepage-introduction-margin;
-  margin-top: calc($navbar-height + $homepage-introduction-margin); // add space below navbar when no banner
+  margin-top: calc($navbar-height + $homepage-introduction-margin);
+  padding-top: calc(
+    $navbar-height + $homepage-introduction-margin
+  ); // add space below navbar when no banner
+  padding-bottom: $homepage-banner-height;
   // background: linear-gradient(0deg, rgba(164, 212, 235, 1) 0%, rgb(52, 127, 180) 100%);
   background: linear-gradient(0deg, #3179b2 0%, #53a0cc 100%);
   display: flex;
@@ -45,7 +21,7 @@ $homepage-banner-height: 48px;
   text-align: center;
   position: relative;
   border-radius: 20px;
-  z-index: 1;
+  z-index: 1000; // Lower than dropdown z-index to ensure dropdowns appear above
 
   .background-canvas {
     position: absolute;
@@ -55,7 +31,6 @@ $homepage-banner-height: 48px;
     width: 100%;
     height: 100%;
     pointer-events: none;
-    // Ensure canvas displays at correct size without stretching
     display: block;
     object-fit: contain;
     // background: linear-gradient(0deg, rgba(164, 212, 235, 1) 0%, rgb(52, 127, 180) 100%);
@@ -92,23 +67,35 @@ $homepage-banner-height: 48px;
     position: relative;
     z-index: 1;
   }
-}
 
-#search-dropdown {
-  .dropdown-toggle::after {
-    display: none;
+  // integrated banner at the bottom of homepage-introduction
+  .homepage-banner {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: $homepage-banner-height;
+    background-color: $button-color-primary;
+    color: white;
+    text-align: center;
+    padding: 12px 15px;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    z-index: 2;
+
+    .homepage-banner-link {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: block;
+
+      &:hover {
+        color: white;
+        text-decoration: underline;
+      }
+    }
   }
-}
-
-#search-button {
-  font-size: 1.2rem;
-  color: $text-color;
-  margin-top: 1rem;
-}
-
-#header-search-form {
-  left: -20rem;
-  width: 22rem;
 }
 
 .callout-card {
@@ -140,7 +127,7 @@ $homepage-banner-height: 48px;
     transform: translateY(-10px);
     text-decoration: none !important;
     color: white;
-    
+
     &::after {
       opacity: 1;
       transform: translateX(-50%) translateY(0);

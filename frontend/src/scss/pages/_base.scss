@@ -5,8 +5,6 @@
   padding-bottom: $default-padding;
 }
 
-
-
 .introduction {
   overflow: hidden;
   margin-top: $navbar-height;
@@ -35,6 +33,7 @@
 }
 
 .navbar {
+  min-height: $navbar-height;
   background-color: white;
   color: white;
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -43,9 +42,26 @@
   width: 100%;
   margin: 0;
   padding: 0;
+  border-bottom: 1px solid $border-color;
+  font-weight: 600;
 
   .nav-link {
-    color: grey !important;
+    color: $text-color;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    padding: 0.5rem 0.5rem !important;
+
+    &:hover {
+      border: 1px solid $border-color;
+      text-decoration: none;
+    }
+  }
+
+  // fix some scaling issues by reducing font size of navbar earlier
+  @media (min-width: 768px) and (max-width: 879px) {
+    .nav-link {
+      font-size: $font-size-sm;
+    }
   }
 
   .logo {
@@ -56,19 +72,42 @@
     background-image: url("@/assets/images/comses-logo-small.png");
     background-position: center;
     background-repeat: no-repeat;
-    background-size: 70px 70px;
+    background-size: 60px 60px;
     display: inline-block;
     height: $navbar-height !important;
     width: $navbar-height !important;
     font-weight: bold;
     font-size: 1.25rem;
   }
+
+  .nav-dropdown-toggle {
+    height: 100%;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: $text-color;
+
+    &:hover {
+      border: 1px solid $border-color;
+    }
+  }
 }
 
-@media (min-width: 768px) {
-  .logo {
-    transform: translateX(-150px);
+#search-dropdown {
+  .dropdown-toggle::after {
+    display: none;
   }
+}
+
+#search-button {
+  font-size: 1.2rem;
+  color: $text-color;
+  margin-top: 1rem;
+}
+
+#header-search-form {
+  left: -20rem;
+  width: 22rem;
 }
 
 @media (max-width: 100px) {
@@ -95,4 +134,3 @@ body {
   height: 100%;
   font-weight: 400;
 }
-
