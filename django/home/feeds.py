@@ -274,7 +274,7 @@ class ReviewedModelFeed(AbstractFeed):
 
 class EventFeed(AbstractFeed):
     def _get_feed_source_data(self):
-        return Event.objects.latest_for_feed(self.max_number_of_items)
+        return Event.objects.upcoming().latest_for_feed(self.max_number_of_items)
 
     def to_feed_item(self, event):
         return FeedItem(
