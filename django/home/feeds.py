@@ -12,7 +12,7 @@ from django.views import View
 from itertools import chain
 from operator import attrgetter
 
-from library.models import Codebase, CodebaseRelease
+from library.models import CodebaseRelease
 from core.discourse import build_discourse_url, get_latest_posts
 from core.models import Event, Job
 
@@ -197,12 +197,18 @@ class FeedItem:
     # a relevant date for the item (date published, event start date, etc.)
     date: datetime = None
     thumbnail: str = ""
+    doi: str = ""
 
 
 class AbstractFeed(ABC):
     max_number_of_items = DEFAULT_HOMEPAGE_FEED_MAX_ITEMS
     _cache_key = None  # subclasses can define a custom cache key if needed
+    rate_limited = False # set to True if the feed is rate limited to cache in dev mode
     cache_timeout = DEFAULT_CACHE_TIMEOUT
+
+    def __init__(self, max_items=None):
+        if max_items is not None:
+            self.max_number_of_items = max_items
 
     def get_feed_data(self):
         return {
@@ -226,42 +232,43 @@ class AbstractFeed(ABC):
     @property
     def cache_key(self):
         if self._cache_key is None:
-            logger.warning("using default cache key for %s", self.__class__.__name__)
+            logger.debug("using default cache key for %s", self.__class__.__name__)
             self._cache_key = f"cache_{self.__class__.__name__}"
-        return self._cache_key
+        return f"{self._cache_key}_{self.max_number_of_items}"
 
     def get_feed_items(self):
-        source_feed_data = cache.get(self.cache_key)
-        # check for cached data first
+        # check for cached data first (skip in dev mode)
+        source_feed_data = None if (settings.DEBUG and not self.rate_limited) else cache.get(self.cache_key)
         if not source_feed_data:
             source_feed_data = self._get_feed_source_data()
             if not source_feed_data:
                 # feed source may be down, do not cache
                 logger.warning("No feed data found [%s]", self.cache_key)
                 return []
-            cache.set(self.cache_key, source_feed_data, self.cache_timeout)
+            if not (settings.DEBUG and not self.rate_limited):
+                cache.set(self.cache_key, source_feed_data, self.cache_timeout)
 
         return [asdict(self.to_feed_item(item)) for item in source_feed_data]
 
 
-class CodebaseFeed(AbstractFeed):
+class ReviewedModelFeed(AbstractFeed):
     def _get_feed_source_data(self):
-        return Codebase.objects.latest_for_feed(self.max_number_of_items)
-
-    def to_feed_item(self, codebase):
-        release = codebase.latest_version
-        feed_item = FeedItem(
-            title=codebase.title,
-            summary=release.release_notes.raw
-            or codebase.summary
-            or codebase.description.raw,
-            link=release.get_absolute_url(),
-            author=release.submitter.get_full_name(),
-            date=release.date_created,
+        return CodebaseRelease.objects.most_recently_reviewed(
+            number=self.max_number_of_items, published_only=True
         )
-        featured_image = codebase.get_featured_image()
+
+    def to_feed_item(self, release):
+        feed_item = FeedItem(
+            title=release.title,
+            summary=release.codebase.summary or release.codebase.description.raw,
+            link=release.get_absolute_url(),
+            author=release.citation_authors,
+            date=release.last_published_on,
+            doi=release.doi,
+        )
+        featured_image = release.codebase.get_featured_image()
         if featured_image:
-            feed_item.thumbnail = featured_image.get_rendition("width-480").url
+            feed_item.thumbnail = featured_image.get_rendition("fill-175x175").url
         return feed_item
 
 
@@ -282,9 +289,9 @@ class EventFeed(AbstractFeed):
 class ForumFeed(AbstractFeed):
     mock = False  # set to True for testing with mock data
 
-    def __init__(self, mock=False):
+    def __init__(self, max_items=None, mock=False):
+        super().__init__(max_items=max_items)
         self.mock = mock
-        super().__init__()
 
     def _get_feed_source_data(self):
         if self.mock:
@@ -311,11 +318,13 @@ class JobFeed(AbstractFeed):
             summary=job.summary,
             link=job.get_absolute_url(),
             author=job.submitter.get_full_name(),
-            date=job.date_created,
+            date=job.application_deadline,
         )
 
 
 class YouTubeFeed(AbstractFeed):
+    rate_limited = True
+
     def _get_feed_source_data(self):
         yt_api_url = f"{settings.YOUTUBE_API_URL}/search"
         params = {
@@ -345,18 +354,6 @@ class YouTubeFeed(AbstractFeed):
             date=item["snippet"]["publishedAt"],
             thumbnail=item["snippet"]["thumbnails"]["medium"]["url"],
         )
-        """
-        return {
-                "items": [
-                    {
-                        "title": item["snippet"]["title"],
-                        "link": f"https://youtu.be/{item['id']['videoId']}",
-                        "thumbnail": item["snippet"]["thumbnails"]["medium"]["url"],
-                    }
-                    for item in data["items"]
-                ]
-            }
-        """
 
 
 class BaseFeedView(View):
@@ -366,7 +363,16 @@ class BaseFeedView(View):
     def get(self, request, *args, **kwargs):
         if not self.feed_class:
             return JsonResponse({"error": "Feed class not configured"}, status=500)
-        feed_data = self.feed_class().get_feed_data()
+        # extract limit param from query string
+        max_items = None
+        if limit_param := request.GET.get("limit"):
+            try:
+                limit_value = int(limit_param)
+                max_items = min(100, limit_value) if limit_value > 0 else None
+            except ValueError:
+                pass
+        
+        feed_data = self.feed_class(max_items=max_items).get_feed_data()
         if feed_data is None:
             return JsonResponse({"error": "Feed not available"}, status=503)
         return JsonResponse(feed_data)
@@ -388,8 +394,8 @@ class JobFeedView(BaseFeedView):
     feed_class = JobFeed
 
 
-class CodebaseFeedView(BaseFeedView):
-    feed_class = CodebaseFeed
+class ReviewedModelFeedView(BaseFeedView):
+    feed_class = ReviewedModelFeed
 
 
 def urlpatterns():
@@ -403,9 +409,9 @@ def urlpatterns():
         path("feeds/code/rss/", RssCodebaseFeed(), name="rss-codebases"),
         path("feeds/all/", AllFeed(), name="all"),
         path(
-            "api/feeds/code/",
-            CodebaseFeedView.as_view(),
-            name="codebase-feed",
+            "api/feeds/reviewed/",
+            ReviewedModelFeedView.as_view(),
+            name="reviewed-model-feed",
         ),
         path("api/feeds/events/", EventFeedView.as_view(), name="event-feed"),
         path("api/feeds/forum/", ForumFeedView.as_view(), name="forum-feed"),

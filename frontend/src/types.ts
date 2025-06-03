@@ -361,4 +361,12 @@ export interface FeedItem {
   link: string;
   date?: Date;
   thumbnail?: string;
+  doi?: string;
+}
+
+export interface FeedProps {
+  feedUrl: string;
+  limit: number;
+  datePrefix?: string;
+  authorPrefix?: string;
 }

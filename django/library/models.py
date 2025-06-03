@@ -1190,6 +1190,17 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def with_cc_license(self, **kwargs):
         return self.filter(license__in=License.objects.creative_commons(), **kwargs)
 
+    def most_recently_reviewed(self, number=10, published_only=True):
+        qs = (
+            self.reviewed()
+            .select_related("codebase", "submitter__member_profile", "review")
+            .filter(review__event_set__action='RELEASE_CERTIFIED')
+        )
+        if published_only:
+            qs = qs.public()
+        
+        # order by the certification event date
+        return qs.order_by("-review__event_set__date_created").distinct()[:number]
 
 @add_to_comses_permission_whitelist
 class CodebaseRelease(index.Indexed, ClusterableModel):

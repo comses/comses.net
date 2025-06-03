@@ -1,12 +1,50 @@
 import "vite/modulepreload-polyfill";
 
 import { createApp } from "vue";
-import FeedBlock from "@/components/FeedBlock.vue";
+import FeedPosts from "@/components/FeedPosts.vue";
+import FeedCodebases from "@/components/FeedCodebases.vue";
+import FeedThumbnailGrid from "@/components/FeedThumbnailGrid.vue";
 import { extractDataParams } from "@/util";
 
-const feeds = ["forum", "events", "jobs"];
+const propsParams = ["feedUrl", "limit", "datePrefix", "authorPrefix"];
 
-for (const feed of feeds) {
-  const props = extractDataParams(`${feed}-feed`, ["title", "link", "feed"]);
-  createApp(FeedBlock, props).mount(`#${feed}-feed`);
-}
+const feedConfigs = [
+  {
+    elementId: "reviewed-models-feed",
+    component: FeedCodebases,
+    dataParams: propsParams,
+  },
+  {
+    elementId: "events-feed",
+    component: FeedPosts,
+    dataParams: propsParams,
+  },
+  {
+    elementId: "jobs-feed",
+    component: FeedPosts,
+    dataParams: propsParams,
+  },
+  {
+    elementId: "forum-feed",
+    component: FeedPosts,
+    dataParams: propsParams,
+  },
+  {
+    elementId: "youtube-feed",
+    component: FeedThumbnailGrid,
+    dataParams: propsParams,
+  },
+];
+
+feedConfigs.forEach(({ elementId, component, dataParams }) => {
+  const element = document.getElementById(elementId);
+
+  if (element) {
+    try {
+      const props = extractDataParams(elementId, dataParams);
+      createApp(component, props).mount(`#${elementId}`);
+    } catch (error) {
+      console.warn(`Failed to initialize feed component for ${elementId}:`, error);
+    }
+  }
+});

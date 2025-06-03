@@ -1,6 +1,7 @@
 import { toRefs } from "vue";
 import { useAxios } from "@/composables/api";
 import { parseDates } from "@/util";
+import type { FeedItem } from "@/types";
 
 export function useFeedAPI() {
   /**
@@ -10,52 +11,24 @@ export function useFeedAPI() {
    */
 
   const baseUrl = "/api/feeds/";
-  const { state, get, detailUrl } = useAxios(baseUrl);
+  const { state, get } = useAxios(baseUrl);
 
-  function getCodebases() {
-    return get(detailUrl("code"));
-  }
-
-  function getEvents() {
-    return get(detailUrl("events"), {
+  async function getFeed(url: string, limit?: number): Promise<{ data: { items: FeedItem[] } }> {
+    let requestUrl = url;
+    if (limit !== undefined && limit > 0) {
+      requestUrl = `${url}?limit=${limit}`;
+    }
+    return get(requestUrl, {
       parser: data => {
         for (const item of data.items) {
           parseDates(item, ["date"]);
         }
       },
     });
-  }
-
-  function getForumPosts() {
-    return get(detailUrl("forum"), {
-      parser: data => {
-        for (const item of data.items) {
-          parseDates(item, ["date"]);
-        }
-      },
-    });
-  }
-
-  function getJobs() {
-    return get(detailUrl("jobs"), {
-      parser: data => {
-        for (const item of data.items) {
-          parseDates(item, ["date"]);
-        }
-      },
-    });
-  }
-
-  function getVideos() {
-    return get(detailUrl("yt"));
   }
 
   return {
     ...toRefs(state),
-    getCodebases,
-    getEvents,
-    getForumPosts,
-    getJobs,
-    getVideos,
+    getFeed,
   };
 }

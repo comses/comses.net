@@ -8,8 +8,11 @@
             <div class="col text-center">
                 <h1 class="text-white mb-3">The Network for Computational Modeling in the Social and Ecological Sciences
                 </h1>
-                <h3 class="text-white opacity-75 w-75 mx-auto">An international network of researchers, educators and
-                    professionals improving computational modeling in the social and ecological sciences.</h3>
+
+                <h3 class="text-white opacity-75 w-75 mx-auto">
+                    An international community and cyberinfrastructure to support transparency and
+                    reproducibility for computational models & their digital context as well as educational resources for agent based modeling
+                </h3>
             </div>
         </div>
         <div class="row justify-content-center my-4">
@@ -29,9 +32,9 @@
                 <a class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4"
                     href="#model-library">
                     <img src="{{ static('images/icons/submit-white.png') }}" alt="Model Library Icon"
-                        class="callout-icon mb-2">
-                    <h2 class="callout-title">Model Library</h2>
-                    <p class="callout-description">A digital repository for model software supporting FAIR principles
+                        class="mb-2">
+                    <h2>Model Library</h2>
+                    <p>A digital repository for model software supporting FAIR principles
                     </p>
                 </a>
             </div>
@@ -39,9 +42,9 @@
                 <a class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4"
                     href="#community">
                     <img src="{{ static('images/icons/groups-white.png') }}" alt="Community Icon"
-                        class="callout-icon mb-2">
-                    <h2 class="callout-title">Community</h2>
-                    <p class="callout-description">Share jobs, events, and discussions with an international network of
+                        class="mb-2">
+                    <h2>Community</h2>
+                    <p>Share jobs, events, and discussions with an international network of
                         modeling scientists</p>
                 </a>
             </div>
@@ -49,9 +52,9 @@
                 <a class="callout-card text-center flex-fill d-flex flex-column align-items-center p-4"
                     href="#resources">
                     <img src="{{ static('images/icons/search-white.png') }}" alt="Resources Icon"
-                        class="callout-icon mb-2">
-                    <h2 class="callout-title">Resources</h2>
-                    <p class="callout-description">Explore curated educational content, standards, etc</p>
+                        class="mb-2">
+                    <h2>Resources</h2>
+                    <p>Explore curated materials and guidance for model development and publication</p>
                 </a>
             </div>
         </div>
@@ -68,156 +71,108 @@
 </section>
 {% endblock %}
 {% block page %}
-<section class="latest-peer-reviewed-models" id="model-library">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 d-flex flex-column justify-content-center text-start text-dark">
-                <div class="library-intro-inner">
-                    <h2 class="text-start fw-bold mb-3">The CoMSES Model Library</h2>
-                    <p class="text-start">
-                        Preserve the <a href="#">digital artifacts and context</a> used to derive a published research
-                        finding in an open digital repository that supports
-                        <a href="#">FAIR practices for Research Software</a>, software artifacts, supporting data, and
-                        models.
-                    </p>
-                    <p class="text-start">
-                        <a href="#">Promote good practices</a> for developing, documenting, and publishing computational
-                        models.
-                    </p>
-                    <div class="d-flex flex-column align-items-start">
-                        <a href="{{ url('library:codebase-list') }}" class="btn btn-primary mb-2">Browse the model
-                            library</a>
-                        <a href="{{ url('library:codebase-list') }}" class="btn btn-primary">Publish your code</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mt-5 mt-md-0">
-                <h1>Latest Peer Reviewed Models</h1>
-                <div class="row">
-                    {% for item in featured_content[:3] %}
-                    <div class="col-12 mb-3">
-                        <div class="d-flex align-items-center">
-                            <div class=" text-center">
-                                <a href="{{ item.link }}">
-                                    {{ image(item.featured_image, "fill-350x350", class='img-fluid
-                                    latest-peer-reviewed-image') }}
-                                </a>
-                            </div>
-                            <div class="ps-3">
-                                <h3><a href="{{ item.link }}">{{ item.title }}</a></h3>
-                                <p class="latest-peer-reviewed-description">{{ item.summary }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {# FIXME: integrate this with feed blocks below #}
-        <div class='row' id="community">
-            <div class='col' data-title="Recent Forum Posts" data-link="{{ constants.DISCOURSE_BASE_URL }}"
-                data-feed="ForumPosts" id="forum-feed"></div>
-            <div class='col' data-title="Latest Community Events" data-link="/events/" data-feed="Events"
-                id="events-feed"></div>
-            <div class='col' data-title="Latest Jobs & Appointments" data-link="/jobs/" data-feed="Jobs" id="jobs-feed">
-            </div>
-        </div>
-</section>
-{# <section class='community'>
-    <h1 class="text-center">Our Community</h1>
-    <div class='container-fluid'>
-        <div class='row justify-content-center mt-4'>
-            <div class='col-md-5 community-box'>
-                <h3 class="text-center">Jobs and Appointments</h3>
-                {% for item in latest_jobs[:3] %}
-                <div class='activity'>
-                    <h4><a href='{{ item.get_absolute_url() }}'>{{ item.title }}</a></h4>
-                    <p><small class='text-muted'>{{ item.summary }}</small></p>
-                </div>
-                {% endfor %}
-                <div class="text-center mt-3">
-                    <button class="btn btn-primary">Browse more jobs</button>
-                </div>
-            </div>
 
-            <div class='col-md-5 community-box'>
-                <h3 class="text-center">Upcoming Events</h3>
-                {% for event in upcoming_events[:3] %}
-                <div class='activity'>
-                    <h4><a href='{{ event.url }}'>{{ event.title }}</a></h4>
-                    <p><small class='text-muted'>Begins {{ event.start_date.strftime('%a %b %d, %Y') }}</small></p>
-                </div>
-                {% endfor %}
-                <div class="text-center mt-3">
-                    <button class="btn btn-primary">Browse more events</button>
+<section class="homepage-section" id="model-library">
+    <div class="container">
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-md-6 d-flex flex-column mb-5">
+                <div>
+                    <h2 class="fw-bold mb-4">The CoMSES Model Library</h2>
+                    <p class="text-start">
+                        Preserve the <a
+                            href='https://www.acm.org/publications/policies/artifact-review-and-badging-current'>digital
+                            artifacts and context</a> used to derive a published research finding in an open digital
+                        repository that supports <a href='https://doi.org/10.15497/RDA00068'>FAIR practices for Research
+                            Software</a>, <a href='https://peerj.com/articles/cs-86/'>software citation</a>,
+                        reproducibility, and reuse.
+                    </p>
+                    <p class="mb-4">
+                        <a href='{{ slugurl("guides-to-good-practice") }}'>Promote good practices</a> for developing,
+                        documenting, and publishing computational models.
+                    </p>
+                    <div class="d-flex flex-column align-items-start mb-4">
+                        <a href="{{ url('library:codebase-add') }}" class="btn btn-lg btn-primary mb-2">
+                            <h4 class="fw-bold mb-0">Publish your model code</h4>
+                        </a>
+                        <a href="{{ url('library:codebase-list') }}" class="btn btn-lg btn-outline-secondary mb-2">
+                            <h4 class="fw-bold mb-0">Browse the library</h4>
+                        </a>
+                    </div>
                 </div>
             </div>
-            <div class='col-md-5 community-box'>
-                <h3 class="text-center">Recent Forum Posts</h3>
-                {% for post in recent_forum_activity[:3] %}
-                <div class='activity'>
-                    <h4><a href='{{ post.url }}'>{{ post.title }}</a></h4>
-                    <small class='text-muted'>Posted by
-                        {% if post.submitter_url %}
-                        <a href='{{ post.submitter_url }}'>{{ post.submitter_name }}</a>
-                        {% else %}
-                        {{ post.submitter_name }}
-                        {% endif %}
-                    </small>
-                </div>
-                {% endfor %}
-                <div class="text-center mt-3">
-                    <button class="btn btn-primary">CoMSES Net Forums</button>
-                </div>
+            <div class="col-md-6 mb-5">
+                <h2 class="fw-bold mb-3">Latest Peer Reviewed Models</h2>
+                <div id="reviewed-models-feed" data-feed-url="{{ feed_urls.reviewed_models }}" data-limit="3"></div>
+                <a href="/reviews/" class="fw-bold ">
+                    Read more about peer review <i class="fas fa-chevron-right ms-1"></i>
+                </a>
             </div>
         </div>
     </div>
-</section> #}
-<section class="extra-resources" id="resources">
+</section>
+<section class="homepage-section bg-light-fade" id="community">
     <div class="container">
-        <div class="row">
-            <div class="col-md-6 d-flex flex-column justify-content-center text-start left-section text-dark">
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-md-4 mb-5">
+                <h3 class="fw-bold mb-3">Upcoming Events</h3>
+                <div id="events-feed" data-feed-url="{{ feed_urls.events }}" data-date-prefix="Begins" data-limit="3">
+                </div>
+                <a href="{{ url('core:event-list') }}" class="fw-bold ">
+                    See more events <i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </div>
+            <div class="col-md-4 mb-5">
+                <h3 class="fw-bold mb-3">Jobs & Appointments</h3>
+                <div id="jobs-feed" data-feed-url="{{ feed_urls.jobs }}" data-date-prefix="Apply by" data-limit="3">
+                </div>
+                <a href="{{ url('core:job-list') }}" class="fw-bold ">
+                    See more openings <i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </div>
+            <div class="col-md-4 mb-5">
+                <h3 class="fw-bold mb-3">Recent Forum Posts</h3>
+                <div id="forum-feed" data-feed-url="{{ feed_urls.forum }}" data-author-prefix="Posted by"
+                    data-limit="3"></div>
+                <a href="{{ constants.DISCOURSE_BASE_URL }}" class="fw-bold ">
+                    Start a discussion <i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="homepage-section" id="resources">
+    <div class="container">
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-md-6 d-flex flex-column mb-5">
                 <h2 class="text-start fw-bold mb-4">Resources</h2>
                 <p class="text-start mb-4">
                     We maintain these community curated resources to help new and experienced computational modelers
                     adopt
-                    <a href="#">FAIR principles</a> for digital data management and improve the
-                    <a href="#">discoverability, reusability, and reproducibility</a> of their computational models.
+                    <a href="https://www.go-fair.org/fair-principles/">FAIR principles</a> for digital data management
+                    and improve the
+                    discoverability, reusability, and reproducibility of their computational models.
                 </p>
-                <ul class="list-unstyled mb-4">
-                    <li class="mb-2"><a href="#">Education and training</a></li>
-                    <li class="mb-2"><a href="#">Best practices</a></li>
-                    <li class="mb-2"><a href="#">Modeling frameworks</a></li>
-                    <li class="mb-2"><a href="#">Journals</a></li>
+                <ul class="list-unstyled fw-bold mb-4">
+                    <li class="mb-2"><a href="/education"><i class="fas fa-chevron-right me-1"></i>Education and training</a></li>
+                    <li class="mb-2"><a href="/resources/frameworks"><i class="fas fa-chevron-right me-1"></i>Modeling frameworks</a></li>
+                    <li class="mb-2"><a href="/resources/journals"><i class="fas fa-chevron-right me-1"></i>Journals</a></li>
+                    <li class="mb-2"><a href="/resources/standards"><i class="fas fa-chevron-right me-1"></i>Standards</a></li>
                 </ul>
-                <div class="mt-3 mb-5">
-                    <a href="#" class="btn btn-primary">All resources</a>
+                <div class="mb-4">
+                    <a href="#" class="btn btn-lg btn-primary">
+                        <h4 class="fw-bold mb-0">All resources</h4>
+                    </a>
                 </div>
             </div>
 
-            <div class="col-md-6 right-section">
-                <h1 class="text-center">Latest Video Content</h1>
-                <div class="row">
-                    <div class="col-md-6 mb-3 text-center">
-                        <div class="video-thumbnail"></div>
-                        <p><a href="#">video title</a></p>
-                    </div>
-                    <div class="col-md-6 mb-3 text-center">
-                        <div class="video-thumbnail"></div>
-                        <p><a href="#">video title</a></p>
-                    </div>
-                    <div class="col-md-6 mb-3 text-center">
-                        <div class="video-thumbnail"></div>
-                        <p><a href="#">video title</a></p>
-                    </div>
-                    <div class="col-md-6 mb-3 text-center">
-                        <div class="video-thumbnail"></div>
-                        <p><a href="#">video title</a></p>
-                    </div>
-                </div>
-                <div class="text-center mt-3">
-                    <button class="btn btn-outline-light w-75">CoMSES Youtube Channel</button>
-                </div>
+            <div class="col-md-6 mb-5">
+                <h2 class="fw-bold mb-3">Latest Video Content</h2>
+                {% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
+                <div id="youtube-feed" data-feed-url="{{ feed_urls.youtube }}" data-limit="4"></div>
+                <a href="{{ social_settings.youtube_url }}" class="fw-bold ">
+                    CoMSES Net on Youtube <i class="fas fa-chevron-right ms-1"></i>
+                </a>
+                {% endwith %}
             </div>
         </div>
     </div>

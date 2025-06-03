@@ -28,6 +28,7 @@ from wagtail.models import Page, Orderable
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
+from django.urls import reverse
 
 from core.fields import MarkdownField, TutorialMarkdownField
 from core.fs import get_canonical_image
@@ -176,6 +177,13 @@ class LandingPage(Page):
     def get_context(self, request, *args, **kwargs):
         context = super(LandingPage, self).get_context(request, *args, **kwargs)
         context["featured_content"] = self.get_featured_content()
+        context["feed_urls"] = {
+            "reviewed_models": reverse("home:reviewed-model-feed"),
+            "events": reverse("home:event-feed"),
+            "forum": reverse("home:forum-feed"),
+            "jobs": reverse("home:job-feed"),
+            "youtube": reverse("home:youtube-feed"),
+        }
         return context
 
     content_panels = Page.content_panels + [
