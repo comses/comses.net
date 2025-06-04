@@ -41,7 +41,7 @@ describe("Visit codebases page", () => {
       loginBeforeEach(user.username, user.password);
       cy.visit("/codebases");
       assert(cy.get("h1").contains("Computational Model Library"));
-      cy.contains("Publish a model").click();
+      getDataCy("publish").contains("Publish").click();
       getDataCy("codebase-title").type(codebase.title);
       getDataCy("codebase-description").type(codebase.description);
       getDataCy("codebase-replication-text").type(codebase["replication-text"]);

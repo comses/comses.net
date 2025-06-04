@@ -1,39 +1,55 @@
 /* Home/Landing page stylesheet */
 
-.banner {
-  height: 80%;
-}
+$homepage-introduction-margin: 20px;
+$homepage-banner-height: 48px;
 
-.mission {
-  background-color: $mission-color;
-  text-align: center;
-  vertical-align: middle;
-  padding-top: $default-padding;
-  padding-bottom: $default-padding;
-}
-
-.landing-page-introduction {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.3),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.3);
+.homepage-introduction {
+  /* default height with no banner */
+  min-height: calc(100vh - $navbar-height - $homepage-introduction-margin * 2);
   overflow: hidden;
-  margin-top: 85px;
-  background: url("../assets/images/background-introduction.png") repeat top center;
-  padding-top: 40px;
-  padding-bottom: 60px;
+  margin: $homepage-introduction-margin;
+  margin-top: calc($navbar-height + $homepage-introduction-margin);
+  padding-top: calc(
+    $navbar-height + $homepage-introduction-margin
+  ); // add space below navbar when no banner
+  padding-bottom: $homepage-banner-height;
+  // background: linear-gradient(0deg, rgba(164, 212, 235, 1) 0%, rgb(52, 127, 180) 100%);
+  background: linear-gradient(0deg, #3179b2 0%, #53a0cc 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  height: 480px;
+  position: relative;
+  border-radius: 20px;
+  z-index: 1000; // Lower than dropdown z-index to ensure dropdowns appear above
+
+  .background-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: block;
+    object-fit: contain;
+    // background: linear-gradient(0deg, rgba(164, 212, 235, 1) 0%, rgb(52, 127, 180) 100%);
+    background: linear-gradient(0deg, #3179b2 0%, #53a0cc 100%);
+  }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: "Alte-DIN-1451-Mittelschrift", "Open Sans", sans-serif;
-    font-weight: 400;
+    font-weight: 700;
+    z-index: 1;
+    position: relative;
   }
 
   h1 {
     padding-top: 40px;
     font-size: 3.5rem;
+    letter-spacing: -0.03em;
   }
 
   h2 {
@@ -42,137 +58,95 @@
 
   h3 {
     font-size: 1rem;
-    font-family: "Open Sans", sans-serif;
-    text-transform: uppercase;
     padding-bottom: 30px;
   }
-}
 
-div.activity {
-  padding: 10px 5px 10px 5px;
-}
-
-.featured-content {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
-  background: url("../assets/images/background-featured-content.png") repeat top center;
-  overflow: hidden;
-  padding-top: 40px;
-  padding-bottom: 40px;
-  vertical-align: middle;
-  margin-top: 85px;
-  font-family: "Open Sans", sans-serif;
-  color: $white;
-  font-weight: 300;
-
-  #featured-content-carousel {
-    height: 350px;
+  .container {
+    position: relative;
+    z-index: 1;
   }
 
-  h1 {
+  // integrated banner at the bottom of homepage-introduction
+  .homepage-banner {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: $homepage-banner-height;
+    background-color: $button-color-primary;
+    color: white;
     text-align: center;
-  }
+    padding: 12px 15px;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    z-index: 2;
 
-  .carousel-inner {
-    height: 350px;
-    overflow: visible;
-  }
-
-  .carousel-text {
-    margin-left: -200px;
-  }
-
-  .carousel-item {
-    height: 320px;
-  }
-
-  .carousel-caption {
-    position: initial !important;
-    text-align: left;
-  }
-
-  .row {
-    height: 320px;
-  }
-}
-
-.community {
-  padding-top: $default-padding;
-  padding-bottom: $default-padding;
-
-  h1 {
-    text-align: center;
-    padding-bottom: 1.5rem;
-  }
-
-  .row {
-    padding-top: 30px;
-    padding-bottom: 30px;
-  }
-}
-
-#search-dropdown {
-  .dropdown-toggle::after {
-    display: none;
-  }
-}
-
-#search-button {
-  font-size: 1.2rem;
-  color: $text-color;
-  margin-top: 1rem;
-}
-
-#header-search-form {
-  left: -20rem;
-  width: 22rem;
-}
-
-footer.footer {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.5);
-  padding: 75px 0;
-  background-image: url("@/assets/images/background-footer.png");
-  color: $white;
-
-  .row {
-    padding-top: 20px;
-    padding-bottom: 20px;
-  }
-
-  .logo-footer-primary {
-    flex-basis: 100%;
-    text-align: center;
-    padding: 0.5rem;
-    img {
-      max-height: 5rem;
-      width: auto;
-      object-fit: contain;
-    }
-  }
-
-  .logo-footer-secondary {
-    padding: 0.5rem 1rem;
-    opacity: 0.75;
-    &:hover {
-      opacity: 1;
-    }
-    img {
-      max-height: 3rem;
-      width: auto;
-      object-fit: contain;
-    }
-  }
-
-  h4 {
-    opacity: 0.5;
-    margin-bottom: 1.5rem;
-  }
-
-  a {
-    color: $white;
-    &:hover {
-      color: $link-color;
+    .homepage-banner-link {
+      color: white;
       text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: block;
+
+      &:hover {
+        color: white;
+        text-decoration: underline;
+      }
     }
   }
+}
+
+.callout-card {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(15px);
+  color: white;
+  position: relative;
+
+  &::after {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f078"; // chevron-down
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    font-size: 1.5rem;
+    color: white;
+    pointer-events: none;
+  }
+
+  &:hover {
+    // background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-10px);
+    text-decoration: none !important;
+    color: white;
+
+    &::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+}
+
+.homepage-section {
+  padding-top: 100px;
+
+  &:last-of-type {
+    margin-bottom: 3rem;
+  }
+}
+
+.feed-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  min-height: 4.5rem;
 }

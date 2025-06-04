@@ -152,10 +152,19 @@ class UserFactory:
 class BaseModelTestCase(TestCase):
     def setUp(self):
         self.user = self.create_user()
+        self.event_factory = EventFactory(self.user)
+        self.job_factory = JobFactory(self.user)
 
     def create_user(self, **kwargs):
         user, factory = create_test_user(**kwargs)
+        self.user_factory = factory
         return user
+
+    def create_event(self, **kwargs):
+        return self.event_factory.create(**kwargs)
+
+    def create_job(self, **kwargs):
+        return self.job_factory.create(**kwargs)
 
 
 def initialize_test_shared_folders():

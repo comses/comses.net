@@ -490,6 +490,16 @@ class CodebaseQuerySet(models.QuerySet):
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
 
+    def latest_for_feed(self, number=10, include_all=False):
+        qs = (
+            self.public()
+            .select_related("submitter__member_profile")
+            .order_by("-date_created")
+        )
+        if include_all:
+            return qs
+        return qs[:number]
+
     def updated_after(self, start_date, end_date=None, **kwargs):
         """
         copy pasted and then refactored from the curator_statistics.py management command
@@ -1180,6 +1190,17 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def with_cc_license(self, **kwargs):
         return self.filter(license__in=License.objects.creative_commons(), **kwargs)
 
+    def most_recently_reviewed(self, number=10, published_only=True):
+        qs = (
+            self.reviewed()
+            .select_related("codebase", "submitter__member_profile", "review")
+            .filter(review__event_set__action='RELEASE_CERTIFIED')
+        )
+        if published_only:
+            qs = qs.public()
+        
+        # order by the certification event date
+        return qs.order_by("-review__event_set__date_created").distinct()[:number]
 
 @add_to_comses_permission_whitelist
 class CodebaseRelease(index.Indexed, ClusterableModel):
