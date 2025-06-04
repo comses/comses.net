@@ -693,7 +693,7 @@ class EventQuerySet(models.QuerySet):
 
     def latest_for_feed(self, number=10):
         return (
-            self.live()
+            self.public()
             .select_related("submitter__member_profile")
             .order_by("-date_created")[:number]
         )
@@ -829,7 +829,7 @@ class JobQuerySet(models.QuerySet):
 
     def latest_for_feed(self, number=10):
         return (
-            self.live()
+            self.public()
             .select_related("submitter__member_profile")
             .order_by("-date_created")[:number]
         )
