@@ -97,74 +97,76 @@
         </div>
 
         <div class="d-flex align-items-center">
-            {# search #}
-            <li id="search-dropdown" class="mx-3 my-auto nav-item dropdown show">
-                <a id="search-button" onclick="focusSearch()" href="#" class="dropdown-toggle" data-bs-toggle="dropdown"
-                    aria-expanded="false" aria-haspopup="true">
-                    <i class="fas fa-search"></i>
-                </a>
-                <div id="header-search-form" class="p-2 dropdown-menu dropdown-menu-right"
-                    aria-labelledby="search-button">
-                    <form method="get" action="/search/">
-                        <input id="header-search-input" type="text" name="query" class="p-2 form-control"
-                            placeholder="search entire site">
-                        {# FIXME: put back when advanced search is implemented
-                        <div class="float-end">
-                            <small><a href="/search/advanced/">options</a></small>
-                        </div>
-                        #}
-                    </form>
-                </div>
-            </li>
-            {# login #}
-            {% if user.is_authenticated %}
-            <li class="nav-item dropdown">
-                <button class="nav-link nav-dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                    aria-expanded="false">
-                    <span class="fas fa-user"></span>
-                    {{ user.username }}
-                    {# FIXME: this should be cached instead #}
-                    {% if user.emailaddress_set.filter(verified=False).exists() %}
-                    <span class="badge bg-warning">Email Unverified</span>
-                    <span class="sr-only">Email Unverified</span>
-                    {% endif %}
-                    <i class="fas fa-chevron-down ms-2"></i>
-                </button>
-                <div class="dropdown-menu dropdown-menu-end">
-                    <a class="dropdown-item" href="{{ profile_url }}">
-                        <i class="fas fa-user-edit"></i>
-                        Your Account
+            <ul class="navbar-nav">
+                {# search #}
+                <li id="search-dropdown" class="mx-3 my-auto nav-item dropdown show">
+                    <a id="search-button" onclick="focusSearch()" href="#" class="dropdown-toggle"
+                        data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                        <i class="fas fa-search"></i>
                     </a>
-                    {% if user.has_perm('library.change_peerreview') %}
-                    <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
-                        <i class="fas fa-flask"></i>
-                        Manage Peer Reviews
-                    </a>
-                    {% endif %}
-                    {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout
-                    #}
-                    <form id="logoutForm" method="post" action="{{ logout_url }}">
-                        {{ csrf_input }}
-                        {% if redirect_field_value %}
-                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                    <div id="header-search-form" class="p-2 dropdown-menu dropdown-menu-right"
+                        aria-labelledby="search-button">
+                        <form method="get" action="/search/">
+                            <input id="header-search-input" type="text" name="query" class="p-2 form-control"
+                                placeholder="search entire site">
+                            {# FIXME: put back when advanced search is implemented
+                            <div class="float-end">
+                                <small><a href="/search/advanced/">options</a></small>
+                            </div>
+                            #}
+                        </form>
+                    </div>
+                </li>
+                {# login #}
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <button class="nav-link nav-dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <span class="fas fa-user"></span>
+                        {{ user.username }}
+                        {# FIXME: this should be cached instead #}
+                        {% if user.emailaddress_set.filter(verified=False).exists() %}
+                        <span class="badge bg-warning">Email Unverified</span>
+                        <span class="sr-only">Email Unverified</span>
                         {% endif %}
-                        <input type="submit" style="display: none">
-                    </form>
-                    <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}">
-                        <i class='fas fa-sign-out-alt'></i>
-                        Sign Out
+                        <i class="fas fa-chevron-down ms-2"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item" href="{{ profile_url }}">
+                            <i class="fas fa-user-edit"></i>
+                            Your Account
+                        </a>
+                        {% if user.has_perm('library.change_peerreview') %}
+                        <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
+                            <i class="fas fa-flask"></i>
+                            Manage Peer Reviews
+                        </a>
+                        {% endif %}
+                        {# POST logouts, see
+                        http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout
+                        #}
+                        <form id="logoutForm" method="post" action="{{ logout_url }}">
+                            {{ csrf_input }}
+                            {% if redirect_field_value %}
+                            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                            {% endif %}
+                            <input type="submit" style="display: none">
+                        </form>
+                        <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}">
+                            <i class='fas fa-sign-out-alt'></i>
+                            Sign Out
+                        </a>
+                    </div>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ login_url }}?next={{ request.path }}">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Sign In
                     </a>
-                </div>
-            </li>
-            {% else %}
-            <li class="nav-item">
-                <a class="nav-link" href="{{ login_url }}?next={{ request.path }}">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Sign In
-                </a>
-            </li>
-            {% endif %}
-            {# end login #}
+                </li>
+                {% endif %}
+                {# end login #}
             </ul>
         </div>
         {# end hamburger menu content #}
