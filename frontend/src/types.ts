@@ -369,4 +369,5 @@ export interface FeedProps {
   limit: number;
   datePrefix?: string;
   authorPrefix?: string;
+  accentVariant?: 1 | 2 | 3;
 }

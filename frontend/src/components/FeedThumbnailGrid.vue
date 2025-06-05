@@ -1,18 +1,18 @@
 <template>
-  <!-- loading placeholder -->
+  <!-- loading feed-placeholder -->
   <div v-if="loading" class="row g-3 mb-4">
-    <div v-for="n in props.limit" :key="`placeholder-${n}`" class="col-6">
+    <div v-for="n in props.limit" :key="`feed-placeholder-${n}`" class="col-6">
       <div class="activity border rounded p-3 h-100 d-flex flex-column">
         <div class="text-center mb-3">
-          <div class="placeholder bg-gray rounded" style="width: 100%; height: 120px"></div>
+          <div class="feed-placeholder bg-gray rounded" style="width: 100%; height: 120px"></div>
         </div>
         <div class="flex-grow-1 d-flex flex-column">
           <div class="mb-2">
-            <span class="placeholder col-10"></span>
+            <span class="feed-placeholder col-10"></span>
           </div>
           <div class="mt-auto">
             <small class="text-muted">
-              <span class="placeholder col-5"></span>
+              <span class="feed-placeholder col-5"></span>
             </small>
           </div>
         </div>
@@ -23,18 +23,18 @@
   <!-- actual content -->
   <div v-else class="row g-3 mb-4">
     <div v-for="item in items" :key="item.title" class="col-6">
-      <div class="activity border rounded p-3 h-100 d-flex flex-column">
-        <div class="text-center mb-3">
+      <div class="activity border rounded h-100 d-flex flex-column overflow-hidden">
+        <div class="flex-shrink-0">
           <a :href="item.link">
             <img
               :src="item.thumbnail"
               :alt="item.title"
-              class="img-fluid rounded"
-              style="width: 100%; object-fit: cover"
+              class="img-fluid w-100"
+              style="height: 120px; object-fit: cover; border-radius: 0.375rem 0.375rem 0 0"
             />
           </a>
         </div>
-        <div class="flex-grow-1 d-flex flex-column">
+        <div class="flex-grow-1 d-flex flex-column p-3">
           <div>
             <a :href="item.link" class="text-decoration-none feed-title">{{ item.title }}</a>
           </div>
@@ -87,8 +87,3 @@ onMounted(async () => {
   }
 });
 </script>
-<style scoped>
-.placeholder {
-  opacity: 0.2;
-}
-</style>

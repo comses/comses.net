@@ -115,7 +115,7 @@
         <div class="row gx-4 gx-lg-5">
             <div class="col-md-4 mb-5">
                 <h3 class="fw-bold mb-3">Upcoming Events</h3>
-                <div id="events-feed" data-feed-url="{{ feed_urls.events }}" data-date-prefix="Begins" data-limit="3">
+                <div id="events-feed" data-feed-url="{{ feed_urls.events }}" data-date-prefix="Begins" data-limit="3" data-accent-variant="1">
                 </div>
                 <a href="{{ url('core:event-list') }}" class="fw-bold ">
                     See more events <i class="fas fa-chevron-right ms-1"></i>
@@ -123,7 +123,7 @@
             </div>
             <div class="col-md-4 mb-5">
                 <h3 class="fw-bold mb-3">Jobs & Appointments</h3>
-                <div id="jobs-feed" data-feed-url="{{ feed_urls.jobs }}" data-date-prefix="Apply by" data-limit="3">
+                <div id="jobs-feed" data-feed-url="{{ feed_urls.jobs }}" data-date-prefix="Apply by" data-limit="3" data-accent-variant="2">
                 </div>
                 <a href="{{ url('core:job-list') }}" class="fw-bold ">
                     See more openings <i class="fas fa-chevron-right ms-1"></i>
@@ -132,7 +132,7 @@
             <div class="col-md-4 mb-5">
                 <h3 class="fw-bold mb-3">Recent Forum Posts</h3>
                 <div id="forum-feed" data-feed-url="{{ feed_urls.forum }}" data-author-prefix="Posted by"
-                    data-limit="3"></div>
+                    data-limit="3" data-accent-variant="3"></div>
                 <a href="{{ constants.DISCOURSE_BASE_URL }}" class="fw-bold ">
                     Start a discussion <i class="fas fa-chevron-right ms-1"></i>
                 </a>

@@ -1,24 +1,25 @@
 <template>
-  <!-- loading placeholder -->
+  <!-- loading feed-placeholder -->
   <template v-if="loading">
-    <div
-      v-for="n in props.limit"
-      :key="`placeholder-${n}`"
-      class="activity border rounded p-3 mb-3"
-    >
+    <div v-for="n in props.limit" :key="`feed-placeholder-${n}`" class="border rounded p-3 mb-3">
       <div class="mb-2">
-        <span class="placeholder col-7 placeholder-lg"></span>
+        <span class="feed-placeholder col-7 feed-placeholder-lg"></span>
       </div>
       <small class="text-muted">
-        <span class="placeholder col-4"></span>
-        <span class="placeholder col-3 ms-2"></span>
+        <span class="feed-placeholder col-4"></span>
+        <span class="feed-placeholder col-3 ms-2"></span>
       </small>
     </div>
   </template>
 
   <!-- actual content -->
   <template v-else>
-    <div v-for="item in items" :key="item.title" class="activity border rounded p-3 mb-3">
+    <div
+      v-for="item in items"
+      :key="item.title"
+      class="feed-item border rounded p-3 mb-3 position-relative"
+      :class="`accent-${props.accentVariant}`"
+    >
       <div class="mb-2">
         <a :href="item.link" class="text-decoration-none feed-title">{{ item.title }}</a>
       </div>
@@ -55,7 +56,9 @@ import type { FeedItem, FeedProps } from "@/types";
 const items = ref<FeedItem[]>([]);
 const loading = ref(true);
 
-const props = withDefaults(defineProps<FeedProps>(), {});
+const props = withDefaults(defineProps<FeedProps>(), {
+  accentVariant: "info",
+});
 
 const { getFeed } = useFeedAPI();
 
@@ -73,8 +76,3 @@ onMounted(async () => {
   }
 });
 </script>
-<style scoped>
-.placeholder {
-  opacity: 0.2;
-}
-</style>

@@ -150,3 +150,37 @@ $homepage-banner-height: 48px;
   display: -webkit-box;
   min-height: 4.5rem;
 }
+
+.feed-placeholder {
+  opacity: 0.2;
+}
+
+.feed-item {
+  &::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: -1px;
+    bottom: -1px;
+    width: 5px;
+    border-radius: 0.375rem 0 0 0.375rem;
+  }
+
+  &.accent-1 {
+    &::before {
+      background-color: $button-color-primary;
+    }
+  }
+
+  &.accent-2 {
+    &::before {
+      background-color: mix($button-color-primary, $info, 50%);
+    }
+  }
+
+  &.accent-3 {
+    &::before {
+      background-color: $info;
+    }
+  }
+}

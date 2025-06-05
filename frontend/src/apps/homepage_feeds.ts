@@ -6,7 +6,7 @@ import FeedCodebases from "@/components/FeedCodebases.vue";
 import FeedThumbnailGrid from "@/components/FeedThumbnailGrid.vue";
 import { extractDataParams } from "@/util";
 
-const propsParams = ["feedUrl", "limit", "datePrefix", "authorPrefix"];
+const propsParams = ["feedUrl", "limit", "datePrefix", "authorPrefix", "accentVariant"];
 
 const feedConfigs = [
   {
