@@ -366,9 +366,8 @@ nav {
 }
 
 .codebase-title {
-  font-family: "Alte-DIN-1451-Mittelschrift", "Open Sans", sans-serif;
   color: $text-color;
-  font-weight: 300;
+  font-weight: 400;
 }
 
 .profile-details {
@@ -409,7 +408,7 @@ nav {
 
   .card-title {
     font-size: 1rem;
-    font-weight: 900;
+    font-weight: 700;
   }
 
   .title {
@@ -460,4 +459,8 @@ nav {
 .admonition-title {
   font-size: 1.1em;
   font-weight: bold;
+}
+
+.lead {
+  font-weight: 400;
 }
