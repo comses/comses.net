@@ -6,8 +6,7 @@
     <div class="container position-relative z-1 d-flex flex-column justify-content-evenly">
         <div class="row">
             <div class="col text-center">
-                <h1>The Network for Computational Modeling in the Social and Ecological Sciences
-                </h1>
+                <h1>{{ page.title }}</h1>
             </div>
         </div>
         <div class="row gx-4 gx-lg-5">
@@ -17,21 +16,12 @@
                     <div class="d-flex align-items-center mb-3">
                         <img src="{{ static('images/icons/submit-white.png') }}" class="me-2" style="height: 2rem;">
                         <h2 class="fw-bold mb-0">
-                            The CoMSES Model Library
+                            {{ page.library_title }}
                         </h2>
                     </div>
-                    <p class="text-start">
-                        Preserve the <a
-                            href='https://www.acm.org/publications/policies/artifact-review-and-badging-current'>digital
-                            artifacts and context</a> used to derive a published research finding in an open digital
-                        repository that supports <a href='https://doi.org/10.15497/RDA00068'>FAIR practices for Research
-                            Software</a>, <a href='https://peerj.com/articles/cs-86/'>software citation</a>,
-                        reproducibility, and reuse.
-                    </p>
-                    <p class="mb-3">
-                        <a href='{{ slugurl("guides-to-good-practice") }}'>Promote good practices</a> for developing,
-                        documenting, and publishing computational models.
-                    </p>
+                    {% autoescape off %}
+                        {{ page.library_blurb }}
+                    {% endautoescape %}
                     <div class="d-flex flex-column align-items-start">
                         <a href="{{ url('library:codebase-add') }}" class="btn btn-lg btn-primary mb-2">
                             <h4 class="fw-bold mb-0">Publish your model code</h4>
@@ -45,18 +35,18 @@
                     <div class="d-flex align-items-center">
                         <img src="{{ static('images/icons/groups-white.png') }}" class="me-2" style="height: 2rem;">
                         <h2 class="fw-bold mb-0 flex-grow-1">
-                            A community of researchers
+                            {{ page.community_title }}
                         </h2>
-                        <h2 class="fas fa-chevron-circle-down mb-0 opacity-75"></h2>
+                        <h2 class="fas fa-chevron-down mb-0 opacity-75"></h2>
                     </div>
                 </a>
                 <a class="homepage-introduction-card text-decoration-none p-3" href="#resources">
                     <div class="d-flex align-items-center">
                         <img src="{{ static('images/icons/search-white.png') }}" class="me-2" style="height: 2rem;">
                         <h2 class="fw-bold mb-0 flex-grow-1">
-                            Resources for modeling
+                            {{ page.resources_title }}
                         </h2>
-                        <h2 class="fas fa-chevron-circle-down mb-0 opacity-75"></h2>
+                        <h2 class="fas fa-chevron-down mb-0 opacity-75"></h2>
                     </div>
                 </a>
             </div>
@@ -84,16 +74,16 @@
 
 <section class="homepage-section" id="community">
     <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div class="col-12 mb-5">
-                    <h1 class="text-start fw-bold mb-4">See what's happening & get involved</h1>
-                    <p class="text-start mb-4">
-                        Stay updated on upcoming conferences and workshops, discover career opportunities, and connect
-                        with other researchers on the community forum.
-                    </p>
-                    <div id="forum-categories-feed" data-feed-url="{{ feed_urls.forum_categories }}" data-limit="6"></div>
-                </div>
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-8 mb-5">
+                <h1 class="text-start fw-bold mb-3">{{ page.community_title }}</h1>
+                {% autoescape off %}
+                    {{ page.community_blurb }}
+                {% endautoescape %}
+            </div>
+            <div class="col-4 mb-5">
+                <h5 class="fw-bold mb-3">Explore the CoMSES Net Forums</h5>
+                <div id="forum-categories-feed" data-feed-url="{{ feed_urls.forum_categories }}" data-limit="6"></div>
             </div>
         </div>
         <div class="row gx-4 gx-lg-5">
@@ -120,24 +110,10 @@
     <div class="container">
         <div class="row gx-4 gx-lg-5">
             <div class="col-md-6 d-flex flex-column mb-5">
-                <h1 class="text-start fw-bold mb-4">Resources</h1>
-                <p class="text-start mb-4">
-                    We maintain these community curated resources to help new and experienced computational modelers
-                    adopt
-                    <a href="https://www.go-fair.org/fair-principles/">FAIR principles</a> for digital data management
-                    and improve the
-                    discoverability, reusability, and reproducibility of their computational models.
-                </p>
-                <ul class="list-unstyled fw-bold mb-4">
-                    <li class="mb-2"><a href="/education"><i class="fas fa-chevron-right me-1"></i>Education and
-                            training</a></li>
-                    <li class="mb-2"><a href="/resources/frameworks"><i class="fas fa-chevron-right me-1"></i>Modeling
-                            frameworks</a></li>
-                    <li class="mb-2"><a href="/resources/journals"><i class="fas fa-chevron-right me-1"></i>Journals</a>
-                    </li>
-                    <li class="mb-2"><a href="/resources/standards"><i
-                                class="fas fa-chevron-right me-1"></i>Standards</a></li>
-                </ul>
+                <h1 class="text-start fw-bold mb-3">{{ page.resources_title }}</h1>
+                {% autoescape off %}
+                    {{ page.resources_blurb }}
+                {% endautoescape %}
                 <div class="mb-4">
                     <a href="#" class="btn btn-lg btn-primary">
                         <h4 class="fw-bold mb-0">All resources</h4>

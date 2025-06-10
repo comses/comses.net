@@ -1,13 +1,26 @@
 <template>
   <!-- loading feed-placeholder -->
   <template v-if="loading">
-    <div v-for="n in props.limit" :key="`feed-placeholder-${n}`" class="p-3 mb-3">
+    <div
+      v-for="n in props.limit"
+      :key="`feed-placeholder-${n}`"
+      class="feed-item p-3 mb-3 position-relative"
+    >
       <div class="mb-2">
-        <span class="feed-placeholder col-7 feed-placeholder-lg"></span>
+        <span
+          class="placeholder placeholder-glow feed-placeholder feed-title clamp-2"
+          style="width: 80%; height: 1.2em; display: block"
+        ></span>
       </div>
       <small class="text-muted">
-        <span class="feed-placeholder col-4"></span>
-        <span class="feed-placeholder col-3 ms-2"></span>
+        <span
+          class="placeholder placeholder-glow feed-placeholder"
+          style="width: 4rem; height: 0.75em"
+        ></span>
+        <span
+          class="placeholder placeholder-glow feed-placeholder ms-2"
+          style="width: 6rem; height: 0.75em"
+        ></span>
       </small>
     </div>
   </template>

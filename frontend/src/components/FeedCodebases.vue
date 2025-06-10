@@ -4,17 +4,22 @@
     <div v-for="n in props.limit" :key="`feed-placeholder-${n}`" class="feed-item p-3 mb-3">
       <div class="d-flex">
         <div class="flex-shrink-0 me-3">
-          <div class="feed-placeholder bg-gray rounded" style="width: 100px; height: 100px"></div>
+          <div
+            class="placeholder placeholder-glow feed-placeholder bg-gray rounded"
+            style="width: 100px; height: 100px"
+          ></div>
         </div>
         <div class="flex-grow-1 d-flex flex-column">
           <h5 class="mb-2">
-            <span class="feed-placeholder col-8 feed-placeholder-lg"></span>
+            <span
+              class="placeholder placeholder-glow feed-placeholder col-8 feed-placeholder-lg"
+            ></span>
           </h5>
           <div class="d-flex align-items-start justify-content-between mt-auto">
             <small class="text-muted">
-              <span class="feed-placeholder col-6"></span>
+              <span class="placeholder placeholder-glow feed-placeholder col-6"></span>
               <br />
-              <span class="feed-placeholder col-4"></span>
+              <span class="placeholder placeholder-glow feed-placeholder col-4"></span>
             </small>
           </div>
         </div>

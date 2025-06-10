@@ -294,8 +294,9 @@ class EventFeed(AbstractFeed):
 class ForumFeed(AbstractFeed):
     mock = False  # set to True for testing with mock data
 
-    def __init__(self, max_items=None):
+    def __init__(self, max_items=None, mock=False):
         super().__init__(max_items=max_items)
+        self.mock = mock
 
     def _get_feed_source_data(self):
         if self.mock:

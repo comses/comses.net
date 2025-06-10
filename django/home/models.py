@@ -35,7 +35,6 @@ from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
 from core.widgets import MarkdownTextarea
 
-# FIXME: should these models be pushed into core..
 from library.models import CodebaseRelease, Contributor
 
 logger = logging.getLogger(__name__)
@@ -114,7 +113,7 @@ class CarouselItem(LinkFields):
         related_name="+",
     )
     embed_url = models.URLField("Embed URL", blank=True)
-    caption = models.CharField(max_length=255)
+    caption = models.CharField(max_length=255, blank=True)
     summary = models.TextField(max_length=600, blank=True)
     title = models.CharField(max_length=255)
     panels = [
@@ -144,15 +143,19 @@ class FeaturedContentItem(Orderable, CarouselItem):
 
 class LandingPage(Page):
     template = "home/index.jinja"
-    FEATURED_CONTENT_COUNT = 6
 
     mission_statement = models.CharField(max_length=512)
-    community_statement = models.TextField()
+    library_title = models.CharField(max_length=255, default="The CoMSES Model Library")
+    library_blurb = MarkdownField(max_length=1024, blank=True)
+    community_title = models.CharField(max_length=255, default="A community of researchers")
+    community_blurb = MarkdownField(max_length=1024, blank=True)
+    resources_title = models.CharField(max_length=255, default="Resources for modeling")
+    resources_blurb = MarkdownField(max_length=1024, blank=True)
 
-    def get_featured_content(self):
+    def get_featured_content(self, limit=5):
         return self.featured_content_queue.select_related(
             "image", "codebase_image", "link_codebase", "link_page"
-        ).all()[: self.FEATURED_CONTENT_COUNT]
+        ).all()[:limit]
 
     def get_sitemap_urls(self, request):
         sitemap_urls = super().get_sitemap_urls(request)
@@ -174,10 +177,8 @@ class LandingPage(Page):
         )
         return sitemap_urls
 
-    def get_context(self, request, *args, **kwargs):
-        context = super(LandingPage, self).get_context(request, *args, **kwargs)
-        context["featured_content"] = self.get_featured_content()
-        context["feed_urls"] = {
+    def get_feed_urls(self):
+        return {
             "reviewed_models": reverse("home:reviewed-model-feed"),
             "events": reverse("home:event-feed"),
             "forum": reverse("home:forum-feed"),
@@ -185,11 +186,22 @@ class LandingPage(Page):
             "jobs": reverse("home:job-feed"),
             "youtube": reverse("home:youtube-feed"),
         }
+
+    def get_context(self, request, *args, **kwargs):
+        context = super(LandingPage, self).get_context(request, *args, **kwargs)
+        # disable featured content for now
+        # context["featured_content"] = self.get_featured_content()
+        context["feed_urls"] = self.get_feed_urls()
         return context
 
     content_panels = Page.content_panels + [
         FieldPanel("mission_statement", widget=forms.Textarea),
-        FieldPanel("community_statement"),
+        FieldPanel("library_title"),
+        FieldPanel("library_blurb"),
+        FieldPanel("community_title"),
+        FieldPanel("community_blurb"),
+        FieldPanel("resources_title"),
+        FieldPanel("resources_blurb"),
         InlinePanel("featured_content_queue", label=_("Featured Content")),
     ]
 

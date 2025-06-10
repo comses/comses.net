@@ -1,14 +1,14 @@
 <template>
   <!-- loading feed-placeholder -->
   <template v-if="loading">
-    <div class="d-flex flex-row gap-2">
+    <div class="d-flex flex-row gap-2 flex-wrap">
       <div
         v-for="n in props.limit"
         :key="`feed-placeholder-${n}`"
-        class="badge border text-secondary d-flex align-items-center gap-1"
+        class="badge feed-item text-gray d-flex align-items-center gap-1"
       >
         <span class="category-color-square feed-placeholder"></span>
-        <span class="feed-placeholder" style="width: 60px; height: 14px"></span>
+        <span class="feed-placeholder" style="width: 6rem; height: 0.75em"></span>
       </div>
     </div>
   </template>
@@ -19,11 +19,12 @@
       <a
         v-for="item in items"
         :key="item.title"
-        class="badge border text-secondary d-flex align-items-center gap-1"
+        class="badge feed-item text-gray d-flex align-items-center gap-1"
         :href="item.link"
       >
         <span class="category-color-square" :style="{ backgroundColor: item.color }"></span>
         {{ item.title }}
+        <i class="fas fa-chevron-right ms-1"></i>
       </a>
     </div>
   </template>
