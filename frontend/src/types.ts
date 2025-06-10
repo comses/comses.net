@@ -362,6 +362,7 @@ export interface FeedItem {
   date?: Date;
   thumbnail?: string;
   doi?: string;
+  color?: string;
 }
 
 export interface FeedProps {
@@ -369,5 +370,4 @@ export interface FeedProps {
   limit: number;
   datePrefix?: string;
   authorPrefix?: string;
-  accentVariant?: 1 | 2 | 3;
 }

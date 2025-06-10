@@ -4,9 +4,10 @@ import { createApp } from "vue";
 import FeedPosts from "@/components/FeedPosts.vue";
 import FeedCodebases from "@/components/FeedCodebases.vue";
 import FeedThumbnailGrid from "@/components/FeedThumbnailGrid.vue";
+import FeedCategories from "@/components/FeedCategories.vue";
 import { extractDataParams } from "@/util";
 
-const propsParams = ["feedUrl", "limit", "datePrefix", "authorPrefix", "accentVariant"];
+const propsParams = ["feedUrl", "limit", "datePrefix", "authorPrefix"];
 
 const feedConfigs = [
   {
@@ -25,8 +26,8 @@ const feedConfigs = [
     dataParams: propsParams,
   },
   {
-    elementId: "forum-feed",
-    component: FeedPosts,
+    elementId: "forum-categories-feed",
+    component: FeedCategories,
     dataParams: propsParams,
   },
   {

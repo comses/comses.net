@@ -1,7 +1,7 @@
 <template>
   <!-- loading feed-placeholder -->
   <template v-if="loading">
-    <div v-for="n in props.limit" :key="`feed-placeholder-${n}`" class="border rounded p-3 mb-3">
+    <div v-for="n in props.limit" :key="`feed-placeholder-${n}`" class="p-3 mb-3">
       <div class="mb-2">
         <span class="feed-placeholder col-7 feed-placeholder-lg"></span>
       </div>
@@ -14,14 +14,9 @@
 
   <!-- actual content -->
   <template v-else>
-    <div
-      v-for="item in items"
-      :key="item.title"
-      class="feed-item border rounded p-3 mb-3 position-relative"
-      :class="`accent-${props.accentVariant}`"
-    >
+    <div v-for="item in items" :key="item.title" class="feed-item p-3 mb-3 position-relative">
       <div class="mb-2">
-        <a :href="item.link" class="text-decoration-none feed-title">{{ item.title }}</a>
+        <a :href="item.link" class="feed-title clamp-2">{{ item.title }}</a>
       </div>
       <small class="text-muted">
         <span v-if="item.author && props.authorPrefix">
@@ -56,9 +51,7 @@ import type { FeedItem, FeedProps } from "@/types";
 const items = ref<FeedItem[]>([]);
 const loading = ref(true);
 
-const props = withDefaults(defineProps<FeedProps>(), {
-  accentVariant: "info",
-});
+const props = withDefaults(defineProps<FeedProps>(), {});
 
 const { getFeed } = useFeedAPI();
 

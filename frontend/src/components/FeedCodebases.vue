@@ -1,11 +1,7 @@
 <template>
   <!-- loading feed-placeholder -->
   <template v-if="loading">
-    <div
-      v-for="n in props.limit"
-      :key="`feed-placeholder-${n}`"
-      class="activity border rounded p-3 mb-3"
-    >
+    <div v-for="n in props.limit" :key="`feed-placeholder-${n}`" class="feed-item p-3 mb-3">
       <div class="d-flex">
         <div class="flex-shrink-0 me-3">
           <div class="feed-placeholder bg-gray rounded" style="width: 100px; height: 100px"></div>
@@ -28,11 +24,7 @@
 
   <!-- actual content -->
   <template v-else>
-    <div
-      v-for="item in items"
-      :key="item.title"
-      class="activity border rounded mb-3 d-flex overflow-hidden"
-    >
+    <div v-for="item in items" :key="item.title" class="feed-item mb-3 d-flex overflow-hidden">
       <div class="flex-shrink-0" style="width: 8rem">
         <a v-if="item.thumbnail" class="d-block h-100" :href="item.link">
           <img
@@ -58,7 +50,7 @@
       </div>
       <div class="flex-grow-1 d-flex flex-column p-3">
         <h5 class="mb-2">
-          <a :href="item.link" class="text-decoration-none feed-title">{{ item.title }}</a>
+          <a :href="item.link" class="feed-title clamp-3">{{ item.title }}</a>
         </h5>
         <div class="d-flex align-items-start justify-content-between mt-auto">
           <small class="text-muted">

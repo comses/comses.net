@@ -181,6 +181,7 @@ class LandingPage(Page):
             "reviewed_models": reverse("home:reviewed-model-feed"),
             "events": reverse("home:event-feed"),
             "forum": reverse("home:forum-feed"),
+            "forum_categories": reverse("home:forum-categories-feed"),
             "jobs": reverse("home:job-feed"),
             "youtube": reverse("home:youtube-feed"),
         }

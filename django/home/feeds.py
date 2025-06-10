@@ -13,7 +13,7 @@ from itertools import chain
 from operator import attrgetter
 
 from library.models import CodebaseRelease
-from core.discourse import build_discourse_url, get_latest_posts
+from core.discourse import build_discourse_url, get_categories, get_latest_posts
 from core.models import Event, Job
 
 import logging
@@ -198,6 +198,7 @@ class FeedItem:
     date: datetime = None
     thumbnail: str = ""
     doi: str = ""
+    color: str = ""
 
 
 class AbstractFeed(ABC):
@@ -258,11 +259,15 @@ class ReviewedModelFeed(AbstractFeed):
         )
 
     def to_feed_item(self, release):
+        short_author_string = release.citation_authors
+        if short_author_string and "," in short_author_string:
+            short_author_string = f"{short_author_string.split(",")[0].strip()} et al."
+        
         feed_item = FeedItem(
             title=release.title,
             summary=release.codebase.summary or release.codebase.description.raw,
             link=release.get_absolute_url(),
-            author=release.citation_authors,
+            author=short_author_string,
             date=release.last_published_on,
             doi=release.doi,
         )
@@ -289,9 +294,8 @@ class EventFeed(AbstractFeed):
 class ForumFeed(AbstractFeed):
     mock = False  # set to True for testing with mock data
 
-    def __init__(self, max_items=None, mock=False):
+    def __init__(self, max_items=None):
         super().__init__(max_items=max_items)
-        self.mock = mock
 
     def _get_feed_source_data(self):
         if self.mock:
@@ -305,6 +309,22 @@ class ForumFeed(AbstractFeed):
             link=build_discourse_url(post["post_url"]),
             author=post["username"],
             date=post["created_at"],
+        )
+
+
+class ForumCategoryFeed(ForumFeed):
+    mock = False
+    cache_timeout = 60 * 60 * 24 * 30 # 30 days
+
+    def _get_feed_source_data(self):
+        return get_categories(number_of_categories=self.max_number_of_items, mock=self.mock)
+
+    def to_feed_item(self, category):
+        return FeedItem(
+            title=category["name"],
+            summary=category["description"],
+            link=build_discourse_url(f"c/{category['slug']}"),
+            color=f"#{category['color']}",
         )
 
 
@@ -386,6 +406,10 @@ class ForumFeedView(BaseFeedView):
     feed_class = ForumFeed
 
 
+class ForumCategoryFeedView(BaseFeedView):
+    feed_class = ForumCategoryFeed
+
+
 class EventFeedView(BaseFeedView):
     feed_class = EventFeed
 
@@ -415,6 +439,7 @@ def urlpatterns():
         ),
         path("api/feeds/events/", EventFeedView.as_view(), name="event-feed"),
         path("api/feeds/forum/", ForumFeedView.as_view(), name="forum-feed"),
+        path("api/feeds/forum-categories/", ForumCategoryFeedView.as_view(), name="forum-categories-feed"),
         path("api/feeds/jobs/", JobFeedView.as_view(), name="job-feed"),
         path("api/feeds/yt/", YouTubeFeedView.as_view(), name="youtube-feed"),
     ]

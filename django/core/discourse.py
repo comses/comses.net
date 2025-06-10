@@ -70,6 +70,53 @@ def get_latest_posts(number_of_posts=5, mock=False):
     return []
 
 
+def get_mock_forum_categories(number_of_categories=5):
+    # https://docs.discourse.org/#tag/Categories/operation/listCategories
+    return {
+        "category_list": {
+            "can_create_category": False,
+            "can_create_topic": False,
+            "categories": [
+                {
+                    "name": f"Test Category {i}",
+                    "description": f"Summary of generated test forum category {i}",
+                    "slug": f"generated-test-forum-category-{i}",
+                    "position": i,
+                    "read_restricted": False,
+                    "color": f"FF0000",
+                }
+                for i in range(number_of_categories)
+            ],
+        }
+    }
+
+
+def get_categories(number_of_categories=5, mock=False):
+    if not mock:
+        url = build_discourse_url("categories.json?include_subcategories=false")
+        response = requests.get(
+            url,
+            headers={
+                "Content-Type": "application/json",
+                "Api-Key": settings.DISCOURSE_API_KEY,
+                "Api-Username": settings.DISCOURSE_API_USERNAME,
+            },
+        )
+        if response.status_code == 200:
+            data = response.json()
+        else:
+            return []
+    else:
+        data = get_mock_forum_categories(number_of_categories=number_of_categories)
+
+    categories = data["category_list"]["categories"]
+    readable_categories = [
+        category for category in categories if category["read_restricted"] == False
+    ]
+    sorted_categories = sorted(readable_categories, key=lambda x: x["position"])
+    return sorted_categories[:number_of_categories]
+
+
 def create_discourse_user(user):
     response = requests.post(
         build_discourse_url("users"),
