@@ -66,6 +66,10 @@ class GitHubRepoValidator:
         token = GitHubApi.get_user_installation_access_token(installation)
         full_name = f"{installation.github_login}/{self.repo_name}"
         github_repo = GitHubApi.get_existing_repo(token, full_name)
+        if github_repo.private:
+            raise ValueError(
+                f"Repository at https://github.com/{full_name} is private. Only public repositories can be synced."
+            )
         return github_repo.html_url
 
     def check_user_repo_empty(self, installation: GithubIntegrationAppInstallation):
@@ -75,6 +79,10 @@ class GitHubRepoValidator:
             token,
             full_name,
         )
+        if github_repo.private:
+            raise ValueError(
+                f"Repository at https://github.com/{full_name} is private. Only public repositories can be synced."
+            )
         try:
             # this should raise a 404 if the repository is empty
             github_repo.get_contents("")
@@ -282,6 +290,9 @@ class GitHubReleaseImporter:
 
         if self.github_release.get("draft") or self.github_release.get("prerelease"):
             raise ValueError("Draft or pre-release, ignoring")
+
+        if self.repository.get("private", False):
+            raise ValueError("Private repository, ignoring")
 
         self.github_release_id = str(self.github_release.get("id"))
 

@@ -43,6 +43,8 @@ from wagtail.images.models import (
 )
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
+from wagtail.contrib.settings.models import BaseSiteSetting, register_setting
+from wagtail.admin.panels import FieldPanel, InlinePanel
 
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
@@ -3506,3 +3508,32 @@ class DataCiteRegistrationLog(models.Model):
                    HTTP Status: {self.http_status}, Message: {self.message},
                    Hash: {self.metadata_hash}, DOI: {self.doi}
                    """
+
+
+class GitHubSyncFaqEntry(index.Indexed, models.Model):
+    configuration = ParentalKey(
+        "GitHubSyncConfiguration", related_name="faq_entries", on_delete=models.CASCADE
+    )
+    question = models.CharField(max_length=500, help_text=_("The FAQ question"))
+    answer = MarkdownField(help_text=_("The FAQ answer in Markdown format"))
+    order = models.PositiveIntegerField(
+        default=0, help_text=_("Order in which this FAQ entry should appear")
+    )
+
+    class Meta:
+        ordering = ["order", "id"]
+
+@register_setting
+class GitHubSyncConfiguration(BaseSiteSetting, ClusterableModel):
+    enable_new_syncs = models.BooleanField(
+        default=True, help_text=_("Disabling will prevent new synced repositories from being set up, existing syncs will remain active, visible, and editable.")
+    )
+    is_beta = models.BooleanField(
+        default=True, help_text=_("Mark the GitHub Sync feature as a beta feature")
+    )
+
+    panels = [
+        FieldPanel("enable_new_syncs"),
+        FieldPanel("is_beta"),
+        InlinePanel("faq_entries", label="FAQ Entries"),
+    ]
