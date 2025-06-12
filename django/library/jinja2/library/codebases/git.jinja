@@ -3,7 +3,11 @@
 
 {% block title %}GitHub Sync{% endblock %}
 
-{% block introduction %}<h1>GitHub Sync</h1>{% endblock %}
+{% block introduction %}
+{% with github_config=settings("library.GitHubSyncConfiguration", use_default_site=True) %}
+    <h1>GitHub Sync{% if github_config.is_beta %} <span class="beta-badge border-white text-white ms-1">Beta</span>{% endif %}</h1>
+{% endwith %}
+{% endblock %}
 
 {% block content %}
 {{ breadcrumb([
