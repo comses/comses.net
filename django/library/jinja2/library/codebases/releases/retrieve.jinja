@@ -299,13 +299,12 @@
                     <b class="card-title mb-0">
                         <i class="fab fa-github"></i>
                         Github Sync
+                        {% with github_config=settings("library.GitHubSyncConfiguration", use_default_site=True) %}
+                            {% if github_config.is_beta %}
+                                <span class="beta-badge ms-1">Beta</span>
+                            {% endif %}
+                        {% endwith %}
                     </b>
-                    {% if has_change_perm %} 
-                        <a class="btn btn-sm btn-outline-secondary"
-                            href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
-                            <i class="fas fa-cog"></i> Configure
-                        </a>
-                    {% endif %}
                 </div>
                 {% if remotes %}
                     <ul class="list-unstyled mb-2">
@@ -318,10 +317,16 @@
                         {% endfor %}
                     </ul>
                 {% endif %}
-                <div class="card-text">
-                    <a class="small" href="/github/" target="_blank">
+                <div class="d-flex align-items-end justify-content-between">
+                    <a class="small me-2" href="/github/" target="_blank">
                         <i class="fas fa-question-circle"></i> What is this?
                     </a>
+                    {% if has_change_perm %} 
+                        <a class="btn btn-sm btn-outline-secondary"
+                            href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
+                            <i class="fas fa-cog"></i> Configure
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
