@@ -493,3 +493,11 @@ nav {
   font-size: 1.1em;
   font-weight: bold;
 }
+
+.beta-badge {
+  @extend .badge;
+  border: 1px solid $text-muted;
+  color: $text-muted;
+  padding: 0.15rem 0.3rem;
+  border-radius: 1rem;
+}
