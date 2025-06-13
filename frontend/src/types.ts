@@ -368,7 +368,7 @@ export interface ReviewerFilterParams {
 }
 
 export interface GithubAccount {
-  id: number;
+  id: string | number;
   username: string;
   profileUrl: string;
   installationId?: number;
