@@ -35,10 +35,6 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     return put(detailUrl(id), data, options);
   }
 
-  async function setupOrgGithubRemote(repoName: string, options?: RequestOptions) {
-    return post(url(["setup_org_github_remote"]), { repoName }, options);
-  }
-
   async function setupUserGithubRemote(repoName: string, options?: RequestOptions) {
     return post(url(["setup_user_github_remote"]), { repoName }, options);
   }
@@ -53,7 +49,6 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     list,
     update,
     getSubmitterInstallationStatus,
-    setupOrgGithubRemote,
     setupUserGithubRemote,
     setupUserExistingGithubRemote,
   };
