@@ -5,7 +5,8 @@
 
 {% block introduction %}
 {% with github_config=settings("library.GitHubSyncConfiguration", use_default_site=True) %}
-    <h1>GitHub Sync{% if github_config.is_beta %} <span class="beta-badge border-white text-white ms-1">Beta</span>{% endif %}</h1>
+<h1>GitHub Sync{% if github_config.is_beta %} <span class="beta-badge border-white text-white ms-1">Beta</span>{% endif
+    %}</h1>
 {% endwith %}
 {% endblock %}
 
@@ -18,26 +19,17 @@
 <h1 class="codebase-title mb-3">
     Configure GitHub Sync for <i>{{ codebase.title }}</i>
 </h1>
-<p>
-    GitHub Sync allows you to connect your model in the CoMSES Model Library (CML) to a GitHub
+<p class="text-muted">
+    GitHub Sync allows you to connect your model in the CoMSES Model Library to a GitHub
     repository.
 </p>
 <p>
-    When creating a new repository here, a git repo will be automatically built from the public
-    releases of your model and <b><u>pushed</u> to GitHub</b>.  This will be updated every time you
-    publish a new release or update the metadata of an existing one, until it is disabled.
+    <a href="{{ url('library:github-sync-overview') }}">Learn more about how it works <i
+            class="fas fa-chevron-right"></i></a>
 </p>
-<p>
-    Changes made to synced repositories on GitHub can be automically pulled back into the CML by
-    enabling <b><u>importing</u> from GitHub</b> and creating a new release on GitHub. This works
-    similarly to the <i>Zenodo</i> GitHub integration.
-</p>
-<p>
-    <a href="{{ url('library:github-sync-overview') }}">Learn more about how it works <i class="fas fa-chevron-right"></i></a>
-</p>
-<hr />
-<div class='my-3' id="github-sync" data-codebase-identifier="{{ codebase.identifier }}" data-is-codebase-live="{{ codebase.live }}"
-    data-github-org-name="{{ github_org_name }}" data-default-repo-name="{{ slugify(codebase.title) }}"></div>
+<div class='my-3' id="github-sync" data-codebase-identifier="{{ codebase.identifier }}"
+    data-is-codebase-live="{{ codebase.live }}" data-github-org-name="{{ github_org_name }}"
+    data-default-repo-name="{{ slugify(codebase.title) }}"></div>
 {% endblock %}
 
 {% block js %}

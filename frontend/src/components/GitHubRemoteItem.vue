@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex align-items-center justify-content-between">
-    <div class="d-flex flex-column align-items-start">
+    <div class="d-flex flex-column align-items-start flex-grow-1 me-3">
       <a :href="remote.url" target="_blank">
         <i class="fab fa-github"></i>
         {{ remote.owner }}/{{ remote.repoName }}
@@ -13,7 +13,7 @@
         </small>
       </button>
     </div>
-    <div class="d-flex">
+    <div class="d-flex flex-row flex-shrink-0 gap-3">
       <div v-if="!remote.isPreexisting" class="form-check form-switch me-3">
         <input
           class="form-check-input"
@@ -24,7 +24,7 @@
         />
         <label class="form-check-label" for="flexSwitchCheckDefault">Pushing</label>
         <div>
-          <small class="form-text text-muted"
+          <small class="form-text text-muted text-nowrap"
             ><small><i class="fas fa-code-branch"></i> to GitHub</small></small
           >
         </div>
@@ -39,7 +39,7 @@
         />
         <label class="form-check-label" for="flexSwitchCheckDefault1">Importing</label>
         <div>
-          <small class="form-text text-muted"
+          <small class="form-text text-muted text-nowrap"
             ><small><i class="fas fa-archive"></i> from GitHub</small></small
           >
         </div>

@@ -117,8 +117,8 @@ class GitRepoApiTestCase(TestCase):
         api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
         # check that the mirror model is updated and the repo is built
-        self.assertIsNotNone(self.git_mirror.last_local_update)
-        self.assertEqual(self.git_mirror.local_releases.count(), 1)
+        self.assertIsNotNone(self.git_mirror.last_modified)
+        self.assertEqual(self.git_mirror.built_releases.count(), 1)
         self.assertTrue(os.path.exists(api.repo_dir))
         # check git stuff
         repo = Repo(api.repo_dir)
@@ -153,7 +153,7 @@ class GitRepoApiTestCase(TestCase):
         self.release_2.publish()
         api.append_releases()
 
-        self.assertEqual(self.git_mirror.local_releases.count(), 2)
+        self.assertEqual(self.git_mirror.built_releases.count(), 2)
         # check git stuff
         repo = Repo(api.repo_dir)
         self.assertFalse(repo.is_dirty())
@@ -204,7 +204,7 @@ class GitRepoApiTestCase(TestCase):
         self.release_2.publish()
         api.build()
 
-        self.assertEqual(self.git_mirror.local_releases.count(), 2)
+        self.assertEqual(self.git_mirror.built_releases.count(), 2)
         # check git stuff
         repo = Repo(api.repo_dir)
         self.assertFalse(repo.is_dirty())
