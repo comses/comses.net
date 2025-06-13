@@ -468,6 +468,26 @@ class BaseCodebaseReleaseFsApi(ABC):
         else:
             raise ValueError(f"StageDirectories values {stage} not valid")
 
+    def get_sip_list_url(self, category: FileCategories):
+        return reverse(
+            "library:codebaserelease-sip-files-list",
+            kwargs={
+                "identifier": str(self.identifier),
+                "version_number": self.version_number,
+                "category": category.name,
+            },
+        )
+
+    def get_originals_list_url(self, category: FileCategories):
+        return reverse(
+            "library:codebaserelease-original-files-list",
+            kwargs={
+                "identifier": str(self.identifier),
+                "version_number": self.version_number,
+                "category": category.name,
+            },
+        )
+
     def get_absolute_url(self, category: FileCategories, relpath: Path):
         return reverse(
             "library:codebaserelease-original-files-detail",
