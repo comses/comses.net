@@ -717,7 +717,8 @@ class CodebaseGitRemoteViewSet(
             validator.validate_format()
             validator.check_user_repo_empty(installation)
         except ValueError as e:
-            raise ValidationError(str(e))
+            error_message = e.args[0] if e.args else "Invalid repository configuration"
+            raise ValidationError(error_message)
 
         # create a mirror if it doesn't exist
         if not codebase.git_mirror:
@@ -759,7 +760,8 @@ class CodebaseGitRemoteViewSet(
             validator.validate_format()
             repo_html_url = validator.get_existing_user_repo_url(installation)
         except ValueError as e:
-            raise ValidationError(str(e))
+            error_message = e.args[0] if e.args else "Invalid repository configuration"
+            raise ValidationError(error_message)
 
         # create a mirror if it doesn't exist
         if not codebase.git_mirror:
@@ -797,7 +799,8 @@ class CodebaseGitRemoteViewSet(
             validator.validate_format()
             validator.check_org_repo_name_unused()
         except ValueError as e:
-            raise ValidationError(str(e))
+            error_message = e.args[0] if e.args else "Invalid repository configuration"
+            raise ValidationError(error_message)
 
         # create a mirror if it doesn't exist
         if not codebase.git_mirror:
@@ -1358,6 +1361,9 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
         queryset = self.queryset.filter(codebase__identifier=identifier)
         return queryset.accessible(user=self.request.user)
 
+    def get_list_url(self, api):
+        raise NotImplementedError
+
     def get_category(self) -> FileCategories:
         category = self.get_parser_context(self.request)["kwargs"]["category"]
         try:
@@ -1404,6 +1410,9 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
 class CodebaseReleaseFilesSipViewSet(BaseCodebaseReleaseFilesViewSet):
     stage = StagingDirectories.sip
 
+    def get_list_url(self, api):
+        return api.get_sip_list_url
+
     @action(detail=False, methods=["post"])
     def update_category(self, request, **kwargs):
         """update a file's category, currently only for imported releases
@@ -1429,12 +1438,16 @@ class CodebaseReleaseFilesSipViewSet(BaseCodebaseReleaseFilesViewSet):
         try:
             fs_api.manifest.update_file_category(file_path, new_category)
         except ValueError as e:
-            raise ValidationError(str(e))
+            error_message = e.args[0] if e.args else "Unable to update file category"
+            raise ValidationError(error_message)
         return Response(status=status.HTTP_200_OK)
 
 
 class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
     stage = StagingDirectories.originals
+
+    def get_list_url(self, api):
+        return api.get_originals_list_url
 
     def create(self, request, *args, **kwargs):
         codebase_release = self.get_object()

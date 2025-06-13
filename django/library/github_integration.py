@@ -417,6 +417,8 @@ class GitHubReleaseImporter:
         return self.log_success()
 
     def extract_semver(self, value) -> str | None:
+        if len(value) > 1024: # prevent expensive/malicious inputs
+            return None
         match = re.search(r"v?(\d+\.\d+\.\d+)", value)
         return match.group(1) if match else None
 
