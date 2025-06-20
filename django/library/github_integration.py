@@ -1,14 +1,16 @@
 import logging
 import re
 import uuid
-from github import GithubIntegration, Auth, Github
 from github.GithubException import GithubException, UnknownObjectException
 from github.Repository import Repository as GithubRepo
 from git import PushInfo, Repo as GitRepo
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
+from github import GithubIntegration, Auth, Github
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 
 from .metadata import ReleaseMetadataConverter
 from .models import (
@@ -24,6 +26,35 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 INSTALLATION_ACCESS_TOKEN_REDIS_KEY = "github_installation_access_token"
+
+
+def get_github_installation_status(user):
+    """
+    Get GitHub installation status for a user.
+    Returns dict with github_account, connect_url, and installation_url.
+    """
+    installation_url = None
+    social_account = user.member_profile.get_social_account("github")
+    if social_account:
+        github_account = {
+            "id": social_account.uid,
+            "username": social_account.extra_data.get("login"),
+            "profile_url": social_account.get_profile_url(),
+        }
+    else:
+        github_account = None
+
+    if github_account:
+        installation_url = f"https://github.com/apps/{slugify(settings.GITHUB_INTEGRATION_APP_NAME)}/installations/new/permissions?target_id={github_account['id']}"
+        installation = getattr(user, "github_integration_app_installation", None)
+        if installation:
+            github_account["installation_id"] = installation.installation_id
+
+    return {
+        "github_account": github_account,
+        "connect_url": reverse("socialaccount_connections"),
+        "installation_url": installation_url,
+    }
 
 
 class GitHubRepoValidator:
@@ -417,7 +448,7 @@ class GitHubReleaseImporter:
         return self.log_success()
 
     def extract_semver(self, value) -> str | None:
-        if len(value) > 1024: # prevent expensive/malicious inputs
+        if len(value) > 1024:  # prevent expensive/malicious inputs
             return None
         match = re.search(r"v?(\d+\.\d+\.\d+)", value)
         return match.group(1) if match else None
