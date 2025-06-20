@@ -148,7 +148,7 @@ E2E_REPO_PATH=${E2E_BACKUPS_PATH}/repo
 
 $(E2E_REPO_PATH):
 	mkdir -p $(E2E_BACKUPS_PATH)
-	wget -c ${BORG_REPO_URL} -P $(E2E_BACKUPS_PATH)
+	wget -c --no-check-certificate ${BORG_REPO_URL} -P $(E2E_BACKUPS_PATH)
 	tar -Jxf $(E2E_BACKUPS_PATH)/repo.tar.xz -C $(E2E_BACKUPS_PATH)
 
 .PHONY: e2e

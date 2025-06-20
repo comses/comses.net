@@ -8,16 +8,14 @@ from string import Template
 import uuid
 import semver
 import uuid
-from collections import OrderedDict
 from datetime import timedelta
 from packaging.version import Version
 from abc import ABC
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from datetime import date, timedelta
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
-from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
@@ -53,13 +51,13 @@ from core.models import Platform, MemberProfile, ModeratedContent
 from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
 from core.view_helpers import get_search_queryset
-from .metadata import CodeMetaConverter, DataCiteConverter, CitationFileFormatConverter
 from .fs import (
     CodebaseReleaseFsApi,
     StagingDirectories,
     FileCategoryDirectories,
     MessageLevels,
 )
+from .metadata import CodeMetaConverter, DataCiteConverter, CitationFileFormatConverter
 
 logger = logging.getLogger(__name__)
 
@@ -1820,6 +1818,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def publish(self):
         self.validate_publishable()
         self._publish()
+        if self.peer_reviewed:
+            # if this release is peer reviewed, schedule a DOI minting
+            from .doi import schedule_mint_public_doi
+
+            schedule_mint_public_doi(self)
 
     def _publish(self):
         if not self.live:
