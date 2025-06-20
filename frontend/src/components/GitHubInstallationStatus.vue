@@ -33,7 +33,10 @@
           </p>
         </div>
       </div>
-      <div class="flex-grow-1 d-flex justify-content-center align-items-center p-3">
+      <div
+        v-if="showAction"
+        class="flex-grow-1 d-flex justify-content-center align-items-center p-3"
+      >
         <a v-if="!githubAccount" :href="installationStatus.connectUrl" class="btn btn-secondary">
           <i class="fab fa-github me-2"></i>
           Connect GitHub
@@ -65,9 +68,14 @@
 import { computed } from "vue";
 import type { GitHubAppInstallationStatus } from "@/types";
 
-const props = defineProps<{
+export interface GitHubInstallationStatusProps {
   installationStatus: GitHubAppInstallationStatus;
-}>();
+  showAction: boolean;
+}
+
+const props = withDefaults(defineProps<GitHubInstallationStatusProps>(), {
+  showAction: true,
+});
 
 const githubAccount = computed(() => props.installationStatus.githubAccount);
 const githubAppInstalled = computed(() => !!githubAccount.value?.installationId);
