@@ -53,8 +53,7 @@ from core.views import (
     HtmlNoDeleteViewSet,
 )
 from core.pagination import SmallResultSetPagination
-from core.serializers import RelatedMemberProfileSerializer
-from .github_integration import GitHubReleaseImporter, GitHubRepoValidator
+from .github_integration import GitHubReleaseImporter, GitHubRepoValidator, get_github_installation_status
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -504,6 +503,11 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=["get"])
+    def github_installation_status(self, request, *args, **kwargs):
+        data = get_github_installation_status(request.user)
+        return Response(data=data, status=status.HTTP_200_OK)
+
     def get_queryset(self):
         if self.action == "list":
             return self.queryset.public()
@@ -663,33 +667,8 @@ class CodebaseGitRemoteViewSet(
     def submitter_installation_status(self, request, *args, **kwargs):
         codebase = self.get_codebase()
         submitter = codebase.submitter
-        installation_url = None
-        social_account = submitter.member_profile.get_social_account("github")
-        if social_account:
-            github_account = {
-                "id": social_account.uid,
-                "username": social_account.extra_data.get("login"),
-                "profile_url": social_account.get_profile_url(),
-            }
-        else:
-            github_account = None
-
-        if github_account:
-            installation_url = f"https://github.com/apps/{slugify(settings.GITHUB_INTEGRATION_APP_NAME)}/installations/new/permissions?target_id={github_account['id']}"
-            installation = getattr(
-                submitter, "github_integration_app_installation", None
-            )
-            if installation:
-                github_account["installation_id"] = installation.installation_id
-
-        return Response(
-            data={
-                "github_account": github_account,
-                "connect_url": reverse("socialaccount_connections"),
-                "installation_url": installation_url,
-            },
-            status=status.HTTP_200_OK,
-        )
+        data = get_github_installation_status(submitter)
+        return Response(data=data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"])
     def setup_user_github_remote(self, request, *args, **kwargs):
