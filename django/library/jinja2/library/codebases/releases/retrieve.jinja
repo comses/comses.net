@@ -352,7 +352,7 @@
             </div>
         </div>
         <div class="section">
-            {% if codebase.repository_url %}
+            {% if codebase.repository_url and not codebase.git_mirror %}
                 <b class='card-title'>External Repository</b>
                 <div class="card-text mb-3">
                     <a href="{{ codebase.repository_url }}" class="d-block text-truncate">
