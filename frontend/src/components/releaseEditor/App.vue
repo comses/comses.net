@@ -56,17 +56,21 @@
           v-if="isImported"
           show-files
           files-route="/package"
-          files-title="Review archive"
-          metadata-title="Review metadata"
-          contributors-title="Review contributors"
+          :files-title="store.release.canEditOriginals ? 'Review archive' : 'Preview archive'"
+          :metadata-title="store.release.canEditOriginals ? 'Review metadata' : 'Edit metadata'"
+          :contributors-title="
+            store.release.canEditOriginals ? 'Review contributors' : 'Edit contributors'
+          "
         />
         <ProgressSidebar
           v-else
-          :show-files="canEditOriginals"
+          show-files
           files-route="/upload"
-          files-title="Upload files"
-          metadata-title="Add metadata"
-          contributors-title="Add contributors"
+          :files-title="store.release.canEditOriginals ? 'Upload files' : 'Preview archive'"
+          :metadata-title="store.release.canEditOriginals ? 'Add metadata' : 'Edit metadata'"
+          :contributors-title="
+            store.release.canEditOriginals ? 'Add contributors' : 'Edit contributors'
+          "
         />
       </div>
       <div class="col-md-9">
