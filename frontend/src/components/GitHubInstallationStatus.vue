@@ -70,7 +70,7 @@ import type { GitHubAppInstallationStatus } from "@/types";
 
 export interface GitHubInstallationStatusProps {
   installationStatus: GitHubAppInstallationStatus;
-  showAction: boolean;
+  showAction?: boolean;
 }
 
 const props = withDefaults(defineProps<GitHubInstallationStatusProps>(), {
