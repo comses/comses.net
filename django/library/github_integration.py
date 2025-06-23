@@ -22,6 +22,7 @@ from .models import (
     GithubIntegrationAppInstallation,
     ImportedReleasePackage,
 )
+from taggit.models import Tag
 
 logger = logging.getLogger(__name__)
 
@@ -422,6 +423,20 @@ class GitHubReleaseImporter:
 
         return self._import_package_and_metadata(release)
 
+    def _resolve_tags(self, tag_names: list[str]) -> list:
+        """
+        Resolve a list of tag names to a list of Tag objects or strings
+        if the tag does not exist
+        """
+        resolved_tags = []
+        for tag_name in tag_names:
+            tag = Tag.objects.filter(name__iexact=tag_name).first()
+            if tag:
+                resolved_tags.append(tag)
+            else:
+                resolved_tags.append(tag_name)
+        return resolved_tags
+
     def _import_package_and_metadata(self, release) -> bool:
         # import the release package
         fs_api = release.get_fs_api()
@@ -440,9 +455,9 @@ class GitHubReleaseImporter:
         if license:
             release.license = license
         if platforms:
-            release.platform_tags.add(*platforms)
+            release.platform_tags.add(*self._resolve_tags(platforms))
         if programming_languages:
-            release.programming_languages.add(*programming_languages)
+            release.programming_languages.add(*self._resolve_tags(programming_languages))
         release.save()
 
         return self.log_success()
