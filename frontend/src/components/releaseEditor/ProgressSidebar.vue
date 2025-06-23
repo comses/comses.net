@@ -13,7 +13,7 @@
           <b>{{ filesTitle }}</b>
           <i class="fas fa-angle-right text-secondary"></i>
         </div>
-        <div class="card-body pb-2 text-dark">
+        <div class="card-body pb-2 text-dark" v-if="store.release.canEditOriginals">
           <ProgressCheck :check="uploadProgress.code" label="Code" />
           <ProgressCheck :check="uploadProgress.docs" label="Documentation" />
           <ProgressCheck :check="uploadProgress.data" label="Input Data" optional />

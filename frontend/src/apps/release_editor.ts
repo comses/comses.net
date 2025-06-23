@@ -28,23 +28,21 @@ window.history.replaceState({}, "", window.location.pathname + window.location.h
 const app = createApp(App, props);
 const pinia = createPinia();
 
+const filesRouteName = props.isImported ? "package" : "upload";
+const filesRouteComponent = props.isImported ? ImportedArchivePage : UploadFormPage;
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    // only include upload route when original files are editable
+    // only default to upload route when original files are editable
     {
       path: "/",
       redirect: {
-        name: props.isImported ? "package" : props.canEditOriginals ? "upload" : "metadata",
+        name: props.canEditOriginals ? filesRouteName : "metadata",
       },
     },
-    ...(props.canEditOriginals && !props.isImported
-      ? [{ path: "/upload", component: UploadFormPage, name: "upload" }]
-      : []),
     // use the imported archive page for imported releases
-    ...(props.isImported
-      ? [{ path: "/package", component: ImportedArchivePage, name: "package" }]
-      : []),
+    { path: `/${filesRouteName}`, component: filesRouteComponent, name: filesRouteName },
     { path: "/metadata", component: MetadataFormPage, name: "metadata" },
     { path: "/contributors", component: ContributorsPage, name: "contributors" },
   ],
