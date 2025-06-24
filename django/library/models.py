@@ -898,6 +898,14 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return pathlib.Path(str(self.uuid), "media", *args)
 
     @property
+    def active_git_remote(self):
+        if self.git_mirror:
+            return self.git_mirror.remotes.filter(
+                models.Q(should_push=True) | models.Q(should_import=True)
+            ).first()
+        return None
+
+    @property
     def summarized_description(self):
         if self.summary:
             return self.summary

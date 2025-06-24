@@ -85,6 +85,7 @@ from .serializers import (
     CodebaseGitRemoteSerializer,
     CodebaseSerializer,
     CodebaseReleaseSerializer,
+    RelatedCodebaseSerializer,
     ContributorSerializer,
     DownloadRequestSerializer,
     PeerReviewerSerializer,
@@ -501,6 +502,23 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
+    def submitted_codebases(self, request, *args, **kwargs):
+        """
+        Returns a list of codebases submitted by the requesting user
+        """
+        queryset = (
+            self.get_queryset().filter(submitter=request.user).order_by("-date_created")
+        )
+        serializer = RelatedCodebaseSerializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context(),
+        )
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
