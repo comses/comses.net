@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="!canCreateUserRemote" class="alert alert-warning">
+    <div v-if="!githubIsSetup" class="alert alert-warning">
       <i class="fas fa-exclamation-triangle me-2"></i>
       Please ensure your GitHub account is connected and the CoMSES Net Sync app is installed using
       the status widget above.
@@ -13,6 +13,7 @@
             class="btn py-3 px-4 rounded-3 w-50"
             :class="!fromExisting ? 'btn-dark' : 'text-muted'"
             @click="fromExisting = false"
+            :disabled="props.disabled"
           >
             <i class="fas fa-plus me-2"></i>
             <div>
@@ -87,7 +88,7 @@
           class="btn btn-primary"
           type="button"
           @click="setupRemote"
-          :disabled="isLoading || !canCreateUserRemote || !repoName.trim() || !!successMessage"
+          :disabled="isLoading || !canProceed || !repoName.trim() || !!successMessage"
         >
           <span v-if="fromExisting">Setup Release Importing</span>
           <span v-else>Push Releases and Setup Importing</span>
@@ -137,13 +138,20 @@ const { isLoading, serverErrors, data, setupUserGithubRemote, setupUserExistingG
   useGitRemotesAPI(props.codebaseIdentifier);
 const successMessage = ref<string | null>(null);
 const repoName = ref("");
-const fromExisting = ref(false);
+const fromExisting = ref(props.disabled);
 
 const githubUsername = computed(() => props.installationStatus.githubAccount?.username);
-const githubAppInstalled = computed(() => !!props.installationStatus.githubAccount?.installationId);
-const canCreateUserRemote = computed(
-  () => !!githubUsername.value && githubAppInstalled.value && !props.disabled
-);
+const githubIsSetup = computed(() => !!props.installationStatus.githubAccount?.installationId);
+
+const canProceed = computed(() => {
+  if (!githubIsSetup.value) {
+    return false;
+  }
+  if (fromExisting.value) {
+    return true; // always allow for existing repos if github is setup
+  }
+  return !props.disabled; // for new repos, codebase must be live
+});
 
 const newRepositoryUrl = computed(
   () => `https://github.com/new?owner=${githubUsername.value}&name=${repoName.value}`

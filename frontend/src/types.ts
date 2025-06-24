@@ -316,6 +316,25 @@ export interface CodebaseRelease {
   versionNumber: string;
 }
 
+export interface RelatedCodebase {
+  absoluteUrl: string;
+  allContributors: Contributor[];
+  githubSyncConfigUrl: string;
+  activeGitRemote: CodebaseGitRemote | null;
+  tags: Tag[];
+  title: string;
+  firstPublishedAt: Date | null;
+  lastPublishedOn: Date | null;
+  identifier: string;
+  versionNumber?: string;
+  featuredImage: string | null;
+  summarizedDescription: string;
+  description: string;
+  live: boolean;
+  peerReviewed?: boolean;
+  repositoryUrl?: string;
+}
+
 interface Codebase {
   absoluteUrl: string;
   allContributors: Contributor[];

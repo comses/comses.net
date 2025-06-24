@@ -442,6 +442,9 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     Sparse codebase serializer
     """
 
+    absolute_url = serializers.URLField(source="get_absolute_url", read_only=True)
+    github_sync_config_url = serializers.SerializerMethodField(read_only=True)
+    active_git_remote = serializers.SerializerMethodField(read_only=True)
     all_contributors = ContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
     version_number = serializers.ReadOnlyField(source="latest_version.version_number")
@@ -455,6 +458,15 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     live = serializers.ReadOnlyField()
     description = MarkdownField()
 
+    def get_github_sync_config_url(self, instance):
+        return reverse("library:codebase-git-remotes-list", args=[instance.identifier])
+
+    def get_active_git_remote(self, instance):
+        active_git_remote = instance.active_git_remote
+        if active_git_remote:
+            return CodebaseGitRemoteSerializer(active_git_remote).data
+        return None
+
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)
 
@@ -464,7 +476,10 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     class Meta:
         model = Codebase
         fields = (
+            "absolute_url",
             "all_contributors",
+            "github_sync_config_url",
+            "active_git_remote",
             "tags",
             "title",
             "first_published_at",

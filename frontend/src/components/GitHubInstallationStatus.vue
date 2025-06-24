@@ -1,6 +1,6 @@
 <template>
   <div class="card mb-3">
-    <div class="card-header p-3 bg-dark text-white">
+    <div class="card-header bg-dark text-white">
       <h5 class="mb-0">Sync requirements</h5>
     </div>
     <div class="d-flex flex-column h-100">

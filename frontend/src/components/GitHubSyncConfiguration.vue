@@ -161,7 +161,7 @@ const userRemotes = computed(() => {
 });
 
 const canSetupSync = computed(() => {
-  return installationStatus.value.githubAccount?.installationId && props.isCodebaseLive;
+  return !!installationStatus.value.githubAccount?.installationId;
 });
 
 const fetchRemotes = async () => {

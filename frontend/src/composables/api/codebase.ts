@@ -1,7 +1,7 @@
 import { toRefs } from "vue";
 import { joinPaths, useAxios, type RequestOptions } from "@/composables/api";
 import type { AxiosResponse } from "axios";
-import type { GitHubAppInstallationStatus } from "@/types";
+import type { GitHubAppInstallationStatus, RelatedCodebase } from "@/types";
 
 interface CodebaseQueryParams {
   query?: string;
@@ -61,6 +61,12 @@ export function useCodebaseAPI() {
     return get(url(["github_installation_status"]), options);
   }
 
+  async function submittedCodebases(
+    options?: RequestOptions
+  ): Promise<AxiosResponse<RelatedCodebase[]>> {
+    return get(url(["submitted_codebases"]), options);
+  }
+
   return {
     ...toRefs(state),
     create,
@@ -73,5 +79,6 @@ export function useCodebaseAPI() {
     detailUrl,
     searchUrl: searchUrl<CodebaseQueryParams>,
     getGitHubInstallationStatus,
+    submittedCodebases,
   };
 }
