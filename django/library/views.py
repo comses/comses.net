@@ -189,10 +189,12 @@ class PeerReviewerDashboardView(PermissionRequiredMixin, ListView):
 
 class PeerReviewerFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
+        if view.action != "list":
+            return queryset
         query_params = request.query_params
-        if "query" in query_params:
-            return queryset.order_by("member_profile__user__last_name")
-        return get_search_queryset(query_params, queryset)
+        if query_params.get("query"):
+            return get_search_queryset(query_params, queryset)
+        return queryset.order_by("member_profile__user__last_name")
 
 
 class PeerReviewerPermission(permissions.BasePermission):
