@@ -1,26 +1,43 @@
-<div class='alert alert-primary mb-5' role='alert'>
-    <h4 class='alert-heading'>
-        About the CoMSES Model Library
-        <a class='btn btn-outline-primary' role='button' href='#collapseLibraryInfo' data-bs-toggle='collapse' aria-expanded='false'
-            aria-controls='collapseLibraryInfo'><i class='fas fa-question-circle'></i>
-            more info
+<div class="my-4">
+    <div class="d-flex justify-content-start mb-3">
+        <a role="button" data-bs-toggle="collapse" href="#collapseLibraryInfo" aria-expanded="false"
+            aria-controls="collapseLibraryInfo" class="btn btn-sm btn-info me-1">
+            <i class="fas fa-info-circle me-1"></i> About the Model Library <i class="fas fa-chevron-down ms-1"></i>
         </a>
-    </h4>
-    <hr>
-    <div class='collapse' id='collapseLibraryInfo'>
-        <p>
-        Our mission is to help computational modelers develop, document, and share their computational models in accordance with <a href='https://www.openmodelingfoundation.org/standards'>community standards</a> and <a href='{{ slugurl("guides-to-good-practice") }}'>good open science and software engineering practices</a>. Model authors can publish their model source code in the <a href="/codebases">Computational Model Library</a> with narrative documentation as well as metadata that supports open science and emerging norms that facilitate software citation, computational reproducibility / frictionless reuse, and interoperability. Model authors can also request <a href='/reviews/'>private peer review</a> of their computational models. Models that pass peer review receive a DOI once published.
-        </p>
-        <p>
-        All users of models published in the library <b>must cite model authors</b> when they use and benefit from their code.
-        </p>
+        <a href="https://forum.comses.net/t/publishing-your-model-1-getting-started/7377"
+            class="btn btn-sm btn-outline-gray mx-1">
+            <i class="fas fa-question-circle me-1"></i> Publishing Tutorial
+        </a>
+        <a href="{{ url('library:github-sync-overview') }}" class="btn btn-sm btn-outline-gray mx-1">
+            <i class="fab fa-github me-1"></i> GitHub Sync
+        </a>
+        <a href="/reviews/" class="btn btn-sm btn-outline-gray mx-1">
+            <i class="fas fa-user-check me-1"></i> Peer Review &amp; DOIs
+        </a>
     </div>
-    <p>
-    Please check out our <a href='https://forum.comses.net/t/publishing-your-model-1-getting-started/7377'>model publishing tutorial</a> and feel free to <a href='{{ slugurl("contact") }}'>contact us</a> if you have any questions or concerns about publishing your model(s) in the <a href='/codebases'>Computational Model Library</a>.
-    </p>
-    <p class='mb-0 pb-0'>
-    We also maintain a <a href='https://catalog.comses.net'>curated database of over 7500 publications of
-    agent-based and individual based models</a> with detailed metadata on availability of code and
-    bibliometric information on the landscape of ABM/IBM publications that we welcome you to explore.
-    </p>
+    <div class="collapse" id="collapseLibraryInfo">
+        <div class="card card-body">
+            <p>
+                Our mission is to help computational modelers develop, document, and share their computational models in
+                accordance with <a href='https://www.openmodelingfoundation.org/standards'>community standards</a> and
+                <a href='{{ slugurl("guides-to-good-practice") }}'>good open science and software engineering
+                    practices</a>. Model authors can publish their model source code in the <a
+                    href="/codebases">Computational Model Library</a> with narrative documentation as well as metadata
+                that supports open science and emerging norms that facilitate software citation, computational
+                reproducibility / frictionless reuse, and interoperability. Model authors can also request <a
+                    href='/reviews/'>private peer review</a> of their computational models. Models that pass peer review
+                receive a DOI once published.
+            </p>
+            <p>
+                All users of models published in the library <b>must cite model authors</b> when they use and benefit
+                from their code.
+            </p>
+            <p>
+                Please check out our <a
+                    href='https://forum.comses.net/t/publishing-your-model-1-getting-started/7377'>model publishing
+                    tutorial</a> and feel free to <a href='{{ slugurl("contact") }}'>contact us</a> if you have any
+                questions or concerns about publishing your model(s) in the Computational Model Library.
+            </p>
+        </div>
+    </div>
 </div>
