@@ -47,14 +47,19 @@
           either pushing or importing is turned on.
         </p>
       </div>
-      <button
-        class="btn btn-primary flex-shrink-0"
-        @click="openSetupModal"
-        :disabled="!canSetupSync"
-      >
-        <i class="fas fa-plus me-2"></i>
-        Sync with a repository
-      </button>
+      <div class="flex-shrink-0">
+        <button
+          class="btn btn-primary"
+          @click="openSetupModal"
+          :disabled="!canSetupSync || !enableNewSyncs"
+        >
+          <i class="fas fa-plus me-2"></i>
+          Sync with a repository
+        </button>
+        <div v-if="!enableNewSyncs" class="text-danger">
+          Sorry, setting up new synced repositories is currently disabled.
+        </div>
+      </div>
     </div>
     <div class="card mb-3">
       <div class="card-header">
@@ -130,12 +135,17 @@ import GitHubSetupUserRemoteWizard from "@/components/GitHubSetupUserRemoteWizar
 import GitHubInstallationStatus from "@/components/GitHubInstallationStatus.vue";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 
-const props = defineProps<{
+export interface GitHubSyncConfigurationProps {
   codebaseIdentifier: string;
   githubOrgName: string;
   defaultRepoName: string;
   isCodebaseLive: boolean;
-}>();
+  enableNewSyncs: boolean;
+}
+
+const props = withDefaults(defineProps<GitHubSyncConfigurationProps>(), {
+  enableNewSyncs: true,
+});
 
 const { list, getSubmitterInstallationStatus } = useGitRemotesAPI(props.codebaseIdentifier);
 
