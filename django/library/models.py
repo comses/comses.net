@@ -31,7 +31,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError, UnsupportedMediaType
 from taggit.models import TaggedItemBase
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, HelpPanel
 from wagtail.coreutils import string_to_ascii
 from wagtail.images.models import (
     Image,
@@ -44,7 +44,7 @@ from wagtail.images.models import (
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 from wagtail.contrib.settings.models import BaseSiteSetting, register_setting
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from django.utils.html import format_html
 
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
@@ -3540,7 +3540,36 @@ class GitHubSyncConfiguration(BaseSiteSetting, ClusterableModel):
         default=True, help_text=_("Mark the GitHub Sync feature as a beta feature")
     )
 
+    @staticmethod
+    def github_app_settings_help_content():
+        """Create formatted content for a configuration help panel on the GitHub Sync settings page
+        """
+        info_html = format_html(
+            '<p>See the <a href="https://github.com/comses/infra/wiki" target="_blank" rel="noopener noreferrer">infra wiki</a> for configuration info.</p>'
+        )
+        app_name = settings.GITHUB_INTEGRATION_APP_NAME
+        org_name = settings.GITHUB_MODEL_LIBRARY_ORG_NAME
+        warnings = []
+        if not app_name:
+            warnings.append("GitHub app name is not configured. Set GITHUB_INTEGRATION_APP_NAME in the environment.")
+        if not org_name:
+            warnings.append("GitHub organization name is not configured. Set GITHUB_MODEL_LIBRARY_ORG_NAME in the environment.")
+        if warnings:
+            help_html = format_html(
+                '<div class="help-block help-warning"><strong>WARNING!</strong> {}</div>',
+                " ".join(warnings)
+            )
+        else:
+            url = f"https://github.com/organizations/{org_name}/settings/apps/{slugify(app_name)}"
+            help_html = format_html(
+               '<a href="{}" class="button" target="_blank" rel="noopener noreferrer">{} settings on GitHub</a>',
+                url,
+                app_name,
+            )
+        return info_html + help_html
+
     panels = [
+        HelpPanel(content=github_app_settings_help_content()),
         FieldPanel("enable_new_syncs"),
         FieldPanel("is_beta"),
         InlinePanel("faq_entries", label="FAQ Entries"),
