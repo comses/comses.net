@@ -79,6 +79,7 @@ from .models import (
     PeerReviewerFeedback,
     PeerReviewInvitation,
     ReviewStatus,
+    GitHubSyncConfiguration,
 )
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (
@@ -688,6 +689,11 @@ class CodebaseGitRemoteViewSet(
 
     @action(detail=False, methods=["post"])
     def setup_user_github_remote(self, request, *args, **kwargs):
+        config = GitHubSyncConfiguration.for_request(request)
+        if not config.enable_new_syncs:
+            raise ValidationError(
+                "Sorry, setting up new synced repositories is currently disabled."
+            )
         codebase = self.get_codebase()
         if not codebase.live:
             raise ValidationError("This model does not have any published releases")
@@ -734,6 +740,11 @@ class CodebaseGitRemoteViewSet(
 
     @action(detail=False, methods=["post"])
     def setup_user_existing_github_remote(self, request, *args, **kwargs):
+        config = GitHubSyncConfiguration.for_request(request)
+        if not config.enable_new_syncs:
+            raise ValidationError(
+                "Sorry, setting up new synced repositories is currently disabled."
+            )
         codebase = self.get_codebase()
         installation = codebase.submitter.github_integration_app_installation
         if not installation:
