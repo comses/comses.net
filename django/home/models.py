@@ -980,13 +980,12 @@ class ComsesDigest(index.Indexed, models.Model):
     represents a single issue of the quarterly digest that points to a static pdf file
     """
 
-    contributors = models.ManyToManyField(Contributor)
-    doi = models.CharField(max_length=128, unique=True, blank=True)
+    doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
     title = models.CharField(max_length=50)
     volume = models.IntegerField()
     issue_number = models.IntegerField()
     publication_date = models.DateField()
-    url = models.CharField(max_length=256, unique=True)
+    url = models.CharField(max_length=256)
 
     @property
     def year_published(self):

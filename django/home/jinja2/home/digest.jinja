@@ -19,8 +19,8 @@
         <p class="pt-4 lead">
             The CoMSES Digest is a quarterly newsletter with relevant CoMSES Net community news - past
             issues can be viewed below. Full Members are automatically subscribed to the newsletter.
-            {# FIXME: add salesforce signup link if it exists #}
-            {# but you can also <a href="http://eepurl.com/b8GCUv">sign up</a> as a basic member. #}
+            Become a full member
+            <a href="{{ url('core:profile-edit', user.id) if user.is_authenticated else url('account_login') }}">here</a>.
         </p>
     </div>
     <h1>Past Issues</h1>
