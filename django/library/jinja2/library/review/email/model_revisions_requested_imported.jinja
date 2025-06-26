@@ -1,0 +1,22 @@
+{% set release=review.codebase_release %}
+{% set imported_release_package = release.imported_release_package %}
+
+Dear {{ review.contact_author_name }},
+
+The reviewer for your computational model [{{ release.title }}]({{ build_absolute_uri(release.share_url) }}) has recommended that changes be made to your model. These are summarized below:
+
+{% autoescape false %}
+{{ feedback.notes_to_author }}
+{% endautoescape %}
+
+Since this release is imported from GitHub, you will need to update it there and then re-import it into CoMSES Net. Here is the process:
+
+1. **Commit and push your changes:** Make the necessary changes to your code and push them to your GitHub repository.
+2. **Edit the release on GitHub:** Go to the [release page on GitHub]({{ imported_release_package.html_url }}) to edit the release.
+3. **Update the release tag:**
+  - In the release edit form, you can choose which tag or branch the release should be associated with.
+  - To include your latest changes, you should create a new tag. You can do this by typing a new version number in the "Tag version" box and selecting "Create new tag: [new_version] on publish". Make sure this new tag points to the branch with your recent commits.
+4. **Confirm the release has been updated:** Follow [this link]({{ build_absolute_uri(release.get_edit_url()) }}) to confirm that the release has been updated, making sure files are categorized and metadata is complete.
+5. **Notify reviewer:** Once changes have been made, use the "Notify Reviewer of Changes" button to send an alert to the reviewer.
+
+On behalf of the editors@comses.net, thank you for submitting your computational model(s) to CoMSES Net! Our peer review service is intended to serve the community and we hope that you find the requested changes will improve your model's accessibility and potential for reuse. If you have any questions or concerns about this process, please feel free to [contact us]({{ build_absolute_uri(slugurl("contact")) }}).
