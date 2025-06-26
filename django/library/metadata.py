@@ -510,33 +510,49 @@ class ReleaseMetadataConverter:
         }
 
 
-def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> CodeMeta:
-    """make sure that codemeta is a CodeMeta object. If we didn't receive anything,
-    try to re-generate it from whichever object is given (codebase or release)"""
+def coerce_codemeta(
+    codemeta: dict | CodeMeta | None, codebase=None, release=None
+) -> CodeMeta | None:
+    """
+    Ensure the returned value is a CodeMeta object or None.
+    - if given a CodeMeta instance, return it
+    - if given a dictionary, parse it into a CodeMeta object
+    - if given None, attempt to generate codemeta from the given codebase or release
+    - return None if the input cannot be converted or generated
+    """
     if isinstance(codemeta, CodeMeta):
         return codemeta
-    if codebase is None:
+    if isinstance(codemeta, dict):
+        try:
+            return CodeMeta(**codemeta)
+        except Exception:
+            return None
+    if codemeta is None:
         if codebase:
             return CodeMetaConverter.convert_codebase(codebase)
         elif release:
             return CodeMetaConverter.convert_release(release)
-    if isinstance(codemeta, dict):
+    return None
+
+
+def coerce_cff(
+    cff: dict | CitationFileFormat | None, release=None
+) -> CitationFileFormat | None:
+    """
+    Ensure the returned value is a CitationFileFormat object or None.
+    - if given a CitationFileFormat instance, return it
+    - if given a dictionary, parse it into a CitationFileFormat object
+    - if given None, attempt to generate cff from the given release
+    - return None if the input cannot be converted or generated
+    """
+    if isinstance(cff, CitationFileFormat):
+        return cff
+    if isinstance(cff, dict):
         try:
-            return CodeMeta(**codemeta)
-        except Exception as e:
-            raise ValueError("Invalid codemeta dictionary") from e
-    raise TypeError("codemeta must be a valid dictionary or CodeMeta instance")
-
-
-def coerce_cff(cff: dict | CitationFileFormat, release=None) -> CitationFileFormat:
-    """make sure that cff is a CitationFileFormat object. If we didn't receive anything,
-    try to re-generate it if given a codebase or release instance"""
-    if not cff:
+            return CitationFileFormat(**cff)
+        except Exception:
+            return None
+    if cff is None:
         if release:
-            cff = CitationFileFormatConverter.convert_release(release)
-    elif isinstance(cff, dict):
-        try:
-            cff = CitationFileFormat(**cff)
-        except:
-            cff = None
-    return cff
+            return CitationFileFormatConverter.convert_release(release)
+    return None
