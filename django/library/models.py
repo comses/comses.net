@@ -1172,6 +1172,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         # set source_release.id to None to create a new release
         # see https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         source_release.id = None
+        source_release.imported_release_package = None
         source_release._state.adding = True
         source_release.__dict__.update(**release_metadata)
         source_release.save()
@@ -1774,9 +1775,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         1. ready to be published
         2. has not already been peer reviewed
         3. a related PeerReview does not exist
+        4. is not an imported, published release
         """
         return (
-            self.is_publishable and not self.peer_reviewed and self.get_review() is None
+            self.is_publishable
+            and not self.peer_reviewed
+            and self.get_review() is None
+            and not (self.is_imported and self.is_published)
         )
 
     @property
@@ -2947,9 +2952,14 @@ class PeerReviewerFeedback(models.Model):
         review.status = ReviewStatus.AWAITING_AUTHOR_CHANGES
         review.save()
         recipients = {review.submitter.email, review.codebase_release.submitter.email}
+
+        if review.codebase_release.release.is_imported:
+            template_name = "library/review/email/model_revisions_requested_imported.jinja"
+        else:
+            template_name = "library/review/email/model_revisions_requested.jinja"
         send_markdown_email(
             subject="Peer review: revisions requested",
-            template_name="library/review/email/model_revisions_requested.jinja",
+            template_name=template_name,
             context={"review": review, "feedback": self},
             to=recipients,
             bcc=[settings.REVIEW_EDITOR_EMAIL],
