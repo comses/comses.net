@@ -28,7 +28,7 @@
         <h3 class="mt-3">{{ year }}</h3>
         <div class="list-group">
             {% for digest in items %}
-            <a href="{{ static(digest.static_path) }}"
+            <a href="{{ digest.url }}"
                 class="border list-group-item list-group-item-action mb-3 p-3"
             >
                 <div class="d-flex w-100 justify-content-between">
