@@ -1200,27 +1200,20 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @transaction.atomic
     def request_peer_review(self, request, identifier, version_number):
         """
-        If a peer review is requestable (publishable, not reviewed, no related review exists):
+        If a peer review is requestable (publishable, not reviewed, no related review exists, and not imported+published):
         - Create a new "under review" draft release if the release from which the request was made is published
         - Otherwise, update the existing draft release to be "under review"
         - Create a new peer review object and send an email to the author
-
-        FIXME: external release problem!!!!!!!!!!! ==========================
-        - always come in published (zipball is archived + locked)
-        - set to under_review status (zipball is unlocked, updates to release are allowed)
-        - if changes are requested, instruct submitter to make changes on github, re-tag, and update the release (v1.0.0 -> v1.0.0-pr1)
-        - peer review completes, zipball is locked, release is updated to published
-
-        * system MUST detect updates to release such as tag_name change and update record accordingly
-
-
-        =====================================================================
         """
         codebase_release = get_object_or_404(
             CodebaseRelease,
             codebase__identifier=identifier,
             version_number=version_number,
         )
+        if codebase_release.is_imported and codebase_release.is_published:
+            raise ValidationError(
+                "Cannot request a peer review for an imported release that has already been published. As a workaround, you can make another release on GitHub and request a peer review for that."
+            )
         codebase_release.validate_publishable()
         existing_review = PeerReview.get_codebase_latest_active_review(
             codebase_release.codebase
