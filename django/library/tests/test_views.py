@@ -28,7 +28,18 @@ from .base import (
     PeerReviewInvitationFactory,
     ReleaseSetup,
 )
-from ..views import CodebaseViewSet, CodebaseReleaseViewSet, PeerReviewInvitationViewSet
+from ..views import (
+    CodebaseViewSet,
+    CodebaseReleaseViewSet,
+    PeerReviewInvitationViewSet,
+    github_sync_webhook,
+)
+from allauth.socialaccount.models import SocialAccount
+import json
+import hmac
+import hashlib
+from django.test import override_settings
+from library.models import GithubIntegrationAppInstallation
 
 import logging
 
@@ -741,6 +752,101 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         data = PeerReviewerFeedbackReviewerForm(instance=feedback).initial
         form = PeerReviewerFeedbackReviewerForm(data.copy(), instance=feedback)
         self.assertFalse(form.is_valid())
+
+
+class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase):
+    def setUp(self):
+        self.user_factory = UserFactory()
+        self.user = self.user_factory.create()
+        self.path = reverse("library:github-sync-webhook")
+        self.secret = "test-secret"
+        self.factory = RequestFactory()
+
+    def _create_signed_request(self, payload, signature=None):
+        body = json.dumps(payload).encode("utf-8")
+        if signature is None:
+            hash_object = hmac.new(
+                self.secret.encode("utf-8"), msg=body, digestmod=hashlib.sha256
+            )
+            signature = f"sha256={hash_object.hexdigest()}"
+        request = self.factory.post(
+            self.path,
+            data=body,
+            content_type="application/json",
+            HTTP_X_GITHUB_EVENT="installation",
+            HTTP_X_HUB_SIGNATURE_256=signature,
+        )
+        return request
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_installation_webhook_no_matching_social_account(self):
+        # if the github account doesn't match a social account user nothing happens
+        payload = {
+            "action": "created",
+            "installation": {"id": 12345},
+            "sender": {"id": 99999, "login": "newuser"},
+        }
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(GithubIntegrationAppInstallation.objects.count(), 0)
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_installation_webhook_creates_installation(self):
+        # if it does, it creates a installation object for them
+        SocialAccount.objects.create(
+            user=self.user,
+            provider="github",
+            uid="54321",
+        )
+        payload = {
+            "action": "created",
+            "installation": {"id": 12345},
+            "sender": {"id": 54321, "login": "testuser"},
+        }
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(GithubIntegrationAppInstallation.objects.count(), 1)
+        installation = GithubIntegrationAppInstallation.objects.first()
+        self.assertEqual(installation.user, self.user)
+        self.assertEqual(installation.installation_id, 12345)
+        self.assertEqual(installation.github_login, "testuser")
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_installation_webhook_updates_existing_installation(self):
+        # re-installing the app on a user acc that already has the link will update the existing installation object
+        SocialAccount.objects.create(
+            user=self.user,
+            provider="github",
+            uid="54321",
+        )
+        GithubIntegrationAppInstallation.objects.create(
+            user=self.user,
+            installation_id=11111,
+            github_user_id=54321,
+            github_login="testuser",
+        )
+        payload = {
+            "action": "created",
+            "installation": {"id": 22222},
+            "sender": {"id": 54321, "login": "testuser-renamed"},
+        }
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(GithubIntegrationAppInstallation.objects.count(), 1)
+        installation = GithubIntegrationAppInstallation.objects.first()
+        self.assertEqual(installation.installation_id, 22222)
+        self.assertEqual(installation.github_login, "testuser-renamed")
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_bad_signature(self):
+        # requests with a bad signature should be rejected
+        payload = {"action": "created"}
+        request = self._create_signed_request(payload, signature="sha256=bad-sig")
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 403)
 
 
 def tearDownModule():
