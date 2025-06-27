@@ -874,27 +874,16 @@ class ComsesDigest(index.Indexed, models.Model):
     represents a single issue of the quarterly digest that points to a static pdf file
     """
 
-    class Seasons(models.IntegerChoices):
-        SPRING = 1, _("Spring")
-        SUMMER = 2, _("Summer")
-        FALL = 3, _("Fall")
-        WINTER = 4, _("Winter")
-
-    contributors = models.ManyToManyField(Contributor)
     doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
-    season = models.IntegerField(choices=Seasons.choices)
+    title = models.CharField(max_length=50)
     volume = models.IntegerField()
     issue_number = models.IntegerField()
     publication_date = models.DateField()
-    static_path = models.CharField(max_length=128, unique=True)
+    url = models.CharField(max_length=256)
 
     @property
     def year_published(self):
         return self.publication_date.year
-
-    @property
-    def title(self):
-        return f"CoMSES Digest: {self.get_season_display()} {self.year_published}"
 
     def get_volume_issue_display(self):
         return f"Vol. {self.volume}, No. {self.issue_number}"
