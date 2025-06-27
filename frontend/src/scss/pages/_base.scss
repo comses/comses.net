@@ -5,25 +5,9 @@
   padding-bottom: $default-padding;
 }
 
-.logo {
-  color: transparent;
-  text-shadow: none;
-  background-color: transparent;
-  border: 0;
-  background-image: url("@/assets/images/comses-logo.png");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 181px 70px;
-  display: inline-block;
-  height: 70px !important;
-  width: 181px !important;
-}
-
 .introduction {
-  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.3),
-    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  margin-top: 85px;
+  margin-top: $navbar-height;
   background: url("../assets/images/background-introduction-200.png") repeat top center;
   text-align: left;
   vertical-align: middle;
@@ -38,12 +22,163 @@
   h3,
   h4 {
     padding-top: 45px;
-    font-family: "Alte-DIN-1451-Mittelschrift", "Open Sans", sans-serif;
+    font-family: "Open Sans", sans-serif;
     color: $white;
-    font-weight: 200;
+    font-weight: 700;
   }
 
   a {
     padding: 20px;
+  }
+}
+
+.navbar {
+  min-height: $navbar-height;
+  background-color: white;
+  color: white;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid $border-color;
+  font-weight: 600;
+
+  .nav-link {
+    color: $text-color;
+    border: 1px solid transparent;
+    border-radius: 0.4rem;
+    padding: 0.5rem 0.5rem !important;
+
+    &:hover {
+      border: 1px solid $border-color;
+      text-decoration: none;
+    }
+  }
+
+  // fix some scaling issues by reducing font size of navbar earlier
+  @media (min-width: 768px) and (max-width: 879px) {
+    .nav-link {
+      font-size: $font-size-sm;
+    }
+  }
+
+  .logo {
+    color: transparent;
+    text-shadow: none;
+    background-color: transparent;
+    border: 0;
+    background-image: url("@/assets/images/comses-logo-small.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 60px 60px;
+    display: inline-block;
+    height: $navbar-height !important;
+    width: $navbar-height !important;
+    font-weight: bold;
+    font-size: 1.25rem;
+  }
+
+  .nav-dropdown-toggle {
+    height: 100%;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.4rem;
+    color: $text-color;
+
+    &:hover {
+      border: 1px solid $border-color;
+    }
+  }
+}
+
+#search-dropdown {
+  .dropdown-toggle::after {
+    display: none;
+  }
+}
+
+#search-button {
+  font-size: 1.2rem;
+  color: $text-color;
+  margin-top: 1rem;
+}
+
+#header-search-form {
+  left: -20rem;
+  width: 22rem;
+}
+
+@media (max-width: 100px) {
+  .navbar-brand.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+    display: block !important;
+  }
+}
+
+.navbar-brand {
+  padding-left: 0.01rem;
+}
+
+.navbar .container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+html,
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100%;
+  font-weight: 400;
+}
+
+footer.footer {
+  padding: 75px 0;
+  background-image: url("@/assets/images/background-footer.png");
+  color: $white;
+
+  .row {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .logo-footer-primary {
+    flex-basis: 100%;
+    text-align: center;
+    padding: 0.5rem;
+    img {
+      max-height: 5rem;
+      width: auto;
+      object-fit: contain;
+    }
+  }
+
+  .logo-footer-secondary {
+    padding: 0.5rem 1rem;
+    opacity: 0.75;
+    &:hover {
+      opacity: 1;
+    }
+    img {
+      max-height: 3rem;
+      width: auto;
+      object-fit: contain;
+    }
+  }
+
+  h4 {
+    opacity: 0.5;
+    margin-bottom: 1.5rem;
+  }
+
+  a {
+    color: $white;
+    &:hover {
+      color: $link-color;
+      text-decoration: none;
+    }
   }
 }

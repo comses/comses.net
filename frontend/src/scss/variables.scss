@@ -16,6 +16,8 @@ $secondary-color: #22b1e6;
 $text-color: #6d6c71;
 $mission-color: #ced9ee;
 $rules-color: lighten(#ced9ee, 8%);
+$rules-color-light: lighten(#ced9ee, 12%);
+$border-color: rgba(0, 0, 0, 0.175);
 
 // bootstrap theme color overrides
 $primary: $blue !default;
@@ -32,7 +34,8 @@ $button-color-primary: #92c02e;
 $placeholder-opacity-max: 0.5;
 $placeholder-opacity-min: 0.2;
 
-$border-radius: 0.2rem;
+$border-radius: 0.4rem;
+$btn-border-radius: $border-radius;
 
 $default-padding: 60px;
 
@@ -44,18 +47,6 @@ $h4-font-size: 1.2rem;
 $h5-font-size: 1.1rem;
 $h6-font-size: 1rem;
 
-// Include Alte DIN 1451 Mittelschrift
-@font-face {
-  font-family: "Alte-DIN-1451-Mittelschrift";
-  src: url("@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.woff") format("woff"),
-    url("@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift")
-      format("svg"),
-    url("@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot"),
-    url("@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix") format("embedded-opentype");
-  font-weight: normal;
-  font-style: normal;
-}
-
 // Include font-awesome
 $fa-font-path: "@fortawesome/fontawesome-free/webfonts";
 @import "@fortawesome/fontawesome-free/scss/fontawesome.scss";
@@ -64,7 +55,7 @@ $fa-font-path: "@fortawesome/fontawesome-free/webfonts";
 @import "@fortawesome/fontawesome-free/scss/brands.scss";
 
 // Use Open Sans as base font
-@import url("https://fonts.googleapis.com/css?family=Open+Sans");
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800");
 $font-family-base: "Open Sans", Roboto, "Helvetica Neue", sans-serif;
 
 // Links
@@ -89,3 +80,6 @@ $min-contrast-ratio: 2;
 
 // enable negative margin utilities
 $enable-negative-margins: true;
+
+// global navbar height
+$navbar-height: 85px;

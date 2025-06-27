@@ -28,15 +28,14 @@ from wagtail.models import Page, Orderable
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
+from django.urls import reverse
 
-from core.discourse import build_discourse_url
 from core.fields import MarkdownField, TutorialMarkdownField
 from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
 from core.widgets import MarkdownTextarea
 
-# FIXME: should these models be pushed into core..
-from library.models import Codebase, CodebaseRelease, Contributor
+from library.models import CodebaseRelease, Contributor
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +113,7 @@ class CarouselItem(LinkFields):
         related_name="+",
     )
     embed_url = models.URLField("Embed URL", blank=True)
-    caption = models.CharField(max_length=255)
+    caption = models.CharField(max_length=255, blank=True)
     summary = models.TextField(max_length=600, blank=True)
     title = models.CharField(max_length=255)
     panels = [
@@ -144,138 +143,19 @@ class FeaturedContentItem(Orderable, CarouselItem):
 
 class LandingPage(Page):
     template = "home/index.jinja"
-    FEATURED_CONTENT_COUNT = 6
-    MAX_CALLOUT_ENTRIES = 3
-    RECENT_FORUM_ACTIVITY_COUNT = 5
 
     mission_statement = models.CharField(max_length=512)
-    community_statement = models.TextField()
+    library_title = models.CharField(max_length=255, default="The CoMSES Model Library")
+    library_blurb = MarkdownField(max_length=1024, blank=True)
+    community_title = models.CharField(max_length=255, default="A community of researchers")
+    community_blurb = MarkdownField(max_length=1024, blank=True)
+    resources_title = models.CharField(max_length=255, default="Resources for modeling")
+    resources_blurb = MarkdownField(max_length=1024, blank=True)
 
-    def get_featured_content(self):
+    def get_featured_content(self, limit=5):
         return self.featured_content_queue.select_related(
             "image", "codebase_image", "link_codebase", "link_page"
-        ).all()[: self.FEATURED_CONTENT_COUNT]
-
-    def get_canned_forum_activity(self):
-        submitter = User.objects.select_related("member_profile").last()
-        return [
-            {
-                "title": f"Generated Forum Topic {i}",
-                "submitter_name": submitter.member_profile.name,
-                "submitter_url": submitter.member_profile.get_absolute_url(),
-                "date_created": datetime.now(),
-                "url": f"https://forum.example.com/topic/{i}",
-            }
-            for i in range(self.RECENT_FORUM_ACTIVITY_COUNT)
-        ]
-
-    def _discourse_username_to_submitter(self, username, topic, topic_title):
-        submitter = None
-        submitter_url = None
-        if username != "comses":
-            try:
-                submitter = User.objects.get(username=username)
-            except User.DoesNotExist:
-                pass
-        if submitter is None:
-            category_id = topic["category_id"]
-            logger.debug(
-                "category id: %s, topic title: %s, topic: %s",
-                category_id,
-                topic_title,
-                topic,
-            )
-            # special case lookup for real submitter
-            # FIXME: get rid of magic constants
-            target_object = None
-            if category_id == 6:
-                # jobs and appointments
-                target_object = (
-                    Job.objects.filter(title=topic_title)
-                    .order_by("-date_created")
-                    .first()
-                )
-            elif category_id == 7:
-                # events
-                target_object = (
-                    Event.objects.filter(title=topic_title)
-                    .order_by("-date_created")
-                    .first()
-                )
-            elif category_id == 8:
-                target_object = (
-                    Codebase.objects.filter(title=topic_title)
-                    .order_by("-date_created")
-                    .first()
-                )
-            if target_object:
-                submitter = target_object.submitter
-                submitter_url = submitter.member_profile.get_absolute_url()
-            else:
-                submitter = User.get_anonymous()
-        return submitter, submitter_url
-
-    def get_recent_forum_activity(self):
-        # FIXME: refactor and clean up logic to form a more sensible discourse api
-        # Discourse API endpoint documented at http://docs.discourse.org/#tag/Topics%2Fpaths%2F~1latest.json%2Fget
-        if settings.DEPLOY_ENVIRONMENT.is_development:
-            return self.get_canned_forum_activity()
-        recent_forum_activity = cache.get("recent_forum_activity")
-        if recent_forum_activity:
-            return recent_forum_activity
-        # transform topics list of dictionaries into web template format with title, submitter, date_created, and url.
-        try:
-            r = requests.get(
-                build_discourse_url("latest.json"),
-                params={"order": "created", "sort": "asc"},
-                timeout=3.0,
-            )
-            posts_dict = r.json()
-            topics = posts_dict["topic_list"]["topics"]
-            recent_forum_activity = []
-            for topic in topics[: self.RECENT_FORUM_ACTIVITY_COUNT]:
-                topic_title = topic["title"]
-                topic_url = build_discourse_url(f"t/{topic['slug']}/{topic['id']}")
-                # getting back to the original submitter involves some trickery.
-                # The Discourse embed Javascript queues up a crawler to hit the given page and parses it for content to use
-                # as the initial topic text. However, this topic gets added as a specific Discourse User (`comses`,
-                # see https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963/150 for more details)
-                # and so we won't always have the direct username of the submitter without looking it up by
-                # 1. Discourse category_id (6 = jobs & appointments, 7 = events, 8 = codebase)
-                # 2. Title (not guaranteed to be unique)
-
-                last_poster_username = topic["last_poster_username"]
-                submitter, submitter_url = self._discourse_username_to_submitter(
-                    last_poster_username, topic, topic_title
-                )
-
-                recent_forum_activity.append(
-                    {
-                        "title": topic_title,
-                        "submitter_name": submitter.username,
-                        "submitter_url": submitter_url,
-                        # FIXME: handle created_at=None gracefully, via default date?
-                        "date_created": datetime.strptime(
-                            topic.get("created_at"), "%Y-%m-%dT%H:%M:%S.%fZ"
-                        ),
-                        "url": topic_url,
-                    }
-                )
-            cache.set("recent_forum_activity", recent_forum_activity, 3600)
-            return recent_forum_activity
-        except Exception as e:
-            logger.exception(e)
-            return []
-
-    def get_latest_jobs(self):
-        return Job.objects.live().order_by("-date_created")[: self.MAX_CALLOUT_ENTRIES]
-
-    def get_upcoming_events(self):
-        return (
-            Event.objects.live()
-            .upcoming()
-            .order_by("start_date")[: self.MAX_CALLOUT_ENTRIES]
-        )
+        ).all()[:limit]
 
     def get_sitemap_urls(self, request):
         sitemap_urls = super().get_sitemap_urls(request)
@@ -297,17 +177,31 @@ class LandingPage(Page):
         )
         return sitemap_urls
 
+    def get_feed_urls(self):
+        return {
+            "reviewed_models": reverse("home:reviewed-model-feed"),
+            "events": reverse("home:event-feed"),
+            "forum": reverse("home:forum-feed"),
+            "forum_categories": reverse("home:forum-categories-feed"),
+            "jobs": reverse("home:job-feed"),
+            "youtube": reverse("home:youtube-feed"),
+        }
+
     def get_context(self, request, *args, **kwargs):
         context = super(LandingPage, self).get_context(request, *args, **kwargs)
-        context["featured_content"] = self.get_featured_content()
-        context["recent_forum_activity"] = self.get_recent_forum_activity()
-        context["latest_jobs"] = self.get_latest_jobs()
-        context["upcoming_events"] = self.get_upcoming_events()
+        # disable featured content for now
+        # context["featured_content"] = self.get_featured_content()
+        context["feed_urls"] = self.get_feed_urls()
         return context
 
     content_panels = Page.content_panels + [
         FieldPanel("mission_statement", widget=forms.Textarea),
-        FieldPanel("community_statement"),
+        FieldPanel("library_title"),
+        FieldPanel("library_blurb"),
+        FieldPanel("community_title"),
+        FieldPanel("community_blurb"),
+        FieldPanel("resources_title"),
+        FieldPanel("resources_blurb"),
         InlinePanel("featured_content_queue", label=_("Featured Content")),
     ]
 

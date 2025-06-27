@@ -1,203 +1,141 @@
 {% extends "base.jinja" %}
 
 {% block introduction_section %}
-    <section class='landing-page-introduction'>
-        <div class='container'>
-            <div class='row'>
-                <div class='col'>
-                    <h1 class='text-white'>A growing collection of resources for <br>computational model-based science.</h1>
-                </div>
-            </div>
-            <div class='row'>
-                <div class='col'>
-                    <h3 class='text-white'>an international community and cyberinfrastructure to support transparency and
-                        reproducibility for computational models &amp; their digital context + educational resources and FAQ's for agent based modeling</h3>
-                </div>
-            </div>
-            <div class='row'>
-                <div class='col'>
-                    <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>Browse the Model Library</a>
-                </div>
+<section class="homepage-introduction pt-5 pt-md-4 position-relative overflow-hidden text-white">
+    <canvas id="hex-animation" class="background-canvas"></canvas>
+    <div class="container position-relative z-1 d-flex flex-column justify-content-evenly">
+        <div class="row">
+            <div class="col text-center">
+                <h1>{{ page.title }}</h1>
             </div>
         </div>
-    </section>
-    {% with site_settings=settings("core.SiteSettings", use_default_site=True) %}
-        {% if site_settings.has_banner %}
-            <section class='banner'>
-                <div class='alert alert-warning' role='alert'>
-                    <h1 class='alert-heading text-center'>
-                        <a href='{{ site_settings.banner_destination_url }}'>
-                            <i class='fas fa-bullhorn'>
-                            </i>
-                            {{ site_settings.banner_message_title }}
-                            <i class='fas fa-bullhorn'></i>
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-md-6 d-flex flex-column mb-5">
+                <h3 class="fw-bold mb-3">What you'll find here</h3>
+                <div class="mb-3 homepage-introduction-card p-3">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ static('images/icons/submit-white.png') }}" class="me-2" style="height: 2rem;">
+                        <h2 class="fw-bold mb-0">
+                            {{ page.library_title }}
+                        </h2>
+                    </div>
+                    {% autoescape off %}
+                        {{ page.library_blurb }}
+                    {% endautoescape %}
+                    <div class="d-flex flex-column align-items-start">
+                        <a href="{{ url('library:codebase-add') }}" class="btn btn-lg btn-primary mb-2">
+                            <h4 class="fw-bold mb-0">Publish your model code</h4>
                         </a>
-                    </h1>
-
-                    <div class='mx-5'>
-                        <em>Posted {{ site_settings.last_modified.strftime('%B %-d, %Y') }}</em>
-                        <div class='text-start fw-bold my-2'>
-                            {% autoescape off %}
-                                {{ site_settings.banner_message }}
-                            {% endautoescape %}
-                        </div>
+                        <a href="{{ url('library:codebase-add') }}" class="btn btn-lg btn-secondary">
+                            <h4 class="fw-bold mb-0">Browse the library</h4>
+                        </a>
                     </div>
                 </div>
-            </section>
-        {% endif %}
+                <a class="homepage-introduction-card text-decoration-none p-3 mb-3" href="#community">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ static('images/icons/groups-white.png') }}" class="me-2" style="height: 2rem;">
+                        <h2 class="fw-bold mb-0 flex-grow-1">
+                            {{ page.community_title }}
+                        </h2>
+                        <h2 class="fas fa-chevron-down mb-0 opacity-75"></h2>
+                    </div>
+                </a>
+                <a class="homepage-introduction-card text-decoration-none p-3" href="#resources">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ static('images/icons/search-white.png') }}" class="me-2" style="height: 2rem;">
+                        <h2 class="fw-bold mb-0 flex-grow-1">
+                            {{ page.resources_title }}
+                        </h2>
+                        <h2 class="fas fa-chevron-down mb-0 opacity-75"></h2>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 mb-5">
+                <h3 class="fw-bold mb-3">Latest peer reviewed models</h3>
+                <div id="reviewed-models-feed" data-feed-url="{{ feed_urls.reviewed_models }}" data-limit="3"></div>
+                <a href="/reviews/" class="fw-bold text-white">
+                    Read more about our peer review process <i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% with site_settings=settings("core.SiteSettings", use_default_site=True) %}
+    {% if site_settings.has_banner %}
+    <div class='homepage-banner'>
+        <a href='{{ site_settings.banner_destination_url }}' class='homepage-banner-link'>
+            {{ site_settings.banner_message_title }}
+        </a>
+    </div>
+    {% endif %}
     {% endwith %}
+</section>
 {% endblock %}
 {% block page %}
-<section class='mission'>
-    <div class='mx-2'>
-        {{ page.mission_statement }}
-        <br>
-        <a href='{{ slugurl("about") }}'>Learn more</a>
-    </div>
-</section>
-<div class='container'>
-    {# FIXME: this should be extracted and moved into the DB as well like CategoryIndexPage callouts #}
-    <section class='callouts'>
-        <div class='row'>
-            <div class='col'>
-                <a href='{{ url("library:codebase-add") }}'>
-                    <img src='{{ static("images/icons/submit.png") }}' alt='Publish your code'>
-                    <h3>Publish your Code</h3>
-                </a>
-                <div class='caption'>
-                    Preserve the <a href='https://www.acm.org/publications/policies/artifact-review-and-badging-current'>digital artifacts and context</a> used to derive a published research finding in an open digital repository that supports <a href='https://doi.org/10.15497/RDA00068'>FAIR practices for Research Software</a>, <a href='https://peerj.com/articles/cs-86/'>software citation</a>, reproducibility, and reuse. 
-                    <br/><br/>
-                    <a href='{{ slugurl("guides-to-good-practice") }}'>Promote good practices</a> for developing, documenting, and publishing computational models.
-                </div>
+
+<section class="homepage-section" id="community">
+    <div class="container">
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-8 mb-5">
+                <h1 class="text-start fw-bold mb-3">{{ page.community_title }}</h1>
+                {% autoescape off %}
+                    {{ page.community_blurb }}
+                {% endautoescape %}
             </div>
-            <div class='col'>
-                <a href='{{ slugurl("resources") }}'>
-                    <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers'>
-                    <h3>Resources for Modelers</h3>
-                </a>
-                <div class='caption'>
-                    <ul class="mb-0">
-                        <li>Subscribe to our <a href='https://www.youtube.com/user/CoMSESNet/playlists'>YouTube channel</a></li>
-                        <li><a href='{{ slugurl("education") }}'>Educational resources</a></li>
-                        <li><a href='{{ slugurl("standards") }}'>Standards for computational modeling</a></li>
-                        <li><a href='{{ slugurl("modeling-frameworks") }}'>Software frameworks</a> for computational
-                            modeling</li>
-                        <li><a href='{{ slugurl("open-code-badge") }}'>Open Code Badge</a> for exemplar computational models</li>
-                    </ul>
-                </div>
-            </div>
-            <div class='col'>
-                <a href='{{ url("core:event-list") }}'>
-                    <img src='{{ static("images/icons/groups.png") }}' alt='Community Events and Jobs'>
-                    <h3>Community Events and Jobs</h3>
-                </a>
-                <div class='caption'>
-                    Upcoming conferences, workshops, training opportunities, schools, and <a href='{{ url("core:event-list") }}'>events of broad interest</a> for
-                    the computational modeling community as well as <a href='{{ url("core:job-list") }}'>an open jobs board
-                    for computational modelers in academia and industry</a>. 
-                </div>
+            <div class="col-4 mb-5">
+                <h5 class="fw-bold mb-3">Explore the CoMSES Net Forums</h5>
+                <div id="forum-categories-feed" data-feed-url="{{ feed_urls.forum_categories }}" data-limit="6"></div>
             </div>
         </div>
-    </section>
-</div>
-<section class='featured-content'>
-    <h1>Featured Models</h1>
-    <div id='featured-content-carousel' class='carousel slide' data-bs-ride='carousel' data-bs-pause='hover'>
-        <ol class="carousel-indicators">
-            {% for _ in featured_content %}
-                <li data-bs-target="#featured-content-carousel" data-bs-slide-to="{{ loop.index0 }}"
-                    {% if loop.index0 == 0 %}class='active'{% endif %}>
-                </li>
-            {% endfor %}
-        </ol>
-        <div class="carousel-inner" role="listbox">
-            {% for item in featured_content %}
-                <div class="carousel-item {% if loop.index0 == 0 %}active{% endif %}">
-                    <div class='container'>
-                        <div class='row'>
-                            <div class='col-md-4 mx-auto my-auto carousel-image'>
-                                <a class='d-block' href='{{ item.link }}'>
-                                    {{ image(item.featured_image, "fill-350x350", class='d-block img-fluid float-end') }}
-                                </a>
-                            </div>
-                            <div class='col-md-8 mx-auto my-auto carousel-text'>
-                                <div class='carousel-caption my-auto'>
-                                    <h3><a href='{{ item.link }}'>{{ item.title }}</a></h3>
-                                    <p>
-                                    {{ item.summary }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-6 mb-5">
+                <h3 class="fw-bold mb-3">Upcoming events</h3>
+                <div id="events-feed" data-feed-url="{{ feed_urls.events }}" data-date-prefix="Begins" data-limit="3">
                 </div>
-            {% endfor %}
-        </div>
-        <a class="carousel-control-prev" href="#featured-content-carousel" role="button" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="sr-only">Previous</span>
-        </a>
-        <a class="carousel-control-next" href="#featured-content-carousel" role="button" data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="sr-only">Next</span>
-        </a>
-    </div>
-</section>
-<section class='community'>
-    <h1>Our Community</h1>
-    <div class='container'>
-        <div class='row'>
-            <div class='col'>
-                {{ markdown(page.community_statement) }}
+                <a href="{{ url('core:event-list') }}" class="fw-bold ">
+                    See more events <i class="fas fa-chevron-right ms-1"></i>
+                </a>
             </div>
-        </div>
-        <div class='row'>
-            <div class='col'>
-                <div class='row'>
-                    <div class='col-9'>
-                        <h3>Recent Forum Posts</h3>
-                    </div>
-                    <div class='col-3 text-end'>
-                        <small><a class='text-end' href='{{ constants.DISCOURSE_BASE_URL }}'>View Forum</a></small>
-                    </div>
+            <div class="col-6 mb-5">
+                <h3 class="fw-bold mb-3">Jobs & appointments</h3>
+                <div id="jobs-feed" data-feed-url="{{ feed_urls.jobs }}" data-date-prefix="Apply by" data-limit="3">
                 </div>
-                {% for post in recent_forum_activity %}
-                    <div class='activity'>
-                        <h4><a href='{{ post.url }}'>{{ post.title }}</a></h4>
-                        <small class='text-muted'>Posted by 
-                            {% if post.submitter_url %}
-                            <a href='{{ post.submitter_url }}'>{{ post.submitter_name }}</a>
-                            {% else %}
-                            {{ post.submitter_name }}
-                            {% endif %}
-                            - {{ post.date_created.strftime('%c') }}
-                        </small>
-                    </div>
-                {% endfor %}
-            </div>
-            <div class='col-1'>
-            </div>
-            <div class='col'>
-                <div class='row'>
-                    <div class='col-10'>
-                        <h3>Latest Jobs &amp; Appointments</h3>
-                    </div>
-                    <div class='col-2 text-end'>
-                        <small><a href='{{ url("core:job-list") }}'>View All</a></small>
-                    </div>
-                </div>
-                {% for item in latest_jobs %}
-                    <div class='activity'>
-                        <h4><a href='{{ item.get_absolute_url() }}'>{{ item.title }}</a></h4>
-                        <p>
-                        <small class='text-muted'>
-                            {{ item.summary }}
-                        </small>
-                        </p>
-                    </div>
-                {% endfor %}
+                <a href="{{ url('core:job-list') }}" class="fw-bold ">
+                    See more openings <i class="fas fa-chevron-right ms-1"></i>
+                </a>
             </div>
         </div>
     </div>
 </section>
+<section class="homepage-section" id="resources">
+    <div class="container">
+        <div class="row gx-4 gx-lg-5">
+            <div class="col-md-6 d-flex flex-column mb-5">
+                <h1 class="text-start fw-bold mb-3">{{ page.resources_title }}</h1>
+                {% autoescape off %}
+                    {{ page.resources_blurb }}
+                {% endautoescape %}
+                <div class="mb-4">
+                    <a href="#" class="btn btn-lg btn-primary">
+                        <h4 class="fw-bold mb-0">All resources</h4>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-5">
+                <h3 class="fw-bold mb-3">Latest video content</h3>
+                {% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
+                <div id="youtube-feed" data-feed-url="{{ feed_urls.youtube }}" data-limit="4"></div>
+                <a href="{{ social_settings.youtube_url }}" class="fw-bold ">
+                    CoMSES Net on Youtube <i class="fas fa-chevron-right ms-1"></i>
+                </a>
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block js %}
+{{ vite_asset('apps/homepage_feeds.ts') }}
+<script src="{{ static('js/background-animation.js') }}" defer></script>
 {% endblock %}
