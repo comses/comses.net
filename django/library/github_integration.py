@@ -421,6 +421,14 @@ class GitHubReleaseImporter:
             ):
                 return False
 
+        package = release.imported_release_package
+        package.name = self.github_release.get("tag_name")
+        package.display_name = self.github_release.get("name", "")
+        package.html_url = self.github_release.get("html_url", "")
+        package.download_url = self.github_release.get("zipball_url", "")
+        package.extra_data = self.github_release
+        package.save()
+
         return self._import_package_and_metadata(release)
 
     def _resolve_tags(self, tag_names: list[str]) -> list:
