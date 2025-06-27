@@ -415,22 +415,22 @@ class ReleaseMetadataConverter:
             return []
         return [value]
 
-    def extract_license_spdx_id(self) -> str | None:
-        # priority: github_repository.license.spdx_id > cff.license
+    def _extract_license_from_github(self) -> str | None:
         gh_license = self._get_field(self.github_repository, "license")
         if isinstance(gh_license, dict):
             spdx_id = gh_license.get("spdx_id", None)
             if spdx_id:
                 return spdx_id
-        # cff.license should be an Enum with a valid spdx id (or a list of them)
+        return None
+
+    def _extract_license_from_cff(self) -> str | None:
         cff_licenses = self._ensure_list(self._get_field(self.cff, "license"))
         for cff_license in cff_licenses:
-            if cff_license and cff_license.value:
+            if cff_license and hasattr(cff_license, "value"):
                 return cff_license.value
+        return None
 
-    def extract_release_notes(self) -> str | None:
-        # priority: codemeta.releaseNotes > github_release.body
-        # codemeta.releaseNotes can be a list, make sure its a str, take the first one
+    def _extract_release_notes_from_codemeta(self) -> str | None:
         release_notes = self._get_field(self.codemeta, "releaseNotes")
         if release_notes:
             if isinstance(release_notes, list):
@@ -438,11 +438,13 @@ class ReleaseMetadataConverter:
                 return release_notes if isinstance(release_notes, str) else None
             elif isinstance(release_notes, str):
                 return release_notes
+        return None
+
+    def _extract_release_notes_from_github(self) -> str | None:
         body = self._get_field(self.github_release, "body")
         return body if isinstance(body, str) else None
 
-    def extract_os(self) -> str:
-        # priority: codemeta.operatingSystem
+    def _extract_os_from_codemeta(self) -> str:
         codemeta_os = self._get_field(self.codemeta, "operatingSystem")
         if not codemeta_os:
             return ""
@@ -467,8 +469,7 @@ class ReleaseMetadataConverter:
                 return "other"
         return ""
 
-    def extract_programming_languages(self) -> list[str] | None:
-        # priority: codemeta.programmingLanguage > [github_repository.language]
+    def _extract_programming_languages_from_codemeta(self) -> list[str] | None:
         codemeta_langs = self._ensure_list(
             self._get_field(self.codemeta, "programmingLanguage")
         )
@@ -480,15 +481,15 @@ class ReleaseMetadataConverter:
                 lang_name = self._get_field(codemeta_lang, "name")
                 if lang_name:
                     langs.append(lang_name)
-        if langs:
-            return langs
-        else:
-            gh_lang = self._get_field(self.github_repository, "language")
-            if gh_lang and isinstance(gh_lang, str):
-                return [gh_lang]
+        return langs if langs else None
 
-    def extract_platforms(self) -> list[str] | None:
-        # priority: codemeta.runtimePlatform
+    def _extract_programming_languages_from_github(self) -> list[str] | None:
+        gh_lang = self._get_field(self.github_repository, "language")
+        if gh_lang and isinstance(gh_lang, str):
+            return [gh_lang]
+        return None
+
+    def _extract_platforms_from_codemeta(self) -> list[str] | None:
         runtime_platforms = self._ensure_list(
             self._get_field(self.codemeta, "runtimePlatform")
         )
@@ -501,12 +502,25 @@ class ReleaseMetadataConverter:
     def convert(self) -> dict:
         """return a dictionary with the metadata fields for a codebase release from
         given sources"""
+        # set priority
+        license_spdx_id = (
+            self._extract_license_from_github() or self._extract_license_from_cff()
+        )
+        release_notes = (
+            self._extract_release_notes_from_codemeta()
+            or self._extract_release_notes_from_github()
+        )
+        programming_languages = (
+            self._extract_programming_languages_from_codemeta()
+            or self._extract_programming_languages_from_github()
+        )
+
         return {
-            "license_spdx_id": self.extract_license_spdx_id(),
-            "release_notes": self.extract_release_notes(),
-            "os": self.extract_os(),
-            "programming_languages": self.extract_programming_languages(),
-            "platforms": self.extract_platforms(),
+            "license_spdx_id": license_spdx_id,
+            "release_notes": release_notes,
+            "os": self._extract_os_from_codemeta(),
+            "programming_languages": programming_languages,
+            "platforms": self._extract_platforms_from_codemeta(),
         }
 
 
