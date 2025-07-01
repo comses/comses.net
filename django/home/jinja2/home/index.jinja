@@ -26,7 +26,7 @@
                         <a href="{{ url('library:codebase-add') }}" class="btn btn-lg btn-primary mb-2">
                             <h4 class="fw-bold mb-0">Publish your model code</h4>
                         </a>
-                        <a href="{{ url('library:codebase-add') }}" class="btn btn-lg btn-secondary">
+                        <a href="{{ url('library:codebase-list') }}" class="btn btn-lg btn-secondary">
                             <h4 class="fw-bold mb-0">Browse the library</h4>
                         </a>
                     </div>
@@ -115,7 +115,7 @@
                     {{ page.resources_blurb }}
                 {% endautoescape %}
                 <div class="mb-4">
-                    <a href="#" class="btn btn-lg btn-primary">
+                    <a href="{{slugurl('resources')}}" class="btn btn-lg btn-primary">
                         <h4 class="fw-bold mb-0">All resources</h4>
                     </a>
                 </div>
