@@ -184,6 +184,7 @@ export interface CodebaseReleaseFiles {
     docs: FileInfo[];
     code: FileInfo[];
     results: FileInfo[];
+    metadata: FileInfo[];
   };
   media: FileInfo[];
 }
@@ -244,6 +245,14 @@ export interface RelatedUser {
   memberProfile: RelatedMemberProfile;
 }
 
+export interface ImportedReleasePackage {
+  service: string;
+  uid: string;
+  name: string;
+  displayName: string;
+  htmlUrl: string;
+}
+
 export interface CodebaseRelease {
   absoluteUrl: string;
   canEditOriginals: boolean;
@@ -256,6 +265,7 @@ export interface CodebaseRelease {
   embargoEndDate: Date | null;
   firstPublishedAt: Date | null;
   identifier: string;
+  importedReleasePackage?: ImportedReleasePackage;
   lastModified: Date | null;
   lastPublishedOn: Date | null;
   license: License | null;
@@ -279,6 +289,25 @@ export interface CodebaseRelease {
     notifyReviewersOfChanges: string | null;
   };
   versionNumber: string;
+}
+
+export interface RelatedCodebase {
+  absoluteUrl: string;
+  allContributors: Contributor[];
+  githubSyncConfigUrl: string;
+  activeGitRemote: CodebaseGitRemote | null;
+  tags: Tag[];
+  title: string;
+  firstPublishedAt: Date | null;
+  lastPublishedOn: Date | null;
+  identifier: string;
+  versionNumber?: string;
+  featuredImage: string | null;
+  summarizedDescription: string;
+  description: string;
+  live: boolean;
+  peerReviewed?: boolean;
+  repositoryUrl?: string;
 }
 
 interface Codebase {
@@ -335,6 +364,9 @@ export interface UploadFailure {
 
 export interface File {
   label: string;
+  category: FileCategory;
+  pendingCategory?: FileCategory;
+  path: string;
 }
 
 export interface Folder {
@@ -370,4 +402,36 @@ export interface FeedProps {
   limit: number;
   datePrefix?: string;
   authorPrefix?: string;
+}
+
+export interface GithubAccount {
+  id: string | number;
+  username: string;
+  profileUrl: string;
+  installationId?: number;
+}
+
+export interface GitHubAppInstallationStatus {
+  githubAccount: GithubAccount | null;
+  connectUrl: string;
+  installationUrl: string | null;
+}
+
+export interface CodebaseGitRemote {
+  id: number;
+  owner: string;
+  repoName: string;
+  url: string;
+  shouldPush: boolean;
+  shouldImport: boolean;
+  isUserRepo: boolean;
+  isPreexisting: boolean;
+  isActive: boolean;
+  lastPushLog: string;
+  lastImportLog: string;
+}
+
+export interface CodebaseGitRemoteForm {
+  shouldPush?: boolean;
+  shouldImport?: boolean;
 }
