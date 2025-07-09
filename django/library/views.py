@@ -1218,21 +1218,32 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         existing_review = PeerReview.get_codebase_latest_active_review(
             codebase_release.codebase
         )
+        # if there is an existing active review, simply redirect to that release
         if existing_review:
             review = existing_review
             review_release = existing_review.codebase_release
             created = False
+        # if not create a new review
         else:
-            if codebase_release.is_draft:
-                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
-                codebase_release.save(update_fields=["status"])
-                review_release = codebase_release
-            else:
+            # first, check if this release status is already under or completed review
+            # if so, something went wrong so we'll 
+            if codebase_release.is_under_review or codebase_release.is_review_complete:
+                raise ValidationError(
+                    "Cannot re-request a review on a release that has already completed or is undergoing review."
+                )
+            # if the release is published, make a new draft copy
+            elif codebase_release.is_published:
                 review_release = (
                     codebase_release.codebase.create_review_draft_from_release(
                         codebase_release
                     )
                 )
+            # if the release is a draft/unpublished, change the status
+            else:
+                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
+                codebase_release.save(update_fields=["status"])
+                review_release = codebase_release
+
             review = PeerReview.objects.create(
                 codebase_release=review_release,
                 submitter=request.user.member_profile,
