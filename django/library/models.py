@@ -1,26 +1,26 @@
 import hashlib
+import io
 import json
 import yaml
 import logging
 import os
 import pathlib
 from string import Template
-import uuid
 import semver
 import uuid
-from collections import OrderedDict
 from datetime import timedelta
 from packaging.version import Version
 from abc import ABC
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from datetime import date, timedelta
 
+from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import Prefetch, Q, Count, Max
 from django.utils.functional import cached_property
 from django.urls import reverse
@@ -33,7 +33,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError, UnsupportedMediaType
 from taggit.models import TaggedItemBase
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, HelpPanel
 from wagtail.coreutils import string_to_ascii
 from wagtail.images.models import (
     Image,
@@ -45,6 +45,8 @@ from wagtail.images.models import (
 )
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
+from wagtail.contrib.settings.models import BaseSiteSetting, register_setting
+from django.utils.html import format_html
 
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
@@ -56,8 +58,9 @@ from core.view_helpers import get_search_queryset
 from .metadata import CodeMetaConverter, DataCiteConverter, CitationFileFormatConverter
 from .fs import (
     CodebaseReleaseFsApi,
+    ImportedCodebaseReleaseFsApi,
     StagingDirectories,
-    FileCategoryDirectories,
+    FileCategories,
     MessageLevels,
 )
 
@@ -544,6 +547,155 @@ class CodebaseQuerySet(models.QuerySet):
         return new_codebases, updated_codebases, releases
 
 
+class GithubIntegrationAppInstallation(models.Model):
+    """Represents a user's installation of the Github Integration App"""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        related_name="github_integration_app_installation",
+        on_delete=models.CASCADE,
+    )
+    github_user_id = models.BigIntegerField(unique=True)
+    github_login = models.CharField(max_length=255)
+    installation_id = models.BigIntegerField(unique=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+
+class CodebaseGitRemote(models.Model):
+    """Represents a remote repository that a local git mirror can push to"""
+
+    is_user_repo = models.BooleanField(
+        default=False, help_text="Whether this is a user-owned remote"
+    )
+    is_preexisting = models.BooleanField(
+        default=False,
+        help_text="Whether this remote was pre-existing or based on a codebase git mirror",
+    )
+    should_push = models.BooleanField(
+        default=True, help_text="Whether to push to this remote"
+    )
+    should_import = models.BooleanField(
+        default=False, help_text="Whether to import new releases from this remote"
+    )
+    repo_name = models.CharField(max_length=100)
+    owner = models.CharField(
+        max_length=100,
+        help_text="Github username (or organization) who owns the remote repository",
+    )
+    url = models.URLField(
+        blank=True,
+        help_text=_("http URL of remote repository"),
+    )
+    mirror = models.ForeignKey(
+        "CodebaseGitMirror",
+        related_name="remotes",
+        on_delete=models.CASCADE,
+    )
+    last_push_log = models.TextField(blank=True)
+    last_import_log = models.TextField(blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    @property
+    def is_active(self):
+        return self.should_push or self.should_import
+
+    @property
+    def installation(self) -> GithubIntegrationAppInstallation | None:
+        if self.is_user_repo:
+            return self.mirror.codebase.submitter.github_integration_app_installation
+        return None
+
+    def __str__(self):
+        return f"{self.owner}/{self.repo_name} (active={self.should_push}) (sync={self.should_import})"
+
+    class Meta:
+        unique_together = ("owner", "repo_name")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["mirror"],
+                condition=models.Q(should_push=True, is_user_repo=True),
+                name="single_pushable_user_repo",
+            ),
+            models.UniqueConstraint(
+                fields=["mirror"],
+                condition=models.Q(should_push=True, is_user_repo=False),
+                name="single_pushable_org_repo",
+            ),
+            models.UniqueConstraint(
+                fields=["mirror"],
+                condition=models.Q(should_import=True),
+                name="single_archivable_repo",
+            ),
+            models.CheckConstraint(
+                check=models.Q(is_user_repo=True) | models.Q(should_import=False),
+                name="org_repo_not_archivable",
+            ),
+            models.CheckConstraint(
+                check=models.Q(is_preexisting=False) | models.Q(should_push=False),
+                name="preexisting_repo_not_pushable",
+            ),
+        ]
+
+
+class CodebaseGitMirror(models.Model):
+    """Represents a local git repository that mirrors a codebase's
+    regular (as opposed to pulled from github) published releases. It can have
+    two remotes: one on the submitter's account, and one in the CoMSES model library
+    organization
+    """
+
+    built_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    @property
+    def active_remotes_list(self) -> list[CodebaseGitRemote]:
+        return list(
+            self.remotes.filter(
+                models.Q(should_push=True) | models.Q(should_import=True)
+            )
+        )
+
+    @property
+    def latest_built_release(self):
+        if not self.built_releases.all():
+            return None
+        return max(self.built_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def unbuilt_releases(self):
+        return (
+            self.codebase.releases.internal()
+            .public()
+            .exclude(id__in=self.built_releases.values_list("id", flat=True))
+        )
+
+    def mark_releases_built(self, new_releases: models.QuerySet | list):
+        self.built_releases.add(*new_releases)
+        self.save()
+
+    def create_remote(self, owner, repo_name, **kwargs):
+        """create a new remote for this mirror, or get an existing one if there is a
+        matching remote that failed to actually be created at the remote location"""
+        existing_remote = CodebaseGitRemote.objects.filter(
+            mirror=self,
+            owner=owner,
+            repo_name=repo_name,
+            url__isnull=True,  # proxy for a successful remote creation
+        ).first()
+        if existing_remote:
+            return existing_remote
+        remote = CodebaseGitRemote.objects.create(
+            mirror=self,
+            owner=owner,
+            repo_name=repo_name,
+            **kwargs,
+        )
+        return remote
+
+
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
@@ -580,6 +732,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         "CodebaseRelease",
         null=True,
         related_name="latest_version",
+        on_delete=models.SET_NULL,
+    )
+
+    git_mirror = models.OneToOneField(
+        "CodebaseGitMirror",
+        null=True,
+        related_name="codebase",
         on_delete=models.SET_NULL,
     )
 
@@ -741,6 +900,14 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return pathlib.Path(str(self.uuid), "media", *args)
 
     @property
+    def active_git_remote(self):
+        if self.git_mirror:
+            return self.git_mirror.remotes.filter(
+                models.Q(should_push=True) | models.Q(should_import=True)
+            ).first()
+        return None
+
+    @property
     def summarized_description(self):
         if self.summary:
             return self.summary
@@ -760,6 +927,15 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     @property
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
+
+    def create_git_mirror(self, **kwargs):
+        if not self.git_mirror:
+            git_mirror = CodebaseGitMirror.objects.create(
+                **kwargs,
+            )
+            self.git_mirror = git_mirror
+            self.save(rebuild_metadata=False)
+        return self.git_mirror
 
     @property
     def publication_year(self):
@@ -831,20 +1007,22 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             release__codebase__id=self.id
         ).count()
 
-    def ordered_releases_list(self, has_change_perm=False, asc=True, **kwargs):
+    def ordered_releases_list(
+        self, has_change_perm=False, asc=True, internal_only=False, **kwargs
+    ):
         """
-        list public releases (or all release if has_change_perm is True) in ascending (default) or descending order
+        list public releases (or all release if has_change_perm is True) in ascending (default) or descending order.
+        If internal_only is True, only return internal (directly uploaded) releases
         """
         if has_change_perm:
             releases = self.releases.filter(**kwargs)
         else:
-            releases = self.public_releases(**kwargs)
+            releases = self.releases.public(**kwargs)
+        if internal_only:
+            releases = releases.internal()
         releases_list = list(releases)
         releases_list.sort(key=lambda r: Version(r.version_number), reverse=not asc)
         return releases_list
-
-    def public_releases(self, **kwargs):
-        return self.releases.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
 
     @classmethod
     def get_list_url(cls):
@@ -975,8 +1153,11 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     @transaction.atomic
     def create_review_draft_from_release(self, source_release):
-        # create a new "under review" release from an existing release
-        # (should only be called from a publishable release)
+        """create a new "under review" release from an existing release
+
+        (should only be called from a publishable, non-external release)
+        """
+
         source_id = source_release.id
         review_draft = self.create_release(
             status=CodebaseRelease.Status.UNDER_REVIEW, source_release=source_release
@@ -993,6 +1174,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         # set source_release.id to None to create a new release
         # see https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         source_release.id = None
+        source_release.imported_release_package = None
         source_release._state.adding = True
         source_release.__dict__.update(**release_metadata)
         source_release.save()
@@ -1050,7 +1232,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     def save(self, rebuild_metadata=True, rebuild_release_metadata=True, **kwargs):
         """save the codebase and optionally rebuild metadata by updating codemeta_snapshot.
-        If rebuild_release_metadata is True, all releases will be saved to trigger metadata updates
+        If rebuild_release_metadata is True, all internal releases will be saved to trigger metadata updates
         """
         if rebuild_metadata:
             logger.debug("Building codemeta for codebase: %s", self)
@@ -1059,7 +1241,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         # saving releases will trigger metadata rebuilding and updating
         # the fs and git mirror if one exists
         if rebuild_metadata and rebuild_release_metadata:
-            for release in self.releases.all():
+            for release in self.releases.internal():
                 release.save(rebuild_metadata=True)
 
     @classmethod
@@ -1129,6 +1311,50 @@ class CodebasePublication(models.Model):
 """
 
 
+class ImportedReleasePackage(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    category_manifest = models.JSONField(
+        default=dict,
+        help_text="Maps file paths to categories (code, docs, data, results)",
+    )
+
+    class Services(models.TextChoices):
+        GITHUB = "github", _("GitHub")
+
+    service = models.CharField(
+        max_length=32,
+        choices=Services.choices,
+        help_text="The external service where the release is hosted",
+    )
+    uid = models.CharField(
+        max_length=128,
+        unique=True,
+        help_text="Unique identifier for this external release e.g. github release id",
+    )
+    name = models.CharField(
+        max_length=255,
+        help_text="Name of the release, ideally the tag name if applicable",
+    )
+    display_name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="A human-readable name for the release, if different from the name",
+    )
+    html_url = models.URLField(
+        blank=True,
+        help_text="URL to the (browser-viewable) page for the release on the external service",
+    )
+    download_url = models.URLField(
+        blank=True,
+        help_text="URL to the downloadable package for the release on the external service, ideally a zipball such as in the case of github",
+    )
+    extra_data = models.JSONField(
+        default=dict,
+        help_text="Additional data for the external release, ideally the full object (e.g. github release) from the external service",
+    )
+
+
 class CodebaseReleaseQuerySet(models.QuerySet):
     def with_release_contributors(self, release_contributor_qs=None, user=None):
         if release_contributor_qs is None:
@@ -1157,6 +1383,14 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
     def with_submitter(self):
         return self.prefetch_related("submitter")
+
+    def internal(self, **kwargs):
+        """returns only releases that are locally uploaded and not archived from an external service"""
+        return self.filter(imported_release_package__isnull=True, **kwargs)
+
+    def imported(self, **kwargs):
+        """returns only releases that are imported from an external service such as GitHub"""
+        return self.filter(imported_release_package__isnull=False, **kwargs)
 
     def public(self, **kwargs):
         return self.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
@@ -1244,6 +1478,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         default=Status.DRAFT,
         help_text=_("The current status of this codebase release."),
         max_length=32,
+    )
+
+    imported_release_package = models.OneToOneField(
+        ImportedReleasePackage,
+        null=True,
+        on_delete=models.SET_NULL,
     )
 
     first_published_at = models.DateTimeField(null=True, blank=True)
@@ -1483,26 +1723,20 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return True
 
     def validate_uploaded_files(self):
+        """Validates that this CodebaseRelease has the required files to be publish()-able
+        - at least one code file
+        - at least one documentation file
+        """
         fs_api = self.get_fs_api()
-        storage = fs_api.get_stage_storage(StagingDirectories.sip)
-        code_msg = self.check_files(storage, FileCategoryDirectories.code)
-        docs_msg = self.check_files(storage, FileCategoryDirectories.docs)
-        msg = " ".join(m for m in [code_msg, docs_msg] if m)
-        if msg:
-            raise ValidationError(msg)
+        missing_categories = []
+        if not fs_api.check_category_file_exists(FileCategories.code):
+            missing_categories.append(FileCategories.code.name)
+        if not fs_api.check_category_file_exists(FileCategories.docs):
+            missing_categories.append(FileCategories.docs.name)
+        if missing_categories:
+            missing_str = " and ".join(missing_categories)
+            raise ValidationError(f"Must have at least one {missing_str} file.")
         return True
-
-    @staticmethod
-    def check_files(storage, category: FileCategoryDirectories):
-        # FIXME: document and/or refactor this API, should raise an exception or ...
-        # currently returns an error message or ""
-        uploaded_files = []
-        if storage.exists(category.name):
-            uploaded_files = list(storage.list(category))
-        if uploaded_files:
-            return ""
-        else:
-            return f"Must have at least one {category.name} file."
 
     @property
     def version_info(self):
@@ -1539,9 +1773,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         1. ready to be published
         2. has not already been peer reviewed
         3. a related PeerReview does not exist
+        4. is not an imported, published release
         """
         return (
-            self.is_publishable and not self.peer_reviewed and self.get_review() is None
+            self.is_publishable
+            and not self.peer_reviewed
+            and self.get_review() is None
+            and not (self.is_imported and self.is_published)
         )
 
     @property
@@ -1774,12 +2012,19 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         }
         return COLOR_MAP.get(self.status)
 
+    @property
+    def is_imported(self):
+        return self.imported_release_package is not None
+
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
 
     def get_fs_api(
         self, mimetype_mismatch_message_level=MessageLevels.error
-    ) -> CodebaseReleaseFsApi:
+    ) -> CodebaseReleaseFsApi | ImportedCodebaseReleaseFsApi:
+        """Factory method to return the appropriate filesystem API for this release."""
+        if self.is_imported:
+            return ImportedCodebaseReleaseFsApi.initialize(self)
         return CodebaseReleaseFsApi.initialize(
             self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
         )
@@ -1820,6 +2065,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def publish(self):
         self.validate_publishable()
         self._publish()
+        if self.codebase.git_mirror:
+            from .tasks import add_releases_and_push_codebase_repo
+
+            transaction.on_commit(
+                lambda: add_releases_and_push_codebase_repo(self.codebase.id)
+            )
 
     def _publish(self):
         if not self.live:
@@ -1904,18 +2155,23 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         if not rebuild_metadata:
             super().save(**kwargs)
         else:
-            logger.debug("Building codemeta for release: %s", self)
-            old_codemeta = self.codemeta_snapshot
-            self.codemeta_snapshot = self.codemeta.dict(serialize=True)
-            super().save(**kwargs)
+            if not self.pk:
+                # do not mess with the filesystem if this is a new release
+                self.codemeta_snapshot = self.codemeta.dict(serialize=True)
+                super().save(**kwargs)
+            else:
+                logger.debug("Building codemeta for release: %s", self)
+                old_codemeta = self.codemeta_snapshot
+                self.codemeta_snapshot = self.codemeta.dict(serialize=True)
+                super().save(**kwargs)
 
-            if old_codemeta != self.codemeta_snapshot:
-                if defer_fs:
-                    from .tasks import update_fs_release_metadata
+                if old_codemeta != self.codemeta_snapshot:
+                    if defer_fs:
+                        from .tasks import update_fs_release_metadata
 
-                    update_fs_release_metadata(self.id)
-                else:
-                    self.get_fs_api().rebuild(metadata_only=True)
+                        update_fs_release_metadata(self.id)
+                    else:
+                        self.get_fs_api().rebuild_metadata()
 
     @classmethod
     def get_indexed_objects(cls):
@@ -2687,9 +2943,14 @@ class PeerReviewerFeedback(models.Model):
         review.status = ReviewStatus.AWAITING_AUTHOR_CHANGES
         review.save()
         recipients = {review.submitter.email, review.codebase_release.submitter.email}
+
+        if review.codebase_release.is_imported:
+            template_name = "library/review/email/model_revisions_requested_imported.jinja"
+        else:
+            template_name = "library/review/email/model_revisions_requested.jinja"
         send_markdown_email(
             subject="Peer review: revisions requested",
-            template_name="library/review/email/model_revisions_requested.jinja",
+            template_name=template_name,
             context={"review": review, "feedback": self},
             to=recipients,
             bcc=[settings.REVIEW_EDITOR_EMAIL],
@@ -3235,3 +3496,61 @@ class DataCiteRegistrationLog(models.Model):
                    HTTP Status: {self.http_status}, Message: {self.message},
                    Hash: {self.metadata_hash}, DOI: {self.doi}
                    """
+
+
+class GitHubSyncFaqEntry(index.Indexed, models.Model):
+    configuration = ParentalKey(
+        "GitHubSyncConfiguration", related_name="faq_entries", on_delete=models.CASCADE
+    )
+    question = models.CharField(max_length=500, help_text=_("The FAQ question"))
+    answer = MarkdownField(help_text=_("The FAQ answer in Markdown format"))
+    order = models.PositiveIntegerField(
+        default=0, help_text=_("Order in which this FAQ entry should appear")
+    )
+
+    class Meta:
+        ordering = ["order", "id"]
+
+@register_setting
+class GitHubSyncConfiguration(BaseSiteSetting, ClusterableModel):
+    enable_new_syncs = models.BooleanField(
+        default=True, help_text=_("Disabling will prevent new synced repositories from being set up, existing syncs will remain active, visible, and editable.")
+    )
+    is_beta = models.BooleanField(
+        default=True, help_text=_("Mark the GitHub Sync feature as a beta feature")
+    )
+
+    @staticmethod
+    def github_app_settings_help_content():
+        """Create formatted content for a configuration help panel on the GitHub Sync settings page
+        """
+        info_html = format_html(
+            '<p>See the <a href="https://github.com/comses/infra/wiki" target="_blank" rel="noopener noreferrer">infra wiki</a> for configuration info.</p>'
+        )
+        app_name = settings.GITHUB_INTEGRATION_APP_NAME
+        org_name = settings.GITHUB_MODEL_LIBRARY_ORG_NAME
+        warnings = []
+        if not app_name:
+            warnings.append("GitHub app name is not configured. Set GITHUB_INTEGRATION_APP_NAME in the environment.")
+        if not org_name:
+            warnings.append("GitHub organization name is not configured. Set GITHUB_MODEL_LIBRARY_ORG_NAME in the environment.")
+        if warnings:
+            help_html = format_html(
+                '<div class="help-block help-warning"><strong>WARNING!</strong> {}</div>',
+                " ".join(warnings)
+            )
+        else:
+            url = f"https://github.com/organizations/{org_name}/settings/apps/{slugify(app_name)}"
+            help_html = format_html(
+               '<a href="{}" class="button" target="_blank" rel="noopener noreferrer">{} settings on GitHub</a>',
+                url,
+                app_name,
+            )
+        return info_html + help_html
+
+    panels = [
+        HelpPanel(content=github_app_settings_help_content()),
+        FieldPanel("enable_new_syncs"),
+        FieldPanel("is_beta"),
+        InlinePanel("faq_entries", label="FAQ Entries"),
+    ]
