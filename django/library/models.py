@@ -2953,7 +2953,7 @@ class PeerReviewerFeedback(models.Model):
         review.save()
         recipients = {review.submitter.email, review.codebase_release.submitter.email}
 
-        if review.codebase_release.release.is_imported:
+        if review.codebase_release.is_imported:
             template_name = "library/review/email/model_revisions_requested_imported.jinja"
         else:
             template_name = "library/review/email/model_revisions_requested.jinja"
