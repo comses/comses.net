@@ -873,7 +873,12 @@ class CategoryManifestManager:
         """return an appropriate category name for a file based on its extension.
         currently defaults to code for all files except pdfs, which can be reasonably assumed to be docs
         """
-        if name.suffix == ".pdf":
+        if (
+            name.suffix == ".pdf"
+            or name.suffix == ".docx"
+            or name.suffix == ".doc"
+            or name.suffix == ".md"
+        ):
             return FileCategories.docs.name
         return FileCategories.code.name
 
