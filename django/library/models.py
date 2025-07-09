@@ -6,6 +6,7 @@ import logging
 import os
 import pathlib
 from string import Template
+import uuid
 import semver
 from datetime import timedelta
 from packaging.version import Version

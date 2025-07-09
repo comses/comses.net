@@ -1,6 +1,7 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href, render_ogp_tags, alert_if_spam, mark_spam_confirm_modal %}
 {% from "library/review/includes/macros.jinja" import confirm_change_closed_modal %}
+{% from "library/codebases/macros.jinja" import imported_release_indicator %}
 
 {% set open_code_badge_png_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
 {% set open_code_badge_svg_url = request.build_absolute_uri(static("images/icons/open-code-badge.svg")) %}
@@ -102,7 +103,9 @@
         {% else %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.</div>
         {% endif %}
-        <h1 class='codebase-title mb-3'>{{ codebase.title }} <span class="badge bg-gray py-1 px-2">{{ release.version_number }}</span></h1>
+        <h1 class='codebase-title mb-3'>
+            {{ codebase.title }} <span class="badge bg-gray py-1 px-2">{{ release.version_number }}</span>
+        </h1>
         <div class='metadata text-muted mb-2'>
             <span class="me-3">
                 <b>Submitted by</b>
@@ -401,6 +404,17 @@
             <div class="card-text mb-3">
                 {{ release.version_number }}
             </div>
+            {% with imported_package = release.imported_release_package %}
+            {% if imported_package and imported_package.display_name and imported_package.html_url %}
+                <b class='card-title'>Imported From</b>
+                <div class="card-text mb-3">
+                    <a href='{{ imported_package.html_url }}'>
+                        <i class="fas fa-tag"></i>
+                        {{ imported_package.display_name }}
+                    </a>
+                </div>
+            {% endif %}
+            {% endwith %}
             <b class='card-title'>License</b>
             <div class="card-text mb-3">
                 <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
@@ -551,7 +565,7 @@
                 <tbody>
                     {% for related_release in codebase.ordered_releases_list(has_change_perm, asc=False) %}
                         <tr>
-                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a></td>
+                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }} {{ imported_release_indicator(related_release) }}</a></td>
                             <td>
                                 {% if release.live or has_change_perm %}
                                     {{ member_profile_href(related_release.submitter.member_profile) }}

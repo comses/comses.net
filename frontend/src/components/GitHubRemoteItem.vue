@@ -40,7 +40,7 @@
         <label class="form-check-label" for="flexSwitchCheckDefault1">Importing</label>
         <div>
           <small class="form-text text-muted text-nowrap"
-            ><small><i class="fas fa-archive"></i> from GitHub</small></small
+            ><small><i class="fas fa-file-import"></i> from GitHub</small></small
           >
         </div>
       </div>

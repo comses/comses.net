@@ -109,3 +109,9 @@
         </div>
     </div>
 {% endmacro %}
+
+{% macro imported_release_indicator(release) %}
+    {% if release.is_imported and release.imported_release_package.service %}
+        <i class="small text-muted fas fa-file-import" title="This release was imported from {{ release.imported_release_package.service }}"></i>
+    {% endif %}
+{% endmacro %}
