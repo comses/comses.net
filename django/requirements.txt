@@ -58,3 +58,4 @@ ipython
 pgcli
 # replace with pypi install eventually (and transfer to OMF?)
 git+https://github.com/comses/codemeticulous.git
+urllib3>=2.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
