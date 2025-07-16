@@ -120,7 +120,7 @@ def schedule_mint_public_doi(release: CodebaseRelease, dry_run: bool = False):
         A tuple of DataCiteRegistrationLog or None and a boolean indicating whether the operation was successful
     """
     if dry_run:
-        return "XX.DRYXX/XXXX-XRUN"
+        return "XX.DRYXX/XXXX-XRUN", True
     return DataCiteApi(dry_run=dry_run).mint_public_doi(release)
 
 

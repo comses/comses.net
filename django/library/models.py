@@ -7,7 +7,6 @@ import pathlib
 from string import Template
 import uuid
 import semver
-import uuid
 from datetime import timedelta
 from packaging.version import Version
 from abc import ABC
