@@ -1191,13 +1191,14 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         qs = (
             self.reviewed()
             .select_related("codebase", "submitter__member_profile", "review")
-            .filter(review__event_set__action='RELEASE_CERTIFIED')
+            .filter(review__event_set__action="RELEASE_CERTIFIED")
         )
         if published_only:
             qs = qs.public()
-        
+
         # order by the certification event date
         return qs.order_by("-review__event_set__date_created").distinct()[:number]
+
 
 @add_to_comses_permission_whitelist
 class CodebaseRelease(index.Indexed, ClusterableModel):
@@ -1818,10 +1819,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         self.validate_publishable()
         self._publish()
         if self.peer_reviewed:
-            # if this release is peer reviewed, schedule a DOI minting
-            from .doi import schedule_mint_public_doi
+            # if this release is peer reviewed schedule a DOI minting
+            from .tasks import schedule_mint_public_doi
 
-            schedule_mint_public_doi(self)
+            schedule_mint_public_doi(
+                self, dry_run=settings.DEPLOY_ENVIRONMENT.is_development
+            )
 
     def _publish(self):
         if not self.live:
@@ -3170,6 +3173,27 @@ class PeerReviewEventLog(models.Model):
 
 
 class DataCiteRegistrationLogQuerySet(models.QuerySet):
+
+    def mock(self, codebase_or_release, **kwargs):
+        """
+        Returns a mock DataCiteRegistrationLog entry for testing
+        """
+        return DataCiteRegistrationLog(
+            codebase=(
+                codebase_or_release
+                if isinstance(codebase_or_release, Codebase)
+                else None
+            ),
+            release=(
+                codebase_or_release
+                if isinstance(codebase_or_release, CodebaseRelease)
+                else None
+            ),
+            doi="10.1234/XYZZY.DRY.RUN",
+            metadata_hash="dry-run-metadata-hash",
+            http_status=200,
+            message="Mock log entry for testing",
+        )
 
     def latest_entry(self, codebase_or_release, **kwargs):
         """

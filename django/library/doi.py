@@ -106,24 +106,6 @@ def is_valid_doi(doi: str) -> bool:
     return False
 
 
-@on_commit_task()
-def schedule_mint_public_doi(release: CodebaseRelease, dry_run: bool = False):
-    """
-    Mint a DOI for the given release.
-
-    Args:
-        release (CodebaseRelease): The release for which to mint a DOI.
-        dry_run (bool, optional): Flag indicating whether the operation should be performed in dry run mode.
-            Defaults to False.
-
-    Returns:
-        A tuple of DataCiteRegistrationLog or None and a boolean indicating whether the operation was successful
-    """
-    if dry_run:
-        return "XX.DRYXX/XXXX-XRUN", True
-    return DataCiteApi(dry_run=dry_run).mint_public_doi(release)
-
-
 class DataCiteApi:
     """
     Wrapper around the datacite package:
@@ -214,6 +196,7 @@ class DataCiteApi:
         """
         Mint a public DOI for the given codebase or release.
 
+
         Args:
             codebase_or_release (Codebase | CodebaseRelease): The codebase or release for which to mint a DOI.
 
@@ -221,7 +204,11 @@ class DataCiteApi:
             tuple: A tuple containing the DOI and a boolean indicating if the minting was successful.
         """
         if self.dry_run:
-            return "XX.DRYXX/XXXX-XRUN", True
+            return (
+                DataCiteRegistrationLog.objects.mock(codebase_or_release),
+                True,
+            )
+        # clear cached datacite property to ensure it is fresh
         if hasattr(codebase_or_release, "datacite"):
             del codebase_or_release.datacite
 

@@ -82,7 +82,9 @@ class LandingPageFeedsTestCase(BaseModelTestCase):
         self._verify_feed_structure(ForumFeed(mock=True))
 
     def test_reviewed_model_feed(self):
-        self._verify_feed_structure(ReviewedModelFeed(), CodebaseRelease.objects.reviewed().count())
+        self._verify_feed_structure(
+            ReviewedModelFeed(), CodebaseRelease.objects.reviewed().count()
+        )
 
     def test_event_feed(self):
         self._verify_feed_structure(EventFeed(), Event.objects.count())

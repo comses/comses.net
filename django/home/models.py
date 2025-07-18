@@ -147,7 +147,9 @@ class LandingPage(Page):
     mission_statement = models.CharField(max_length=512)
     library_title = models.CharField(max_length=255, default="The CoMSES Model Library")
     library_blurb = MarkdownField(max_length=1024, blank=True)
-    community_title = models.CharField(max_length=255, default="A community of researchers")
+    community_title = models.CharField(
+        max_length=255, default="A community of researchers"
+    )
     community_blurb = MarkdownField(max_length=1024, blank=True)
     resources_title = models.CharField(max_length=255, default="Resources for modeling")
     resources_blurb = MarkdownField(max_length=1024, blank=True)

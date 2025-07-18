@@ -22,7 +22,9 @@ class Command(BaseCommand):
         ComsesDigest.objects.all().delete()
         err_msg = ""
 
-        response = requests.get(ZENODO_COMMUNITY_API_URL, params={"size": 1000, "sort": "publication-desc"})
+        response = requests.get(
+            ZENODO_COMMUNITY_API_URL, params={"size": 1000, "sort": "publication-desc"}
+        )
         if response.status_code != 200:
             logger.error("Failed to fetch Zenodo records for CoMSES Digest.")
             return
@@ -35,7 +37,9 @@ class Command(BaseCommand):
                     title=record["metadata"]["title"],
                     volume=int(record["metadata"]["journal"]["volume"]),
                     issue_number=int(record["metadata"]["journal"]["issue"]),
-                    publication_date=datetime.strptime(record["metadata"]["publication_date"], "%Y-%m-%d").date(),
+                    publication_date=datetime.strptime(
+                        record["metadata"]["publication_date"], "%Y-%m-%d"
+                    ).date(),
                     url=record["links"]["latest_html"],
                 )
             except Exception as e:
@@ -49,4 +53,6 @@ class Command(BaseCommand):
             )
             logger.error(err_msg)
         else:
-            logger.info(f"\n\nSuccessfully indexed all digest records from Zenodo community.")
+            logger.info(
+                f"\n\nSuccessfully indexed all digest records from Zenodo community."
+            )
