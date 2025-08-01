@@ -9,6 +9,8 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_ENVIRONMENT: test
     steps:
       - uses: actions/checkout@v4
 

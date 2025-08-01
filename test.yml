@@ -1,0 +1,15 @@
+services:
+  server:
+    build:
+      args:
+        UBUNTU_MIRROR: "${UBUNTU_MIRROR}"
+        REQUIREMENTS_FILE: "requirements-test.txt"
+        RUN_SCRIPT: "./deploy/test.sh"
+    image: comses/server:dev
+    volumes:
+      - ./django:/code
+      - ./docs:/docs
+    environment:
+      DJANGO_SETTINGS_MODULE: "core.settings.test"
+    ports:
+      - "127.0.0.1:8000:8000"

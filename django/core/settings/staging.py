@@ -5,7 +5,9 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 DEBUG = False
 DJANGO_VITE_DEV_MODE = False
-DEPLOY_ENVIRONMENT = Environment.STAGING
+DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(
+    Environment.STAGING
+)
 
 # datacite sandbox configuration inherited from defaults should suffice
 # DATACITE_PREFIX = "10.82853"

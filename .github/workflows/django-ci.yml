@@ -7,8 +7,10 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  run_tests:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_ENVIRONMENT: test
     steps:
       - uses: actions/checkout@v4
       - name: build containers and run Django tests

@@ -3,14 +3,19 @@ from .defaults import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(
+    Environment.DEVELOPMENT
+)
+
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
 
-INSTALLED_APPS += [
-    "debug_toolbar",
-    "fixture_magic",
-]
+if not TESTING:
+    INSTALLED_APPS += [
+        "debug_toolbar",
+        "fixture_magic",
+    ]
+    MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "server"]
 

@@ -56,5 +56,5 @@ wagtail-modeladmin==2.1.0
 invoke
 ipython
 pgcli
-# replace with pypi install eventually (and transfer to OMF?)
+# replace with pypi scicodes install eventually
 git+https://github.com/comses/codemeticulous.git

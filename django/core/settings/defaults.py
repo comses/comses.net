@@ -10,8 +10,10 @@ Wagtail settings reference:
 """
 
 import os
+import sys
 import warnings
 from elasticsearch.exceptions import ElasticsearchWarning
+from collections import namedtuple
 from enum import Enum
 from pathlib import Path
 
@@ -26,15 +28,19 @@ def read_secret(file, fallback=""):
         return fallback
 
 
+EnvConfig = namedtuple("EnvConfig", ["base_url", "label"])
+
+
 class Environment(Enum):
-    DEVELOPMENT = "http://localhost:8000"
-    STAGING = "https://staging.comses.net"
-    PRODUCTION = "https://www.comses.net"
-    TEST = "http://localhost:8000"
+    DEVELOPMENT = EnvConfig(base_url="http://localhost:8000", label="DEVELOPMENT")
+    STAGING = EnvConfig(base_url="https://staging.comses.net", label="STAGING")
+    PRODUCTION = EnvConfig(base_url="https://www.comses.net", label="PRODUCTION")
+    # TEST is used for local and github testing, not a real environment
+    TEST = EnvConfig(base_url="http://localhost:8000", label="TEST")
 
     @property
     def base_url(self):
-        return self.value
+        return self.value.base_url
 
     @property
     def is_staging_or_production(self):
@@ -57,7 +63,14 @@ class Environment(Enum):
         return self == Environment.TEST
 
 
-DEPLOY_ENVIRONMENT = Environment.DEVELOPMENT
+def set_environment(env: Environment):
+    global DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL
+    DEPLOY_ENVIRONMENT = env
+    # Base URL to use when referring to full URLs within the Wagtail admin backend -
+    # e.g. in notification emails. Don't include '/admin' or a trailing slash
+    WAGTAILADMIN_BASE_URL = BASE_URL = env.base_url
+    return DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL
+
 
 # go two levels up for root project directory
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -72,13 +85,11 @@ DEBUG = True
 
 DJANGO_VITE_DEV_MODE = True
 
-# Base URL to use when referring to full URLs within the Wagtail admin backend -
-# e.g. in notification emails. Don't include '/admin' or a trailing slash
-# FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
 
-WAGTAILADMIN_BASE_URL = BASE_URL = DEPLOY_ENVIRONMENT.base_url
+TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
+
 # set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
-ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
+# ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 
 # wagtail config: https://docs.wagtail.io/en/v2.10.1/getting_started/integrating_into_django.html
 WAGTAIL_APPS = [
