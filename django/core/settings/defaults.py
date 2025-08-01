@@ -191,6 +191,7 @@ CSP_CONNECT_SRC = (
     "cdn.jsdelivr.net",  # codemirror spell checker
     "*.comses.net",  # sentry.comses.net / forum.comses.net
     "www.google-analytics.com",  # google analytics
+    "export.highcharts.com",  # highcharts metrics export
 )
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com", "localhost:*")
 CSP_STYLE_SRC = (
