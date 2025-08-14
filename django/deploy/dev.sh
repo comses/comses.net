@@ -16,4 +16,5 @@ initdb() {
     fi
 }
 initdb
+echo "Running dev server with ${DJANGO_SETTINGS_MODULE}"
 exec env DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE} /code/manage.py runserver 0.0.0.0:8000

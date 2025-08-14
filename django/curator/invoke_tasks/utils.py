@@ -30,7 +30,7 @@ def dj(ctx, command, **kwargs):
     Run a Django manage.py command on the server.
     """
     django_settings_module = os.environ.get("DJANGO_SETTINGS_MODULE")
-    invocation = f"python3 manage.py {command} --settings {django_settings_module}"
+    invocation = f"python3 /code/manage.py {command} --settings {django_settings_module}"
     print("Invoking command: ", invocation)
     ctx.run(
         invocation, env={"DJANGO_SETTINGS_MODULE": django_settings_module}, **kwargs

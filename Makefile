@@ -2,7 +2,7 @@ DOCKER_SHARED_DIR=docker/shared
 # shared directory subdirectories for postgres (data), frontend (vite), logs, static assets to be delivered by nginx
 # `data` directory is used for direct postgres db server-side outputs, e.g., postgres COPY commands issued in
 # ./manage.py export_raw_data
-DOCKER_SHARED_SUBDIRS=data vite logs library media static
+DOCKER_SHARED_SUBDIRS=data vite logs library media static tests
 
 BUILD_DIR=build
 SECRETS_DIR=${BUILD_DIR}/secrets
@@ -151,8 +151,9 @@ $(E2E_REPO_PATH):
 
 .PHONY: e2e
 e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
-	docker compose -f docker-compose.yml -f e2e.yml up -d --build --quiet-pull
+	docker compose -f docker-compose.yml -f e2e.yml build -q
+	docker compose -f docker-compose.yml -f e2e.yml up -d
+	sleep 42
 	docker compose -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \
-		inv db.init && \
 		inv prepare"

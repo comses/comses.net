@@ -31,6 +31,9 @@ services:
     volumes:
       - ./frontend:/code
   server:
+    build:
+      args:
+        RUN_SCRIPT: ./deploy/dev.sh
     depends_on:
       db:
         condition: service_started

@@ -15,7 +15,7 @@ LOGGING["loggers"]["core.views"] = {
     "propagate": False,
 }
 
-SHARE_DIR = path.realpath("library/tests/tmp")
+SHARE_DIR = path.realpath("/shared/tests")
 LIBRARY_ROOT = path.join(SHARE_DIR, "library")
 LIBRARY_PREVIOUS_ROOT = path.join(SHARE_DIR, ".latest")
 REPOSITORY_ROOT = path.join(SHARE_DIR, "repository")
