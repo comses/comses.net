@@ -94,8 +94,8 @@
         {% elif release.is_under_review %}
             <div class="alert alert-danger mt-2">This release is currently undergoing peer review and must remain unpublished until complete.</div>
         {% elif release.is_review_complete %}
-            <div class="alert alert-warning mt-2">This release has undergone peer review and is currently unpublished. You can
-                <a href="{{ release.get_publish_url() }}">publish it here</a>
+            <div class="alert alert-info mt-2">This release has passed peer review but is currently <b>unpublished</b>.
+                <a href="{{ release.get_publish_url() }}">Click here to publish it</a> and receive a DOI.
             </div>
         {% elif release.is_draft %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently a draft.</div>

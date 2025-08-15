@@ -2,8 +2,8 @@ from os import path
 
 from .defaults import *
 
-
-DEPLOY_ENVIRONMENT = Environment.TEST
+DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(Environment.TEST)
+TESTING = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "server"]
 
@@ -15,7 +15,7 @@ LOGGING["loggers"]["core.views"] = {
     "propagate": False,
 }
 
-SHARE_DIR = path.realpath("library/tests/tmp")
+SHARE_DIR = path.realpath("/shared/tests")
 LIBRARY_ROOT = path.join(SHARE_DIR, "library")
 LIBRARY_PREVIOUS_ROOT = path.join(SHARE_DIR, ".latest")
 REPOSITORY_ROOT = path.join(SHARE_DIR, "repository")

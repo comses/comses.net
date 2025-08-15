@@ -128,7 +128,6 @@ def _restore_database(ctx, working_directory, target_database):
         target_database=target_database,
         dumpfile=dumpfile,
         force=True,
-        migrate=False,
     )
 
 
@@ -224,3 +223,4 @@ def restore(
             working_directory=working_directory,
             target_database=target_database,
         )
+        ctx.run("/code/manage.py migrate")

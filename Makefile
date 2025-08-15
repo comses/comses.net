@@ -1,11 +1,8 @@
-# set DEPLOY_ENVIRONMENT in config.mk
-DEPLOY_ENVIRONMENT := dev
-
 DOCKER_SHARED_DIR=docker/shared
 # shared directory subdirectories for postgres (data), frontend (vite), logs, static assets to be delivered by nginx
 # `data` directory is used for direct postgres db server-side outputs, e.g., postgres COPY commands issued in
 # ./manage.py export_raw_data
-DOCKER_SHARED_SUBDIRS=data vite logs library media static
+DOCKER_SHARED_SUBDIRS=data vite logs library media static tests
 
 BUILD_DIR=build
 SECRETS_DIR=${BUILD_DIR}/secrets
@@ -24,6 +21,7 @@ BORG_REPO_URL := https://example.com/repo.tar.xz
 BORG_REPO_PATH=${BUILD_DIR}/repo.tar.xz
 REPO_BACKUPS_PATH=${DOCKER_SHARED_DIR}/backups
 
+# DEPLOY_ENVIRONMENT must be set in config.mk
 include config.mk
 include .env
 
@@ -34,13 +32,13 @@ include .env
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
-	docker compose build --pull
+	docker compose build --pull -q
 
 $(BORG_REPO_PATH):
 	wget -c ${BORG_REPO_URL} -P ${BUILD_DIR}
 
 config.mk:
-	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
+	envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
 
 .PHONY: $(DOCKER_SHARED_DIR)
 $(DOCKER_SHARED_DIR):
@@ -82,9 +80,9 @@ release-version: .env
 	$(ENVREPLACE) TEST_BASIC_AUTH_PASSWORD $$(openssl rand -base64 42) .env
 
 .PHONY: docker-compose.yml
-docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) release-version .env
+docker-compose.yml: base.yml dev.yml staging.yml test.yml prod.yml config.mk $(PGPASS_PATH) release-version .env
 	case "$(DEPLOY_ENVIRONMENT)" in \
-	  dev|staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
+	  dev|staging|test) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  *) echo "invalid environment. must be either dev, staging or prod" 1>&2; exit 1;; \
 	esac
@@ -148,12 +146,14 @@ E2E_REPO_PATH=${E2E_BACKUPS_PATH}/repo
 
 $(E2E_REPO_PATH):
 	mkdir -p $(E2E_BACKUPS_PATH)
-	wget -c ${BORG_REPO_URL} -P $(E2E_BACKUPS_PATH)
+	wget -c --no-check-certificate ${BORG_REPO_URL} -P $(E2E_BACKUPS_PATH)
 	tar -Jxf $(E2E_BACKUPS_PATH)/repo.tar.xz -C $(E2E_BACKUPS_PATH)
 
 .PHONY: e2e
 e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
-	docker compose -f docker-compose.yml -f e2e.yml up -d --build
+	docker compose -f docker-compose.yml -f e2e.yml build -q
+	docker compose -f docker-compose.yml -f e2e.yml up -d
+	sleep 42
 	docker compose -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \
 		inv prepare"

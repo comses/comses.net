@@ -38,7 +38,7 @@ router.register(
     basename="codebaserelease-share",
 )
 
-if settings.DEPLOY_ENVIRONMENT == Environment.DEVELOPMENT:
+if settings.DEPLOY_ENVIRONMENT.is_development:
     router.register(
         r"test_codebases",
         views.DevelopmentCodebaseDeleteView,

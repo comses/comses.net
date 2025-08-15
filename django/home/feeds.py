@@ -204,7 +204,7 @@ class FeedItem:
 class AbstractFeed(ABC):
     max_number_of_items = DEFAULT_HOMEPAGE_FEED_MAX_ITEMS
     _cache_key = None  # subclasses can define a custom cache key if needed
-    rate_limited = False # set to True if the feed is rate limited to cache in dev mode
+    rate_limited = False  # set to True if the feed is rate limited to cache in dev mode
     cache_timeout = DEFAULT_CACHE_TIMEOUT
 
     def __init__(self, max_items=None):
@@ -239,7 +239,11 @@ class AbstractFeed(ABC):
 
     def get_feed_items(self):
         # check for cached data first (skip in dev mode)
-        source_feed_data = None if (settings.DEBUG and not self.rate_limited) else cache.get(self.cache_key)
+        source_feed_data = (
+            None
+            if (settings.DEBUG and not self.rate_limited)
+            else cache.get(self.cache_key)
+        )
         if not source_feed_data:
             source_feed_data = self._get_feed_source_data()
             if not source_feed_data:
@@ -262,7 +266,7 @@ class ReviewedModelFeed(AbstractFeed):
         short_author_string = release.citation_authors
         if short_author_string and "," in short_author_string:
             short_author_string = f"{short_author_string.split(",")[0].strip()} et al."
-        
+
         feed_item = FeedItem(
             title=release.title,
             summary=release.codebase.summary or release.codebase.description.raw,
@@ -315,10 +319,12 @@ class ForumFeed(AbstractFeed):
 
 class ForumCategoryFeed(ForumFeed):
     mock = False
-    cache_timeout = 60 * 60 * 24 * 30 # 30 days
+    cache_timeout = 60 * 60 * 24 * 30  # 30 days
 
     def _get_feed_source_data(self):
-        return get_categories(number_of_categories=self.max_number_of_items, mock=self.mock)
+        return get_categories(
+            number_of_categories=self.max_number_of_items, mock=self.mock
+        )
 
     def to_feed_item(self, category):
         return FeedItem(
@@ -392,7 +398,7 @@ class BaseFeedView(View):
                 max_items = min(100, limit_value) if limit_value > 0 else None
             except ValueError:
                 pass
-        
+
         feed_data = self.feed_class(max_items=max_items).get_feed_data()
         if feed_data is None:
             return JsonResponse({"error": "Feed not available"}, status=503)
@@ -440,7 +446,11 @@ def urlpatterns():
         ),
         path("api/feeds/events/", EventFeedView.as_view(), name="event-feed"),
         path("api/feeds/forum/", ForumFeedView.as_view(), name="forum-feed"),
-        path("api/feeds/forum-categories/", ForumCategoryFeedView.as_view(), name="forum-categories-feed"),
+        path(
+            "api/feeds/forum-categories/",
+            ForumCategoryFeedView.as_view(),
+            name="forum-categories-feed",
+        ),
         path("api/feeds/jobs/", JobFeedView.as_view(), name="job-feed"),
         path("api/feeds/yt/", YouTubeFeedView.as_view(), name="youtube-feed"),
     ]

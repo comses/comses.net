@@ -77,30 +77,27 @@ urlpatterns = [
     path("", include((get_core_urls(), "core"), namespace="core")),
     path("accounts/", include("allauth.urls")),
     path("django/admin/", admin.site.urls),
-    # Replace the default wagtail admin home page
-    # path('wagtail/admin/', view=wagtail_hooks.DashboardView.as_view(), name='wagtailadmin_home'),
     path("wagtail/admin/", include(wagtailadmin_urls)),
     path("api/schema/", schema_view),
     path("api-auth/", include("rest_framework.urls")),
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
-    # https://docs.wagtail.io/en/v2.9.2/reference/contrib/sitemaps.html
+    # https://docs.wagtail.org/en/stable/reference/contrib/sitemaps.html
     path("sitemap.xml", sitemap),
     path("robots.txt", include("robots.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-if not settings.DEPLOY_ENVIRONMENT.is_production:
-    import debug_toolbar
-
+if settings.DEPLOY_ENVIRONMENT.is_development:
     urlpatterns += [
         path("argh/", handler500, name="error"),
         path("make-error/", views.make_error),
-        path("__debug__/", include(debug_toolbar.urls)),
-    ]
+    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    if not settings.TESTING:
+        from debug_toolbar.toolbar import debug_toolbar_urls
 
-if settings.DEPLOY_ENVIRONMENT.is_development:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+        urlpatterns += debug_toolbar_urls()
+
 
 # NB: wagtail_urls are the catchall, must be last
 urlpatterns.append(path("", include(wagtail_urls)))

@@ -6,6 +6,7 @@ import requests
 from collections import defaultdict
 
 from django.conf import settings
+from huey.contrib.djhuey import on_commit_task
 
 from .models import (
     Codebase,
@@ -101,7 +102,7 @@ def print_console_message(dry_run: bool, interactive: bool):
 def is_valid_doi(doi: str) -> bool:
     # checks if DOI is formatted like this "00.12345/q2xt-rj46"
     if doi:
-        return re.match(DOI_PATTERN, doi)
+        return bool(re.match(DOI_PATTERN, doi, re.IGNORECASE))
     return False
 
 
@@ -195,6 +196,7 @@ class DataCiteApi:
         """
         Mint a public DOI for the given codebase or release.
 
+
         Args:
             codebase_or_release (Codebase | CodebaseRelease): The codebase or release for which to mint a DOI.
 
@@ -202,7 +204,11 @@ class DataCiteApi:
             tuple: A tuple containing the DOI and a boolean indicating if the minting was successful.
         """
         if self.dry_run:
-            return "XX.DRYXX/XXXX-XRUN", True
+            return (
+                DataCiteRegistrationLog.objects.mock(codebase_or_release),
+                True,
+            )
+        # clear cached datacite property to ensure it is fresh
         if hasattr(codebase_or_release, "datacite"):
             del codebase_or_release.datacite
 
