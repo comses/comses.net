@@ -1823,7 +1823,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             from .tasks import schedule_mint_public_doi
 
             schedule_mint_public_doi(
-                self, dry_run=settings.DEPLOY_ENVIRONMENT.is_development
+                self.id, dry_run=settings.DEPLOY_ENVIRONMENT.is_development
             )
 
     def _publish(self):
