@@ -37,7 +37,7 @@ IS_PRODUCTION = settings.DEPLOY_ENVIRONMENT.is_production
 
 # prefix differs across (dev + staging) and production
 DATACITE_PREFIX = settings.DATACITE_PREFIX
-DOI_PATTERN = re.compile(f"{DATACITE_PREFIX}/[-._;()/:a-zA-Z0-9]+")
+DOI_PATTERN = re.compile(f"{DATACITE_PREFIX}/[-._;()/:a-zA-Z0-9]+", re.IGNORECASE)
 
 MAX_DATACITE_API_WORKERS = 25
 
@@ -102,7 +102,7 @@ def print_console_message(dry_run: bool, interactive: bool):
 def is_valid_doi(doi: str) -> bool:
     # checks if DOI is formatted like this "00.12345/q2xt-rj46"
     if doi:
-        return bool(re.match(DOI_PATTERN, doi, re.IGNORECASE))
+        return bool(re.match(DOI_PATTERN, doi))
     return False
 
 
