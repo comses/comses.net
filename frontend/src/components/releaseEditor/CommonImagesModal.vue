@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import type Modal from "bootstrap/js/dist/modal";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import FileUpload from "@/components/releaseEditor/FileUpload.vue";
@@ -40,6 +40,7 @@ const props = defineProps<{
   buttonClass: string;
   identifier: string;
   files: FileInfo[];
+  show: boolean;
 }>();
 
 const store = useReleaseEditorStore();
@@ -49,6 +50,12 @@ const imagesModal = ref<Modal>();
 const { mediaListUrl, mediaDelete, mediaClear } = useCodebaseAPI();
 
 const uploadUrl = computed(() => mediaListUrl(props.identifier));
+
+onMounted(() => {
+  if (props.show) {
+    imagesModal.value?.show();
+  }
+});
 
 async function getMediaFiles() {
   await store.fetchMediaFiles();

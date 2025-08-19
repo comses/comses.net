@@ -40,6 +40,7 @@
             button-class="btn btn-primary me-2"
             :identifier="identifier"
             :files="store.files.media"
+            :show="showUploadImageModal"
           />
         </span>
         <PublishModal :show="showPublishModal" button-class="btn btn-danger" />
@@ -79,6 +80,7 @@ const props = defineProps<{
   isLive: boolean;
   canEditOriginals: boolean;
   showPublishModal: boolean;
+  showUploadImageModal: boolean;
 }>();
 
 const store = useReleaseEditorStore();

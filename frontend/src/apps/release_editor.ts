@@ -17,9 +17,10 @@ const props = extractDataParams("release-editor", [
   "canEditOriginals",
 ]);
 
-// check if ?publish is in the url, set prop, and clear from the url
+// check if ?publish or ?upload-image is in the url, set prop, and clear from the url
 const urlParams = new URLSearchParams(window.location.search);
 props.showPublishModal = urlParams.has("publish");
+props.showUploadImageModal = urlParams.has("upload-image");
 window.history.replaceState({}, "", window.location.pathname + window.location.hash);
 
 const app = createApp(App, props);

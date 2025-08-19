@@ -42,7 +42,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
-import { ReviewerFeedback } from "@/types";
+import type { ReviewerFeedback } from "@/types";
 
 const props = defineProps<{
   reviewId: string;
