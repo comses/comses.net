@@ -7,12 +7,16 @@
     </div>
     <div v-for="event in events" :key="event.dateCreated">
       <div class="card mb-2">
-        <div class="card-body">
-          <h5 class="card-title">{{ event.dateCreated }}</h5>
-          <p class="card-text">
-            <span class="badge bg-primary">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="badge bg-gray">
               {{ event.action }}
             </span>
+            <b class="small text-muted float-end">{{
+              new Date(event.dateCreated).toLocaleDateString()
+            }}</b>
+          </div>
+          <p class="card-text small text-muted">
             {{ event.message }} (<em>by: </em
             ><a :href="event.author.absoluteUrl"> {{ event.author.name }} </a>)
           </p>

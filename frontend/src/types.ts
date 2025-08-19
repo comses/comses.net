@@ -158,6 +158,31 @@ export interface Reviewer {
   notes: string;
 }
 
+export interface ReviewerFeedback {
+  id: number;
+  dateCreated: string;
+  lastModified: string;
+  invitation: number;
+  recommendation?: "revise" | "accept";
+  privateReviewerNotes: string;
+  privateEditorNotes: string;
+  notesToAuthor: string;
+  hasNarrativeDocumentation: boolean;
+  narrativeDocumentationComments: string;
+  hasCleanCode: boolean;
+  cleanCodeComments: string;
+  isRunnable: boolean;
+  runnableComments: string;
+  reviewerSubmitted: boolean;
+  editorUrl: string;
+  reviewerName: string;
+  reviewStatus:
+    | "Awaiting reviewer feedback"
+    | "Awaiting editor feedback"
+    | "Awaiting author release changes"
+    | "Review is complete";
+}
+
 export interface ReviewInvitation {
   id: number;
   slug: string;

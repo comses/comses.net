@@ -23,7 +23,7 @@
 {% macro confirm_change_closed_modal(review, show_reopen=False) %}
     {% set action = "reopen" if review.closed else "close" %}
     {% if not review.closed %}
-        <button type="button" data-bs-toggle='modal' data-bs-target='#confirm-review-change-closed' class='btn btn-danger my-1 w-100'>
+        <button type="button" data-bs-toggle='modal' data-bs-target='#confirm-review-change-closed' class='btn btn-outline-gray my-1 w-100'>
             Close review
         </button>
     {% elif show_reopen %}
