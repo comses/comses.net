@@ -18,7 +18,7 @@
     <h2>Editor Form</h2>
     <form method="post">
         {% include 'includes/form.jinja' %}
-        <p class="text-muted">The reviewer's recommendation is <span class="badge bg-info">{{ review_feedback.recommendation }}</span></p>
+        <p class="text-muted">Reviewer recommendation: <span class="badge bg-info">{{ review_feedback.recommendation }}</span></p>
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 {% endblock %}

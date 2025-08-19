@@ -5,11 +5,16 @@
 
 Dear {{ review.submitter.name }},
 
-Congratulations! The peer review of your model [{{ release.title }}]({{ release_url }}) is now complete and your release has been marked as peer reviewed. **Your release will remain private until you [publish it yourself]({{release_publish_url}})**.
+Congratulations! The peer review of your model [{{ release.title }}]({{ release_url }}) is complete and your release has been marked as peer reviewed. **Your release will remain private until you manually [publish it]({{release_publish_url}})**.
 
-Once published, a DOI will be automatically minted and assigned to your model, if you encounter any issues with this process please feel free to [contact us]({{ build_absolute_uri(slugurl('contact')) }}). We also feature peer reviewed models on the CoMSES Net home page, if you wish to have yours displayed with an image you can [upload one here]({{ release_upload_image_url }}) if you have not done so already.
+Once your model is published, a DOI will automatically be minted and assigned to this specific release of your model. Please be sure to include [a software citation of your model](https://libguides.mit.edu/software/citing) via this DOI in the references section of publications that depend on this specific model release.
 
-Thank you for submitting your computational model for review to CoMSES Net! Please consider serving as a reviewer of model code in future model peer reviews.
+Peer reviewed models are automatically featured on the CoMSES Net home page alongside an image that you can [upload here]({{ release_upload_image_url }}) - we **strongly recommend that you upload a screenshot or image for your model** to increase its visibility and reach.
+
+If you have any questions or concerns about software citation, this peer review process, or other general feedback please feel free to [post on our forums](https://forum.comses.net/c/help/23) or [contact us]({{ build_absolute_uri(slugurl('contact')) }}). 
+
+
+Thank you for submitting your computational models to CoMSES Net! We appreciate you taking the time to curate and entrust them with us and hope you will consider serving as a fellow peer reviewer for other researchers' computational models.
 
 Best regards,
 The CoMSES Net Editors
