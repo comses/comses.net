@@ -8,26 +8,30 @@
   <BootstrapModal id="publish-modal" title="Publish Release" ref="publishModal" size="lg" centered>
     <template #body>
       <p>
-        <b>Please read carefully!</b> <b>Publishing</b> a model release makes it public so anyone may view and download
-        it. Once a model release is published, all files associated with the release will be <b>frozen</b> and you will
-        not be able to add or remove files to the release. You <b>can still edit your model release's metadata</b> after
-        publication. If you would like a DOI for your model to support software citation best practices (highly
-        recommended!), <a href="/reviews/">request a peer review</a> of your model before publishing it so you can
-        address any reviewer concerns that may include changes to the files associated with your release.
+        <b>Please read carefully!</b> <b>Publishing</b> a model release makes it public so anyone
+        may view and download it. Once a model release is published, all files associated with the
+        release will be <b>frozen</b> and you will not be able to add or remove files to the
+        release. You <b>can still edit your model release's metadata</b> after publication. If you
+        would like a DOI for your model to support software citation best practices (highly
+        recommended!), <a href="/reviews/">request a peer review</a> of your model before publishing
+        it so you can address any reviewer concerns that may include changes to the files associated
+        with your release.
       </p>
       <p>
-        You must assign a <em>semantic version number</em> to this release when you publish it. We recommend the
-        <a target="_blank" href="https://semver.org">semantic versioning</a> standard which splits a version number into
-        three parts: major, minor and patch. For example, version 2.7.18 has major version 2, minor version 7, and patch
-        version 18. Increase the <i>major</i> version (leftmost number) if this new release is backwards incompatible
-        with the previous release. Increase the <i>minor</i> version (middle number) if this release introduced new
-        features but is still backwards compatible. Increase the <i>patch</i> version (rightmost number) if this release
-        only contains bug fixes and is still backwards compatible (without the bugs).
+        You must assign a <em>semantic version number</em> to this release when you publish it. We
+        recommend the <a target="_blank" href="https://semver.org">semantic versioning</a> standard
+        which splits a version number into three parts: major, minor and patch. For example, version
+        2.7.18 has major version 2, minor version 7, and patch version 18. Increase the
+        <i>major</i> version (leftmost number) if this new release is backwards incompatible with
+        the previous release. Increase the <i>minor</i> version (middle number) if this release
+        introduced new features but is still backwards compatible. Increase the <i>patch</i> version
+        (rightmost number) if this release only contains bug fixes and is still backwards compatible
+        (without the bugs).
       </p>
       <p>
-        We also recommend that you include a screenshot or other representative image of your model to improve its
-        visibility and discoverability; these images are prominently displayed on our front page's featured model
-        gallery, in the model library, and search results.
+        We also recommend that you include a screenshot or other representative image of your model
+        to improve its visibility and discoverability; these images are prominently displayed on our
+        front page's featured model gallery, in the model library, and search results.
       </p>
       <form id="publish-form" class="mb-3" @submit="handleSubmit">
         <TextField name="versionNumber" label="Version Number" help="" required>
