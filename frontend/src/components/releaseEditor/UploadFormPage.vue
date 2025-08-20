@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p>
+    <p v-if="store.release.canEditOriginals">
       A codebase release should ideally include the source code, documentation, input data and
       dependencies necessary for someone else (including your future self) to understand, replicate,
       or reuse the model. Please note that we impose a specific directory structure to organize your
@@ -12,6 +12,10 @@
       <code>../data/&lt;datafile&gt;</code> to access those data files. This will make the lives of
       others wishing to review, download and run your model easier.
     </p>
+    <p v-else>
+      Below is the current filesystem layout of the archival package. Since this release has already
+      been published, the files can no longer be edited.
+    </p>
     <div class="card card-body bg-light">
       <h3 class="card-title">Current Archival Package Filesystem Layout</h3>
       <span class="text-warning" v-if="folderContents === null">Loading download preview...</span>
@@ -22,20 +26,22 @@
         <FileTree :directory="folderContents" />
       </div>
     </div>
-    <div v-for="config in configs" :key="config.uploadType">
-      <FileUpload
-        :accepted-file-types="config.acceptedFileTypes"
-        :instructions="config.instructions"
-        :originals="store.getFilesInCategory(config.uploadType)"
-        :upload-url="uploadUrl(config.uploadType)"
-        :title="config.title"
-        :category="config.uploadType"
-        @delete-file="handleDeleteFile(config.uploadType, $event)"
-        @clear="handleClear(config.uploadType)"
-        @upload-done="handleUploadDone(config.uploadType)"
-      >
-      </FileUpload>
-      <hr />
+    <div v-if="store.release.canEditOriginals">
+      <div v-for="config in configs" :key="config.uploadType">
+        <FileUpload
+          :accepted-file-types="config.acceptedFileTypes"
+          :instructions="config.instructions"
+          :originals="store.getFilesInCategory(config.uploadType)"
+          :upload-url="uploadUrl(config.uploadType)"
+          :title="config.title"
+          :category="config.uploadType"
+          @delete-file="handleDeleteFile(config.uploadType, $event)"
+          @clear="handleClear(config.uploadType)"
+          @upload-done="handleUploadDone(config.uploadType)"
+        >
+        </FileUpload>
+        <hr />
+      </div>
     </div>
   </div>
 </template>
