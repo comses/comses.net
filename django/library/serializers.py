@@ -684,6 +684,7 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = (
             "date_created",
+            "last_modified",
             "invitation",
             "recommendation",
             "reviewer",

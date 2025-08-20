@@ -1372,6 +1372,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def get_publish_url(self):
         return f"{self.get_edit_url()}?publish"
 
+    def get_upload_image_url(self):
+        return f"{self.get_edit_url()}?upload-image"
+
     def get_list_url(self):
         return reverse(
             "library:codebaserelease-list",
