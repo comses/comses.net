@@ -24,14 +24,14 @@ django-vite==3.0.5
 django-waffle==4.2.0
 djangorestframework==3.15.2
 djangorestframework-camel-case==1.4.2
-Django==4.2.22
+Django==5.2.5
 elasticsearch-dsl>=7.0.0,<8.0.0
 elasticsearch>=7.0.0,<8.0.0
 html2text>=2016.9.19
 huey==2.5.3
 jinja2==3.1.6
 jsonschema==4.23.0
-markdown==3.7
+markdown==3.8.2
 nltk>=3.8.1,<4.0.0
 numpy==1.26.4
 pandas==2.2.2
@@ -51,8 +51,8 @@ shortuuid==1.0.13
 tzdata==2024.1
 uwsgi==2.0.28
 uwsgitop==0.12
-wagtail==5.2.8
-wagtail-modeladmin==2.1.0
+wagtail==7.1.1
+wagtail-modeladmin==2.2.0
 invoke
 ipython
 pgcli

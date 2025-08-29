@@ -1,29 +1,33 @@
-from django import forms
-from wagtail.utils.widgets import WidgetWithScript
+from django.forms import Media, Textarea
+from wagtail.admin.staticfiles import versioned_static
 
 
-class MarkdownTextarea(WidgetWithScript, forms.widgets.Textarea):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def render_js_init(self, domId, name, value):
-        return 'mdeAttach("{0}");'.format(domId)
+class MarkdownTextarea(Textarea):
+    def build_attrs(self, *args, **kwargs):
+        attrs = super().build_attrs(*args, **kwargs)
+        attrs["data-controller"] = "mde-controller"
+        return attrs
 
     def render(self, name, value, attrs=None, renderer=None):
-        # The raw content of markupfield needs to extracted for the markdown to display properly
+        # extract the raw content of markupfield into the markdown field
         if hasattr(value, "raw"):
             value = value.raw
         return super().render(name, value, attrs, renderer)
 
-    class Media:
-        css = {
-            "all": (
-                # FIXME: this hardcoded URL should instead be pulled from frontend simplemde dependencies
-                "https://unpkg.com/easymde/dist/easymde.min.css",
-            )
-        }
-        js = (
-            # FIXME: this hardcoded URL should be instead be pulled from frontend simplemde dependencies
-            "https://unpkg.com/easymde/dist/easymde.min.js",
-            "js/mde.attach.js",
+    @property
+    def media(self):
+        return Media(
+            css={
+                "all": (
+                    "https://unpkg.com/easymde/dist/easymde.min.css",
+                    versioned_static("css/easymde.custom.css"),
+                )
+            },
+            js=(
+                # FIXME: can we pull this from node dependencies somehow
+                "https://unpkg.com/easymde/dist/easymde.min.js",
+                versioned_static("js/mde.attach.js"),
+                # load controller js
+                versioned_static("js/mde-controller.js"),
+            ),
         )
