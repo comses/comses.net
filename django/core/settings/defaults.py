@@ -174,6 +174,13 @@ AUTHENTICATION_BACKENDS = (
     "guardian.backends.ObjectPermissionBackend",
 )
 
+### configure wagtailmarkdown https://github.com/torchbox/wagtail-markdown
+
+# WAGTAILMARKDOWN = {
+#     "autodownload_fontawesome": False,
+#     "tab_length": 4,
+# }
+
 #########################################################
 # Content Security Policy support provided via django-csp
 #
