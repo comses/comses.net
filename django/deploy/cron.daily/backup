@@ -3,7 +3,7 @@
 # Run backups over the model library filesystem and db
 
 export DJANGO_SETTINGS_MODULE="core.settings.production"
-/usr/local/bin/inv -r /code db.backup borg.backup >> /shared/logs/comses-backup.log 2>&1
+inv -r /code db.backup borg.backup >> /shared/logs/comses-backup.log 2>&1
 
 # FIXME: should we synchronize DOI metadata after backups or before backups?
 # Pros of after backups: DOI metadata syncing alters the DB and taking a snapshot backup before running this may protect against
