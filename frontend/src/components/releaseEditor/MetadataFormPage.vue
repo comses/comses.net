@@ -39,12 +39,12 @@
         help=" Modeling software frameworks (e.g., NetLogo, RePast, Mason, CORMAS, Mesa, etc.) used by this model"
         required
       />
-      <TaggerField
+      <ProgrammingLanguageListField
         class="mb-3"
         data-cy="programming-languages"
         name="programmingLanguages"
         label="Programming Language(s)"
-        help=" Programming languages used in this model"
+        help="The programming languages used to implement this model, e.g., Python, Java, C++, etc."
         required
       />
       <TextField
@@ -114,6 +114,7 @@ import { useForm } from "@/composables/form";
 import { useReleaseEditorAPI } from "@/composables/api";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import type { License, CodebaseReleaseMetadata } from "@/types";
+import ProgrammingLanguageListField from "../form/ProgrammingLanguageListField.vue";
 
 const store = useReleaseEditorStore();
 const router = useRouter();
@@ -139,7 +140,11 @@ const schema = yup.object().shape({
     .label("Frameworks"),
   programmingLanguages: yup
     .array()
-    .of(yup.object().shape({ name: yup.string() }))
+    .of(yup.object().shape({
+      programmingLanguage: yup.object().required(),
+      release: yup.object().required(),
+      version: yup.string().optional()
+    }))
     .min(1)
     .required()
     .label("Programming Languages"),
@@ -196,4 +201,11 @@ watch(
     }
   }
 );
+
+watch(
+  () => values.programmingLanguages,
+  () => {
+    console.log(values.programmingLanguages);
+  }
+)
 </script>
