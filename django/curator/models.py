@@ -15,7 +15,7 @@ from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from taggit.models import Tag
 
-from library.models import ProgrammingLanguage, CodebaseReleasePlatformTag
+from library.models import CodebaseReleasePlatformTag
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +42,6 @@ def get_through_tables():
 class TagCuratorProxyQuerySet(models.QuerySet):
     def with_comma(self):
         return self.filter(name__icontains=",")
-
-    def programming_languages(self):
-        return self.filter(
-            id__in=ProgrammingLanguage.objects.values_list("tag_id", flat=True)
-        )
 
     def platforms(self):
         return self.filter(

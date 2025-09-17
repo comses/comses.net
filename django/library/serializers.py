@@ -37,6 +37,8 @@ from .models import (
     CodebaseReleaseDownload,
     Contributor,
     License,
+    ProgrammingLanguage,
+    ReleaseLanguage,
     CodebaseImage,
     PeerReviewerFeedback,
     PeerReviewInvitation,
@@ -60,6 +62,28 @@ class LicenseSerializer(serializers.ModelSerializer):
         fields = (
             "name",
             "url",
+        )
+
+
+class ReleaseLanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReleaseLanguage
+        fields = (
+            "programming_language",
+            "release",
+            "version",
+        )
+
+
+class ProgrammingLanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProgrammingLanguage
+        fields = (
+            "id",
+            "name",
+            "url",
+            "is_pinned",
+            "is_user_defined",
         )
 
 
@@ -563,7 +587,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     can_edit_originals = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source="get_os_display")
     platforms = TagSerializer(many=True, source="platform_tags")
-    programming_languages = TagSerializer(many=True)
+    programming_languages = ReleaseLanguageSerializer(many=True)
     submitter = RelatedUserSerializer(read_only=True, label="Submitter")
     version_number = serializers.ReadOnlyField()
     release_notes = MarkdownField(max_length=2048)
@@ -635,14 +659,10 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         return serialized.data
 
     def update(self, instance, validated_data):
-        programming_languages = TagSerializer(
-            many=True, data=validated_data.pop("programming_languages")
-        )
         platform_tags = TagSerializer(
             many=True, data=validated_data.pop("platform_tags")
         )
 
-        set_tags(instance, programming_languages, "programming_languages")
         set_tags(instance, platform_tags, "platform_tags")
 
         raw_license = validated_data.pop("license")

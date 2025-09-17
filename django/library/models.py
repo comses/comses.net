@@ -89,10 +89,22 @@ class CodebaseTag(TaggedItemBase):
     content_object = ParentalKey("library.Codebase", related_name="tagged_codebases")
 
 
-class ProgrammingLanguage(TaggedItemBase):
-    content_object = ParentalKey(
-        "library.CodebaseRelease", related_name="tagged_release_languages"
+@register_snippet
+class ProgrammingLanguage(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    url = models.URLField(blank=True)
+    is_pinned = models.BooleanField(default=False)
+    is_user_defined = models.BooleanField(default=False)
+
+
+class ReleaseLanguage(models.Model):
+    programming_language = models.ForeignKey(
+        "library.ProgrammingLanguage", related_name="release_languages", on_delete=models.CASCADE
     )
+    release = models.ForeignKey(
+        "library.CodebaseRelease", related_name="release_languages", on_delete=models.CASCADE
+    )
+    version = models.CharField(max_length=20)
 
 
 class CodebaseReleasePlatformTag(TaggedItemBase):
@@ -1143,7 +1155,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return self.prefetch_related("tagged_release_platforms__tag")
 
     def with_programming_languages(self):
-        return self.prefetch_related("tagged_release_languages__tag")
+        return self
 
     def with_codebase(self):
         return self.prefetch_related(
@@ -1285,9 +1297,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         through=CodebaseReleasePlatformTag, related_name="platform_codebase_releases"
     )
     platforms = models.ManyToManyField(Platform)
-    programming_languages = ClusterTaggableManager(
-        through=ProgrammingLanguage, related_name="pl_codebase_releases"
-    )
+    programming_languages = models.ManyToManyField(ProgrammingLanguage, through="ReleaseLanguage")
     codebase = models.ForeignKey(
         Codebase, related_name="releases", on_delete=models.PROTECT
     )

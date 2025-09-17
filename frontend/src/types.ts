@@ -225,6 +225,19 @@ export interface License {
   url?: string;
 }
 
+export interface ProgrammingLanguage {
+  id?: number;
+  name: string;
+  pinned?: boolean;
+  is_user_defined?: boolean;
+}
+
+export interface ReleaseLanguage {
+  programmingLanguage: ProgrammingLanguage;
+  release: CodebaseRelease;
+  version?: string;
+}
+
 export interface ReleaseContributor {
   contributor: Contributor;
   includeInCitation?: boolean;
@@ -291,7 +304,7 @@ export interface CodebaseRelease {
   peerReviewed: boolean;
   platforms: Tag[];
   possibleLicenses: License[];
-  programmingLanguages: Tag[];
+  programmingLanguages: ReleaseLanguage[];
   releaseContributors: ReleaseContributor[];
   releaseNotes: string;
   reviewStatus: string | null;
