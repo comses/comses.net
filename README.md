@@ -1,5 +1,7 @@
 # Support Open Science @ CoMSES Net
 [![Django CI](https://github.com/comses/comses.net/actions/workflows/django-ci.yml/badge.svg)](https://github.com/comses/comses.net/actions/workflows/django-ci.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3470337.svg)](https://doi.org/10.5281/zenodo.3470337)
+
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
