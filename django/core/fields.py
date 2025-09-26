@@ -99,7 +99,7 @@ class MarkdownField(MarkupField):
 TUTORIAL_ALLOWED_TAGS = frozenset(list(ALLOWED_TAGS) + ["iframe"])
 
 TUTORIAL_ALLOWED_ATTRIBUTES = dict(
-    ALLOWED_ATTRIBUTES, **{"iframe": ["alt", "src", "allowfullscreen"]}
+    ALLOWED_ATTRIBUTES, **{"iframe": ["alt", "src", "allowfullscreen", "referrerpolicy"]}
 )
 
 TUTORIAL_MARKDOWN_EXTENSIONS = DEFAULT_MARKDOWN_EXTENSIONS + [VideoEmbedExtension()]

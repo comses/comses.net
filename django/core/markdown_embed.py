@@ -51,6 +51,7 @@ class VideoEmbedInlineProcessor(InlineProcessor):
         el = etree.Element("iframe")
         el.set("class", provider)
         el.set("src", PROVIDERS[provider]["embed"] % video_id.strip())
+        el.set("referrerpolicy", "strict-origin-when-cross-origin")
         el.set("alt", alt)
         el.set("allowfullscreen", "true")
         wrapper.append(el)
