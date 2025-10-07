@@ -186,7 +186,9 @@ class ReleaseSetup:
         draft_release.license, created = License.objects.get_or_create(name="MIT")
         draft_release.os = "Any"
         ReleaseLanguage.objects.create(
-            programming_language=ProgrammingLanguage.objects.get_or_create(name="Python"),
+            programming_language=ProgrammingLanguage.objects.get_or_create(
+                name="Python"
+            ),
             release=draft_release,
         )
         contributor_factory = ContributorFactory(user=draft_release.submitter)

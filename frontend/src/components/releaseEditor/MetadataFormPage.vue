@@ -140,10 +140,12 @@ const schema = yup.object().shape({
     .label("Frameworks"),
   releaseLanguages: yup
     .array()
-    .of(yup.object().shape({
-      programmingLanguage: yup.object().shape({ name: yup.string() }).required(),
-      version: yup.string().optional()
-    }))
+    .of(
+      yup.object().shape({
+        programmingLanguage: yup.object().shape({ name: yup.string() }).required(),
+        version: yup.string().optional(),
+      })
+    )
     .min(1)
     .required()
     .label("Programming Languages"),

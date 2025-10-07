@@ -58,8 +58,17 @@
     <Sortable :list="languages" :item-key="item => item" @end="sort($event)">
       <template #item="{ element, index }">
         <div :key="element" class="my-1 input-group">
-          <input :value="element.programmingLanguage.name" class="form-control w-25" readonly :disabled="disabled" />
-          <input v-model="element.version" placeholder="Language version (e.g. 3.12)" class="form-control w-50" />
+          <input
+            :value="element.programmingLanguage.name"
+            class="form-control w-25"
+            readonly
+            :disabled="disabled"
+          />
+          <input
+            v-model="element.version"
+            placeholder="Language version (e.g. 3.12)"
+            class="form-control w-50"
+          />
           <button
             type="button"
             class="btn btn-delete-item"
@@ -148,7 +157,11 @@ function createCustom() {
   const customLang: ProgrammingLanguage = {
     name: languageCustomName.value,
   };
-  if (!languages.value.some(e => e.programmingLanguage.name.toLowerCase() === customLang.name.toLowerCase())) {
+  if (
+    !languages.value.some(
+      e => e.programmingLanguage.name.toLowerCase() === customLang.name.toLowerCase()
+    )
+  ) {
     create(customLang);
     languageCustomName.value = "";
   }

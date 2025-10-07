@@ -1235,6 +1235,7 @@ class ProgrammingLanguageViewSet(CommonViewSetMixin, NoDeleteViewSet):
     """
     ViewSet for ProgrammingLanguage model
     """
+
     queryset = ProgrammingLanguage.objects.all()
     serializer_class = ProgrammingLanguageSerializer
     pagination_class = SmallResultSetPagination

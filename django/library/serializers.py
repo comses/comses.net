@@ -76,9 +76,10 @@ class ProgrammingLanguageSerializer(serializers.ModelSerializer):
             "is_user_defined",
         )
 
+
 class ReleaseLanguageSerializer(serializers.ModelSerializer):
     programming_language = ProgrammingLanguageSerializer(read_only=True)
-    
+
     # def create(self, validated_data):
     #     programming_language_data = self.initial_data.pop("programming_language")
     #     programming_language, created = ProgrammingLanguage.objects.get_or_create(
@@ -671,11 +672,12 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         return serialized.data
 
     def resolve_language(self, language_name):
-        programming_language = ProgrammingLanguage.objects.filter(name__iexact=language_name).first()
+        programming_language = ProgrammingLanguage.objects.filter(
+            name__iexact=language_name
+        ).first()
         if not programming_language:
             programming_language = ProgrammingLanguage.objects.create(
-                name=language_name,
-                is_user_defined=True
+                name=language_name, is_user_defined=True
             )
         return programming_language
 
@@ -691,7 +693,6 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         if release_languages_data:
             # Clear existing programming languages
             instance.release_languages.all().delete()
-
 
             # Create new release languages
             for release_language_data in release_languages_data:

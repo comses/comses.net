@@ -320,13 +320,7 @@ interface Codebase {
 
 export type CodebaseReleaseMetadata = Pick<
   CodebaseRelease,
-  | "releaseNotes"
-  | "embargoEndDate"
-  | "os"
-  | "platforms"
-  | "releaseLanguages"
-  | "live"
-  | "license"
+  "releaseNotes" | "embargoEndDate" | "os" | "platforms" | "releaseLanguages" | "live" | "license"
 >;
 
 export interface UploadSuccess {

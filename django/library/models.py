@@ -108,14 +108,19 @@ class ProgrammingLanguage(models.Model):
 
 class ReleaseLanguageQuerySet(models.QuerySet):
     def for_release(self, release):
-        return self.select_related('programming_language').filter(release=release)
+        return self.select_related("programming_language").filter(release=release)
+
 
 class ReleaseLanguage(models.Model):
     programming_language = models.ForeignKey(
-        "library.ProgrammingLanguage", related_name="release_languages", on_delete=models.CASCADE
+        "library.ProgrammingLanguage",
+        related_name="release_languages",
+        on_delete=models.CASCADE,
     )
     release = models.ForeignKey(
-        "library.CodebaseRelease", related_name="release_languages", on_delete=models.CASCADE
+        "library.CodebaseRelease",
+        related_name="release_languages",
+        on_delete=models.CASCADE,
     )
     version = models.CharField(max_length=20)
 
@@ -1216,13 +1221,14 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         qs = (
             self.reviewed()
             .select_related("codebase", "submitter__member_profile", "review")
-            .filter(review__event_set__action='RELEASE_CERTIFIED')
+            .filter(review__event_set__action="RELEASE_CERTIFIED")
         )
         if published_only:
             qs = qs.public()
-        
+
         # order by the certification event date
         return qs.order_by("-review__event_set__date_created").distinct()[:number]
+
 
 @add_to_comses_permission_whitelist
 class CodebaseRelease(index.Indexed, ClusterableModel):
