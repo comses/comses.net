@@ -1,12 +1,20 @@
 <template>
-  <div class="alert alert-danger mb-4" role="alert">
-    <p>
+  <div class="alert alert-info mb-4" role="alert">
+    <p class="mb-1">
       <i class="fas fa-exclamation-triangle"></i> Peer reviews must be requested on
       <strong>unpublished model releases</strong> so that you can continue to revise your submission
-      based on reviewer guidance. If you have already published your model
-      <strong>a new draft release will be created</strong> as an exact copy of your most recent
-      published release.
+      based on reviewer guidance.
     </p>
+    <ul>
+      <li>
+        If you have already published this release,
+        <strong>a new draft will be created</strong> as an exact copy in order to allow for changes.
+      </li>
+      <li>
+        If this release was imported from GitHub and published, you will not be able to request a
+        review, and will need to create a new release on GitHub for peer review to take place on.
+      </li>
+    </ul>
     <p class="mb-0">
       Once a model release passes peer review it will remain private until you choose to publish it,
       at which point you may set a version number. Please note that
