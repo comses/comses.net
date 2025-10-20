@@ -4,12 +4,3 @@
 
 export DJANGO_SETTINGS_MODULE="core.settings.production"
 inv -r /code db.backup borg.backup >> /shared/logs/comses-backup.log 2>&1
-
-# FIXME: should we synchronize DOI metadata after backups or before backups?
-# Pros of after backups: DOI metadata syncing alters the DB and taking a snapshot backup before running this may protect against
-# errors or bugs that happened as a result of the sync
-#
-# Pros of before backups: backups will be more up-to-date
-#
-# currently syncing after backups
-./manage.py doi_mint_pending_releases --no-interactive --no-dry-run

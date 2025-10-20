@@ -7,4 +7,4 @@
 # Pros of before backups: backups will be more up-to-date
 #
 # currently syncing after backups
-./manage.py doi_mint_pending_releases --no-interactive --no-dry-run
+/code/manage.py doi_mint_pending_releases --no-interactive --no-dry-run
