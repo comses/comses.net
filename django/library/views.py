@@ -60,6 +60,7 @@ from .models import (
     Contributor,
     CodebaseImage,
     License,
+    ProgrammingLanguage,
     PeerReview,
     PeerReviewer,
     PeerReviewerFeedback,
@@ -73,6 +74,7 @@ from .serializers import (
     ContributorSerializer,
     DownloadRequestSerializer,
     PeerReviewerSerializer,
+    ProgrammingLanguageSerializer,
     ReleaseContributorSerializer,
     CodebaseReleaseEditSerializer,
     CodebaseImageSerializer,
@@ -1227,3 +1229,15 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse("core:profile-detail", kwargs={"pk": self.request.user.id})
+
+
+class ProgrammingLanguageViewSet(CommonViewSetMixin, NoDeleteViewSet):
+    """
+    ViewSet for ProgrammingLanguage model
+    """
+
+    queryset = ProgrammingLanguage.objects.all()
+    serializer_class = ProgrammingLanguageSerializer
+    pagination_class = SmallResultSetPagination
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    ordering = ["-is_pinned", "name"]
