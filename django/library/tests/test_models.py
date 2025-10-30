@@ -14,7 +14,13 @@ from .base import (
     ReleaseContributorFactory,
     ReleaseSetup,
 )
-from ..models import Codebase, CodebaseRelease, License
+from ..models import (
+    ProgrammingLanguage,
+    ReleaseLanguage,
+    Codebase,
+    CodebaseRelease,
+    License,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -248,7 +254,11 @@ class CodebaseReleaseTest(BaseModelTestCase):
             ValidationError, lambda: self.codebase_release.validate_publishable()
         )
 
-        self.codebase_release.programming_languages.add("Java")
+        ReleaseLanguage.objects.create(
+            programming_language=ProgrammingLanguage.objects.get_or_create(name="Java"),
+            release=self.codebase_release,
+            version="8",
+        )
         self.assertRaises(
             ValidationError, lambda: self.codebase_release.validate_publishable()
         )

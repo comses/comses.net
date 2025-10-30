@@ -196,8 +196,10 @@ class CodeMetaConverter:
             ),
             programmingLanguage=[
                 # FIXME: this can include "version" when langs are refactored
-                {"@type": "ComputerLanguage", "name": pl.name}
-                for pl in release.programming_languages.all().order_by("name")
+                {"@type": "ComputerLanguage", "name": rl.programming_language.name}
+                for rl in release.release_languages.all().order_by(
+                    "programming_language__name"
+                )
             ],
             runtimePlatform=[
                 tag.name for tag in release.platform_tags.all().order_by("name")

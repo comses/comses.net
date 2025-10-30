@@ -225,6 +225,18 @@ export interface License {
   url?: string;
 }
 
+export interface ProgrammingLanguage {
+  id?: number;
+  name: string;
+  pinned?: boolean;
+  is_user_defined?: boolean;
+}
+
+export interface ReleaseLanguage {
+  programmingLanguage: ProgrammingLanguage;
+  version?: string;
+}
+
 export interface ReleaseContributor {
   contributor: Contributor;
   includeInCitation?: boolean;
@@ -291,7 +303,7 @@ export interface CodebaseRelease {
   peerReviewed: boolean;
   platforms: Tag[];
   possibleLicenses: License[];
-  programmingLanguages: Tag[];
+  releaseLanguages: ReleaseLanguage[];
   releaseContributors: ReleaseContributor[];
   releaseNotes: string;
   reviewStatus: string | null;
@@ -333,13 +345,7 @@ interface Codebase {
 
 export type CodebaseReleaseMetadata = Pick<
   CodebaseRelease,
-  | "releaseNotes"
-  | "embargoEndDate"
-  | "os"
-  | "platforms"
-  | "programmingLanguages"
-  | "live"
-  | "license"
+  "releaseNotes" | "embargoEndDate" | "os" | "platforms" | "releaseLanguages" | "live" | "license"
 >;
 
 export interface UploadSuccess {

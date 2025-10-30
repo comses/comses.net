@@ -63,7 +63,7 @@ export interface MultiSelectFieldProps {
   multiple?: boolean;
   trackBy?: string;
   labelWith?: string;
-  customLabel?: (option: any) => void;
+  customLabel?: (option: any, label: any) => string;
   options: any[];
 }
 

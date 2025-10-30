@@ -19,7 +19,14 @@ from core.tests.permissions_base import (
 )
 from library.forms import PeerReviewerFeedbackReviewerForm
 from library.fs import FileCategoryDirectories
-from library.models import Codebase, CodebaseRelease, License, PeerReview
+from library.models import (
+    ProgrammingLanguage,
+    ReleaseLanguage,
+    Codebase,
+    CodebaseRelease,
+    License,
+    PeerReview,
+)
 from library.tests.base import ReviewSetup
 from .base import (
     CodebaseFactory,
@@ -561,7 +568,11 @@ class CodebaseReleasePublishTestCase(TestCase):
         )
         self.assertRaises(ValidationError, lambda: self.codebase_release.publish())
 
-        self.codebase_release.programming_languages.add("Java")
+        ReleaseLanguage.objects.create(
+            programming_language=ProgrammingLanguage.objects.get_or_create(name="Java"),
+            release=self.codebase_release,
+            version="8",
+        )
         self.codebase_release.publish()
 
         download_response = self.client.get(

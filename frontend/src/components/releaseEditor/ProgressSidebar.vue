@@ -86,11 +86,12 @@ const uploadProgress = computed(() => {
 
 const metadataProgress = computed(() => {
   const metadata = store.metadata;
+  console.log(metadata);
   return {
     notes: !!metadata.releaseNotes,
     os: !!metadata.os.length,
     platforms: metadata.platforms.length > 0,
-    languages: metadata.programmingLanguages.length > 0,
+    languages: metadata.releaseLanguages.length > 0,
     license: !!metadata.license,
   };
 });
