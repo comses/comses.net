@@ -89,10 +89,36 @@ class CodebaseTag(TaggedItemBase):
     content_object = ParentalKey("library.Codebase", related_name="tagged_codebases")
 
 
-class ProgrammingLanguage(TaggedItemBase):
+class ProgrammingLanguageTag(TaggedItemBase):
     content_object = ParentalKey(
         "library.CodebaseRelease", related_name="tagged_release_languages"
     )
+
+
+@register_snippet
+class ProgrammingLanguage(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    url = models.URLField(blank=True)
+    is_pinned = models.BooleanField(default=False)
+    is_user_defined = models.BooleanField(default=False)
+
+
+class ReleaseLanguage(models.Model):
+    programming_language = models.ForeignKey(
+        "library.ProgrammingLanguage",
+        related_name="release_languages",
+        on_delete=models.CASCADE,
+    )
+    release = models.ForeignKey(
+        "library.CodebaseRelease",
+        related_name="release_languages",
+        on_delete=models.CASCADE,
+    )
+    version = models.CharField(max_length=20)
+
+    @property
+    def name(self):
+        return self.programming_language.name
 
 
 class CodebaseReleasePlatformTag(TaggedItemBase):
@@ -818,9 +844,9 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     @property
     def all_release_programming_languages(self):
         return list(
-            self.releases.exclude(programming_languages__isnull=True).values_list(
-                "programming_languages__name", flat=True
-            )
+            self.releases.exclude(release_languages__isnull=True)
+            .values_list("release_languages__programming_language__name", flat=True)
+            .distinct()
         )
 
     def download_count(self):
@@ -986,7 +1012,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         # cache these before removing source release id to copy it over
         contributors = ReleaseContributor.objects.filter(release_id=source_release.id)
         platform_tags = source_release.platform_tags.all()
-        programming_languages = source_release.programming_languages.all()
+        release_languages = source_release.release_languages.all()
         # set source_release.id to None to create a new release
         # see https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         source_release.id = None
@@ -994,7 +1020,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         source_release.__dict__.update(**release_metadata)
         source_release.save()
         source_release.platform_tags.add(*platform_tags)
-        source_release.programming_languages.add(*programming_languages)
+        source_release.release_languages.add(*release_languages)
         contributors.copy_to(source_release)
         return source_release
 
@@ -1143,7 +1169,12 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return self.prefetch_related("tagged_release_platforms__tag")
 
     def with_programming_languages(self):
-        return self.prefetch_related("tagged_release_languages__tag")
+        return self.prefetch_related(
+            Prefetch(
+                "release_languages",
+                ReleaseLanguage.objects.prefetch_related("programming_language"),
+            )
+        )
 
     def with_codebase(self):
         return self.prefetch_related(
@@ -1285,8 +1316,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         through=CodebaseReleasePlatformTag, related_name="platform_codebase_releases"
     )
     platforms = models.ManyToManyField(Platform)
-    programming_languages = ClusterTaggableManager(
-        through=ProgrammingLanguage, related_name="pl_codebase_releases"
+    programming_language_tags = ClusterTaggableManager(
+        through=ProgrammingLanguageTag, related_name="pl_codebase_releases"
     )
     codebase = models.ForeignKey(
         Codebase, related_name="releases", on_delete=models.PROTECT
@@ -1341,7 +1372,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             ],
         ),
         index.RelatedFields(
-            "programming_languages",
+            "release_languages",
             [
                 index.SearchField("name"),
             ],
@@ -1463,7 +1494,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         # naive check for metadata being present (i.e., None or false-y values)
         if not self.license:
             errors.append(ValidationError(_("Please specify a software license.")))
-        if not self.programming_languages.exists():
+        if not self.release_languages.exists():
             errors.append(
                 ValidationError(
                     _(
@@ -2733,7 +2764,7 @@ class CommonMetadata:
         self.description = codebase.description.raw
         self.release_notes = release.release_notes.raw if release.release_notes else ""
         self.version = release.version_number
-        self.programming_languages = release.programming_languages.all()
+        self.release_languages = release.release_languages.all()
         self.os = release.os
         self.identifier = release.permanent_url
         self.url = release.permanent_url
