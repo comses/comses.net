@@ -60,6 +60,7 @@ from .models import (
     Contributor,
     CodebaseImage,
     License,
+    ProgrammingLanguage,
     PeerReview,
     PeerReviewer,
     PeerReviewerFeedback,
@@ -73,6 +74,7 @@ from .serializers import (
     ContributorSerializer,
     DownloadRequestSerializer,
     PeerReviewerSerializer,
+    ProgrammingLanguageSerializer,
     ReleaseContributorSerializer,
     CodebaseReleaseEditSerializer,
     CodebaseImageSerializer,
@@ -426,9 +428,9 @@ class CodebaseFilter(filters.BaseFilterBackend):
         if programming_languages:
             # FIXME: this does not work for the same reason tags__name__in does not work, e.g.,
             # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
-            # criteria.update(releases__programming_languages__name__in=programming_languages)
+            # criteria.update(releases__release_languages__programming_language__name__in=programming_languages)
             codebases = Codebase.objects.public(
-                releases__programming_languages__name__in=programming_languages
+                releases__release_languages__programming_language__name__in=programming_languages
             )
             criteria.update(id__in=codebases.values_list("id", flat=True))
 
@@ -1227,3 +1229,16 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse("core:profile-detail", kwargs={"pk": self.request.user.id})
+
+
+class ProgrammingLanguageViewSet(CommonViewSetMixin, NoDeleteViewSet):
+    """
+    ViewSet for ProgrammingLanguage model
+    """
+
+    queryset = ProgrammingLanguage.objects.all()
+    pagination_class = None
+    serializer_class = ProgrammingLanguageSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (OrderingFilter,)
+    ordering = ["-is_pinned", "name"]
