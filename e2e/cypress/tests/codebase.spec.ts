@@ -80,7 +80,8 @@ describe("Visit codebases page", () => {
       getDataCy("operating-system").find("select").select("Operating System Independent");
       getDataCy("software-frameworks").type("NetLogo {enter}");
       cy.get("body").click(0, 0);
-      getDataCy("programming-languages").type("Net Logo {enter}");
+      getDataCy("programming-languages").find("input[type=\"checkbox\"]").check();
+      getDataCy("programming-languages").type("Netlogo {enter}");
       cy.get("body").click(0, 0);
       getDataCy("license").click();
       getDataCy("license").within(() => {
