@@ -20,7 +20,7 @@
       <div class="input-group">
         <input
           v-model="languageCustomName"
-          :id="`${id}-custom-input-name`"
+          :id="id"
           :class="['form-control', { 'is-invalid': localErrors.name }]"
           placeholder="Enter the name of the programming language"
           @input="localErrors.name = ''"
