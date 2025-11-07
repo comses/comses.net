@@ -5,14 +5,15 @@
 
 Dear {{ review.submitter.name }},
 
-Congratulations! The peer review of your model [{{ release.title }}]({{ release_url }}) is complete and your release has been marked as peer reviewed. **Your release will remain private until you manually [publish it]({{release_publish_url}})**.
+Congratulations! Your model [{{ release.title }}]({{ release_url }}) has passed peer review.  **Your release will remain private until you manually [publish it]({{release_publish_url}})**.
 
-Once your model is published, a DOI will automatically be minted and assigned to this specific release of your model. Please be sure to include [a software citation of your model](https://libguides.mit.edu/software/citing) via this DOI in the references section of publications that depend on this specific model release.
+**Important Reminders**
 
-Peer reviewed models are automatically featured on the CoMSES Net home page alongside an image that you can [upload here]({{ release_upload_image_url }}) - we **strongly recommend that you upload a screenshot or image for your model** to increase its visibility and reach.
+- After your model is published, a permanent Digital Object Identifier (DOI) will be scheduled to be minted and assigned to this specific model release within 24 hours. Please use this DOI to [cite your model](https://libguides.mit.edu/software/citing) in the references section of any publications that depend on this specific model release.
+- If you would like your model to be **featured** in our [Ten-Minute Dialogs video series on YouTube](https://www.youtube.com/playlist?list=PLjgV-BPJumxuqX_b2oFx76cbpxH1J56dr) please [contact us]({{ build_absolute_uri(slugurl('contact')) }}).
+- Peer reviewed models are automatically featured on the [CoMSES Net home page](https://www.comses.net) with an image that you can [upload here]({{ release_upload_image_url }}) - we **strongly recommend that you upload a screenshot or image for your model** to increase its visibility and reach.
 
 If you have any questions or concerns about software citation, this peer review process, or other general feedback please feel free to [post on our forums](https://forum.comses.net/c/help/23) or [contact us]({{ build_absolute_uri(slugurl('contact')) }}). 
-
 
 Thank you for submitting your computational models to CoMSES Net! We appreciate you taking the time to curate and entrust them with us and hope you will consider serving as a fellow peer reviewer for other researchers' computational models.
 
