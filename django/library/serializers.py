@@ -37,6 +37,8 @@ from .models import (
     CodebaseReleaseDownload,
     Contributor,
     License,
+    ProgrammingLanguage,
+    ReleaseLanguage,
     CodebaseImage,
     PeerReviewerFeedback,
     PeerReviewInvitation,
@@ -60,6 +62,40 @@ class LicenseSerializer(serializers.ModelSerializer):
         fields = (
             "name",
             "url",
+        )
+
+
+class ProgrammingLanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProgrammingLanguage
+        fields = (
+            "id",
+            "name",
+            "url",
+            "is_pinned",
+            "is_user_defined",
+        )
+
+
+class ReleaseLanguageSerializer(serializers.ModelSerializer):
+    programming_language = ProgrammingLanguageSerializer(read_only=True)
+
+    # def create(self, validated_data):
+    #     programming_language_data = self.initial_data.pop("programming_language")
+    #     programming_language, created = ProgrammingLanguage.objects.get_or_create(
+    #         name=programming_language_data['name']
+    #     )
+    #     validated_data["programming_language"] = programming_language
+    #     instance = ReleaseLanguage(**validated_data)
+    #     instance.save()
+    #     return instance
+
+    class Meta:
+        model = ReleaseLanguage
+        fields = (
+            "programming_language",
+            "release",
+            "version",
         )
 
 
@@ -563,7 +599,8 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     can_edit_originals = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source="get_os_display")
     platforms = TagSerializer(many=True, source="platform_tags")
-    programming_languages = TagSerializer(many=True)
+    programming_language_tags = TagSerializer(many=True)
+    release_languages = ReleaseLanguageSerializer(read_only=True, many=True)
     submitter = RelatedUserSerializer(read_only=True, label="Submitter")
     version_number = serializers.ReadOnlyField()
     release_notes = MarkdownField(max_length=2048)
@@ -609,7 +646,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
             "os_display",
             "peer_reviewed",
             "platforms",
-            "programming_languages",
+            "release_languages",
             "submitted_package",
             "submitter",
             "codebase",
@@ -634,16 +671,40 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         )
         return serialized.data
 
+    def resolve_language(self, language_name):
+        programming_language = ProgrammingLanguage.objects.filter(
+            name__iexact=language_name
+        ).first()
+        if not programming_language:
+            programming_language = ProgrammingLanguage.objects.create(
+                name=language_name, is_user_defined=True
+            )
+        return programming_language
+
     def update(self, instance, validated_data):
-        programming_languages = TagSerializer(
-            many=True, data=validated_data.pop("programming_languages")
-        )
         platform_tags = TagSerializer(
             many=True, data=validated_data.pop("platform_tags")
         )
 
-        set_tags(instance, programming_languages, "programming_languages")
         set_tags(instance, platform_tags, "platform_tags")
+
+        # Handle programming languages
+        release_languages_data = self.initial_data.pop("release_languages")
+        if release_languages_data:
+            # Clear existing programming languages
+            instance.release_languages.all().delete()
+
+            # Create new release languages
+            for release_language_data in release_languages_data:
+                language_data = release_language_data.get("programming_language")
+                if not language_data or "name" not in language_data:
+                    raise ValidationError("Malformed programming language data")
+                programming_language = self.resolve_language(language_data["name"])
+                ReleaseLanguage.objects.create(
+                    programming_language=programming_language,
+                    release=instance,
+                    version=release_language_data.get("version", ""),
+                )
 
         raw_license = validated_data.pop("license")
         existing_license = License.objects.get(name=raw_license["name"])
