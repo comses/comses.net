@@ -1,11 +1,13 @@
 import logging
 
+from codemeticulous.cff.models import LicenseEnum
+from django.test import TestCase
 from core.tests.base import BaseModelTestCase, UserFactory
 from .base import (
     CodebaseFactory,
     ReleaseSetup,
 )
-from library.metadata import CodeMeta
+from library.metadata import CodeMeta, ReleaseMetadataConverter
 
 logger = logging.getLogger(__name__)
 
@@ -91,3 +93,121 @@ class CodebaseMetadataTestCase(BaseModelTestCase):
 
         recurse_contents(sip_contents["contents"])
         self.assertEqual(len(files_found), 3)
+
+
+class ReleaseMetadataConverterTestCase(TestCase):
+
+    def setUp(self):
+        self.minimal_codemeta = {"name": "Test Code"}
+        self.minimal_cff = {
+            "cff-version": "1.2.0",
+            "title": "Test Title",
+            "message": "Test Message",
+            "authors": [{"name": "Test Author"}],
+        }
+
+    def test_extract_license_from_github(self):
+        converter = ReleaseMetadataConverter(
+            github_repository={"license": {"spdx_id": "MIT"}}
+        )
+        self.assertEqual(converter._extract_license_from_github(), "MIT")
+
+    def test_extract_license_from_cff(self):
+        cff = {**self.minimal_cff, "license": LicenseEnum.GPL_3_0_only}
+        converter = ReleaseMetadataConverter(cff=cff)
+        self.assertEqual(converter._extract_license_from_cff(), "GPL-3.0-only")
+
+    def test_extract_release_notes_from_codemeta(self):
+        codemeta = {**self.minimal_codemeta, "releaseNotes": "From CodeMeta"}
+        converter = ReleaseMetadataConverter(codemeta=codemeta)
+        self.assertEqual(
+            converter._extract_release_notes_from_codemeta(), "From CodeMeta"
+        )
+
+    def test_extract_release_notes_from_github(self):
+        converter = ReleaseMetadataConverter(github_release={"body": "From GitHub"})
+        self.assertEqual(converter._extract_release_notes_from_github(), "From GitHub")
+
+    def test_extract_os_from_codemeta(self):
+        codemeta = {**self.minimal_codemeta, "operatingSystem": "Linux"}
+        converter = ReleaseMetadataConverter(codemeta=codemeta)
+        self.assertEqual(converter._extract_os_from_codemeta(), "linux")
+
+    def test_extract_programming_languages_from_codemeta(self):
+        codemeta = {
+            **self.minimal_codemeta,
+            "programmingLanguage": ["Python", "R"],
+        }
+        converter = ReleaseMetadataConverter(codemeta=codemeta)
+        self.assertEqual(
+            converter._extract_programming_languages_from_codemeta(), ["Python", "R"]
+        )
+
+    def test_extract_programming_languages_from_github(self):
+        converter = ReleaseMetadataConverter(github_repository={"language": "Java"})
+        self.assertEqual(
+            converter._extract_programming_languages_from_github(), ["Java"]
+        )
+
+    def test_extract_platforms_from_codemeta(self):
+        codemeta = {
+            **self.minimal_codemeta,
+            "runtimePlatform": ["Mesa", "NetLogo"],
+        }
+        converter = ReleaseMetadataConverter(codemeta=codemeta)
+        self.assertEqual(
+            converter._extract_platforms_from_codemeta(), ["Mesa", "NetLogo"]
+        )
+
+    def test_convert_priority(self):
+        # test the convert() method's priority logic
+        codemeta = {
+            **self.minimal_codemeta,
+            "releaseNotes": "From CodeMeta",
+            "programmingLanguage": ["Python"],
+        }
+        github_release = {"body": "From GitHub"}
+        github_repository = {"license": {"spdx_id": "MIT"}, "language": "Java"}
+        cff = {**self.minimal_cff, "license": LicenseEnum.GPL_3_0_only}
+
+        converter = ReleaseMetadataConverter(
+            codemeta=codemeta,
+            cff=cff,
+            github_repository=github_repository,
+            github_release=github_release,
+        )
+        result = converter.convert()
+        self.assertEqual(result["license_spdx_id"], "MIT")  # Github > CFF
+        self.assertEqual(result["release_notes"], "From CodeMeta")  # CodeMeta > Github
+        self.assertEqual(
+            result["programming_languages"], ["Python"]
+        )  # CodeMeta > Github
+
+    def test_convert_fallback(self):
+        """Test the convert() method's fallback logic."""
+        github_release = {"body": "From GitHub"}
+        github_repository = {"language": "Java"}
+        cff = {**self.minimal_cff, "license": LicenseEnum.GPL_3_0_only}
+
+        converter = ReleaseMetadataConverter(
+            cff=cff,
+            github_repository=github_repository,
+            github_release=github_release,
+        )
+        result = converter.convert()
+        self.assertEqual(result["license_spdx_id"], "GPL-3.0-only")
+        self.assertEqual(result["release_notes"], "From GitHub")
+        self.assertEqual(result["programming_languages"], ["Java"])
+
+    def test_convert_no_sources(self):
+        """Test that convert returns gracefully with no sources."""
+        converter = ReleaseMetadataConverter()
+        result = converter.convert()
+        expected = {
+            "license_spdx_id": None,
+            "release_notes": None,
+            "os": "",
+            "programming_languages": None,
+            "platforms": None,
+        }
+        self.assertEqual(result, expected)
