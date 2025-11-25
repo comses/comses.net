@@ -1,6 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from django.core.exceptions import ObjectDoesNotExist
 
 from library.models import (
     ProgrammingLanguageTag,
@@ -96,15 +97,33 @@ class Command(BaseCommand):
 
         ReleaseLanguage.objects.all().delete()
         tags = ProgrammingLanguageTag.objects.all()
+        aliases = {}
         for tag in tags:
             version = ""
             if tag.tag.name.lower().startswith("netlogo"):
                 version = tag.tag.name[7:].strip()
 
-            programming_language = ProgrammingLanguage.objects.get_or_create(
-                name__istartswith=tag.tag.name,
-                defaults={"name": tag.tag.name, "is_user_defined": True},
-            )[0]
+            programming_language_name = tag.tag.name
+            if tag.tag.name in aliases:
+                programming_language_name = aliases[tag.tag.name]
+
+            try:
+                programming_language = ProgrammingLanguage.objects.get(name__iexact=programming_language_name)
+            except ObjectDoesNotExist:
+                programming_language = None
+
+            if programming_language is None:
+                programming_language_name = input("Enter the programming language name for tag '{}' (leave blank to skip): ".format(tag.tag.name))
+                if programming_language_name == "":
+                    logger.info("Skipping tag '{}'".format(tag.tag.name))
+                    continue
+                aliases[tag.tag.name] = programming_language_name
+
+                programming_language = ProgrammingLanguage.objects.get_or_create(
+                    name__iexact=programming_language_name,
+                    defaults={"name": programming_language_name, "is_user_defined": True},
+                )[0]
+
             ReleaseLanguage.objects.create(
                 programming_language=programming_language,
                 release=tag.content_object,
