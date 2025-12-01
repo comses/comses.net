@@ -1,8 +1,8 @@
 {% extends "base.jinja" %}
 
 {% block introduction %}
-{% with github_config=settings("library.GitHubSyncConfiguration", use_default_site=True) %}
-<h1>GitHub Sync Overview{% if github_config.is_beta %} <span
+{% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
+<h1>GitHub Integration Overview{% if github_config.is_beta %} <span
         class="beta-badge border-white text-white ms-1">Beta</span>{% endif %}</h1>
 {% endwith %}
 {% endblock %}
@@ -18,7 +18,7 @@
             <button class="nav-link" id="how-it-works-tab" data-bs-toggle="tab" data-bs-target="#how-it-works"
                 type="button" role="tab" aria-controls="how-it-works" aria-selected="false">How it works</button>
         </li>
-        {% with github_config=settings("library.GitHubSyncConfiguration", use_default_site=True) %}
+        {% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
         {% if github_config and github_config.faq_entries.exists() %}
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="faq-tab" data-bs-toggle="tab" data-bs-target="#faq" type="button" role="tab"
@@ -33,7 +33,7 @@
                 <div class="col-12">
                     <div class="mb-4">
                         <p>
-                            The <b>CoMSES Model Library GitHub Sync</b> feature allows you to connect your model in the
+                            The <b>CoMSES Model Library GitHub integration</b> allows you to connect your model in the
                             library to a
                             GitHub repository, enabling either a one-way or bidirectional sync of model source code and
                             metadata
@@ -45,16 +45,16 @@
                             <span class="btn btn-sm btn-outline-secondary py-0 disabled">
                                 <i class="fas fa-cog"></i> Configure
                             </span>
-                            for one of your models listed below or on the <strong>GitHub Sync</strong> tab on a model's
+                            for one of your models listed below or on the <strong><i class="fab fa-github"></i> GitHub</strong> tab on a model's
                             page. Once you have an active synced repository, it will be linked in the same tab and
                             visible to others.
                         </p>
                     </div>
                     {% if user.is_authenticated %}
-                    <div id="github-sync-overview"></div>
+                    <div id="github-overview"></div>
                     {% else %}
                     <div class="alert alert-dark text-center" role="alert">
-                        You must be <a href="{{ url('account_login') }}?next={{ request.path }}" class="alert-link">signed in</a> to manage GitHub Sync for your models.
+                        You must be <a href="{{ url('account_login') }}?next={{ request.path }}" class="alert-link">signed in</a> to manage the GitHub integration for your models.
                     </div>
                     {% endif %}
                 </div>
@@ -244,7 +244,7 @@
             </div>
         </div>
         <div class="tab-pane fade" id="faq" role="tabpanel" aria-labelledby="faq-tab">
-            {% with github_config=settings("library.GitHubSyncConfiguration", use_default_site=True) %}
+            {% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
             {% if github_config and github_config.faq_entries.exists() %}
             <div class="row justify-content-center">
                 <div class="col-12" role="tablist" aria-multiselectable="true">
@@ -279,5 +279,5 @@
 {% endblock %}
 
 {% block js %}
-{{ vite_asset("apps/github_sync_overview.ts") }}
+{{ vite_asset("apps/github_overview.ts") }}
 {% endblock %}

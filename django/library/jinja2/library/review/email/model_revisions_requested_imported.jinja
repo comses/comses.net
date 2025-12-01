@@ -1,5 +1,5 @@
 {% set release=review.codebase_release %}
-{% set imported_release_package = release.imported_release_package %}
+{% set imported_sync_state = release.imported_release_sync_state %}
 
 Dear {{ review.contact_author_name }},
 
@@ -12,7 +12,7 @@ The reviewer for your computational model [{{ release.title }}]({{ build_absolut
 Since this release is imported from GitHub, you will need to update it there and then re-import it into CoMSES Net. Here is the process:
 
 1. **Commit and push your changes:** Make the necessary changes to your code and push them to your GitHub repository.
-2. **Edit the release on GitHub:** Go to the [release page on GitHub]({{ imported_release_package.html_url }}) to edit the release.
+2. **Edit the release on GitHub:** Go to the [release page on GitHub]({{ imported_sync_state.html_url }}) to edit the release.
 3. **Update the release tag:**
   - In the release edit form, you can choose which tag or branch the release should be associated with.
   - To include your latest changes, you should create a new tag. You can do this by typing a new version number in the "Tag version" box and selecting "Create new tag: [new_version] on publish". Make sure this new tag points to the branch with your recent commits.
