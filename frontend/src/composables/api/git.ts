@@ -3,7 +3,9 @@ import { useAxios, joinPaths, type RequestOptions } from "@/composables/api";
 import type {
   CodebaseGitRemote,
   CodebaseGitRemoteForm,
+  CodebaseReleaseWithPushableStates,
   GitHubAppInstallationStatus,
+  GitHubRelease,
 } from "@/types";
 import type { AxiosResponse } from "axios";
 
@@ -35,12 +37,57 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     return put(detailUrl(id), data, options);
   }
 
-  async function setupUserGithubRemote(repoName: string, options?: RequestOptions) {
-    return post(url(["setup_user_github_remote"]), { repoName }, options);
+  async function setupUserGithubRemote(
+    repoName: string,
+    isPreexisting: boolean,
+    options?: RequestOptions
+  ) {
+    return post(
+      url(["setup_user_github_remote"]),
+      { repoName, is_preexisting: isPreexisting },
+      options
+    );
   }
 
-  async function setupUserExistingGithubRemote(repoName: string, options?: RequestOptions) {
-    return post(url(["setup_user_existing_github_remote"]), { repoName }, options);
+  async function getActiveRemote(
+    options?: RequestOptions
+  ): Promise<AxiosResponse<CodebaseGitRemote>> {
+    return get(url(["active_remote"]), options);
+  }
+
+  async function buildLocalRepo(options?: RequestOptions) {
+    return post(url(["build_local_repo"]), {}, options);
+  }
+
+  async function listLocalReleases(
+    options?: RequestOptions
+  ): Promise<AxiosResponse<CodebaseReleaseWithPushableStates[]>> {
+    return get(url(["local_releases"]), options);
+  }
+
+  async function listGitHubReleases(
+    options?: RequestOptions
+  ): Promise<AxiosResponse<GitHubRelease[]>> {
+    return get(url(["github_releases"]), options);
+  }
+
+  async function importGitHubRelease(
+    githubReleaseId: string | number,
+    customVersion?: string,
+    options?: RequestOptions
+  ) {
+    return post(
+      url(["import_github_release"]),
+      {
+        github_release_id: githubReleaseId,
+        custom_version: customVersion,
+      },
+      options
+    );
+  }
+
+  async function pushAllReleasesToGitHub(options?: RequestOptions) {
+    return post(url(["push_all"]), {}, options);
   }
 
   return {
@@ -50,6 +97,11 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     update,
     getSubmitterInstallationStatus,
     setupUserGithubRemote,
-    setupUserExistingGithubRemote,
+    getActiveRemote,
+    buildLocalRepo,
+    listLocalReleases,
+    listGitHubReleases,
+    importGitHubRelease,
+    pushAllReleasesToGitHub,
   };
 }

@@ -83,7 +83,6 @@ class GitHubReleaseImporterTests(TestCase):
             owner="testuser",
             repo_name="test-repo",
             is_user_repo=True,
-            should_import=True,
         )
         self.payload = SAMPLE_PAYLOAD.copy()
 
@@ -144,7 +143,7 @@ class GitHubReleaseImporterTests(TestCase):
             ).exists()
         )
         release = CodebaseRelease.objects.get(version_number="1.0.0")
-        self.assertEqual(release.imported_release_package.uid, "12345")
+        self.assertEqual(release.imported_release_sync_state.github_release_id, "12345")
         self.assertEqual(release.submitter, self.codebase.submitter)
         mock_fs_api.import_release_package.assert_called_once()
 
@@ -164,7 +163,7 @@ class GitHubReleaseImporterTests(TestCase):
         self.assertEqual(CodebaseRelease.objects.count(), 1)
         release = CodebaseRelease.objects.first()
         self.assertEqual(
-            release.imported_release_package.download_url,
+            release.imported_release_sync_state.download_url,
             "https://api.github.com/repos/testuser/test-repo/zipball/v1.0.0",
         )
 
@@ -185,10 +184,9 @@ class GitHubReleaseImporterTests(TestCase):
         self.assertEqual(mock_fs_api.import_release_package.call_count, 2)
 
         release.refresh_from_db()
-        self.assertEqual(release.imported_release_package.download_url, new_url)
+        self.assertEqual(release.imported_release_sync_state.download_url, new_url)
 
         self.remote.refresh_from_db()
-        self.assertIn("Successfully re-imported", self.remote.last_import_log)
 
         # release version number should NOT have changed
         self.assertEqual(release.version_number, "1.0.0")
@@ -213,7 +211,6 @@ class GitHubReleaseImporterTests(TestCase):
         # fs_api should not be called again
         self.assertEqual(mock_fs_api.import_release_package.call_count, 2)
         self.remote.refresh_from_db()
-        self.assertIn("Release already exists", self.remote.last_import_log)
 
         # re-importing an under_review release should work
         release.status = CodebaseRelease.Status.UNDER_REVIEW
@@ -230,4 +227,4 @@ class GitHubReleaseImporterTests(TestCase):
         self.assertTrue(success_review)
         self.assertEqual(mock_fs_api.import_release_package.call_count, 3)
         release.refresh_from_db()
-        self.assertEqual(release.imported_release_package.download_url, review_url)
+        self.assertEqual(release.imported_release_sync_state.download_url, review_url)

@@ -1,12 +1,12 @@
 {% extends "base.jinja" %}
 {% from "common.jinja" import breadcrumb %}
 
-{% set github_config=settings("library.GitHubSyncConfiguration", use_default_site=True) %}
+{% set github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
 
-{% block title %}GitHub Sync{% endblock %}
+{% block title %}GitHub Integration{% endblock %}
 
 {% block introduction %}
-<h1>GitHub Sync{% if github_config.is_beta %} <span class="beta-badge border-white text-white ms-1">Beta</span>{% endif
+<h1>GitHub Integration{% if github_config.is_beta %} <span class="beta-badge border-white text-white ms-1">Beta</span>{% endif
     %}</h1>
 {% endblock %}
 
@@ -14,25 +14,25 @@
 {{ breadcrumb([
 {'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
 {'url': url('library:codebase-detail', codebase.identifier), 'text': codebase.title|truncate(68) },
-{'text': 'GitHub Sync' },
+{'text': 'GitHub' },
 ]) }}
-<h1 class="codebase-title mb-3">
-    Configure GitHub Sync for <i>{{ codebase.title }}</i>
+<h1 class="codebase-title fw-bold mb-3">
+    Connect a GitHub repository with <span class="badge bg-gray">{{ codebase.title }}</span>
 </h1>
 <p class="text-muted">
-    GitHub Sync allows you to connect your model in the CoMSES Model Library to a GitHub
-    repository.
+    The CoMSES Model Library GitHub integration allows you to transfer releases of your model to
+    or from a GitHub repository by connecting an existing repository or by having one created for you.
 </p>
 <p>
     <a href="{{ url('library:github-sync-overview') }}">Learn more about how it works <i
             class="fas fa-chevron-right"></i></a>
 </p>
-<div class='my-3' id="github-sync" data-codebase-identifier="{{ codebase.identifier }}"
+<div class='my-3' id="github-config" data-codebase-identifier="{{ codebase.identifier }}"
     data-is-codebase-live="{{ codebase.live }}" data-github-org-name="{{ github_org_name }}"
-    data-default-repo-name="{{ slugify(codebase.title) }}" data-enable-new-syncs="{{ github_config.enable_new_syncs }}">
+    data-default-repo-name="{{ slugify(codebase.title) }}" data-enable-new-syncs="{{ github_config.enable_new_connections }}">
 </div>
 {% endblock %}
 
 {% block js %}
-{{ vite_asset("apps/github_sync_config.ts") }}
+{{ vite_asset("apps/github_config.ts") }}
 {% endblock %}

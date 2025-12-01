@@ -141,9 +141,8 @@ class CodeMetaConverter:
             type_="SoftwareSourceCode",
             name=codebase.title,
             codeRepository=(
-                codebase.git_mirror.remotes.first().url
-                # FIXME: coderepository can be one url, how do we determine priority?
-                if codebase.git_mirror and codebase.git_mirror.remotes.first()
+                codebase.git_remotes.first().url
+                if codebase.git_remotes.first()
                 else codebase.repository_url
             )
             or None,

@@ -55,7 +55,7 @@ urlpatterns = [
     path(
         "github/",
         TemplateView.as_view(
-            template_name="library/github_sync_overview.jinja",
+            template_name="library/github_overview.jinja",
             extra_context={
                 "github_model_library_org_name": settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
             },

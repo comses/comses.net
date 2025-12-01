@@ -31,8 +31,9 @@ from core.serializers import (
 )
 from .models import (
     CodebaseGitRemote,
-    ImportedReleasePackage,
+    ImportedReleaseSyncState,
     PeerReviewer,
+    PushableReleaseSyncState,
     ReleaseContributor,
     Codebase,
     CodebaseRelease,
@@ -443,7 +444,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     """
 
     absolute_url = serializers.URLField(source="get_absolute_url", read_only=True)
-    github_sync_config_url = serializers.SerializerMethodField(read_only=True)
+    github_config_url = serializers.SerializerMethodField(read_only=True)
     active_git_remote = serializers.SerializerMethodField(read_only=True)
     all_contributors = ContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
@@ -458,7 +459,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     live = serializers.ReadOnlyField()
     description = MarkdownField()
 
-    def get_github_sync_config_url(self, instance):
+    def get_github_config_url(self, instance):
         return reverse("library:codebase-git-remotes-list", args=[instance.identifier])
 
     def get_active_git_remote(self, instance):
@@ -478,7 +479,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
         fields = (
             "absolute_url",
             "all_contributors",
-            "github_sync_config_url",
+            "github_config_url",
             "active_git_remote",
             "tags",
             "title",
@@ -495,8 +496,32 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
         )
 
 
+class PushableReleaseSyncStateSerializer(serializers.ModelSerializer):
+    can_repush = serializers.SerializerMethodField()
+
+    def get_can_repush(self, instance):
+        return instance.can_repush()
+
+    class Meta:
+        model = PushableReleaseSyncState
+        fields = "__all__"
+
+
+class ImportedReleaseSyncStateSerializer(serializers.ModelSerializer):
+    can_reimport = serializers.SerializerMethodField()
+
+    def get_can_reimport(self, instance):
+        return instance.can_reimport()
+
+    class Meta:
+        model = ImportedReleaseSyncState
+        fields = "__all__"
+
+
 class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
     is_active = serializers.ReadOnlyField()
+    pushable_sync_states = PushableReleaseSyncStateSerializer(many=True, read_only=True)
+    imported_sync_states = ImportedReleaseSyncStateSerializer(many=True, read_only=True)
 
     class Meta:
         model = CodebaseGitRemote
@@ -505,13 +530,11 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "owner",
             "repo_name",
             "url",
-            "should_push",
-            "should_import",
             "is_user_repo",
             "is_preexisting",
             "is_active",
-            "last_push_log",
-            "last_import_log",
+            "pushable_sync_states",
+            "imported_sync_states",
         )
         read_only_fields = (
             "id",
@@ -521,8 +544,8 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "is_user_repo",
             "is_preexisting",
             "is_active",
-            "last_push_log",
-            "last_import_log",
+            "pushable_sync_states",
+            "imported_sync_states",
         )
 
 
@@ -588,18 +611,6 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
         )
 
 
-class ImportedReleasePackageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ImportedReleasePackage
-        fields = (
-            "service",
-            "uid",
-            "name",
-            "display_name",
-            "html_url",
-        )
-
-
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
     absolute_url = serializers.URLField(
         source="get_absolute_url",
@@ -629,7 +640,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     release_notes = MarkdownField(max_length=2048)
     urls = serializers.SerializerMethodField()
     review_status = serializers.SerializerMethodField()
-    imported_release_package = ImportedReleasePackageSerializer(read_only=True)
+    imported_release_sync_state = ImportedReleaseSyncStateSerializer(read_only=True)
 
     def get_urls(self, instance):
         request_peer_review_url = instance.get_request_peer_review_url()
@@ -651,6 +662,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         model = CodebaseRelease
         fields = (
             "absolute_url",
+            "status",
             "can_edit_originals",
             "citation_text",
             "release_contributors",
@@ -678,9 +690,31 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
             "output_data_url",
             "version_number",
             "id",
-            "imported_release_package",
+            "imported_release_sync_state",
             "share_url",
             "urls",
+        )
+
+
+class CodebaseReleaseWithPushableStatesSerializer(CodebaseReleaseSerializer):
+    """Extends base release serializer to include pushable sync states for local mirror context"""
+
+    pushable_sync_states = PushableReleaseSyncStateSerializer(read_only=True, many=True)
+    active_or_null_remote_pushable_sync_state = serializers.SerializerMethodField()
+
+    def get_active_or_null_remote_pushable_sync_state(self, instance):
+        # find the single active remote for this codebase and return the matching pushable state
+        # or null-remote state
+        active_remote = instance.codebase.active_git_remote
+        state = instance.pushable_sync_states.filter(remote=active_remote).first()
+        if not state:
+            state = instance.pushable_sync_states.filter(remote__isnull=True).first()
+        return PushableReleaseSyncStateSerializer(state).data if state else None
+
+    class Meta(CodebaseReleaseSerializer.Meta):
+        fields = CodebaseReleaseSerializer.Meta.fields + (
+            "pushable_sync_states",
+            "active_or_null_remote_pushable_sync_state",
         )
 
 

@@ -562,7 +562,7 @@ class GithubIntegrationAppInstallation(models.Model):
 
 
 class CodebaseGitRemote(models.Model):
-    """Represents a remote repository that a local git mirror can push to"""
+    """Represents a remote repository associated with a `Codebase` that can be pushed to or imported from"""
 
     is_user_repo = models.BooleanField(
         default=False, help_text="Whether this is a user-owned remote"
@@ -570,12 +570,6 @@ class CodebaseGitRemote(models.Model):
     is_preexisting = models.BooleanField(
         default=False,
         help_text="Whether this remote was pre-existing or based on a codebase git mirror",
-    )
-    should_push = models.BooleanField(
-        default=True, help_text="Whether to push to this remote"
-    )
-    should_import = models.BooleanField(
-        default=False, help_text="Whether to import new releases from this remote"
     )
     repo_name = models.CharField(max_length=100)
     owner = models.CharField(
@@ -586,113 +580,317 @@ class CodebaseGitRemote(models.Model):
         blank=True,
         help_text=_("http URL of remote repository"),
     )
-    mirror = models.ForeignKey(
-        "CodebaseGitMirror",
-        related_name="remotes",
+    is_active = models.BooleanField(default=False)
+    codebase = models.ForeignKey(
+        "Codebase",
+        related_name="git_remotes",
         on_delete=models.CASCADE,
     )
-    last_push_log = models.TextField(blank=True)
-    last_import_log = models.TextField(blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
     @property
-    def is_active(self):
-        return self.should_push or self.should_import
-
-    @property
     def installation(self) -> GithubIntegrationAppInstallation | None:
         if self.is_user_repo:
-            return self.mirror.codebase.submitter.github_integration_app_installation
+            return self.codebase.submitter.github_integration_app_installation
         return None
 
     def __str__(self):
-        return f"{self.owner}/{self.repo_name} (active={self.should_push}) (sync={self.should_import})"
+        return f"{self.owner}/{self.repo_name} (active={self.is_active}))"
 
     class Meta:
         unique_together = ("owner", "repo_name")
         constraints = [
             models.UniqueConstraint(
-                fields=["mirror"],
-                condition=models.Q(should_push=True, is_user_repo=True),
-                name="single_pushable_user_repo",
-            ),
-            models.UniqueConstraint(
-                fields=["mirror"],
-                condition=models.Q(should_push=True, is_user_repo=False),
-                name="single_pushable_org_repo",
-            ),
-            models.UniqueConstraint(
-                fields=["mirror"],
-                condition=models.Q(should_import=True),
-                name="single_archivable_repo",
-            ),
-            models.CheckConstraint(
-                check=models.Q(is_user_repo=True) | models.Q(should_import=False),
-                name="org_repo_not_archivable",
-            ),
-            models.CheckConstraint(
-                check=models.Q(is_preexisting=False) | models.Q(should_push=False),
-                name="preexisting_repo_not_pushable",
+                fields=["codebase"],
+                condition=models.Q(is_active=True),
+                name="single_active_remote",
             ),
         ]
 
 
-class CodebaseGitMirror(models.Model):
-    """Represents a local git repository that mirrors a codebase's
-    regular (as opposed to pulled from github) published releases. It can have
-    two remotes: one on the submitter's account, and one in the CoMSES model library
-    organization
-    """
 
-    built_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+
+class BaseReleaseSyncState(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", _("pending")
+        RUNNING = "RUNNING", _("running")
+        SUCCESS = "SUCCESS", _("success")
+        ERROR = "ERROR", _("error")
+
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    last_log = models.TextField(blank=True)
+    full_log = models.JSONField(default=list)
+    error_message = models.TextField(blank=True)
+    http_status = models.IntegerField(null=True, blank=True)
+    last_sync_started_at = models.DateTimeField(null=True, blank=True)
+    last_sync_finished_at = models.DateTimeField(null=True, blank=True)
+    batch_id = models.CharField(max_length=36, blank=True, null=True)
+    tag_name = models.CharField(max_length=128)
 
-    @property
-    def active_remotes_list(self) -> list[CodebaseGitRemote]:
-        return list(
-            self.remotes.filter(
-                models.Q(should_push=True) | models.Q(should_import=True)
-            )
-        )
+    class Meta:
+        abstract = True
 
-    @property
-    def latest_built_release(self):
-        if not self.built_releases.all():
-            return None
-        return max(self.built_releases.all(), key=lambda r: Version(r.version_number))
+    def _append_log(self, message: str, now):
+        logs = list(self.full_log or [])
+        logs.append({"t": now.isoformat(), "msg": message})
+        self.full_log = logs
+        self.last_log = message
 
-    @property
-    def unbuilt_releases(self):
-        return (
-            self.codebase.releases.internal()
-            .public()
-            .exclude(id__in=self.built_releases.values_list("id", flat=True))
-        )
+    def mark_running(self):
+        """set status to RUNNING and stamp last_sync_started_at"""
+        self.status = self.Status.RUNNING
+        self.last_sync_started_at = timezone.now()
+        self.save(update_fields=["status", "last_sync_started_at", "last_modified"])
+        return self
 
-    def mark_releases_built(self, new_releases: models.QuerySet | list):
-        self.built_releases.add(*new_releases)
+    def log_failure(self, message: str, now_func=None):
+        """mark this sync state as ERROR and append a log entry"""
+        now = (now_func or timezone.now)()
+        self.status = self.Status.ERROR
+        self.error_message = message
+        self.last_sync_finished_at = now
+        self._append_log(message, now)
         self.save()
+        return self
 
-    def create_remote(self, owner, repo_name, **kwargs):
-        """create a new remote for this mirror, or get an existing one if there is a
-        matching remote that failed to actually be created at the remote location"""
-        existing_remote = CodebaseGitRemote.objects.filter(
-            mirror=self,
-            owner=owner,
-            repo_name=repo_name,
-            url__isnull=True,  # proxy for a successful remote creation
-        ).first()
-        if existing_remote:
-            return existing_remote
-        remote = CodebaseGitRemote.objects.create(
-            mirror=self,
-            owner=owner,
-            repo_name=repo_name,
-            **kwargs,
+    def log_success(self, message: str | None = None, now_func=None):
+        """mark this sync state as SUCCESS and optionally append a log entry"""
+        now = (now_func or timezone.now)()
+        self.status = self.Status.SUCCESS
+        self.last_sync_finished_at = now
+        if message:
+            self._append_log(message, now)
+        self.save()
+        return self
+
+
+class PushableReleaseSyncState(BaseReleaseSyncState):
+    """Represents the build/push state of a release.
+    One row with remote=None is the canonical build state created when the release is built locally.
+    Additional rows (release, remote) are duplicated later (partially) for each remote.
+    """
+    remote = models.ForeignKey(
+        "library.CodebaseGitRemote",
+        null=True,  # remote is only added after we attempt to push it somewhere
+        on_delete=models.CASCADE,
+        related_name="pushable_sync_states",
+    )
+    release = models.ForeignKey(
+        "library.CodebaseRelease",
+        on_delete=models.CASCADE,
+        related_name="pushable_sync_states",
+    )
+    built_commit_sha = models.CharField(
+        max_length=40,
+        blank=True,
+        help_text=_("Last commit SHA created for this release in the mirror repo"),
+    )
+    last_built_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Updated when the release is committed to the mirror repo"),
+    )
+    pushed_commit_sha = models.CharField(
+        max_length=40,
+        blank=True,
+        help_text=_("Last commit SHA pushed to the remote repo"),
+    )
+
+    class Meta:
+        unique_together = ("release", "remote")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["release"],
+                condition=models.Q(remote__isnull=True),
+                name="single_null_remote_pushable_build_state",
+            )
+        ]
+
+    @classmethod
+    def latest_for_codebase(cls, codebase):
+        return (
+            cls.objects.filter(
+                release__codebase=codebase,
+            )
+            .select_related("release")
+            .order_by("release__version_number")
+            .last()
         )
-        return remote
+
+    @classmethod
+    def unbuilt_internal_public_releases(cls, codebase):
+        built_ids = cls.objects.filter(
+            release__codebase=codebase,
+        ).values_list("release_id", flat=True)
+        return (
+            codebase.releases.internal().public().exclude(id__in=built_ids)
+        )
+
+    @classmethod
+    def from_codebase_release(cls, release, commit_sha, tag_name, now_func=None):
+        now = timezone.now()
+        state, _ = cls.objects.get_or_create(
+            release=release, remote=None, defaults={"tag_name": tag_name}
+        )
+        state.status = cls.Status.PENDING # yet to be pushed
+        state.built_commit_sha = commit_sha
+        state.last_built_at = now
+        state.last_sync_started_at = state.last_sync_started_at or now
+        state.last_sync_finished_at = now
+        state.tag_name = tag_name
+        state.save()
+        return state
+    
+    def can_repush(self) -> bool:
+        """
+        return true when a repush should be allowed:
+        - push failed
+        - or both built and pushed commit SHAs exist and do not match
+        """
+        if self.status == self.Status.ERROR:
+            return True
+        built = (self.built_commit_sha or "").strip()
+        pushed = (self.pushed_commit_sha or "").strip()
+        return bool(built and pushed and built != pushed)
+    
+    @classmethod
+    def copy_states_to_remote(cls, codebase, from_remote, to_remote):
+        """
+        copy all pushable states from one remote to another for a codebase,
+        resetting sync-related fields for a clean start
+        """
+        if not from_remote or not to_remote or from_remote.id == to_remote.id:
+            return
+        states = cls.objects.filter(release__codebase=codebase, remote=from_remote)
+        if not states.exists():
+            return
+        for s in states:
+            obj, _ = cls.objects.get_or_create(
+                release=s.release, remote=to_remote, defaults={"tag_name": s.tag_name}
+            )
+            obj.tag_name = s.tag_name
+            obj.built_commit_sha = s.built_commit_sha
+            obj.last_built_at = s.last_built_at
+            obj.pushed_commit_sha = ""
+            obj.status = cls.Status.PENDING
+            obj.last_log = ""
+            obj.error_message = ""
+            obj.http_status = None
+            obj.last_sync_started_at = None
+            obj.last_sync_finished_at = None
+            obj.save()
+
+
+class ImportedReleaseSyncState(BaseReleaseSyncState):
+    """Represents the state of the process involved in importing a release from GitHub.
+    Will only exist for releases that have at least been attempted to be imported from GitHub
+
+    only one will exist for a given CodebaseRelease, since a release can only be imported once.
+    though multiple can exist for a GitHub release, only if they are from different remotes.
+    """
+    # remote is the source repository this GitHub release came from
+    remote = models.ForeignKey(
+        "library.CodebaseGitRemote",
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="imported_sync_states",
+        help_text=_("Remote from which this release was imported"),
+    )
+    category_manifest = models.JSONField(
+        default=dict,
+        help_text="Maps file paths to categories (code, docs, data, results)",
+    )
+    github_release_id = models.CharField(
+        max_length=128,
+    )
+    display_name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="A human-readable name for the release, if different from the tag name",
+    )
+    html_url = models.URLField(
+        blank=True,
+        help_text="URL to the (browser-viewable) page for the release on the external service",
+    )
+    download_url = models.URLField(
+        blank=True,
+        help_text="URL to the downloadable package for the release on the external service, ideally a zipball such as in the case of github",
+    )
+    extra_data = models.JSONField(
+        default=dict,
+        help_text="Additional data for the external release, ideally the full object (e.g. github release) from the external service",
+    )
+
+    class Meta:
+        unique_together = ("remote", "github_release_id")
+
+    # manager-style helpers
+    @classmethod
+    def from_github_release(cls, remote, gh_release_raw: dict):
+        """create or update a sync state from a github release object from the github API.
+        only updates when tracked fields change
+        """
+        release_id = str(gh_release_raw.get("id", ""))
+        if not release_id:
+            raise ValueError("missing github release id")
+        tag_name = gh_release_raw.get("tag_name")
+        display_name = gh_release_raw.get("name")
+        html_url = gh_release_raw.get("html_url")
+        download_url = gh_release_raw.get("zipball_url")
+
+        obj, _ = cls.objects.get_or_create(
+            remote=remote,
+            github_release_id=release_id,
+            defaults={
+                "tag_name": tag_name,
+                "display_name": display_name,
+                "html_url": html_url,
+                "download_url": download_url,
+                "extra_data": gh_release_raw,
+                "status": cls.Status.PENDING,
+            },
+        )
+        changed = False
+        if obj.tag_name != tag_name:
+            obj.tag_name = tag_name
+            changed = True
+        if obj.display_name != display_name:
+            obj.display_name = display_name
+            changed = True
+        if obj.html_url != html_url:
+            obj.html_url = html_url
+            changed = True
+        if obj.download_url != download_url:
+            obj.download_url = download_url
+            changed = True
+        # store full release object
+        if (obj.extra_data or {}) != (gh_release_raw or {}):
+            obj.extra_data = gh_release_raw or {}
+            changed = True
+
+        if changed:
+            obj.save()
+        return obj
+    
+    def can_reimport(self) -> bool:
+        """
+        return true when a re-import should be allowed:
+        - job has completed (SUCCESS) or failed (ERROR)
+        - and either no CodebaseRelease exists yet for this sync state
+        - or the existing CodebaseRelease is not live (i.e., not published)
+        """
+        if self.status not in [self.Status.SUCCESS, self.Status.ERROR]:
+            return False
+        release = CodebaseRelease.objects.filter(imported_release_sync_state=self).first()
+        if not release:
+            return True
+        return not release.live
+
 
 
 @add_to_comses_permission_whitelist
@@ -731,13 +929,6 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         "CodebaseRelease",
         null=True,
         related_name="latest_version",
-        on_delete=models.SET_NULL,
-    )
-
-    git_mirror = models.OneToOneField(
-        "CodebaseGitMirror",
-        null=True,
-        related_name="codebase",
         on_delete=models.SET_NULL,
     )
 
@@ -900,11 +1091,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     @property
     def active_git_remote(self):
-        if self.git_mirror:
-            return self.git_mirror.remotes.filter(
-                models.Q(should_push=True) | models.Q(should_import=True)
-            ).first()
-        return None
+        return self.git_remotes.filter(is_active=True).first()
 
     @property
     def summarized_description(self):
@@ -927,14 +1114,33 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
-    def create_git_mirror(self, **kwargs):
-        if not self.git_mirror:
-            git_mirror = CodebaseGitMirror.objects.create(
-                **kwargs,
-            )
-            self.git_mirror = git_mirror
-            self.save(rebuild_metadata=False)
-        return self.git_mirror
+    def create_remote(self, owner, repo_name, **kwargs):
+        """create a new remote for this codebase, or get an existing one if there is a
+        matching remote that failed to actually be created at the remote location"""
+        existing_remote = CodebaseGitRemote.objects.filter(
+            codebase=self,
+            owner=owner,
+            repo_name=repo_name,
+            url__isnull=True,  # proxy for a successful remote creation
+        ).first()
+        if existing_remote:
+            return existing_remote
+        remote = CodebaseGitRemote.objects.create(
+            codebase=self,
+            owner=owner,
+            repo_name=repo_name,
+            **kwargs,
+        )
+        return remote
+
+    def latest_pushable_sync_state(self):
+        """return the latest (by version number) pushable sync state for this codebase
+        i.e. the latest release that has been added to the git repo"""
+        return PushableReleaseSyncState.latest_for_codebase(self)
+
+    def unbuilt_internal_public_releases(self):
+        """return internal (non-github imported), public releases that have not yet been added to the git repo"""
+        return PushableReleaseSyncState.unbuilt_internal_public_releases(self)
 
     @property
     def publication_year(self):
@@ -1173,7 +1379,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         # set source_release.id to None to create a new release
         # see https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         source_release.id = None
-        source_release.imported_release_package = None
+        source_release.imported_release_sync_state = None
         source_release._state.adding = True
         source_release.__dict__.update(**release_metadata)
         source_release.save()
@@ -1310,50 +1516,6 @@ class CodebasePublication(models.Model):
 """
 
 
-class ImportedReleasePackage(models.Model):
-    date_created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-    category_manifest = models.JSONField(
-        default=dict,
-        help_text="Maps file paths to categories (code, docs, data, results)",
-    )
-
-    class Services(models.TextChoices):
-        GITHUB = "github", _("GitHub")
-
-    service = models.CharField(
-        max_length=32,
-        choices=Services.choices,
-        help_text="The external service where the release is hosted",
-    )
-    uid = models.CharField(
-        max_length=128,
-        unique=True,
-        help_text="Unique identifier for this external release e.g. github release id",
-    )
-    name = models.CharField(
-        max_length=255,
-        help_text="Name of the release, ideally the tag name if applicable",
-    )
-    display_name = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="A human-readable name for the release, if different from the name",
-    )
-    html_url = models.URLField(
-        blank=True,
-        help_text="URL to the (browser-viewable) page for the release on the external service",
-    )
-    download_url = models.URLField(
-        blank=True,
-        help_text="URL to the downloadable package for the release on the external service, ideally a zipball such as in the case of github",
-    )
-    extra_data = models.JSONField(
-        default=dict,
-        help_text="Additional data for the external release, ideally the full object (e.g. github release) from the external service",
-    )
-
-
 class CodebaseReleaseQuerySet(models.QuerySet):
     def with_release_contributors(self, release_contributor_qs=None, user=None):
         if release_contributor_qs is None:
@@ -1385,11 +1547,11 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
     def internal(self, **kwargs):
         """returns only releases that are locally uploaded and not archived from an external service"""
-        return self.filter(imported_release_package__isnull=True, **kwargs)
+        return self.filter(imported_release_sync_state__isnull=True, **kwargs)
 
     def imported(self, **kwargs):
         """returns only releases that are imported from an external service such as GitHub"""
-        return self.filter(imported_release_package__isnull=False, **kwargs)
+        return self.filter(imported_release_sync_state__isnull=False, **kwargs)
 
     def public(self, **kwargs):
         return self.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
@@ -1480,8 +1642,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         max_length=32,
     )
 
-    imported_release_package = models.OneToOneField(
-        ImportedReleasePackage,
+    imported_release_sync_state = models.OneToOneField(
+        ImportedReleaseSyncState,
         null=True,
         on_delete=models.SET_NULL,
     )
@@ -1657,6 +1819,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 "identifier": self.codebase.identifier,
                 "version_number": self.version_number,
             },
+        )
+
+    def get_or_create_pushable_sync_state(self, commit_sha: str, tag_name: str):
+        return PushableReleaseSyncState.from_codebase_release(
+            self, commit_sha, tag_name
         )
 
     def get_review(self):
@@ -2017,7 +2184,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def is_imported(self):
-        return self.imported_release_package is not None
+        return self.imported_release_sync_state is not None
 
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
@@ -2075,11 +2242,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             schedule_mint_public_doi(
                 self.id, dry_run=settings.DEPLOY_ENVIRONMENT.is_development
             )
-        if self.codebase.git_mirror:
-            from .tasks import add_releases_and_push_codebase_repo
+        if PushableReleaseSyncState.objects.filter(release__codebase=self.codebase).exists():
+            # if this codebase has a local git repo built by us, append the new release to it
+            from .tasks import append_releases_to_local_git_repo
 
             transaction.on_commit(
-                lambda: add_releases_and_push_codebase_repo(self.codebase.id)
+                lambda: append_releases_to_local_git_repo(self.codebase.id)
             )
 
     def _publish(self):
@@ -2955,7 +3123,9 @@ class PeerReviewerFeedback(models.Model):
         recipients = {review.submitter.email, review.codebase_release.submitter.email}
 
         if review.codebase_release.is_imported:
-            template_name = "library/review/email/model_revisions_requested_imported.jinja"
+            template_name = (
+                "library/review/email/model_revisions_requested_imported.jinja"
+            )
         else:
             template_name = "library/review/email/model_revisions_requested.jinja"
         send_markdown_email(
@@ -3529,9 +3699,9 @@ class DataCiteRegistrationLog(models.Model):
                    """
 
 
-class GitHubSyncFaqEntry(index.Indexed, models.Model):
+class GitHubIntegrationFaqEntry(index.Indexed, models.Model):
     configuration = ParentalKey(
-        "GitHubSyncConfiguration", related_name="faq_entries", on_delete=models.CASCADE
+        "GitHubIntegrationConfiguration", related_name="faq_entries", on_delete=models.CASCADE
     )
     question = models.CharField(max_length=500, help_text=_("The FAQ question"))
     answer = MarkdownField(help_text=_("The FAQ answer in Markdown format"))
@@ -3542,19 +3712,51 @@ class GitHubSyncFaqEntry(index.Indexed, models.Model):
     class Meta:
         ordering = ["order", "id"]
 
-@register_setting
-class GitHubSyncConfiguration(BaseSiteSetting, ClusterableModel):
-    enable_new_syncs = models.BooleanField(
-        default=True, help_text=_("Disabling will prevent new synced repositories from being set up, existing syncs will remain active, visible, and editable.")
+
+class GitHubIntegrationTutorialVideo(index.Indexed, models.Model):
+    configuration = ParentalKey(
+        "GitHubIntegrationConfiguration",
+        related_name="tutorial_videos",
+        on_delete=models.CASCADE,
     )
-    is_beta = models.BooleanField(
-        default=True, help_text=_("Mark the GitHub Sync feature as a beta feature")
+    title = models.CharField(blank=True, max_length=200, help_text=_("optional short title for the tutorial"))
+    youtube_id = models.CharField(
+        max_length=32,
+        help_text=_("YouTube video id (e.g., dQw4w9WgXcQ)"),
+    )
+    description = models.TextField(blank=True, help_text=_("optional short description"))
+    order = models.PositiveIntegerField(
+        default=0, help_text=_("order in which this tutorial should appear")
     )
 
+    class Meta:
+        ordering = ["order", "id"]
+
+    panels = [
+        FieldPanel("title"),
+        FieldPanel("youtube_id"),
+        FieldPanel("description"),
+        FieldPanel("order"),
+    ]
+
+    def __str__(self):
+        return f"{self.title} ({self.youtube_id})"
+
+@register_setting
+class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
+    enable_new_connections = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Disabling will prevent new repositories from being connected, existing connections will remain active, visible, and editable."
+        ),
+    )
+    is_beta = models.BooleanField(
+        default=True, help_text=_("Mark the GitHub integration feature as a beta feature")
+    )
+     
     @staticmethod
     def github_app_settings_help_content():
-        """Create formatted content for a configuration help panel on the GitHub Sync settings page
-        """
+        """Create formatted content for a configuration help panel on the GitHub Integration settings page"""
         info_html = format_html(
             '<p>See the <a href="https://github.com/comses/infra/wiki" target="_blank" rel="noopener noreferrer">infra wiki</a> for configuration info.</p>'
         )
@@ -3562,18 +3764,22 @@ class GitHubSyncConfiguration(BaseSiteSetting, ClusterableModel):
         org_name = settings.GITHUB_MODEL_LIBRARY_ORG_NAME
         warnings = []
         if not app_name:
-            warnings.append("GitHub app name is not configured. Set GITHUB_INTEGRATION_APP_NAME in the environment.")
+            warnings.append(
+                "GitHub app name is not configured. Set GITHUB_INTEGRATION_APP_NAME in the environment."
+            )
         if not org_name:
-            warnings.append("GitHub organization name is not configured. Set GITHUB_MODEL_LIBRARY_ORG_NAME in the environment.")
+            warnings.append(
+                "GitHub organization name is not configured. Set GITHUB_MODEL_LIBRARY_ORG_NAME in the environment."
+            )
         if warnings:
             help_html = format_html(
                 '<div class="help-block help-warning"><strong>WARNING!</strong> {}</div>',
-                " ".join(warnings)
+                " ".join(warnings),
             )
         else:
             url = f"https://github.com/organizations/{org_name}/settings/apps/{slugify(app_name)}"
             help_html = format_html(
-               '<a href="{}" class="button" target="_blank" rel="noopener noreferrer">{} settings on GitHub</a>',
+                '<a href="{}" class="button" target="_blank" rel="noopener noreferrer">{} settings on GitHub</a>',
                 url,
                 app_name,
             )
@@ -3581,7 +3787,8 @@ class GitHubSyncConfiguration(BaseSiteSetting, ClusterableModel):
 
     panels = [
         HelpPanel(content=github_app_settings_help_content()),
-        FieldPanel("enable_new_syncs"),
+        FieldPanel("enable_new_connections"),
         FieldPanel("is_beta"),
         InlinePanel("faq_entries", label="FAQ Entries"),
+        InlinePanel("tutorial_videos", label="Tutorial Videos"),
     ]

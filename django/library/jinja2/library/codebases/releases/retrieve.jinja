@@ -293,44 +293,35 @@
 {% endwith %}
 
 
-{% with remotes = codebase.git_mirror.active_remotes_list if codebase.git_mirror else None %}
-    {% if has_change_perm or remotes %}
+{% with remote = codebase.active_git_remote %}
+    {% if has_change_perm or remote %}
     <div class="card-metadata">
         <div class="card-body">
             <div class="section mb-0">
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <b class="card-title mb-0">
-                        <i class="fab fa-github"></i>
-                        Github Sync
-                        {% with github_config=settings("library.GitHubSyncConfiguration", use_default_site=True) %}
+                        GitHub
+                        {% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
                             {% if github_config.is_beta %}
                                 <span class="beta-badge ms-1">Beta</span>
                             {% endif %}
                         {% endwith %}
                     </b>
-                </div>
-                {% if remotes %}
-                    <ul class="list-unstyled mb-2">
-                        {% for remote in remotes %}
-                            <li class="d-flex align-items-center mb-1">
-                                <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate badge bg-primary">
-                                    {{ remote.owner }}/{{ remote.repo_name }}
-                                </a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <div class="d-flex align-items-end justify-content-between">
                     <a class="small me-2" href="/github/" target="_blank">
-                        <i class="fas fa-question-circle"></i> What is this?
+                        <i class="fas fa-question-circle"></i>
                     </a>
-                    {% if has_change_perm %} 
-                        <a class="btn btn-sm btn-outline-secondary"
-                            href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
-                            <i class="fas fa-cog"></i> Configure
-                        </a>
-                    {% endif %}
                 </div>
+                {% if remote %}
+                    <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate w-100 badge bg-dark">
+                        <i class="fab fa-github"></i> {{ remote.owner }}/{{ remote.repo_name }}
+                    </a>
+                {% endif %}
+                {% if has_change_perm %} 
+                    <a class="btn btn-sm btn-outline-secondary w-100 mt-2"
+                        href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
+                        <i class="fas fa-cog"></i> Configure
+                    </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -355,7 +346,7 @@
             </div>
         </div>
         <div class="section">
-            {% if codebase.repository_url and not codebase.git_mirror %}
+            {% if codebase.repository_url and not remotes %}
                 <b class='card-title'>External Repository</b>
                 <div class="card-text mb-3">
                     <a href="{{ codebase.repository_url }}" class="d-block text-truncate">
@@ -404,13 +395,13 @@
             <div class="card-text mb-3">
                 {{ release.version_number }}
             </div>
-            {% with imported_package = release.imported_release_package %}
-            {% if imported_package and imported_package.display_name and imported_package.html_url %}
+            {% with imported_sync_state = release.imported_release_sync_state %}
+            {% if imported_sync_state and imported_sync_state.display_name and imported_sync_state.html_url %}
                 <b class='card-title'>Imported From</b>
                 <div class="card-text mb-3">
-                    <a href='{{ imported_package.html_url }}'>
+                    <a href='{{ imported_sync_state.html_url }}'>
                         <i class="fas fa-tag"></i>
-                        {{ imported_package.display_name }}
+                        {{ imported_sync_state.display_name }} on GitHub
                     </a>
                 </div>
             {% endif %}
