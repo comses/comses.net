@@ -280,6 +280,7 @@ export interface ImportedReleasePackage {
 
 export interface CodebaseRelease {
   absoluteUrl: string;
+  status: "DRAFT" | "UNDER_REVIEW" | "REVIEW_COMPLETE" | "PUBLISHED" | "UNPUBLISHED";
   canEditOriginals: boolean;
   citationText?: string;
   codebase: Codebase;
@@ -290,7 +291,6 @@ export interface CodebaseRelease {
   embargoEndDate: Date | null;
   firstPublishedAt: Date | null;
   identifier: string;
-  importedReleasePackage?: ImportedReleasePackage;
   lastModified: Date | null;
   lastPublishedOn: Date | null;
   license: License | null;
@@ -314,12 +314,13 @@ export interface CodebaseRelease {
     notifyReviewersOfChanges: string | null;
   };
   versionNumber: string;
+  importedReleaseSyncState?: ImportedReleaseSyncState | null;
 }
 
 export interface RelatedCodebase {
   absoluteUrl: string;
   allContributors: Contributor[];
-  githubSyncConfigUrl: string;
+  githubConfigUrl: string;
   activeGitRemote: CodebaseGitRemote | null;
   tags: Tag[];
   title: string;
@@ -442,6 +443,43 @@ export interface GitHubAppInstallationStatus {
   installationUrl: string | null;
 }
 
+export type ReleaseSyncStatus = "PENDING" | "RUNNING" | "SUCCESS" | "ERROR";
+
+export interface BaseReleaseSyncState {
+  id: number;
+  status: ReleaseSyncStatus;
+  lastLog: string;
+  fullLog: any[];
+  errorMessage: string;
+  httpStatus: number | null;
+  lastSyncStartedAt: string | null;
+  lastSyncFinishedAt: string | null;
+  batchId?: string | null;
+  tagName: string;
+  dateCreated: string;
+  lastModified: string;
+}
+
+export interface PushableReleaseSyncState extends BaseReleaseSyncState {
+  remote: number | null;
+  release: number;
+  builtCommitSha: string;
+  lastBuiltAt: string | null;
+  pushedCommitSha: string;
+  canRepush: boolean;
+}
+
+export interface ImportedReleaseSyncState extends BaseReleaseSyncState {
+  remote: number | null;
+  categoryManifest: Record<string, string>;
+  githubReleaseId: string;
+  displayName: string;
+  htmlUrl: string;
+  downloadUrl: string;
+  extraData: Record<string, any>;
+  canReimport: boolean;
+}
+
 export interface CodebaseGitRemote {
   id: number;
   owner: string;
@@ -452,11 +490,32 @@ export interface CodebaseGitRemote {
   isUserRepo: boolean;
   isPreexisting: boolean;
   isActive: boolean;
-  lastPushLog: string;
-  lastImportLog: string;
+  pushableSyncStates: PushableReleaseSyncState[];
+  importedSyncStates: ImportedReleaseSyncState[];
 }
 
 export interface CodebaseGitRemoteForm {
   shouldPush?: boolean;
   shouldImport?: boolean;
+}
+
+export interface CodebaseReleaseWithPushableStates extends CodebaseRelease {
+  pushableSyncStates: PushableReleaseSyncState[];
+  activeOrNullRemotePushableSyncState?: PushableReleaseSyncState | null;
+}
+
+export interface GitHubRelease {
+  id: string | number;
+  name: string;
+  tagName: string;
+  htmlUrl: string;
+  zipballUrl: string;
+  draft: boolean;
+  prerelease: boolean;
+  createdAt: string | null;
+  publishedAt: string | null;
+  hasSemanticVersioning: boolean;
+  version: string;
+  createdByIntegration: boolean;
+  importedSyncState?: ImportedReleaseSyncState | null;
 }

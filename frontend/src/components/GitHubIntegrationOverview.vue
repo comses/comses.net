@@ -29,7 +29,7 @@
               <a
                 v-if="codebase.activeGitRemote"
                 :href="codebase.activeGitRemote.url"
-                class="badge bg-primary mt-1"
+                class="badge bg-dark mt-1"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -38,7 +38,7 @@
               </a>
             </div>
             <a
-              :href="codebase.githubSyncConfigUrl"
+              :href="codebase.githubConfigUrl"
               class="btn btn-sm btn-outline-secondary text-nowrap"
             >
               <i class="fas fa-cog"></i> Configure
@@ -48,7 +48,7 @@
       </div>
     </div>
     <div class="col-md-4 col-12 mb-3 order-1 order-md-2">
-      <GitHubInstallationStatus :installation-status="installationStatus" />
+      <ConnectGitHubStep :installation-status="installationStatus" />
     </div>
   </div>
 </template>
@@ -57,7 +57,7 @@
 import { ref, onMounted } from "vue";
 import { useCodebaseAPI } from "@/composables/api/codebase";
 import type { RelatedCodebase, GitHubAppInstallationStatus } from "@/types";
-import GitHubInstallationStatus from "@/components/GitHubInstallationStatus.vue";
+import ConnectGitHubStep from "@/components/githubIntegration/ConnectGitHubStep.vue";
 
 const { submittedCodebases, getGitHubInstallationStatus } = useCodebaseAPI();
 

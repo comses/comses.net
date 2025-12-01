@@ -53,7 +53,13 @@ from core.views import (
     HtmlNoDeleteViewSet,
 )
 from core.pagination import SmallResultSetPagination
-from .github_integration import GitHubReleaseImporter, GitHubRepoValidator, get_github_installation_status
+from .github_integration import (
+    GitHubReleaseImporter,
+    GitHubRepoValidator,
+    get_github_installation_status,
+    list_github_releases_for_remote,
+    GitHubApi,
+)
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -79,13 +85,15 @@ from .models import (
     PeerReviewerFeedback,
     PeerReviewInvitation,
     ReviewStatus,
-    GitHubSyncConfiguration,
+    GitHubIntegrationConfiguration,
 )
+from .models import ImportedReleaseSyncState, PushableReleaseSyncState
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (
     CodebaseGitRemoteSerializer,
     CodebaseSerializer,
     CodebaseReleaseSerializer,
+    CodebaseReleaseWithPushableStatesSerializer,
     RelatedCodebaseSerializer,
     ContributorSerializer,
     DownloadRequestSerializer,
@@ -97,10 +105,11 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
-from .tasks import build_and_push_codebase_repo, build_and_push_single_remote
+from .tasks import import_github_release_task, push_all_releases_to_github, build_local_git_repo
 
 import logging
 import pathlib
+from packaging.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -620,7 +629,10 @@ class CodebaseGitRemoteViewSet(
     def get_queryset(self):
         resolved = resolve(self.request.path)
         identifier = resolved.kwargs["identifier"]
-        return self.queryset.filter(mirror__codebase__identifier=identifier)
+        return (
+            self.queryset.filter(codebase__identifier=identifier)
+            .prefetch_related("pushable_sync_states", "imported_sync_states")
+        )
 
     def get_codebase(self):
         try:
@@ -630,40 +642,14 @@ class CodebaseGitRemoteViewSet(
 
     def _forward_integrity_error(self, e: IntegrityError):
         msg = str(e)
-        if "single_pushable_user_repo" in msg:
-            raise ValidationError("There can only be one active user-owned repository.")
-        if "single_pushable_org_repo" in msg:
-            raise ValidationError(
-                "There can only be one active organization-owned repository."
-            )
-        if "single_archivable_repo" in msg:
-            raise ValidationError(
-                "There can only be one repository that releases are being archived from."
-            )
-        if "org_repo_not_archivable" in msg:
-            raise ValidationError(
-                "Repositories in the CoMSES Model Library organization cannot be archived."
-            )
-        if "preexisting_repo_not_pushable" in msg:
-            raise ValidationError(
-                "Pre-existing linked repositories cannot be pushed to."
-            )
+        if "single_active_remote" in msg:
+            raise ValidationError("There can only be one active repository for a codebase at a time.")
         else:
             raise ValidationError("A repository already exists at this location.")
 
     def update(self, request, *args, **kwargs):
         try:
-            response = super().update(request, *args, **kwargs)
-            # if pushing was turned on, trigger a build and push task for this remote
-            if request.data.get("should_push") == True:
-                codebase_id = self.get_codebase().id
-                remote_id = kwargs["pk"]
-                build_and_push_single_remote(codebase_id, remote_id)
-                response = Response(
-                    status=status.HTTP_202_ACCEPTED,
-                    data="Pushing process started in the background, this should take only a few seconds.",
-                )
-            return response
+            return super().update(request, *args, **kwargs)
         except IntegrityError as e:
             self._forward_integrity_error(e)
 
@@ -682,6 +668,159 @@ class CodebaseGitRemoteViewSet(
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=["post"])
+    def push_all(self, request, *args, **kwargs):
+        """Manually push all releases to GitHub for the active remote.
+
+        Immediately marks per-remote PushableReleaseSyncState rows as RUNNING for UI feedback,
+        then enqueues an async task to perform the push and create GitHub releases.
+        """
+        codebase = self.get_codebase()
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            raise ValidationError("Active remote not found")
+
+        # seed/mark pushable sync states to RUNNING for this remote
+        releases = CodebaseRelease.objects.filter(codebase=codebase)
+        now = timezone.now()
+        for release in releases:
+            # prefer copying tag from canonical null-remote state
+            base_state = release.pushable_sync_states.filter(remote__isnull=True).first()
+            tag_name = getattr(base_state, "tag_name", None) or release.version_number
+            state, _ = PushableReleaseSyncState.objects.get_or_create(
+                release=release,
+                remote=active_remote,
+                defaults={"tag_name": tag_name},
+            )
+            state.status = PushableReleaseSyncState.Status.RUNNING
+            state.last_sync_started_at = now
+            state.save()
+
+        push_all_releases_to_github(codebase.id, active_remote.id)
+        return Response(status=status.HTTP_202_ACCEPTED, data="Push started.")
+
+    @action(detail=False, methods=["post"])
+    def push_release(self, request, *args, **kwargs):
+        """Push a single release to GitHub for the active remote.
+
+        body params:
+        - version_number: str (required) release version to push
+        """
+        from .tasks import push_release_to_github
+
+        codebase = self.get_codebase()
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            raise ValidationError("Active remote not found")
+        version_number = request.data.get("version_number")
+        if not version_number:
+            raise ValidationError("'version_number' is required")
+        release = (
+            CodebaseRelease.objects.filter(codebase=codebase, version_number=version_number)
+            .first()
+        )
+        if not release:
+            raise ValidationError("Release not found")
+
+        # seed or mark per-remote pushable state to RUNNING
+        base_state = release.pushable_sync_states.filter(remote__isnull=True).first()
+        tag_name = getattr(base_state, "tag_name", None) or version_number
+        state, _ = PushableReleaseSyncState.objects.get_or_create(
+            release=release, remote=active_remote, defaults={"tag_name": tag_name}
+        )
+        state.status = PushableReleaseSyncState.Status.RUNNING
+        state.last_sync_started_at = timezone.now()
+        state.save()
+
+        push_release_to_github(codebase.id, active_remote.id, release.id)
+        return Response(status=status.HTTP_202_ACCEPTED, data="Release push started.")
+
+    @action(detail=False, methods=["get"])
+    def active_remote(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if active_remote:
+            serializer = self.get_serializer(active_remote)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(data=None, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"])
+    def local_releases(self, request, *args, **kwargs):
+        """Return all local releases for this codebase with pushable sync states.
+
+        Includes the canonical null-remote state and any per-remote states for completeness.
+        """
+        codebase = self.get_codebase()
+        qs = (
+            CodebaseRelease.objects.filter(codebase=codebase)
+            .select_related("codebase")
+            .prefetch_related("pushable_sync_states")
+        )
+        releases = list(qs)
+        releases.sort(key=lambda r: Version(r.version_number), reverse=True)
+        serializer = CodebaseReleaseWithPushableStatesSerializer(
+            releases, many=True, context=self.get_serializer_context()
+        )
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def github_releases(self, request, *args, **kwargs):
+        """fetch releases from the connected GitHub repository for this codebase
+
+        requires an active remote. returns minimal release info suitable for client display
+        and import selection.
+        """
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            return Response([], status=status.HTTP_200_OK)
+        try:
+            releases = list_github_releases_for_remote(active_remote)
+            return Response(releases, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.exception("Failed to fetch GitHub releases: %s", e)
+            raise ValidationError("Unable to fetch GitHub releases for the active remote")
+
+    @action(detail=False, methods=["post"])
+    def import_github_release(self, request, *args, **kwargs):
+        """Start an async import for a specific GitHub release id for the active remote.
+
+        body params:
+        - github_release_id: str | int (required)
+        - custom_version: str (optional) when the release tag/name has no semver
+        """
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            raise ValidationError("Active remote not found")
+        github_release_id = request.data.get("github_release_id")
+        if not github_release_id:
+            raise ValidationError("'github_release_id' is required")
+        custom_version = request.data.get("custom_version")
+        # require existing sync state
+        sync_state = (
+            ImportedReleaseSyncState.objects.filter(
+                remote=active_remote, github_release_id=str(github_release_id)
+            ).first()
+        )
+        if not sync_state:
+            raise ValidationError(
+                "Import not prepared. refresh GitHub releases and try again."
+            )
+        if sync_state.status == ImportedReleaseSyncState.Status.RUNNING:
+            raise ValidationError("GitHub release import is already in progress")
+        # mark as RUNNING and dispatch import task
+        sync_state.mark_running()
+        import_github_release_task(
+            active_remote.codebase_id,
+            active_remote.id,
+            str(github_release_id),
+            custom_version,
+        )
+        return Response(status=status.HTTP_202_ACCEPTED, data="Import started.")
+
     @action(detail=False, methods=["get"])
     def submitter_installation_status(self, request, *args, **kwargs):
         codebase = self.get_codebase()
@@ -691,8 +830,8 @@ class CodebaseGitRemoteViewSet(
 
     @action(detail=False, methods=["post"])
     def setup_user_github_remote(self, request, *args, **kwargs):
-        config = GitHubSyncConfiguration.for_request(request)
-        if not config.enable_new_syncs:
+        config = GitHubIntegrationConfiguration.for_request(request)
+        if not config.enable_new_connections:
             raise ValidationError(
                 "Sorry, setting up new synced repositories is currently disabled."
             )
@@ -706,6 +845,7 @@ class CodebaseGitRemoteViewSet(
                 "Installation of the Github integration app is required"
             )
 
+        is_preexisting = bool(request.data.get("is_preexisting", False))
         repo_name = request.data.get("repo_name")
         if not repo_name:
             raise ValidationError("Repository name is required")
@@ -713,120 +853,49 @@ class CodebaseGitRemoteViewSet(
         validator = GitHubRepoValidator(repo_name)
         try:
             validator.validate_format()
-            validator.check_user_repo_empty(installation)
+            repo_html_url = None
+            if is_preexisting:
+                repo_html_url = validator.get_existing_user_repo_url(installation)
+            else:
+                repo_html_url = validator.check_user_repo_empty(installation)
         except ValueError as e:
             error_message = e.args[0] if e.args else "Invalid repository configuration"
             raise ValidationError(error_message)
 
-        # create a mirror if it doesn't exist
-        if not codebase.git_mirror:
-            codebase.create_git_mirror()
-        # set up the user remote
+        # swap out a new active remote for the old one
+        queryset = self.get_queryset()
+        current_remote = queryset.filter(is_active=True).first()
         try:
-            codebase.git_mirror.create_remote(
-                owner=installation.github_login,
-                repo_name=repo_name,
-                is_user_repo=True,
-                is_preexisting=False,
-                should_push=True,
-                should_import=True,
-            )
-        except IntegrityError as e:
-            self._forward_integrity_error(e)
-        # trigger the build and push task
-        build_and_push_codebase_repo(codebase.id)
-        return Response(
-            status=status.HTTP_202_ACCEPTED,
-            data="Pushing process started in the background, this should take only a few seconds.",
-        )
-
-    @action(detail=False, methods=["post"])
-    def setup_user_existing_github_remote(self, request, *args, **kwargs):
-        config = GitHubSyncConfiguration.for_request(request)
-        if not config.enable_new_syncs:
-            raise ValidationError(
-                "Sorry, setting up new synced repositories is currently disabled."
-            )
-        codebase = self.get_codebase()
-        installation = codebase.submitter.github_integration_app_installation
-        if not installation:
-            raise ValidationError(
-                "Installation of the Github integration app is required"
-            )
-
-        repo_name = request.data.get("repo_name")
-        if not repo_name:
-            raise ValidationError("Repository name is required")
-
-        validator = GitHubRepoValidator(repo_name)
-        try:
-            validator.validate_format()
-            repo_html_url = validator.get_existing_user_repo_url(installation)
-        except ValueError as e:
-            error_message = e.args[0] if e.args else "Invalid repository configuration"
-            raise ValidationError(error_message)
-
-        # create a mirror if it doesn't exist
-        if not codebase.git_mirror:
-            codebase.create_git_mirror()
-        # set up the user remote
-        try:
-            codebase.git_mirror.create_remote(
-                owner=installation.github_login,
-                repo_name=repo_name,
-                is_user_repo=True,
-                is_preexisting=True,
-                should_push=False,
-                should_import=True,
-                url=repo_html_url,
-            )
+            with transaction.atomic():
+                if current_remote:
+                    current_remote.is_active = False
+                    current_remote.save(update_fields=["is_active", "last_modified"])
+                new_remote = codebase.create_remote(
+                    owner=installation.github_login,
+                    repo_name=repo_name,
+                    is_user_repo=True,
+                    is_preexisting=is_preexisting,
+                    is_active=True,
+                    url=repo_html_url,
+                )
+                if current_remote:
+                    # duplicate pushable release states for the new remote
+                    PushableReleaseSyncState.copy_states_to_remote(
+                        codebase=codebase, from_remote=current_remote, to_remote=new_remote
+                    )
         except IntegrityError as e:
             self._forward_integrity_error(e)
         return Response(
             status=status.HTTP_200_OK,
-            data="Repository remote successfully set up. From now on, releases published on GitHub will be imported to the CoMSES Model Library.",
+            data="Repository connection successful.",
         )
 
     @action(detail=False, methods=["post"])
-    def setup_org_github_remote(self, request, *args, **kwargs):
+    def build_local_repo(self, request, *args, **kwargs):
+        """Build or update the local git mirror for this codebase without pushing."""
         codebase = self.get_codebase()
-        if not codebase.live:
-            raise ValidationError("This model does not have any published releases")
-
-        repo_name = request.data.get("repo_name")
-        if not repo_name:
-            raise ValidationError("Repository name is required")
-
-        validator = GitHubRepoValidator(repo_name)
-        try:
-            validator.validate_format()
-            validator.check_org_repo_name_unused()
-        except ValueError as e:
-            error_message = e.args[0] if e.args else "Invalid repository configuration"
-            raise ValidationError(error_message)
-
-        # create a mirror if it doesn't exist
-        if not codebase.git_mirror:
-            codebase.create_git_mirror()
-        # set up the org remote
-        try:
-            codebase.git_mirror.create_remote(
-                owner=settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
-                repo_name=repo_name,
-                is_user_repo=False,
-                is_preeexisting=False,
-                should_push=True,
-                should_import=False,
-            )
-        except IntegrityError as e:
-            self._forward_integrity_error(e)
-
-        # trigger the build and push task
-        build_and_push_codebase_repo(codebase.id)
-        return Response(
-            status=status.HTTP_202_ACCEPTED,
-            data="Synchronization process started, this should take only a few seconds. Refresh this page to see the status.",
-        )
+        build_local_git_repo(codebase.id)
+        return Response(status=status.HTTP_202_ACCEPTED, data="Local repository build started.")
 
 
 @csrf_exempt
@@ -834,7 +903,6 @@ def github_sync_webhook(request):
     """
     Handle GitHub app webhook events:
     - new installations (match to connected socialaccount and save the installation record)
-    - new releases (create a new CodebaseRelease)
 
     for local testing, use smee.io or similar to forward webhooks:
     https://docs.github.com/en/webhooks/using-webhooks/handling-webhook-deliveries#setup
@@ -857,13 +925,21 @@ def github_sync_webhook(request):
     event = request.headers.get("X-GitHub-Event")
     if event == "installation":
         payload = json.loads(request.body)
+        action = payload["action"]
         sender = payload["sender"]
         # match based on the uid
         uid = sender["id"]
         social_account = SocialAccount.objects.filter(
             provider="github", uid=str(uid)
         ).first()
-        if social_account:
+        if not social_account:
+            return HttpResponse(status=404)
+        if action == "deleted":
+            installation = GithubIntegrationAppInstallation.objects.filter(
+                user=social_account.user,
+            ).delete()
+            return HttpResponse("OK", status=200)
+        else:
             installation = GithubIntegrationAppInstallation.objects.update_or_create(
                 user=social_account.user,
                 defaults={
@@ -873,18 +949,6 @@ def github_sync_webhook(request):
                 },
             )
             return HttpResponse("OK", status=200)
-    elif event == "release":
-        payload = json.loads(request.body)
-        # always ignore releases created by the integration app
-        if slugify(settings.GITHUB_INTEGRATION_APP_NAME) in payload["sender"]["login"]:
-            return HttpResponse(status=202)
-        try:
-            importer = GitHubReleaseImporter(payload)
-            success = importer.import_or_reimport()
-            if success:
-                return HttpResponse("OK", status=200)
-        except:
-            pass
 
     return HttpResponse(status=202)
 

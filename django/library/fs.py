@@ -853,12 +853,12 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
 
 
 class CategoryManifestManager:
-    def __init__(self, imported_release_package):
-        self.imported_release_package = imported_release_package
+    def __init__(self, imported_release_sync_state):
+        self.imported_release_sync_state = imported_release_sync_state
 
     @property
     def data(self) -> dict:
-        return self.imported_release_package.category_manifest
+        return self.imported_release_sync_state.category_manifest
 
     def build(self, file_list: list[Path]):
         """generate a manifest from scratch from a list of files (normally sip.list()).
@@ -884,8 +884,8 @@ class CategoryManifestManager:
 
     def update(self, manifest):
         """save the manifest to the imported release package"""
-        self.imported_release_package.category_manifest = manifest
-        self.imported_release_package.save()
+        self.imported_release_sync_state.category_manifest = manifest
+        self.imported_release_sync_state.save()
 
     def update_file_category(self, name, category: FileCategories):
         manifest = self.data
@@ -933,16 +933,16 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         system_file_presence_message_level=MessageLevels.error,
         mimetype_mismatch_message_level=MessageLevels.error,
     ):
-        self.imported_release_package = codebase_release.imported_release_package
-        if not self.imported_release_package:
+        self.imported_release_sync_state = codebase_release.imported_release_sync_state
+        if not self.imported_release_sync_state:
             raise ValueError("CodebaseRelease must be an imported release")
         super().__init__(
             codebase_release,
             system_file_presence_message_level,
             mimetype_mismatch_message_level,
         )
-        self.imported_release_package = codebase_release.imported_release_package
-        self.manifest = CategoryManifestManager(self.imported_release_package)
+        self.imported_release_sync_state = codebase_release.imported_release_sync_state
+        self.manifest = CategoryManifestManager(self.imported_release_sync_state)
 
     def list(self, stage=StagingDirectories.sip, category=None):
         if category is not None:
@@ -1018,7 +1018,7 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         if cd and "filename=" in cd:
             filename = re.findall("filename=(.+)", cd)[0]
         else:
-            tag_name = self.imported_release_package.tag_name
+            tag_name = self.imported_release_sync_state.tag_name
             filename = f"{tag_name}.zip"
         file_path = Path(originals_storage.location) / filename
         with file_path.open("wb") as f:
@@ -1040,7 +1040,7 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
     def import_release_package(
         self, installation_token: str, download_url: str | None = None
     ) -> tuple[dict, dict]:
-        """import a release archive from a remote URL (imported_release_package.download_url by default)
+        """import a release archive from a remote URL (imported_release_sync_state.download_url by default)
         by downloading into the originals storage and extracting into the SIP storage.
 
         returns a tuple of dicts representing extracted metadata from known metadata files found in the archive,
@@ -1049,7 +1049,7 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         NOTE: currently only supports zip archives
         """
         if download_url is None:
-            download_url = self.imported_release_package.download_url
+            download_url = self.imported_release_sync_state.download_url
         archive_path = self.download_archive(download_url, installation_token)
         self.extract_to_sip(archive_path)
         sip_contents = list(self.get_sip_storage().list())
@@ -1115,9 +1115,6 @@ class CodebaseGitRepositoryApi:
 
     def __init__(self, codebase):
         self.codebase = codebase
-        self.mirror = codebase.git_mirror
-        if not self.mirror:
-            raise ValueError("Codebase must have a git_mirror")
         self.repo_dir = Path(self.codebase.base_git_dir).absolute()
 
     @property
@@ -1320,12 +1317,14 @@ class CodebaseGitRepositoryApi:
                 return None
 
             commit_msg = f"Update metadata for release {release.version_number}"
-            self.repo.index.commit(
+            commit = self.repo.index.commit(
                 message=commit_msg,
                 committer=self.committer,
                 author=self.author,
                 author_date=timezone.now(),
             )
+            # update pushable build state (null remote) for this release to reflect new commit
+            release.get_or_create_pushable_sync_state(commit.hexsha, release.version_number)
             if merge_into_main:
                 self.checkout_main()
                 try:
@@ -1350,20 +1349,23 @@ class CodebaseGitRepositoryApi:
         """
         self.check_file_sizes(self.codebase)
         if not releases:
-            releases = self.mirror.unbuilt_releases
+            # select internal public releases without a successful build state
+            releases = self.codebase.unbuilt_internal_public_releases()
         if not releases:
             # nothing to do, return the existing repo
             return Repo(self.repo_dir)
         with self.use_temporary_repo(from_existing=True):
             # make sure the releases are higher than the latest mirrored release
-            if not all(
-                Version(release.version_number)
-                > Version(self.mirror.latest_built_release.version_number)
-                for release in releases
-            ):
-                raise ValueError(
-                    "Releases must be higher than the latest mirrored release to append"
-                )
+            latest_built_state = self.codebase.latest_pushable_sync_state()
+            if latest_built_state is not None:
+                if not all(
+                    Version(release.version_number)
+                    > Version(latest_built_state.release.version_number)
+                    for release in releases
+                ):
+                    raise ValueError(
+                        "Releases must be higher than the latest mirrored release to append"
+                    )
             # make sure the releases are ordered by version number
             releases = sorted(releases, key=lambda r: Version(r.version_number))
             # append releases to the git repo by adding files, committing, and creating a branch
@@ -1372,9 +1374,9 @@ class CodebaseGitRepositoryApi:
                 self.add_readme(release)
                 commit = self.commit_release(release)
                 self.create_release_branch(release, commit)
+                # update pushable build state (null remote) per release
+                release.get_or_create_pushable_sync_state(commit.hexsha, release.version_number)
             self.checkout_main()
-        # record newly mirrored releases and update timestamp
-        self.mirror.mark_releases_built(releases)
         return Repo(self.repo_dir)
 
     def build(self) -> Repo:
@@ -1395,22 +1397,19 @@ class CodebaseGitRepositoryApi:
                 self.add_readme(release)
                 commit = self.commit_release(release)
                 self.create_release_branch(release, commit)
+                # update pushable build state per release
+                release.get_or_create_pushable_sync_state(commit.hexsha, release.version_number)
             self.checkout_main()
-        # record mirrored releases and update timestamp
-        self.mirror.mark_releases_built(releases)
         return Repo(self.repo_dir)
 
     def update_or_build(self) -> Repo:
-        # if the repo doesn't exist, is empty, or the mirror object is not tracking them,
-        # build (or rebuild) the repo
-        if (
-            not self.repo_dir.exists()
-            or not self.repo_dir.joinpath(".git").exists()
-            or not self.mirror.built_releases.exists()
-        ):
+        # if the repo doesn't exist or is empty, build/rebuild
+        if not self.repo_dir.exists() or not self.repo_dir.joinpath(".git").exists():
             return self.build()
-        else:
-            return self.append_releases()
+        # if no successful build states exist, rebuild
+        if not self.codebase.latest_pushable_sync_state():
+            return self.build()
+        return self.append_releases()
 
     def dirs_equal(self, dir1: Path, dir2: Path, ignore=[".git"]):
         """

@@ -12,7 +12,7 @@
     </p>
     <p>
       If you do need to add, remove, or update any files, you can do so by
-      <a target="_blank" :href="store.release.importedReleasePackage?.htmlUrl"
+      <a target="_blank" :href="store.release.importedReleaseSyncState?.htmlUrl"
         >updating the source GitHub release</a
       >
       to point at a new tag with the desired changes, which will trigger a re-import of the release.
