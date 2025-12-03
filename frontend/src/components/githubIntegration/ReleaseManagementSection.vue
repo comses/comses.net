@@ -44,6 +44,7 @@
                   :release="release"
                   :is-in-progress="false"
                   :progress="0"
+                  @push-started="pollForPushJobs"
                 />
                 <li
                   v-if="localReleases.length === 0"
@@ -106,7 +107,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import LocalReleaseItem from "@/components/githubIntegration/LocalReleaseItem.vue";
 import GitHubReleaseItem from "@/components/githubIntegration/GitHubReleaseItem.vue";
 import { useGitRemotesAPI } from "@/composables/api/git";
-import type { GitHubRelease, CodebaseReleaseWithPushableStates, CodebaseGitRemote } from "@/types";
+import type { GitHubRelease, CodebaseReleaseWithGitRefSyncState, CodebaseGitRemote } from "@/types";
 
 export interface ReleaseManagementSectionProps {
   codebaseIdentifier: string;
@@ -118,7 +119,7 @@ const props = defineProps<ReleaseManagementSectionProps>();
 
 defineEmits<{ "change-remote": [] }>();
 
-const localReleases = ref<CodebaseReleaseWithPushableStates[]>([]);
+const localReleases = ref<CodebaseReleaseWithGitRefSyncState[]>([]);
 const githubReleases = ref<GitHubRelease[]>([]);
 const localLoading = ref(false);
 const githubLoading = ref(false);
@@ -164,11 +165,7 @@ watch(
   }
 );
 
-const hasUnpushedReleases = computed(() =>
-  localReleases.value.some(
-    r => Array.isArray(r.pushableSyncStates) && r.pushableSyncStates.length > 0
-  )
-);
+const hasUnpushedReleases = computed(() => localReleases.value.some(r => !!r.gitRefSyncState));
 
 const handlePushAll = async () => {
   await pushAllReleasesToGitHub();
@@ -188,14 +185,14 @@ function hasNoImportJobs(): boolean {
 }
 
 function hasNoPushJobs(): boolean {
-  // check RUNNING jobs only for the active remote
   const activeId = props.activeRemote?.id;
   if (!activeId) return false;
-  return localReleases.value.every(r =>
-    (r.pushableSyncStates || [])
-      .filter(s => s.remote === activeId)
-      .every(s => s.status !== "RUNNING")
-  );
+  return localReleases.value.every(r => {
+    const state = r.gitRefSyncState;
+    if (!state) return true;
+    if (state.remote !== activeId) return true;
+    return state.status !== "RUNNING";
+  });
 }
 
 async function pollRemotesUntil(successCondition: () => boolean | Promise<boolean>) {

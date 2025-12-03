@@ -460,13 +460,12 @@ export interface BaseReleaseSyncState {
   lastModified: string;
 }
 
-export interface PushableReleaseSyncState extends BaseReleaseSyncState {
+export interface GitRefSyncState extends BaseReleaseSyncState {
   remote: number | null;
-  release: number;
   builtCommitSha: string;
   lastBuiltAt: string | null;
   pushedCommitSha: string;
-  canRepush: boolean;
+  canPush: boolean;
 }
 
 export interface ImportedReleaseSyncState extends BaseReleaseSyncState {
@@ -490,18 +489,10 @@ export interface CodebaseGitRemote {
   isUserRepo: boolean;
   isPreexisting: boolean;
   isActive: boolean;
-  pushableSyncStates: PushableReleaseSyncState[];
-  importedSyncStates: ImportedReleaseSyncState[];
 }
 
-export interface CodebaseGitRemoteForm {
-  shouldPush?: boolean;
-  shouldImport?: boolean;
-}
-
-export interface CodebaseReleaseWithPushableStates extends CodebaseRelease {
-  pushableSyncStates: PushableReleaseSyncState[];
-  activeOrNullRemotePushableSyncState?: PushableReleaseSyncState | null;
+export interface CodebaseReleaseWithGitRefSyncState extends CodebaseRelease {
+  gitRefSyncState: GitRefSyncState | null;
 }
 
 export interface GitHubRelease {

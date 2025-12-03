@@ -31,9 +31,9 @@ from core.serializers import (
 )
 from .models import (
     CodebaseGitRemote,
+    GitRefSyncState,
     ImportedReleaseSyncState,
     PeerReviewer,
-    PushableReleaseSyncState,
     ReleaseContributor,
     Codebase,
     CodebaseRelease,
@@ -496,14 +496,14 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
         )
 
 
-class PushableReleaseSyncStateSerializer(serializers.ModelSerializer):
-    can_repush = serializers.SerializerMethodField()
+class GitRefSyncStateSerializer(serializers.ModelSerializer):
+    can_push = serializers.SerializerMethodField()
 
-    def get_can_repush(self, instance):
-        return instance.can_repush()
+    def get_can_push(self, instance):
+        return instance.can_push()
 
     class Meta:
-        model = PushableReleaseSyncState
+        model = GitRefSyncState
         fields = "__all__"
 
 
@@ -520,8 +520,6 @@ class ImportedReleaseSyncStateSerializer(serializers.ModelSerializer):
 
 class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
     is_active = serializers.ReadOnlyField()
-    pushable_sync_states = PushableReleaseSyncStateSerializer(many=True, read_only=True)
-    imported_sync_states = ImportedReleaseSyncStateSerializer(many=True, read_only=True)
 
     class Meta:
         model = CodebaseGitRemote
@@ -533,8 +531,6 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "is_user_repo",
             "is_preexisting",
             "is_active",
-            "pushable_sync_states",
-            "imported_sync_states",
         )
         read_only_fields = (
             "id",
@@ -544,8 +540,6 @@ class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
             "is_user_repo",
             "is_preexisting",
             "is_active",
-            "pushable_sync_states",
-            "imported_sync_states",
         )
 
 
@@ -696,26 +690,13 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         )
 
 
-class CodebaseReleaseWithPushableStatesSerializer(CodebaseReleaseSerializer):
-    """Extends base release serializer to include pushable sync states for local mirror context"""
+class CodebaseReleaseWithGitRefSyncStateSerializer(CodebaseReleaseSerializer):
+    """Extends base release serializer to include git ref sync state for local mirror context"""
 
-    pushable_sync_states = PushableReleaseSyncStateSerializer(read_only=True, many=True)
-    active_or_null_remote_pushable_sync_state = serializers.SerializerMethodField()
-
-    def get_active_or_null_remote_pushable_sync_state(self, instance):
-        # find the single active remote for this codebase and return the matching pushable state
-        # or null-remote state
-        active_remote = instance.codebase.active_git_remote
-        state = instance.pushable_sync_states.filter(remote=active_remote).first()
-        if not state:
-            state = instance.pushable_sync_states.filter(remote__isnull=True).first()
-        return PushableReleaseSyncStateSerializer(state).data if state else None
+    git_ref_sync_state = GitRefSyncStateSerializer(read_only=True)
 
     class Meta(CodebaseReleaseSerializer.Meta):
-        fields = CodebaseReleaseSerializer.Meta.fields + (
-            "pushable_sync_states",
-            "active_or_null_remote_pushable_sync_state",
-        )
+        fields = CodebaseReleaseSerializer.Meta.fields + ("git_ref_sync_state",)
 
 
 class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):

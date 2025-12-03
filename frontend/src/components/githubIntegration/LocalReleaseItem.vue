@@ -23,18 +23,18 @@
         >
       </div>
       <div class="d-flex align-items-center gap-2">
-        <div
-          v-if="release.activeOrNullRemotePushableSyncState"
-          class="d-flex align-items-center gap-1"
-        >
+        <div v-if="release.gitRefSyncState" class="d-flex align-items-center gap-1">
           <span class="badge" :class="statusBadgeClass">{{ statusLabel }}</span>
           <BootstrapTooltip
-            v-if="release.activeOrNullRemotePushableSyncState.status === 'ERROR' && errorMessage"
+            v-if="release.gitRefSyncState.status === 'ERROR' && errorMessage"
             :title="errorMessage"
             icon-class="fas fa-exclamation-triangle text-danger"
             placement="bottom"
           />
         </div>
+        <span v-if="release.gitRefSyncState?.canPush" class="badge bg-primary">
+          {{ release.gitRefSyncState?.status === "SUCCESS" ? "Metadata updates" : "Can push" }}
+        </span>
       </div>
     </div>
 
@@ -56,11 +56,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useReleaseEditorAPI } from "@/composables/api/releaseEditor";
-import type { CodebaseReleaseWithPushableStates } from "@/types";
+import type { CodebaseReleaseWithGitRefSyncState } from "@/types";
 import BootstrapTooltip from "@/components/BootstrapTooltip.vue";
 
 export interface LocalReleaseItemProps {
-  release: CodebaseReleaseWithPushableStates;
+  release: CodebaseReleaseWithGitRefSyncState;
   isInProgress: boolean;
   progress: number;
 }
@@ -70,7 +70,7 @@ const props = defineProps<LocalReleaseItemProps>();
 const { editUrl } = useReleaseEditorAPI();
 
 const statusLabel = computed(() => {
-  const state = props.release.activeOrNullRemotePushableSyncState;
+  const state = props.release.gitRefSyncState;
   if (!state) return "";
   switch (state.status) {
     case "RUNNING":
@@ -78,7 +78,7 @@ const statusLabel = computed(() => {
     case "ERROR":
       return "Failed";
     case "SUCCESS":
-      return "Success (FIXME: metadata updates?)";
+      return "Success";
     case "PENDING":
       return "Pending";
     default:
@@ -87,7 +87,7 @@ const statusLabel = computed(() => {
 });
 
 const statusBadgeClass = computed(() => {
-  const state = props.release.activeOrNullRemotePushableSyncState;
+  const state = props.release.gitRefSyncState;
   if (!state) return null;
   switch (state.status) {
     case "RUNNING":
@@ -107,7 +107,5 @@ const editHref = computed(() =>
   editUrl(props.release.codebase.identifier, props.release.versionNumber)
 );
 
-const errorMessage = computed(
-  () => props.release.activeOrNullRemotePushableSyncState?.errorMessage || ""
-);
+const errorMessage = computed(() => props.release.gitRefSyncState?.errorMessage || "");
 </script>

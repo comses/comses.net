@@ -46,7 +46,11 @@
       centered
     >
       <template #body>
-        <p>This will disconnect the current repository allowing you to select a different one.</p>
+        <p>
+          This will disconnect the current repository allowing you to select a different one.
+          Releases that you imported from GitHub will remain, however any information about which
+          releases you already pushed <b>to</b> the current repository will be lost.
+        </p>
       </template>
       <template #footer>
         <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
@@ -75,12 +79,9 @@ export interface GitHubSyncConfigurationNewProps {
   githubOrgName: string;
   defaultRepoName: string;
   isCodebaseLive: boolean;
-  enableNewSyncs: boolean;
 }
 
-const props = withDefaults(defineProps<GitHubSyncConfigurationNewProps>(), {
-  enableNewSyncs: true,
-});
+const props = defineProps<GitHubSyncConfigurationNewProps>();
 
 const {
   getSubmitterInstallationStatus,

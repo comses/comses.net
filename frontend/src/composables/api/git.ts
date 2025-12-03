@@ -2,8 +2,7 @@ import { toRefs } from "vue";
 import { useAxios, joinPaths, type RequestOptions } from "@/composables/api";
 import type {
   CodebaseGitRemote,
-  CodebaseGitRemoteForm,
-  CodebaseReleaseWithPushableStates,
+  CodebaseReleaseWithGitRefSyncState,
   GitHubAppInstallationStatus,
   GitHubRelease,
 } from "@/types";
@@ -17,7 +16,7 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
    */
 
   const baseUrl = `/codebases/${codebaseIdentifier}/git/remotes/`;
-  const { state, get, post, put, detailUrl } = useAxios(baseUrl);
+  const { state, get, post, detailUrl } = useAxios(baseUrl);
 
   function url(paths: string[] = []) {
     return joinPaths([baseUrl, ...paths]);
@@ -31,10 +30,6 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
 
   async function list(options?: RequestOptions): Promise<AxiosResponse<CodebaseGitRemote[]>> {
     return get(baseUrl, options);
-  }
-
-  async function update(id: number, data: CodebaseGitRemoteForm, options?: RequestOptions) {
-    return put(detailUrl(id), data, options);
   }
 
   async function setupUserGithubRemote(
@@ -61,7 +56,7 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
 
   async function listLocalReleases(
     options?: RequestOptions
-  ): Promise<AxiosResponse<CodebaseReleaseWithPushableStates[]>> {
+  ): Promise<AxiosResponse<CodebaseReleaseWithGitRefSyncState[]>> {
     return get(url(["local_releases"]), options);
   }
 
@@ -94,7 +89,6 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     ...toRefs(state),
     detailUrl,
     list,
-    update,
     getSubmitterInstallationStatus,
     setupUserGithubRemote,
     getActiveRemote,
