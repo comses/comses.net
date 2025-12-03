@@ -9,6 +9,5 @@ const props = extractDataParams("github-config", [
   "githubOrgName",
   "defaultRepoName",
   "isCodebaseLive",
-  "enableNewSyncs",
 ]);
 createApp(GitHubIntegrationConfiguration, props).mount("#github-config");
