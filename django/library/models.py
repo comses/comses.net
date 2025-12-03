@@ -630,7 +630,7 @@ class BaseReleaseSyncState(models.Model):
     last_sync_started_at = models.DateTimeField(null=True, blank=True)
     last_sync_finished_at = models.DateTimeField(null=True, blank=True)
     batch_id = models.CharField(max_length=36, blank=True, null=True)
-    tag_name = models.CharField(max_length=128)
+    tag_name = models.CharField(max_length=128, blank=True)
 
     class Meta:
         abstract = True
@@ -669,122 +669,162 @@ class BaseReleaseSyncState(models.Model):
         return self
 
 
-class PushableReleaseSyncState(BaseReleaseSyncState):
-    """Represents the build/push state of a release.
-    One row with remote=None is the canonical build state created when the release is built locally.
-    Additional rows (release, remote) are duplicated later (partially) for each remote.
+class GitRefSyncState(BaseReleaseSyncState):
     """
+    Represents the sync state (to a remote) of a git ref (release branch/tag or the codebase main branch)
+    that was built from a submission
+
+    exactly one is attached to either a CodebaseRelease (release branch / tag)
+    or a Codebase (main branch)
+
+    created with remote=None and assigned to a remote once a push is attempted, when swapping remotes,
+    the state is reset and assigned to the new remote
+    """
+
     remote = models.ForeignKey(
         "library.CodebaseGitRemote",
-        null=True,  # remote is only added after we attempt to push it somewhere
-        on_delete=models.CASCADE,
-        related_name="pushable_sync_states",
-    )
-    release = models.ForeignKey(
-        "library.CodebaseRelease",
-        on_delete=models.CASCADE,
-        related_name="pushable_sync_states",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="git_ref_sync_states",
     )
     built_commit_sha = models.CharField(
         max_length=40,
         blank=True,
-        help_text=_("Last commit SHA created for this release in the mirror repo"),
+        help_text=_("Last commit SHA created for this git ref in the mirror repo"),
     )
     last_built_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text=_("Updated when the release is committed to the mirror repo"),
+        help_text=_("Updated when the git ref is committed to the mirror repo"),
     )
     pushed_commit_sha = models.CharField(
         max_length=40,
         blank=True,
         help_text=_("Last commit SHA pushed to the remote repo"),
     )
-
-    class Meta:
-        unique_together = ("release", "remote")
-        constraints = [
-            models.UniqueConstraint(
-                fields=["release"],
-                condition=models.Q(remote__isnull=True),
-                name="single_null_remote_pushable_build_state",
-            )
-        ]
+    branch_name = models.CharField(max_length=128, blank=True)
 
     @classmethod
-    def latest_for_codebase(cls, codebase):
+    def latest_release_ref_for_codebase(cls, codebase):
         return (
-            cls.objects.filter(
-                release__codebase=codebase,
-            )
+            cls.objects.filter(release__codebase=codebase)
             .select_related("release")
             .order_by("release__version_number")
             .last()
         )
 
     @classmethod
-    def unbuilt_internal_public_releases(cls, codebase):
-        built_ids = cls.objects.filter(
-            release__codebase=codebase,
-        ).values_list("release_id", flat=True)
-        return (
-            codebase.releases.internal().public().exclude(id__in=built_ids)
+    def releases_without_git_ref_sync_state(cls, codebase):
+        built_ids = (
+            cls.objects.filter(release__codebase=codebase)
+            .values_list("release__id", flat=True)
         )
+        return codebase.releases.internal().public().exclude(id__in=built_ids)
 
     @classmethod
-    def from_codebase_release(cls, release, commit_sha, tag_name, now_func=None):
-        now = timezone.now()
-        state, _ = cls.objects.get_or_create(
-            release=release, remote=None, defaults={"tag_name": tag_name}
-        )
-        state.status = cls.Status.PENDING # yet to be pushed
-        state.built_commit_sha = commit_sha
-        state.last_built_at = now
-        state.last_sync_started_at = state.last_sync_started_at or now
-        state.last_sync_finished_at = now
-        state.tag_name = tag_name
-        state.save()
+    def for_release(cls, release):
+        """Fetch or create the release's git ref sync state."""
+        state = getattr(release, "git_ref_sync_state", None)
+        if state:
+            return state
+        state = cls.objects.create(status=cls.Status.PENDING)
+        release.git_ref_sync_state = state
+        release.save(update_fields=["git_ref_sync_state", "last_modified"])
         return state
-    
-    def can_repush(self) -> bool:
+
+    @classmethod
+    def for_codebase(cls, codebase, branch_name="main"):
+        """Fetch or create the codebase main branch git ref sync state."""
+        state = getattr(codebase, "main_git_ref_sync_state", None)
+        if state:
+            return state
+        state = cls.objects.create(status=cls.Status.PENDING, branch_name=branch_name)
+        codebase.main_git_ref_sync_state = state
+        codebase.save(update_fields=["main_git_ref_sync_state", "last_modified"])
+        return state
+
+    @classmethod
+    def reassign_remotes_for_codebase(cls, codebase, remote):
+        """reassign all git ref sync states for a codebase to a new remote and
+        DESTROY push state for the prior remote"""
+        qs = cls.objects.filter(release__codebase=codebase)
+        for state in qs:
+            state.reassign_remote(remote)
+        main_state = getattr(codebase, "main_git_ref_sync_state", None)
+        if main_state:
+            main_state.reassign_remote(remote)
+
+    @classmethod
+    def start_all_push_jobs_for_codebase(cls, codebase, remote):
+        """set remotes and mark pushable refs (main + releases) as RUNNING"""
+        # start main branch job if needed
+        main_state = codebase.get_or_create_main_git_ref_sync_state()
+        main_state.set_remote(remote)
+        if main_state.can_push():
+            main_state.mark_running()
+        # start release jobs that can be pushed
+        releases = codebase.ordered_releases_list(internal_only=True, asc=True)
+        for release in releases:
+            state = release.get_or_create_git_ref_sync_state()
+            state.set_remote(remote)
+            if state.can_push():
+                state.mark_running()
+
+    def reassign_remote(self, remote):
+        """bind to a new remote and reset push status/logs"""
+        self.remote = remote
+        self.pushed_commit_sha = ""
+        self.status = self.Status.PENDING
+        self.last_log = ""
+        self.error_message = ""
+        self.http_status = None
+        self.last_sync_started_at = None
+        self.last_sync_finished_at = None
+        # keeping this for now, might be useful if something goes wrong
+        # self.full_log = []
+        self.save()
+        return self
+
+    def record_build(self, commit_sha, tag_name=None, branch_name=None):
+        """record the latest commit hash and optionally tag/branch names if given and not already set"""
+        self.built_commit_sha = commit_sha
+        # only update if given and not already set
+        if tag_name and not (self.tag_name or "").strip():
+            self.tag_name = tag_name
+        if branch_name and not (self.branch_name or "").strip():
+            self.branch_name = branch_name
+        self.last_built_at = timezone.now()
+        self.save()
+        return self
+
+    def set_remote(self, remote):
+        """set the remote, only if not already set to something different"""
+        if self.remote and self.remote.id != remote.id:
+            raise ValueError("git ref sync state already bound to a different remote")
+        self.remote = remote
+        self.save()
+        return self
+
+    def record_push_success(self, commit_sha, summary=None):
+        self.pushed_commit_sha = commit_sha
+        self.save(update_fields=["pushed_commit_sha", "last_modified"])
+        return self.log_success(summary)
+
+    def can_push(self) -> bool:
         """
-        return true when a repush should be allowed:
+        return true when a git ref is pushable, either:
         - push failed
-        - or both built and pushed commit SHAs exist and do not match
+        - no commit sha has been pushed
+        - or the pushed sha is out of date
         """
         if self.status == self.Status.ERROR:
             return True
-        built = (self.built_commit_sha or "").strip()
-        pushed = (self.pushed_commit_sha or "").strip()
-        return bool(built and pushed and built != pushed)
-    
-    @classmethod
-    def copy_states_to_remote(cls, codebase, from_remote, to_remote):
-        """
-        copy all pushable states from one remote to another for a codebase,
-        resetting sync-related fields for a clean start
-        """
-        if not from_remote or not to_remote or from_remote.id == to_remote.id:
-            return
-        states = cls.objects.filter(release__codebase=codebase, remote=from_remote)
-        if not states.exists():
-            return
-        for s in states:
-            obj, _ = cls.objects.get_or_create(
-                release=s.release, remote=to_remote, defaults={"tag_name": s.tag_name}
-            )
-            obj.tag_name = s.tag_name
-            obj.built_commit_sha = s.built_commit_sha
-            obj.last_built_at = s.last_built_at
-            obj.pushed_commit_sha = ""
-            obj.status = cls.Status.PENDING
-            obj.last_log = ""
-            obj.error_message = ""
-            obj.http_status = None
-            obj.last_sync_started_at = None
-            obj.last_sync_finished_at = None
-            obj.save()
-
+        if not self.pushed_commit_sha:
+            return True
+        if self.built_commit_sha and self.built_commit_sha != self.pushed_commit_sha:
+            return True
+        return False
 
 class ImportedReleaseSyncState(BaseReleaseSyncState):
     """Represents the state of the process involved in importing a release from GitHub.
@@ -831,7 +871,7 @@ class ImportedReleaseSyncState(BaseReleaseSyncState):
 
     # manager-style helpers
     @classmethod
-    def from_github_release(cls, remote, gh_release_raw: dict):
+    def for_github_release(cls, remote, gh_release_raw: dict):
         """create or update a sync state from a github release object from the github API.
         only updates when tracked fields change
         """
@@ -976,6 +1016,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             "JSON metadata conforming to the codemeta schema. Cached as of the last update"
         ),
     )
+    main_git_ref_sync_state = models.OneToOneField(
+        "library.GitRefSyncState",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="codebase",
+    )
 
     objects = CodebaseQuerySet.as_manager()
 
@@ -1114,6 +1161,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
+    def get_or_create_main_git_ref_sync_state(self, branch_name: str):
+        """return the git ref sync state for this codebase's main branch"""
+        return GitRefSyncState.for_codebase(self, branch_name)
+
     def create_remote(self, owner, repo_name, **kwargs):
         """create a new remote for this codebase, or get an existing one if there is a
         matching remote that failed to actually be created at the remote location"""
@@ -1133,14 +1184,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         )
         return remote
 
-    def latest_pushable_sync_state(self):
-        """return the latest (by version number) pushable sync state for this codebase
-        i.e. the latest release that has been added to the git repo"""
-        return PushableReleaseSyncState.latest_for_codebase(self)
+    def latest_release_git_ref_sync_state(self):
+        """return the latest (by version number) git ref sync state for this codebase"""
+        return GitRefSyncState.latest_release_ref_for_codebase(self)
 
-    def unbuilt_internal_public_releases(self):
+    def releases_without_git_ref_sync_state(self):
         """return internal (non-github imported), public releases that have not yet been added to the git repo"""
-        return PushableReleaseSyncState.unbuilt_internal_public_releases(self)
+        return GitRefSyncState.releases_without_git_ref_sync_state(self)
 
     @property
     def publication_year(self):
@@ -1647,6 +1697,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         null=True,
         on_delete=models.SET_NULL,
     )
+    git_ref_sync_state = models.OneToOneField(
+        "library.GitRefSyncState",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="release",
+    )
 
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
@@ -1821,10 +1878,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             },
         )
 
-    def get_or_create_pushable_sync_state(self, commit_sha: str, tag_name: str):
-        return PushableReleaseSyncState.from_codebase_release(
-            self, commit_sha, tag_name
-        )
+    def get_or_create_git_ref_sync_state(self):
+        """Return the git ref sync state for this release (creating if needed)."""
+        return GitRefSyncState.for_release(self)
 
     def get_review(self):
         review = getattr(self, "review", None)
@@ -2242,7 +2298,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             schedule_mint_public_doi(
                 self.id, dry_run=settings.DEPLOY_ENVIRONMENT.is_development
             )
-        if PushableReleaseSyncState.objects.filter(release__codebase=self.codebase).exists():
+        if GitRefSyncState.objects.filter(release__codebase=self.codebase).exists():
             # if this codebase has a local git repo built by us, append the new release to it
             from .tasks import append_releases_to_local_git_repo
 
@@ -3744,12 +3800,6 @@ class GitHubIntegrationTutorialVideo(index.Indexed, models.Model):
 
 @register_setting
 class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
-    enable_new_connections = models.BooleanField(
-        default=True,
-        help_text=_(
-            "Disabling will prevent new repositories from being connected, existing connections will remain active, visible, and editable."
-        ),
-    )
     is_beta = models.BooleanField(
         default=True, help_text=_("Mark the GitHub integration feature as a beta feature")
     )
@@ -3787,7 +3837,6 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
 
     panels = [
         HelpPanel(content=github_app_settings_help_content()),
-        FieldPanel("enable_new_connections"),
         FieldPanel("is_beta"),
         InlinePanel("faq_entries", label="FAQ Entries"),
         InlinePanel("tutorial_videos", label="Tutorial Videos"),

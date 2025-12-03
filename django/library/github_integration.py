@@ -300,6 +300,8 @@ class GitHubApi:
         self,
         local_repo: GitRepo,
         release: CodebaseRelease,
+        branch_name: str | None = None,
+        tag_name: str | None = None,
     ) -> tuple[str, str]:
         """push only a single release branch and its tag to the remote.
 
@@ -314,10 +316,10 @@ class GitHubApi:
         remote = local_repo.remote(name="origin")
 
         # determine refs to push
-        branch_name = (
+        branch_name = branch_name or (
             f"{CodebaseGitRepositoryApi.RELEASE_BRANCH_PREFIX}{release.version_number}"
         )
-        tag_name = release.version_number
+        tag_name = tag_name or release.version_number
         repo = local_repo
         try:
             release_branch = repo.heads[branch_name]
@@ -353,7 +355,7 @@ class GitHubApi:
             summaries.append("no refs pushed")
         return (release_branch.commit.hexsha, timestamp + "\n".join(summaries))
 
-    def push_main(self, local_repo: GitRepo) -> str:
+    def push_main(self, local_repo: GitRepo) -> tuple[str, str]:
         """push the main branch to the remote if it exists locally"""
         token = self.installation_access_token
         push_url = f"https://x-access-token:{token}@github.com/{self.github_repo.full_name}.git"
@@ -377,7 +379,8 @@ class GitHubApi:
                     summaries.append("main: did not push")
         if not summaries:
             summaries.append("main: no refs pushed")
-        return f"[{timezone.now().isoformat()}]:\n" + "\n".join(summaries)
+        commit_sha = repo.heads[CodebaseGitRepositoryApi.DEFAULT_BRANCH_NAME].commit.hexsha
+        return (commit_sha, f"[{timezone.now().isoformat()}]:\n" + "\n".join(summaries))
 
     def create_release_for_tag(self, local_repo: GitRepo, tag_name: str):
         """create a GitHub release for a single tag if it does not already exist"""
@@ -474,7 +477,7 @@ def list_github_releases_for_remote(remote: CodebaseGitRemote) -> list[dict]:
                 if imported_state is None or (
                     imported_state.status == ImportedReleaseSyncState.Status.PENDING
                 ):
-                    imported_state = ImportedReleaseSyncState.from_github_release(
+                    imported_state = ImportedReleaseSyncState.for_github_release(
                         remote, raw
                     )
             except Exception as e:
@@ -627,7 +630,7 @@ class GitHubReleaseImporter:
         # the same download url indicates nothing actually changed, skip import
         if self.sync_state.download_url == gh_release_raw.get("zipball_url"):
             return self.log_success("Attempted reimport, no changes detected")
-        self.sync_state = ImportedReleaseSyncState.from_github_release(
+        self.sync_state = ImportedReleaseSyncState.for_github_release(
             self.remote, gh_release_raw
         )
         return self._import_package_and_metadata(release)

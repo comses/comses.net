@@ -87,13 +87,13 @@ from .models import (
     ReviewStatus,
     GitHubIntegrationConfiguration,
 )
-from .models import ImportedReleaseSyncState, PushableReleaseSyncState
+from .models import GitRefSyncState, ImportedReleaseSyncState
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (
     CodebaseGitRemoteSerializer,
     CodebaseSerializer,
     CodebaseReleaseSerializer,
-    CodebaseReleaseWithPushableStatesSerializer,
+    CodebaseReleaseWithGitRefSyncStateSerializer,
     RelatedCodebaseSerializer,
     ContributorSerializer,
     DownloadRequestSerializer,
@@ -629,9 +629,8 @@ class CodebaseGitRemoteViewSet(
     def get_queryset(self):
         resolved = resolve(self.request.path)
         identifier = resolved.kwargs["identifier"]
-        return (
-            self.queryset.filter(codebase__identifier=identifier)
-            .prefetch_related("pushable_sync_states", "imported_sync_states")
+        return self.queryset.filter(codebase__identifier=identifier).prefetch_related(
+            "git_ref_sync_states", "imported_sync_states"
         )
 
     def get_codebase(self):
@@ -672,7 +671,7 @@ class CodebaseGitRemoteViewSet(
     def push_all(self, request, *args, **kwargs):
         """Manually push all releases to GitHub for the active remote.
 
-        Immediately marks per-remote PushableReleaseSyncState rows as RUNNING for UI feedback,
+        Immediately marks each release's GitRefSyncState as RUNNING for UI feedback,
         then enqueues an async task to perform the push and create GitHub releases.
         """
         codebase = self.get_codebase()
@@ -681,61 +680,11 @@ class CodebaseGitRemoteViewSet(
         if not active_remote:
             raise ValidationError("Active remote not found")
 
-        # seed/mark pushable sync states to RUNNING for this remote
-        releases = CodebaseRelease.objects.filter(codebase=codebase)
-        now = timezone.now()
-        for release in releases:
-            # prefer copying tag from canonical null-remote state
-            base_state = release.pushable_sync_states.filter(remote__isnull=True).first()
-            tag_name = getattr(base_state, "tag_name", None) or release.version_number
-            state, _ = PushableReleaseSyncState.objects.get_or_create(
-                release=release,
-                remote=active_remote,
-                defaults={"tag_name": tag_name},
-            )
-            state.status = PushableReleaseSyncState.Status.RUNNING
-            state.last_sync_started_at = now
-            state.save()
-
+        # start all push jobs for this remote (set remotes and mark running)
+        GitRefSyncState.start_all_push_jobs_for_codebase(codebase, active_remote)
+        # enqueue task to carry out all the push jobs we just started
         push_all_releases_to_github(codebase.id, active_remote.id)
         return Response(status=status.HTTP_202_ACCEPTED, data="Push started.")
-
-    @action(detail=False, methods=["post"])
-    def push_release(self, request, *args, **kwargs):
-        """Push a single release to GitHub for the active remote.
-
-        body params:
-        - version_number: str (required) release version to push
-        """
-        from .tasks import push_release_to_github
-
-        codebase = self.get_codebase()
-        queryset = self.get_queryset()
-        active_remote = queryset.filter(is_active=True).first()
-        if not active_remote:
-            raise ValidationError("Active remote not found")
-        version_number = request.data.get("version_number")
-        if not version_number:
-            raise ValidationError("'version_number' is required")
-        release = (
-            CodebaseRelease.objects.filter(codebase=codebase, version_number=version_number)
-            .first()
-        )
-        if not release:
-            raise ValidationError("Release not found")
-
-        # seed or mark per-remote pushable state to RUNNING
-        base_state = release.pushable_sync_states.filter(remote__isnull=True).first()
-        tag_name = getattr(base_state, "tag_name", None) or version_number
-        state, _ = PushableReleaseSyncState.objects.get_or_create(
-            release=release, remote=active_remote, defaults={"tag_name": tag_name}
-        )
-        state.status = PushableReleaseSyncState.Status.RUNNING
-        state.last_sync_started_at = timezone.now()
-        state.save()
-
-        push_release_to_github(codebase.id, active_remote.id, release.id)
-        return Response(status=status.HTTP_202_ACCEPTED, data="Release push started.")
 
     @action(detail=False, methods=["get"])
     def active_remote(self, request, *args, **kwargs):
@@ -748,19 +697,15 @@ class CodebaseGitRemoteViewSet(
 
     @action(detail=False, methods=["get"])
     def local_releases(self, request, *args, **kwargs):
-        """Return all local releases for this codebase with pushable sync states.
-
-        Includes the canonical null-remote state and any per-remote states for completeness.
-        """
+        """Return all local releases for this codebase with git ref sync states."""
         codebase = self.get_codebase()
         qs = (
             CodebaseRelease.objects.filter(codebase=codebase)
-            .select_related("codebase")
-            .prefetch_related("pushable_sync_states")
+            .select_related("codebase", "git_ref_sync_state")
         )
         releases = list(qs)
         releases.sort(key=lambda r: Version(r.version_number), reverse=True)
-        serializer = CodebaseReleaseWithPushableStatesSerializer(
+        serializer = CodebaseReleaseWithGitRefSyncStateSerializer(
             releases, many=True, context=self.get_serializer_context()
         )
         return Response(serializer.data)
@@ -830,11 +775,6 @@ class CodebaseGitRemoteViewSet(
 
     @action(detail=False, methods=["post"])
     def setup_user_github_remote(self, request, *args, **kwargs):
-        config = GitHubIntegrationConfiguration.for_request(request)
-        if not config.enable_new_connections:
-            raise ValidationError(
-                "Sorry, setting up new synced repositories is currently disabled."
-            )
         codebase = self.get_codebase()
         if not codebase.live:
             raise ValidationError("This model does not have any published releases")
@@ -879,9 +819,9 @@ class CodebaseGitRemoteViewSet(
                     url=repo_html_url,
                 )
                 if current_remote:
-                    # duplicate pushable release states for the new remote
-                    PushableReleaseSyncState.copy_states_to_remote(
-                        codebase=codebase, from_remote=current_remote, to_remote=new_remote
+                    # reset git ref sync states for the new remote
+                    GitRefSyncState.reassign_remotes_for_codebase(
+                        codebase=codebase, remote=new_remote
                     )
         except IntegrityError as e:
             self._forward_integrity_error(e)

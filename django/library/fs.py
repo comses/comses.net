@@ -10,7 +10,6 @@ import shutil
 import tarfile
 import zipfile
 import filecmp
-from contextlib import contextmanager
 from packaging.version import Version
 from enum import Enum
 from functools import total_ordering
@@ -1147,24 +1146,6 @@ class CodebaseGitRepositoryApi:
                         f"File {file} is too large ({file_size_mb}MB), individual files must be under {cls.FILE_SIZE_LIMIT_MB}MB"
                     )
 
-    @contextmanager
-    def use_temporary_repo(self, from_existing=False):
-        """
-        context manager that allows for 'atomic' operations on the git repository
-        by creating a temporary copy and copying it back after the block is executed
-        """
-        original_repo_dir = self.repo_dir
-        with TemporaryDirectory() as tmpdir:
-            self.repo_dir = Path(tmpdir)
-            if from_existing:
-                shutil.copytree(original_repo_dir, self.repo_dir, dirs_exist_ok=True)
-                self.initialize(should_exist=True)
-            yield
-            if original_repo_dir.exists():
-                shutil.rmtree(original_repo_dir)
-            shutil.copytree(self.repo_dir, original_repo_dir, dirs_exist_ok=True)
-            self.repo_dir = original_repo_dir
-
     def initialize(self, should_exist=False):
         """
         initialize the git repository or connect to an existing one
@@ -1187,8 +1168,12 @@ class CodebaseGitRepositoryApi:
             logger.exception(e)
             raise RuntimeError(f"Failed to initialize git repository")
 
-    def checkout_main(self):
+    def checkout_main(self, update_main_git_ref_sync_state=False):
+        """checkout the default (main) branch and create/update the git ref sync state if requested"""
         self.repo.git.checkout(self.DEFAULT_BRANCH_NAME)
+        if update_main_git_ref_sync_state:
+            main_state = self.codebase.get_or_create_main_git_ref_sync_state(self.DEFAULT_BRANCH_NAME)
+            main_state.record_build(commit_sha=self.repo.head.commit.hexsha)
 
     def clear_existing_files(self):
         """
@@ -1250,7 +1235,7 @@ class CodebaseGitRepositoryApi:
                 f.write(content)
             self.repo.index.add([filename])
 
-    def commit_release(self, release, tag=True):
+    def commit_release(self, release):
         """
         commit the the release and tag it, should only be called after adding all necessary files
         """
@@ -1274,9 +1259,9 @@ class CodebaseGitRepositoryApi:
             author=self.author,
             author_date=release.last_published_on,
         )
-        if tag:
-            self.repo.create_tag(f"{release.version_number}")
-        return commit
+        tag_name = release.version_number
+        self.repo.create_tag(tag_name)
+        return commit, tag_name
 
     def create_release_branch(self, release, commit):
         """
@@ -1285,6 +1270,21 @@ class CodebaseGitRepositoryApi:
         release_branch_name = self.get_release_branch_name(release)
         self.repo.create_head(release_branch_name, commit)
         return release_branch_name
+
+    def build_release_refs(self, release):
+        """
+        commit the release, create a branch/tag, and create the git ref sync state
+        """
+        self.add_release_files(release)
+        self.add_readme(release)
+        commit, tag_name = self.commit_release(release)
+        branch_name = self.create_release_branch(release, commit)
+        # create git ref sync state for the release
+        release.get_or_create_git_ref_sync_state().record_build(
+            commit.hexsha,
+            tag_name=tag_name,
+            branch_name=branch_name,
+        )
 
     def update_release_branch(self, release) -> Repo | None:
         """
@@ -1297,43 +1297,44 @@ class CodebaseGitRepositoryApi:
 
         returns None if no changes were made, otherwise returns the updated repo
         """
-        with self.use_temporary_repo(from_existing=True):
-            self.initialize(should_exist=True)
-            release_branch_name = self.get_release_branch_name(release)
-            # determine whether this is the latest release (i.e. points to the
-            # same thing as main) and should merge back into main
-            release_branch = self.repo.heads[release_branch_name]
-            main_branch = self.repo.heads[self.DEFAULT_BRANCH_NAME]
-            merge_into_main = (main_branch.commit == release_branch.commit) and (
-                main_branch.commit == self.repo.head.commit
-            )
+        self.initialize(should_exist=True)
+        release_branch_name = self.get_release_branch_name(release)
+        # determine whether this is the latest release (i.e. points to the
+        # same thing as main) and should merge back into main
+        release_branch = self.repo.heads[release_branch_name]
+        main_branch = self.repo.heads[self.DEFAULT_BRANCH_NAME]
+        merge_into_main = (main_branch.commit == release_branch.commit) and (
+            main_branch.commit == self.repo.head.commit
+        )
 
-            self.repo.git.checkout(release_branch_name)
-            self.add_release_files(release)
-            self.add_readme(release)
+        self.repo.git.checkout(release_branch_name)
+        self.add_release_files(release)
+        self.add_readme(release)
 
-            # check for changes before committing
-            if not self.repo.is_dirty():
-                return None
-
-            commit_msg = f"Update metadata for release {release.version_number}"
-            commit = self.repo.index.commit(
-                message=commit_msg,
-                committer=self.committer,
-                author=self.author,
-                author_date=timezone.now(),
-            )
-            # update pushable build state (null remote) for this release to reflect new commit
-            release.get_or_create_pushable_sync_state(commit.hexsha, release.version_number)
-            if merge_into_main:
-                self.checkout_main()
-                try:
-                    self.repo.git.merge("--ff-only", release_branch_name)
-                except Exception as e:
-                    logger.error(
-                        f"Unexpected divergence when trying to merge {release_branch_name} into {self.DEFAULT_BRANCH_NAME}: {e}"
-                    )
+        # check for changes before committing
+        if not self.repo.is_dirty():
             self.checkout_main()
+            return None
+
+        commit_msg = f"Update metadata for release {release.version_number}"
+        commit = self.repo.index.commit(
+            message=commit_msg,
+            committer=self.committer,
+            author=self.author,
+            author_date=timezone.now(),
+        )
+        # update git ref sync state for this release to reflect new commit
+        release.get_or_create_git_ref_sync_state().record_build(commit.hexsha)
+        if merge_into_main:
+            self.checkout_main()
+            try:
+                self.repo.git.merge("--ff-only", release_branch_name)
+                self.checkout_main(update_main_git_ref_sync_state=True)
+            except Exception as e:
+                logger.error(
+                    f"Unexpected divergence when trying to merge {release_branch_name} into {self.DEFAULT_BRANCH_NAME}: {e}"
+                )
+        self.checkout_main()
 
         return Repo(self.repo_dir)
 
@@ -1349,34 +1350,29 @@ class CodebaseGitRepositoryApi:
         """
         self.check_file_sizes(self.codebase)
         if not releases:
-            # select internal public releases without a successful build state
-            releases = self.codebase.unbuilt_internal_public_releases()
+            # select internal public releases without a build state
+            releases = self.codebase.releases_without_git_ref_sync_state()
         if not releases:
             # nothing to do, return the existing repo
             return Repo(self.repo_dir)
-        with self.use_temporary_repo(from_existing=True):
-            # make sure the releases are higher than the latest mirrored release
-            latest_built_state = self.codebase.latest_pushable_sync_state()
-            if latest_built_state is not None:
-                if not all(
-                    Version(release.version_number)
-                    > Version(latest_built_state.release.version_number)
-                    for release in releases
-                ):
-                    raise ValueError(
-                        "Releases must be higher than the latest mirrored release to append"
-                    )
-            # make sure the releases are ordered by version number
-            releases = sorted(releases, key=lambda r: Version(r.version_number))
-            # append releases to the git repo by adding files, committing, and creating a branch
-            for release in releases:
-                self.add_release_files(release)
-                self.add_readme(release)
-                commit = self.commit_release(release)
-                self.create_release_branch(release, commit)
-                # update pushable build state (null remote) per release
-                release.get_or_create_pushable_sync_state(commit.hexsha, release.version_number)
-            self.checkout_main()
+        self.initialize(should_exist=True)
+        # make sure the releases are higher than the latest mirrored release
+        latest_built_state = self.codebase.latest_release_git_ref_sync_state()
+        if latest_built_state is not None:
+            if not all(
+                Version(release.version_number)
+                > Version(latest_built_state.release.version_number)
+                for release in releases
+            ):
+                raise ValueError(
+                    "Releases must be higher than the latest mirrored release to append"
+                )
+        # make sure the releases are ordered by version number
+        releases = sorted(releases, key=lambda r: Version(r.version_number))
+        # append releases to the git repo by adding files, committing, and creating a branch
+        for release in releases:
+            self.build_release_refs(release)
+        self.checkout_main(update_main_git_ref_sync_state=True)
         return Repo(self.repo_dir)
 
     def build(self) -> Repo:
@@ -1390,16 +1386,12 @@ class CodebaseGitRepositoryApi:
         releases = self.codebase.ordered_releases_list(internal_only=True)
         if not releases:
             raise ValidationError("Must have at least one public release to build from")
-        with self.use_temporary_repo():
-            self.initialize()
-            for release in releases:
-                self.add_release_files(release)
-                self.add_readme(release)
-                commit = self.commit_release(release)
-                self.create_release_branch(release, commit)
-                # update pushable build state per release
-                release.get_or_create_pushable_sync_state(commit.hexsha, release.version_number)
-            self.checkout_main()
+        if self.repo_dir.exists():
+            shutil.rmtree(self.repo_dir)
+        self.initialize()
+        for release in releases:
+            self.build_release_refs(release)
+        self.checkout_main(update_main_git_ref_sync_state=True)
         return Repo(self.repo_dir)
 
     def update_or_build(self) -> Repo:
@@ -1407,7 +1399,7 @@ class CodebaseGitRepositoryApi:
         if not self.repo_dir.exists() or not self.repo_dir.joinpath(".git").exists():
             return self.build()
         # if no successful build states exist, rebuild
-        if not self.codebase.latest_pushable_sync_state():
+        if not self.codebase.latest_release_git_ref_sync_state():
             return self.build()
         return self.append_releases()
 
