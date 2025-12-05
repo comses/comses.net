@@ -50,8 +50,8 @@
     <TextField
       class="mb-3"
       name="repositoryUrl"
-      label="Version Control Repository URL (optional)"
-      help="Is this model being developed on GitHub, BitBucket, GitLab, or other Git-based version control repository? Enter its root repository URL (e.g., https://github.com/comses/water-markets-model) for future CoMSES and Git integration."
+      label="Version Control Repository URL (reference only)"
+      help="Link to your model's version control repository (GitHub, GitLab, BitBucket, etc.) for reference only that will not be used for synchronization."
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     <button
