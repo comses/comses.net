@@ -48,8 +48,11 @@
       <template #body>
         <p>
           This will disconnect the current repository allowing you to select a different one.
-          Releases that you imported from GitHub will remain, however any information about which
-          releases you already pushed <b>to</b> the current repository will be lost.
+          Releases that you imported from GitHub will remain.
+        </p>
+        <p>
+          However, once you connect a different repository, any information about which releases you
+          already pushed <b>to</b> the current repository will be lost.
         </p>
       </template>
       <template #footer>

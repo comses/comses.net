@@ -317,9 +317,10 @@
                     </a>
                 {% endif %}
                 {% if has_change_perm %} 
-                    <a class="btn btn-sm btn-outline-secondary w-100 mt-2"
+                    <a class="card-text d-inline-flex align-items-center gap-1 mt-2 text-decoration-none"
                         href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
-                        <i class="fas fa-cog"></i> Configure
+                        <i class="fas fa-cog"></i>
+                        {{ "Manage" if remote else "Connect a repository" }}
                     </a>
                 {% endif %}
             </div>

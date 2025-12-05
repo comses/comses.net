@@ -131,7 +131,7 @@ class GitHubRepoValidator:
             )
         except GithubException as e:
             if e.status == 404:
-                return True
+                return github_repo.html_url
             raise e
         return github_repo.html_url
 
@@ -344,10 +344,10 @@ class GitHubApi:
 
         # push release branch
         _summarize(remote.push(branch_name), f"branch ({branch_name})")
-        # push tag (exactly one)
+        # push tag (exactly one) but skip logging until gitpython flag behavior is clearer
         if tag_ref:
             refspec = f"refs/tags/{tag_name}:refs/tags/{tag_name}"
-            _summarize(remote.push(refspec), f"tag ({tag_name})")
+            remote.push(refspec)
         else:
             summaries.append(f"tag ({tag_name}): not found locally")
         timestamp = f"[{timezone.now().isoformat()}]:\n"

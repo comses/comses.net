@@ -15,9 +15,9 @@
           <li
             v-for="codebase in userCodebases"
             :key="codebase.identifier"
-            class="list-group-item d-flex justify-content-between align-items-center"
+            class="list-group-item d-flex justify-content-between align-items-center gap-3"
           >
-            <div class="w-75">
+            <div class="w-100" style="max-width: 60%">
               <h6 class="mb-0 text-truncate">
                 <span v-if="!codebase.live" class="me-2 text-muted" title="Unpublished">
                   <i class="fas fa-lock"></i>
@@ -39,9 +39,10 @@
             </div>
             <a
               :href="codebase.githubConfigUrl"
-              class="btn btn-sm btn-outline-secondary text-nowrap"
+              class="small d-inline-flex align-items-center gap-1 text-nowrap flex-shrink-0"
             >
-              <i class="fas fa-cog"></i> Configure
+              <i class="fas fa-cog"></i>
+              {{ codebase.activeGitRemote ? "Manage" : "Connect a repository" }}
             </a>
           </li>
         </ul>

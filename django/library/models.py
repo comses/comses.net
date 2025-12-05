@@ -730,7 +730,10 @@ class GitRefSyncState(BaseReleaseSyncState):
             return state
         state = cls.objects.create(status=cls.Status.PENDING)
         release.git_ref_sync_state = state
-        release.save(update_fields=["git_ref_sync_state", "last_modified"])
+        release.save(
+            rebuild_metadata=False,
+            update_fields=["git_ref_sync_state", "last_modified"],
+        )
         return state
 
     @classmethod
@@ -741,7 +744,11 @@ class GitRefSyncState(BaseReleaseSyncState):
             return state
         state = cls.objects.create(status=cls.Status.PENDING, branch_name=branch_name)
         codebase.main_git_ref_sync_state = state
-        codebase.save(update_fields=["main_git_ref_sync_state", "last_modified"])
+        codebase.save(
+            rebuild_metadata=False,
+            rebuild_release_metadata=False,
+            update_fields=["main_git_ref_sync_state", "last_modified"],
+        )
         return state
 
     @classmethod
@@ -756,13 +763,15 @@ class GitRefSyncState(BaseReleaseSyncState):
             main_state.reassign_remote(remote)
 
     @classmethod
-    def start_all_push_jobs_for_codebase(cls, codebase, remote):
+    def start_all_push_jobs_for_codebase(cls, codebase, remote) -> bool:
         """set remotes and mark pushable refs (main + releases) as RUNNING"""
+        started = False
         # start main branch job if needed
         main_state = codebase.get_or_create_main_git_ref_sync_state()
         main_state.set_remote(remote)
         if main_state.can_push():
             main_state.mark_running()
+            started = True
         # start release jobs that can be pushed
         releases = codebase.ordered_releases_list(internal_only=True, asc=True)
         for release in releases:
@@ -770,6 +779,8 @@ class GitRefSyncState(BaseReleaseSyncState):
             state.set_remote(remote)
             if state.can_push():
                 state.mark_running()
+                started = True
+        return started
 
     def reassign_remote(self, remote):
         """bind to a new remote and reset push status/logs"""
@@ -1161,7 +1172,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
-    def get_or_create_main_git_ref_sync_state(self, branch_name: str):
+    def get_or_create_main_git_ref_sync_state(self, branch_name="main"):
         """return the git ref sync state for this codebase's main branch"""
         return GitRefSyncState.for_codebase(self, branch_name)
 

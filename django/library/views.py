@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction, IntegrityError
+from django.db.models import Q
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse
@@ -680,8 +681,19 @@ class CodebaseGitRemoteViewSet(
         if not active_remote:
             raise ValidationError("Active remote not found")
 
+        # prevent concurrent push jobs for the same codebase
+        if GitRefSyncState.objects.filter(
+            Q(release__codebase=codebase) | Q(codebase=codebase),
+            status=GitRefSyncState.Status.RUNNING,
+        ).exists():
+            raise ValidationError("Push already in progress for this codebase. Please wait.")
+
         # start all push jobs for this remote (set remotes and mark running)
-        GitRefSyncState.start_all_push_jobs_for_codebase(codebase, active_remote)
+        started = GitRefSyncState.start_all_push_jobs_for_codebase(
+            codebase, active_remote
+        )
+        if not started:
+            return Response(status=status.HTTP_204_NO_CONTENT)
         # enqueue task to carry out all the push jobs we just started
         push_all_releases_to_github(codebase.id, active_remote.id)
         return Response(status=status.HTTP_202_ACCEPTED, data="Push started.")
