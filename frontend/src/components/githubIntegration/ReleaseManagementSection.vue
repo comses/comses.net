@@ -20,11 +20,17 @@
             <button
               v-if="canPush"
               class="btn btn-primary btn-sm"
-              :disabled="!hasUnpushedReleases"
+              :disabled="isPushButtonDisabled"
               @click="handlePushAll"
             >
-              <i class="fas fa-upload me-2"></i>
-              Push All
+              <span v-if="showPushPendingSpinner" class="d-inline-flex align-items-center">
+                <i class="fas fa-spinner fa-spin me-2"></i>
+                Pushing...
+              </span>
+              <span v-else class="d-inline-flex align-items-center">
+                <i class="fas fa-upload me-2"></i>
+                Push All
+              </span>
             </button>
           </div>
           <div style="overflow-y: auto">
@@ -123,6 +129,7 @@ const localReleases = ref<CodebaseReleaseWithGitRefSyncState[]>([]);
 const githubReleases = ref<GitHubRelease[]>([]);
 const localLoading = ref(false);
 const githubLoading = ref(false);
+const pushAllPending = ref(false);
 
 const { listLocalReleases, listGitHubReleases, pushAllReleasesToGitHub } = useGitRemotesAPI(
   props.codebaseIdentifier
@@ -165,11 +172,37 @@ watch(
   }
 );
 
-const hasUnpushedReleases = computed(() => localReleases.value.some(r => !!r.gitRefSyncState));
+const hasUnpushedReleases = computed(() =>
+  localReleases.value.some(r => Boolean(r.gitRefSyncState?.canPush))
+);
+
+const hasRunningPushJobs = computed(() => {
+  const activeId = props.activeRemote?.id;
+  if (!activeId) return false;
+  return localReleases.value.some(r => {
+    const state = r.gitRefSyncState;
+    if (!state) return false;
+    if (state.remote !== activeId) return false;
+    return state.status === "RUNNING";
+  });
+});
+
+const showPushPendingSpinner = computed(() => pushAllPending.value && !hasRunningPushJobs.value);
+const isPushButtonDisabled = computed(
+  () => !hasUnpushedReleases.value || pushAllPending.value || hasRunningPushJobs.value
+);
 
 const handlePushAll = async () => {
-  await pushAllReleasesToGitHub();
-  pollForPushJobs();
+  if (isPushButtonDisabled.value) return;
+  pushAllPending.value = true;
+  try {
+    await pushAllReleasesToGitHub();
+    pollForPushJobs();
+  } catch (error) {
+    console.log("Failed to push all releases", error);
+  } finally {
+    pushAllPending.value = false;
+  }
 };
 
 function hasNoImportJobs(): boolean {
@@ -185,14 +218,7 @@ function hasNoImportJobs(): boolean {
 }
 
 function hasNoPushJobs(): boolean {
-  const activeId = props.activeRemote?.id;
-  if (!activeId) return false;
-  return localReleases.value.every(r => {
-    const state = r.gitRefSyncState;
-    if (!state) return true;
-    if (state.remote !== activeId) return true;
-    return state.status !== "RUNNING";
-  });
+  return !hasRunningPushJobs.value;
 }
 
 async function pollRemotesUntil(successCondition: () => boolean | Promise<boolean>) {
