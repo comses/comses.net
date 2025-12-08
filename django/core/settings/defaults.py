@@ -521,15 +521,19 @@ HUEY = {
 }
 
 # SSO, user registration, and django-allauth configuration, see
-# https://django-allauth.readthedocs.io/en/latest/configuration.html
+# https://django-allauth.readthedocs.io/en/latest/installation/quickstart.html
+# and
+# https://django-allauth.readthedocs.io/en/latest/account/configuration.html
 # ACCOUNT_ADAPTER = 'core.adapter.AccountAdapter'
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+# ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+ACCOUNT_LOGIN_METHODS = {"email", "username"}
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 15
-ACCOUNT_EMAIL_REQUIRED = True
+# FIXME: deprecated
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'email2*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_FORM_CLASS = "core.forms.SignupForm"
-# FIXME: enable after configuring form
-ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = True
 ACCOUNT_TEMPLATE_EXTENSION = "jinja"
 ACCOUNT_PRESERVE_USERNAME_CASING = False
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
