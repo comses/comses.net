@@ -51,24 +51,30 @@
       class="mb-3"
       name="repositoryUrl"
       label="Version Control Repository URL (reference only)"
-      help="Link to your model's version control repository (GitHub, GitLab, BitBucket, etc.) for reference only that will not be used for synchronization."
+      help="Link to your model's version control repository (GitHub, GitLab, BitBucket, etc.). For reference only, you can connect a GitHub repository with the button below, or later on."
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-    <button
-      v-if="!asModal"
-      type="submit"
-      class="btn btn-primary"
-      :disabled="isLoading"
-      data-cy="next"
-    >
-      {{ props.identifier ? "Update" : "Next" }}
-    </button>
+    <div v-if="!asModal" class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary" :disabled="isLoading" data-cy="next">
+        {{ props.identifier ? "Update" : "Continue to upload model" }}
+      </button>
+      <button
+        v-if="!props.identifier"
+        type="submit"
+        class="btn btn-outline-gray"
+        :disabled="isLoading"
+        data-cy="go-github-config"
+        @click="goToGithubConfig = true"
+      >
+        Import model from GitHub
+      </button>
+    </div>
   </form>
 </template>
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { onBeforeUnmount, onMounted } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import TextField from "@/components/form/TextField.vue";
 import TextareaField from "@/components/form/TextareaField.vue";
 import MarkdownField from "@/components/form/MarkdownField.vue";
@@ -76,7 +82,8 @@ import TaggerField from "@/components/form/TaggerField.vue";
 import HoneypotField from "@/components/form/HoneypotField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
-import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
+import { type RequestOptions, useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
+import { useGitRemotesAPI } from "@/composables/api/git";
 
 const props = withDefaults(
   defineProps<{
@@ -106,6 +113,7 @@ type CodebaseEditFields = yup.InferType<typeof schema>;
 
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useCodebaseAPI();
 const { editUrl } = useReleaseEditorAPI();
+const goToGithubConfig = ref(false);
 
 const {
   errors,
@@ -137,27 +145,40 @@ onBeforeUnmount(() => {
   removeUnsavedAlertListener();
 });
 
-function nextUrl(identifier: string) {
-  if (props.identifier) {
-    return detailUrl(props.identifier);
-  } else {
-    const versionNumber = values.latestVersionNumber || "1.0.0";
-    return editUrl(identifier, versionNumber);
-  }
+function githubConfigUrl(identifier: string) {
+  const { detailUrl: gitDetailUrl } = useGitRemotesAPI(identifier);
+  return gitDetailUrl("");
+}
+
+function redirectUrl(identifier: string, useGithubConfig: boolean) {
+  if (useGithubConfig) return githubConfigUrl(identifier);
+  if (props.identifier) return detailUrl(props.identifier);
+  const versionNumber = values.latestVersionNumber || "1.0.0";
+  return editUrl(identifier, versionNumber);
 }
 
 async function createOrUpdate() {
+  const useGithubConfig = goToGithubConfig.value && !props.identifier;
   const onSuccess = (response: any) => {
+    const destination = useGithubConfig;
     if (props.asModal) {
       emit("success");
     } else {
-      window.location.href = nextUrl(response.data.identifier);
+      window.location.href = redirectUrl(response.data.identifier, destination);
     }
   };
-  if (props.identifier) {
-    await update(props.identifier, values, { onSuccess });
-  } else {
-    await create(values, { onSuccess });
+  const requestOptions: RequestOptions = { onSuccess };
+  if (useGithubConfig) {
+    requestOptions.config = { params: { initial_version: "0.0.1" } };
+  }
+  try {
+    if (props.identifier) {
+      await update(props.identifier, values, requestOptions);
+    } else {
+      await create(values, requestOptions);
+    }
+  } finally {
+    goToGithubConfig.value = false;
   }
 }
 </script>

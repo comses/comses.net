@@ -546,7 +546,8 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
     def perform_create(self, serializer):
         super().perform_create(serializer)
         codebase = serializer.instance
-        return codebase.get_or_create_draft()
+        initial_version = self.request.query_params.get("initial_version")
+        return codebase.get_or_create_draft(initial_version=initial_version)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -788,9 +789,6 @@ class CodebaseGitRemoteViewSet(
     @action(detail=False, methods=["post"])
     def setup_user_github_remote(self, request, *args, **kwargs):
         codebase = self.get_codebase()
-        if not codebase.live:
-            raise ValidationError("This model does not have any published releases")
-
         installation = codebase.submitter.github_integration_app_installation
         if not installation:
             raise ValidationError(
@@ -798,6 +796,9 @@ class CodebaseGitRemoteViewSet(
             )
 
         is_preexisting = bool(request.data.get("is_preexisting", False))
+        if not codebase.live and not is_preexisting:
+            raise ValidationError("This model does not have any published releases")
+
         repo_name = request.data.get("repo_name")
         if not repo_name:
             raise ValidationError("Repository name is required")

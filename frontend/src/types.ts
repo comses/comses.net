@@ -510,3 +510,10 @@ export interface GitHubRelease {
   createdByIntegration: boolean;
   importedSyncState?: ImportedReleaseSyncState | null;
 }
+
+export type ReleaseAlignment = {
+  [versionOrTagName: string]: {
+    githubRelease: GitHubRelease | null;
+    localRelease: CodebaseReleaseWithGitRefSyncState | null;
+  };
+};

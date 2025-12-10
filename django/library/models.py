@@ -1402,14 +1402,20 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             return image_metadata
 
     @transaction.atomic
-    def get_or_create_draft(self):
+    def get_or_create_draft(self, initial_version: str | None = None):
         existing_draft = self.releases.filter(
             status=CodebaseRelease.Status.DRAFT
         ).first()
         if existing_draft:
             return existing_draft
 
-        draft_release = self.create_release()
+        # allow for overriding the version number of the initial draft
+        # this is currently used to create a less conflict-prone 0.0.1 draft when 
+        # someone wants to import all their work with the github integration
+        if initial_version:
+            draft_release = self.create_release(version_number=initial_version)
+        else:
+            draft_release = self.create_release()
         # reset fields that should not be copied over to a new draft
         draft_release.doi = None
         draft_release.release_notes = ""
