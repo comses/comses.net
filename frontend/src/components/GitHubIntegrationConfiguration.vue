@@ -32,7 +32,7 @@
       </div>
       <FormAlert :validation-errors="[]" :server-errors="serverErrors" />
     </div>
-    <div v-if="showReleaseManagement">
+    <div v-if="showReleaseManagement" class="border rounded p-3">
       <ReleaseManagementSection
         :codebase-identifier="codebaseIdentifier"
         :active-remote="activeRemote"
