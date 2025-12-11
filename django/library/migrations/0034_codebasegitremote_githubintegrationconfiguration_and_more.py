@@ -101,10 +101,6 @@ class Migration(migrations.Migration):
                 "abstract": False,
             },
         ),
-        migrations.RemoveField(
-            model_name="codebaseimage",
-            name="description",
-        ),
         migrations.CreateModel(
             name="ImportedReleaseSyncState",
             fields=[
