@@ -8,271 +8,183 @@
 {% endblock %}
 
 {% block content %}
+{% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
+{% macro icon_bullets(items) -%}
+<ul class="px-1 mb-0">
+    {%- for item in items %}
+    {% set icon = item.icon or "fas fa-chevron-right" %}
+    <li class="d-flex mb-2">
+        <i class="{{ icon }} pt-1 text-muted" style="width: 1rem"></i>
+        <div class="ps-3 flex-grow-1">{{ item.text.rendered|safe }}</div>
+    </li>
+    {%- endfor %}
+</ul>
+{%- endmacro %}
+
+{% macro tutorial_videos(videos) -%}
+{%- for video in videos %}
+<div class="{% if not loop.first %}mt-4{% endif %}">
+    {% if video.title %}
+    <h5 class="mb-2 fw-bold">{{ video.title }}</h5>
+    {% endif %}
+    <iframe src="https://www.youtube.com/embed/{{ video.youtube_id }}"
+        title="{{ video.title or '' }}"
+        style="display: block; width: 100%; aspect-ratio: 16 / 9; border: 0;"
+        allow="picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen></iframe>
+    {% if video.caption and video.caption.raw %}
+    <div class="text-muted small">{{ video.caption.rendered|safe }}</div>
+    {% endif %}
+</div>
+{%- endfor %}
+{%- endmacro %}
+
+{% macro faq_accordion(entries, accordion_id="github-faq-accordion") -%}
+<div id="{{ accordion_id }}" role="tablist" aria-multiselectable="true">
+    {% for entry in entries %}
+    {% set entry_id = accordion_id ~ "_entry_" ~ loop.index %}
+    {% set heading_id = accordion_id ~ "_heading_" ~ loop.index %}
+    <div class="card mb-2">
+        <div class="card-header" role="tab" id="{{ heading_id }}">
+            <h5 class="mb-0">
+                <button class="btn btn-link text-start" data-bs-toggle="collapse" data-bs-target="#{{ entry_id }}"
+                    aria-expanded="false" aria-controls="{{ entry_id }}">
+                    {{ entry.question }}
+                </button>
+            </h5>
+        </div>
+        <div id="{{ entry_id }}" class="collapse" aria-labelledby="{{ heading_id }}" data-bs-parent="#{{ accordion_id }}">
+            <div class="card-body">
+                {{ entry.answer.rendered|safe }}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{%- endmacro %}
+
 <div class="container">
-    <ul class="nav nav-tabs justify-content-center" id="githubSyncTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview"
-                type="button" role="tab" aria-controls="overview" aria-selected="true">Overview</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="how-it-works-tab" data-bs-toggle="tab" data-bs-target="#how-it-works"
-                type="button" role="tab" aria-controls="how-it-works" aria-selected="false">How it works (OUTDATED!)</button>
-        </li>
-        {% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
-        {% if github_config and github_config.faq_entries.exists() %}
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="faq-tab" data-bs-toggle="tab" data-bs-target="#faq" type="button" role="tab"
-                aria-controls="faq" aria-selected="false">FAQ</button>
-        </li>
-        {% endif %}
-        {% endwith %}
-    </ul>
-    <div class="tab-content py-3" id="githubSyncTabsContent">
-        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
-            <div class="row justify-content-center">
-                <div class="col-12">
-                    <div class="mb-4">
-                        <p>
-                            The <b>CoMSES Model Library GitHub integration</b>
-                            allows you to transfer releases of your model to or from a GitHub
-                            repository by connecting an existing repository or by having one created for you.
-                        </p>
-                        <p>
-                            Get started by pressing
-                            <span class="text-secondary opacity-75">
-                                <i class="fas fa-cog"></i> Connect a repository
-                            </span>
-                            for one of your models listed below or on the <strong><i class="fab fa-github"></i> GitHub</strong> tab on a model's
-                            page. Once you have an active synced repository, it will be linked in the same tab and
-                            visible to others.
-                        </p>
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="mb-4">
+                <p>
+                    The <b>CoMSES Model Library GitHub integration</b>
+                    allows you to transfer releases of your model to or from a GitHub
+                    repository by connecting an existing repository or by having one created for you.
+                </p>
+                <p>
+                    Get started by pressing
+                    <span class="text-secondary opacity-75">
+                        <i class="fas fa-cog"></i> Connect a repository
+                    </span>
+                    for one of your models listed below or on the <strong><i class="fab fa-github"></i> GitHub</strong>
+                    tab on a model's
+                    page. Once you have an active synced repository, it will be linked in the same tab and
+                    visible to others.
+                </p>
+            </div>
+            {% if user.is_authenticated %}
+            <div id="github-overview"></div>
+            {% else %}
+            <div class="alert alert-dark text-center" role="alert">
+                You must be <a href="{{ url('account_login') }}?next={{ request.path }}" class="alert-link">signed
+                    in</a> to manage the GitHub integration for your models.
+            </div>
+            {% endif %}
+            <div class="row mt-4">
+                <h1 class="mb-3 fw-bold">Learn more about how it works</h1>
+                <div class="col-12 col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h4 class="h6 mb-2">Import model code from GitHub</h4>
+                            <p class="text-muted small mb-0">Already use GitHub? You can import GitHub releases straight
+                                into the CoMSES Model Library.</p>
+                            <div class="mt-auto">
+                                <a class="text-decoration-none" href="#import-existing">
+                                    Read more <i class="fas fa-arrow-right small ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                    {% if user.is_authenticated %}
-                    <div id="github-overview"></div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h4 class="h6 mb-2">Set up a new GitHub repository</h4>
+                            <p class="text-muted small mb-0">New to GitHub? We'll build a git repository for your model
+                                and let you push it to your own GitHub account.</p>
+                            <div class="mt-auto">
+                                <a class="text-decoration-none" href="#connect-new">
+                                    Read more <i class="fas fa-arrow-right small ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h4 class="h6 mb-2">Have questions? Concerns?</h4>
+                            <p class="text-muted small mb-0">Check out the list of frequently ask questions. If you
+                                don't find an answer, we are happy to help, just <a
+                                    href="{{ slugurl('contact') }}">contact us</a>.</p>
+                            <div class="mt-auto">
+                                <a class="text-decoration-none" href="#overview-faqs">
+                                    FAQs <i class="fas fa-arrow-right small ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr class="full-bleed my-5">
+            <div class="row mt-5">
+                <div class="col-12" id="import-existing">
+                    <h1 class="mb-3 fw-bold">Import models from an existing GitHub repository</h1>
+                    <div class="mt-4">
+                        <div class="float-lg-end ms-lg-5 mb-3" style="width: 500px; max-width: 100%;">
+                            {% if github_config %}
+                            {{ tutorial_videos(github_config.existing_repo_tutorial_videos.all()) }}
+                            {% endif %}
+                        </div>
+                        {% if github_config %}
+                        {{ icon_bullets(github_config.existing_repo_info_items.all()) }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <hr class="full-bleed my-5">
+            <div class="row">
+                <div class="col-12" id="connect-new">
+                    <h1 class="mb-3 fw-bold">Set up a new GitHub repository for your submitted model</h1>
+                    <div class="mt-4">
+                        <div class="float-lg-end ms-lg-5 mb-3" style="width: 500px; max-width: 100%;">
+                            {% if github_config %}
+                            {{ tutorial_videos(github_config.new_repo_tutorial_videos.all()) }}
+                            {% endif %}
+                        </div>
+                        {% if github_config %}
+                        {{ icon_bullets(github_config.new_repo_info_items.all()) }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <hr class="full-bleed my-5">
+            <div class="row">
+                <div class="col-12" id="overview-faqs">
+                    <h1 class="mb-3 fw-bold">Frequently asked questions</h1>
+                    {% if github_config and github_config.faq_entries.exists() %}
+                    {{ faq_accordion(github_config.faq_entries.all()) }}
                     {% else %}
-                    <div class="alert alert-dark text-center" role="alert">
-                        You must be <a href="{{ url('account_login') }}?next={{ request.path }}" class="alert-link">signed in</a> to manage the GitHub integration for your models.
-                    </div>
+                    <p class="text-muted mb-0">Details coming soon.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
-        <div class="tab-pane fade" id="how-it-works" role="tabpanel" aria-labelledby="how-it-works-tab">
-            <div class="row justify-content-center mb-5">
-                <div class="col-12 col-md-10">
-                    <p class="text-center">
-                        The bidirectional sync between the CoMSES Model Library and GitHub consists of two distinct
-                        processes:
-                        <strong>pushing</strong> (CoMSES → GitHub) and <strong>importing</strong> (GitHub → CoMSES),
-                        both of
-                        which can be toggled on or off independently.
-                    <ul>
-                        <li>
-                            Both processes will be enabled by default when generating a new repository from a model
-                            submission.
-                        </li>
-                        <li>
-                            Alternatively, you can link an existing repository with only importing enabled to import
-                            new releases from GitHub, similarly to the <i>Zenodo</i> GitHub integration.
-                        </li>
-                    </ul>
-                    </p>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex align-items-center justify-content-between">
-                            <h3 class="mb-0"><i class="fas fa-code-branch"></i> Pushing</h3>
-                            <span class="text-muted">(CoMSES → GitHub)</span>
-                        </div>
-                        <div class="card-body">
-                            <h5>How It Works</h5>
-                            <ul class="px-3">
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-code-branch pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Published model releases are transformed into commits, branches,
-                                        and releases on GitHub, preserving your project's history and versioning
-                                    </div>
-                                </li>
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-user pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        In order to maintain attribution, the original submitter is set as the commit
-                                        author, and all other authors as co-authors
-                                        <p class="text-muted small mb-0">
-                                            {% if not user.is_authenticated %}
-                                            We will use a connected Github account or your profile information to sign
-                                            commits.
-                                            You can
-                                            connect
-                                            your Github account by editing your profile if you want it to appear as the
-                                            author
-                                            of the
-                                            commits.
-                                            {% elif user.member_profile.github_username %}
-                                            Since you have a connected Github account, we will use it to sign commits:
-                                            <code>{{ user.member_profile.github_username }} &lt;{{ user.member_profile.github_username }}@users.noreply.github.com&gt;</code>
-                                            {% else %}
-                                            Since you do not have a github account connected we will use your profile
-                                            information:
-                                            <code>{{ user.member_profile.name }} &lt;{{ user.email }}&gt;</code>
-                                            {% endif %}
-                                        </p>
-                                    </div>
-                                </li>
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-tags pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Metadata is preserved by adding to the GitHub repo where possible and stored in
-                                        versioned
-                                        <a href="https://codemeta.github.io/"><code>codemeta.json</code></a>,
-                                        <a
-                                            href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository"><code>LICENSE</code></a>,
-                                        and <a
-                                            href="https://citation-file-format.github.io/"><code>CITATION.cff</code></a>
-                                        files
-                                    </div>
-                                </li>
-                                <li class="d-flex">
-                                    <i class="fas fa-sync-alt pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Each time a new release is published on the Model Library, or metadata for an
-                                        existing
-                                        one is updated, the GitHub repository is
-                                        updated automatically
-                                    </div>
-                                </li>
-                            </ul>
-                            <hr />
-                            <h5>Considerations</h5>
-                            <ul class="px-3">
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Changes made to any generated branches on GitHub will cause that branch to
-                                        longer be
-                                        automatically updated by the Model Library
-                                    </div>
-                                </li>
-                                <li class="d-flex">
-                                    <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Individual files cannot exceed 100MB
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex align-items-center justify-content-between">
-                            <h3 class="mb-0"><i class="fas fa-file-import"></i> Importing</h3>
-                            <span class="text-muted">(GitHub → CoMSES)</span>
-                        </div>
-                        <div class="card-body">
-                            <h5>How It Works</h5>
-                            <ul class="px-3">
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-rocket pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Whenever you <a
-                                            href="https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository">publish
-                                            a new release</a> on a linked GitHub repository with
-                                        importing enabled, the release is automatically imported as a new release of
-                                        your model
-                                        in the CoMSES Model Library
-                                    </div>
-                                </li>
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-lock pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Releases imported from GitHub are initially unpublished in the Model Library,
-                                        allowing
-                                        you to
-                                        approve the extracted metadata, make any last-minute changes (by updating the
-                                        corresponding GitHub release),
-                                        and request peer review.
-                                    </div>
-                                </li>
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-file-archive pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        The release assets for the GitHub release are imported to the model library, and
-                                        are
-                                        available for download like any other release
-                                    </div>
-                                </li>
-                                <li class="d-flex">
-                                    <i class="fas fa-tags pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        In order to populate metadata for the release record in the Model Library,
-                                        <code>codemeta.json</code> and/or
-                                        <code>CITATION.cff</code> files placed in the root of the repository will be
-                                        parsed
-                                    </div>
-                                </li>
-                            </ul>
-                            <hr />
-                            <h5>Considerations</h5>
-                            <ul class="px-3">
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Metadata files describing the model software should be well-formed and kept up
-                                        to date
-                                        in the repository to ensure accurate information is imported
-                                    </div>
-                                </li>
-                                <li class="d-flex mb-2">
-                                    <i class="fas fa-exclamation-triangle pt-1" style="width: 1rem"></i>
-                                    <div class="ps-3 flex-grow-1">
-                                        Releases imported from GitHub do not enforce a certain directory structure,
-                                        instead
-                                        pulling in the
-                                        release assets as-is, so you must ensure this contains all of your source code,
-                                        documentation, and other necessary files
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="tab-pane fade" id="faq" role="tabpanel" aria-labelledby="faq-tab">
-            {% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
-            {% if github_config and github_config.faq_entries.exists() %}
-            <div class="row justify-content-center">
-                <div class="col-12" role="tablist" aria-multiselectable="true">
-                    {% for faq_entry in github_config.faq_entries.all() %}
-                    {% set entry_id = "entry_" ~ loop.index %}
-                    {% set heading_id = "faqHeading_" ~ loop.index %}
-                    <div class='card mb-2'>
-                        <div class='card-header' role='tab' id='{{ heading_id }}'>
-                            <h5 class='mb-0'>
-                                <button class='btn btn-link text-start' data-bs-toggle='collapse'
-                                    data-bs-target='#{{entry_id}}' aria-expanded='false' aria-controls='{{entry_id}}'>
-                                    {{ faq_entry.question }}
-                                </button>
-                            </h5>
-                        </div>
-                        <div id='{{entry_id}}' class='collapse' aria-labelledby='{{ heading_id }}'>
-                            <div class='card-body'>
-                                {% autoescape off %}
-                                {{ faq_entry.answer }}
-                                {% endautoescape %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-            {% endwith %}
-        </div>
     </div>
 </div>
+{% endwith %}
 {% endblock %}
 
 {% block js %}

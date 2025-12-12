@@ -409,7 +409,11 @@
             {% endwith %}
             <b class='card-title'>License</b>
             <div class="card-text mb-3">
-                <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
+                {% if release.license %}
+                    <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
+                {% else %}
+                    None
+                {% endif %}
             </div>
             <b class='card-title'>Programming Language</b>
             <div class="card-text mb-3">

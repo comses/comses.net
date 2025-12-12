@@ -1,10 +1,8 @@
 <template>
   <div class="row">
-    <div class="col-md-8 col-12 mb-3 order-2 order-md-1">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">Submitted models</h5>
-        </div>
+    <h4 class="fw-bold">Your submitted models</h4>
+    <div class="col-md-8 col-12 order-2 order-md-1">
+      <div class="card" style="height: 15rem">
         <div v-if="loadingCodebases" class="card-body text-center">
           <i class="fas fa-spinner fa-spin"></i> Loading...
         </div>
@@ -48,8 +46,8 @@
         </ul>
       </div>
     </div>
-    <div class="col-md-4 col-12 mb-3 order-1 order-md-2">
-      <ConnectGitHubStep :installation-status="installationStatus" />
+    <div class="col-md-4 col-12 order-1 order-md-2">
+      <ConnectGitHubStep :installation-status="installationStatus" style="height: 15rem" />
     </div>
   </div>
 </template>

@@ -42,6 +42,7 @@ from wagtail.images.models import (
     get_upload_to,
     ImageQuerySet,
 )
+from wagtail.models import Orderable
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 from wagtail.contrib.settings.models import BaseSiteSetting, register_setting
@@ -3772,55 +3773,97 @@ class DataCiteRegistrationLog(models.Model):
                    """
 
 
-class GitHubIntegrationFaqEntry(index.Indexed, models.Model):
+class GitHubIntegrationFaqEntry(index.Indexed, Orderable):
     configuration = ParentalKey(
         "GitHubIntegrationConfiguration", related_name="faq_entries", on_delete=models.CASCADE
     )
     question = models.CharField(max_length=500, help_text=_("The FAQ question"))
     answer = MarkdownField(help_text=_("The FAQ answer in Markdown format"))
-    order = models.PositiveIntegerField(
-        default=0, help_text=_("Order in which this FAQ entry should appear")
-    )
 
     class Meta:
-        ordering = ["order", "id"]
+        ordering = ["sort_order", "id"]
 
 
-class GitHubIntegrationTutorialVideo(index.Indexed, models.Model):
+class GitHubIntegrationInfoItemBase(index.Indexed, Orderable):
+    icon = models.CharField(
+        max_length=200,
+        help_text=_("optional icon class (e.g., 'fas fa-link')"),
+        blank=True,
+    )
+    text = MarkdownField(help_text=_("The info item text (Markdown)"))
+
+    panels = [
+        FieldPanel("icon"),
+        FieldPanel("text"),
+    ]
+
+    class Meta:
+        abstract = True
+        ordering = ["sort_order", "id"]
+
+
+class GitHubIntegrationExistingRepoInfoItem(GitHubIntegrationInfoItemBase):
     configuration = ParentalKey(
         "GitHubIntegrationConfiguration",
-        related_name="tutorial_videos",
+        related_name="existing_repo_info_items",
         on_delete=models.CASCADE,
     )
-    title = models.CharField(blank=True, max_length=200, help_text=_("optional short title for the tutorial"))
+
+
+class GitHubIntegrationNewRepoInfoItem(GitHubIntegrationInfoItemBase):
+    configuration = ParentalKey(
+        "GitHubIntegrationConfiguration",
+        related_name="new_repo_info_items",
+        on_delete=models.CASCADE,
+    )
+
+
+class GitHubIntegrationTutorialVideoBase(index.Indexed, Orderable):
+    title = models.CharField(
+        blank=True, max_length=200, help_text=_("optional short title for the tutorial")
+    )
     youtube_id = models.CharField(
         max_length=32,
         help_text=_("YouTube video id (e.g., dQw4w9WgXcQ)"),
     )
-    description = models.TextField(blank=True, help_text=_("optional short description"))
-    order = models.PositiveIntegerField(
-        default=0, help_text=_("order in which this tutorial should appear")
-    )
-
-    class Meta:
-        ordering = ["order", "id"]
+    caption = MarkdownField(blank=True, help_text=_("optional caption (Markdown)"))
 
     panels = [
         FieldPanel("title"),
         FieldPanel("youtube_id"),
-        FieldPanel("description"),
-        FieldPanel("order"),
+        FieldPanel("caption"),
     ]
 
+    class Meta:
+        abstract = True
+        ordering = ["sort_order", "id"]
+
     def __str__(self):
-        return f"{self.title} ({self.youtube_id})"
+        if self.title:
+            return f"{self.title} ({self.youtube_id})"
+        return self.youtube_id
+
+
+class GitHubIntegrationExistingRepoTutorialVideo(GitHubIntegrationTutorialVideoBase):
+    configuration = ParentalKey(
+        "GitHubIntegrationConfiguration",
+        related_name="existing_repo_tutorial_videos",
+        on_delete=models.CASCADE,
+    )
+
+
+class GitHubIntegrationNewRepoTutorialVideo(GitHubIntegrationTutorialVideoBase):
+    configuration = ParentalKey(
+        "GitHubIntegrationConfiguration",
+        related_name="new_repo_tutorial_videos",
+        on_delete=models.CASCADE,
+    )
 
 @register_setting
 class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
     is_beta = models.BooleanField(
         default=True, help_text=_("Mark the GitHub integration feature as a beta feature")
     )
-     
     @staticmethod
     def github_app_settings_help_content():
         """Create formatted content for a configuration help panel on the GitHub Integration settings page"""
@@ -3856,5 +3899,8 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
         HelpPanel(content=github_app_settings_help_content()),
         FieldPanel("is_beta"),
         InlinePanel("faq_entries", label="FAQ Entries"),
-        InlinePanel("tutorial_videos", label="Tutorial Videos"),
+        InlinePanel("existing_repo_info_items", label="Existing Repo Info Items"),
+        InlinePanel("existing_repo_tutorial_videos", label="Existing Repo Tutorial Videos"),
+        InlinePanel("new_repo_info_items", label="New Repo Info Items"),
+        InlinePanel("new_repo_tutorial_videos", label="New Repo Tutorial Videos"),
     ]
