@@ -176,8 +176,6 @@
                     <h1 class="mb-3 fw-bold">Frequently asked questions</h1>
                     {% if github_config and github_config.faq_entries.exists() %}
                     {{ faq_accordion(github_config.faq_entries.all()) }}
-                    {% else %}
-                    <p class="text-muted mb-0">Details coming soon.</p>
                     {% endif %}
                 </div>
             </div>
