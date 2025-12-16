@@ -34,7 +34,13 @@
         front page's featured model gallery, in the model library, and search results.
       </p>
       <form id="publish-form" class="mb-3" @submit="handleSubmit">
-        <TextField name="versionNumber" label="Version Number" help="" required>
+        <TextField
+          v-if="!store.release.importedReleaseSyncState"
+          name="versionNumber"
+          label="Version Number"
+          help=""
+          required
+        >
           <template #help>
             <small class="form-text text-muted" aria-describedby="versionNumber">
               <a target="_blank" href="https://semver.org/">more info on semantic versioning</a>
@@ -44,6 +50,12 @@
         </TextField>
         <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
       </form>
+      <div v-if="store.release.importedReleaseSyncState" class="alert alert-danger my-2">
+        <p class="mb-0">
+          <i class="fas fa-exclamation-triangle text-danger"></i>
+          Releases imported from GitHub cannot be peer reviewed once they have been published.
+        </p>
+      </div>
       <p class="mb-0">Publishing a release cannot be undone. Proceed?</p>
     </template>
     <template #footer>

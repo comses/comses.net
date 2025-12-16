@@ -59,4 +59,4 @@ invoke
 ipython
 pgcli
 # replace with pypi scicodes install eventually
-git+https://github.com/comses/codemeticulous.git
+git+https://github.com/SciCodes/codemeticulous.git@1671bc206061f4a3aa59ecf589ecd2ad7b80ecd5

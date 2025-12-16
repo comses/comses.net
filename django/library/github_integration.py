@@ -368,7 +368,7 @@ class GitHubApi:
         try:
             _ = repo.heads[CodebaseGitRepositoryApi.DEFAULT_BRANCH_NAME]
         except Exception:
-            return f"[{timezone.now().isoformat()}]: main not found locally"
+            return  ("", f"[{timezone.now().isoformat()}]: main not found locally")
         success_mask = PushInfo.NEW_HEAD | PushInfo.FAST_FORWARD | PushInfo.UP_TO_DATE
         summaries: list[str] = []
         for info in remote.push(CodebaseGitRepositoryApi.DEFAULT_BRANCH_NAME):

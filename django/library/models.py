@@ -649,9 +649,9 @@ class BaseReleaseSyncState(models.Model):
         self.save(update_fields=["status", "last_sync_started_at", "last_modified"])
         return self
 
-    def log_failure(self, message: str, now_func=None):
+    def log_failure(self, message: str):
         """mark this sync state as ERROR and append a log entry"""
-        now = (now_func or timezone.now)()
+        now = timezone.now()
         self.status = self.Status.ERROR
         self.error_message = message
         self.last_sync_finished_at = now
@@ -659,9 +659,9 @@ class BaseReleaseSyncState(models.Model):
         self.save()
         return self
 
-    def log_success(self, message: str | None = None, now_func=None):
+    def log_success(self, message: str | None = None):
         """mark this sync state as SUCCESS and optionally append a log entry"""
-        now = (now_func or timezone.now)()
+        now = timezone.now()
         self.status = self.Status.SUCCESS
         self.last_sync_finished_at = now
         if message:
@@ -2408,9 +2408,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             super().save(**kwargs)
         else:
             if not self.pk:
+                # save first so m2m/reverse relations used by codemeta generation can be accessed
                 # do not mess with the filesystem if this is a new release
-                self.codemeta_snapshot = self.codemeta.dict(serialize=True)
                 super().save(**kwargs)
+                self.codemeta_snapshot = self.codemeta.dict(serialize=True)
+                super().save(update_fields=["codemeta_snapshot"])
             else:
                 logger.debug("Building codemeta for release: %s", self)
                 old_codemeta = self.codemeta_snapshot
