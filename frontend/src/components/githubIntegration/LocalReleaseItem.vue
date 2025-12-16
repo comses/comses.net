@@ -2,7 +2,7 @@
   <li class="list-group-item p-2 rounded" :class="itemClass">
     <div class="d-flex flex-column gap-1">
       <div class="d-flex align-items-center gap-2">
-        <a :href="release.absoluteUrl" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+        <a :href="release.absoluteUrl" target="_blank"><i class="fas fa-link"></i></a>
         <h6 class="mb-0 fw-bold d-flex align-items-center gap-2">
           <span>v{{ release.versionNumber }}</span>
           <span v-if="!release.live" class="badge bg-gray">
@@ -13,15 +13,10 @@
       </div>
       <div class="text-muted small">
         <span v-if="!release.live">
-          <span v-if="release.importedReleaseSyncState">
-            <a
-              v-if="release.importedReleaseSyncState"
-              :href="editHref"
-              class="text-decoration-underline"
-            >
-              Verify and publish
-            </a>
+          <span v-if="release.importedReleaseSyncState" class="float-end">
+            <a :href="editHref"><i class="fas fa-edit"></i> Verify import</a>
             <BootstrapTooltip
+              class="ms-1"
               title="Releases imported from GitHub will be unpublished until you verify and correct metadata and file categorization. Afterwards, you can publish OR request peer review."
               icon-class="fas fa-question-circle text-muted"
               placement="bottom"

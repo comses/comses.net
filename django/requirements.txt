@@ -58,6 +58,5 @@ wagtail-modeladmin==2.2.0
 invoke
 ipython
 pgcli
-# replace with pypi scicodes install eventually
 git+https://github.com/comses/codemeticulous.git
 sqlparse>=0.5.4 # not directly required, pinned by Snyk to avoid a vulnerability

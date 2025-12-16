@@ -908,12 +908,15 @@ class CategoryManifestManager:
         manifest, and remove any files in the manifest that are not in the file list
         """
         manifest = self.data
+        file_list_keys: set[str] = set()
         for name in file_list:
-            if name not in manifest:
-                manifest[name] = self._guess_file_category(name)
-        for name in list(manifest.keys()):
-            if name not in file_list:
-                del manifest[name]
+            key = str(name)
+            file_list_keys.add(key)
+            if key not in manifest:
+                manifest[key] = self._guess_file_category(name)
+        for key in list(manifest.keys()):
+            if key not in file_list_keys:
+                del manifest[key]
         self.update(manifest)
 
 
@@ -1506,6 +1509,7 @@ def import_archive(codebase_release, nested_code_folder_name, fs_api=None):
     """currently only used for tests"""
     if fs_api is None:
         fs_api = codebase_release.get_fs_api()
+    nested_code_folder_name = str(nested_code_folder_name)
     archive_name = f"{nested_code_folder_name}.zip"
     shutil.make_archive(nested_code_folder_name, "zip", nested_code_folder_name)
     with open(archive_name, "rb") as f:

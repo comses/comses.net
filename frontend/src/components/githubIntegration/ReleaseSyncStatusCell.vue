@@ -19,13 +19,14 @@
         <span v-if="direction === 'right'" :class="arrowClass"
           ><i class="fas fa-arrow-right"></i
         ></span>
+        <BootstrapTooltip
+          class="ms-1"
+          :title="errorMessage"
+          v-if="currentStatus === 'ERROR' && errorMessage"
+          icon-class="fas fa-info-circle text-muted"
+          placement="bottom"
+        ></BootstrapTooltip>
       </div>
-      <BootstrapTooltip
-        :title="errorMessage"
-        v-if="errorMessage"
-        icon-class="fas fa-exclamation-triangle text-danger"
-        placement="bottom"
-      ></BootstrapTooltip>
       <small v-if="metadataPending" class="text-muted">
         update pending
         <BootstrapTooltip
@@ -34,7 +35,11 @@
           placement="bottom"
         ></BootstrapTooltip>
       </small>
-      <button v-if="showReimport" class="btn btn-link btn-sm p-0" @click="handleImportClick">
+      <button v-if="showRetryImport" class="btn btn-link btn-sm p-0" @click="handleImportClick">
+        <i class="fas fa-redo me-1"></i>
+        Retry
+      </button>
+      <button v-else-if="showReimport" class="btn btn-link btn-sm p-0" @click="handleImportClick">
         <i class="fas fa-redo me-1"></i>
         Reimport
       </button>
@@ -134,6 +139,10 @@ const metadataPending = computed(() => {
     currentStatus.value === "SUCCESS" &&
     localState.value?.canPush === true
   );
+});
+
+const showRetryImport = computed(() => {
+  return direction.value === "left" && currentStatus.value === "ERROR";
 });
 
 const showReimport = computed(() => {
