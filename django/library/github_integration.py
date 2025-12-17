@@ -548,7 +548,7 @@ class GitHubReleaseImporter:
         self._reimporting = False
 
         if not self.sync_state.download_url:
-            return self.log_failure("No zipball found in the github release")
+            raise ValueError("No zipball found in the github release")
 
     @property
     def installation_token(self):

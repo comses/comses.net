@@ -71,9 +71,7 @@ def import_github_release_task(
                 remote=remote, github_release_id=str(github_release_id)
             ).first()
             if sync_state:
-                sync_state.status = ImportedReleaseSyncState.Status.ERROR
-                sync_state.error_message = str(e)
-                sync_state.save()
+                sync_state.log_failure(str(e))
         except Exception:
             logger.exception("Failed to update sync state after import error")
         logger.exception("Failed to import GitHub release asynchronously: %s", e)
