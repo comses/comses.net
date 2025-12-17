@@ -2,9 +2,20 @@
   <div v-if="persistentErrors.length > 0">
     <FormAlert :validation-errors="[]" :server-errors="persistentErrors" />
   </div>
-  <div class="d-flex flex-row justify-content-end mb-2">
-    <span class="badge bg-transparent border border-blue-gray text-dark me-2">transferred</span>
-    <span class="badge bg-blue-gray text-dark">original</span>
+  <div class="d-flex flex-row justify-content-between mb-2">
+    <span class="text-muted small">
+      <small v-if="canPush">
+        * Public model library releases indicated with
+        <i class="fas fa-code-branch text-muted"></i>
+        have been built into a git repository, each corresponding to a commit in a main branch,
+        version branch, and tag which can be pushed to the connected GitHub repository. We won't
+        overwrite any changes you make to the GitHub repository.
+      </small>
+    </span>
+    <span class="d-flex flex-row align-items-start">
+      <span class="badge bg-transparent border border-blue-gray text-dark me-2">transferred</span>
+      <span class="badge bg-blue-gray text-dark">original</span>
+    </span>
   </div>
   <div>
     <div class="table-responsive">
@@ -39,7 +50,7 @@
                     Pushing...
                   </span>
                   <span v-else class="d-inline-flex align-items-center">
-                    Push pending <i class="fas fa-arrow-right ms-2"></i>
+                    * Push pending <i class="fas fa-arrow-right ms-2"></i>
                   </span>
                 </button>
               </div>
