@@ -5,6 +5,7 @@
         <a :href="release.absoluteUrl" target="_blank"><i class="fas fa-link"></i></a>
         <h6 class="mb-0 fw-bold d-flex align-items-center gap-2">
           <span>v{{ release.versionNumber }}</span>
+          <i v-if="release.gitRefSyncState" class="fas fa-code-branch text-muted"></i>
           <span v-if="!release.live" class="badge bg-gray">
             <i class="fas fa-lock"></i> Private
           </span>
