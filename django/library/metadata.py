@@ -448,11 +448,19 @@ class ReleaseMetadataConverter:
         if not codemeta_os:
             return ""
         if isinstance(codemeta_os, list):
-            os_str = codemeta_os[0]
-        elif isinstance(codemeta_os, str):
-            os_str = codemeta_os
+            if not codemeta_os:
+                return ""
+            os_value = codemeta_os[0]
         else:
-            return ""
+            os_value = codemeta_os
+
+        if isinstance(os_value, str):
+            os_str = os_value
+        else:
+            # try to extract a name from a structured object (e.g., {"name": "Linux"})
+            os_name = self._get_field(os_value, "name")
+            os_str = os_name if isinstance(os_name, str) else ""
+
         if os_str:
             normalized = os_str.lower()
             # attempt to match the given os string to a known platform
