@@ -32,6 +32,15 @@
       </div>
       <FormAlert :validation-errors="[]" :server-errors="serverErrors" />
     </div>
+    <div v-if="justConnectedRemote && activeRemote" class="alert alert-success" role="alert">
+      <i class="fas fa-check-circle me-2"></i>
+      <b>Successfully connected to {{ activeRemote.owner }}/{{ activeRemote.repoName }}</b>
+      <p class="mb-0 mt-2">
+        Manage this connection by importing releases from GitHub or pushing releases to GitHub
+        below. Return here in the future by pressing
+        <b><i class="fas fa-cog"></i> manage</b> in the GitHub panel on the model page.
+      </p>
+    </div>
     <div v-if="showReleaseManagement" class="border rounded p-3">
       <ReleaseManagementSection
         :codebase-identifier="codebaseIdentifier"
@@ -105,6 +114,7 @@ const activeRemote = ref<CodebaseGitRemote | null>(null);
 const activeRemoteLoading = ref(false);
 const repoName = ref(""); // input-only repo name
 const isValidating = ref(false);
+const justConnectedRemote = ref(false);
 // releases state is owned by ReleaseManagementSection
 
 const isGitHubConnected = computed(() => !!installationStatus.value.githubAccount);
@@ -201,6 +211,7 @@ const handleConnectRepo = async () => {
   await setupUserGithubRemote(repoName.value.trim(), selectedSyncType.value === "existing", {
     onSuccess: async () => {
       await refreshActiveRemote();
+      justConnectedRemote.value = true;
     },
   });
   isValidating.value = false;

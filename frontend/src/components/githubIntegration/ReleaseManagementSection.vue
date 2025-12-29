@@ -60,6 +60,17 @@
                 <i class="fab fa-github"></i>
                 <span>GitHub releases</span>
               </div>
+              <div v-if="showNoGitHubReleasesMessage" class="text-muted small mt-2 fw-normal">
+                No releases found. You must
+                <a
+                  :href="`${activeRemote?.url}/releases`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  create a release on GitHub <i class="fas fa-external-link-alt"></i
+                ></a>
+                in order to import to the model library.
+              </div>
             </th>
           </tr>
         </thead>
@@ -314,6 +325,13 @@ watch(
 
 const hasUnpushedReleases = computed(() =>
   extractLocalReleases().some(r => Boolean(r.gitRefSyncState?.canPush))
+);
+
+const showNoGitHubReleasesMessage = computed(
+  () =>
+    props.activeRemote?.isPreexisting &&
+    extractGithubReleases().length === 0 &&
+    !githubLoading.value
 );
 
 const hasRunningPushJobs = computed(() => {

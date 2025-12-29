@@ -98,7 +98,8 @@ def _get_github_config_for_default_site(apps):
     Site = apps.get_model("wagtailcore", "Site")
     GitHubIntegrationConfiguration = apps.get_model("library", "GitHubIntegrationConfiguration")
     default_site = Site.objects.get(is_default_site=True)
-    return GitHubIntegrationConfiguration.objects.get(site=default_site)
+    config, _ = GitHubIntegrationConfiguration.objects.get_or_create(site=default_site)
+    return config
 
 
 def populate_initial_content(apps, schema_editor):

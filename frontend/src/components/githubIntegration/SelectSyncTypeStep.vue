@@ -59,20 +59,30 @@
         <div class="alert alert-warning py-2 mb-3">
           <small>
             <i class="fas fa-exclamation-triangle me-2"></i>
-            <strong>Important:</strong> Do NOT initialize the repository with README, .gitignore, or
-            license files.
+            Name the repository anything you want, but make sure it is <b>public</b> and
+            <b>NOT initialized</b>
+            with anything like a README, .gitignore, or license files.
           </small>
         </div>
 
         <div class="row g-2">
           <div class="col-12 col-md-6">
-            <a :href="newRepositoryUrl" target="_blank" class="btn btn-secondary w-100">
+            <a
+              :href="newRepositoryUrl"
+              target="_blank"
+              class="btn btn-secondary w-100"
+              @click="hasClickedCreateRepo = true"
+            >
               <i class="fas fa-external-link-alt me-2"></i>
               Create New Repository
             </a>
           </div>
           <div class="col-12 col-md-6">
-            <button class="btn btn-primary w-100" @click="emit('choice', 'new')">
+            <button
+              class="btn btn-primary w-100"
+              :disabled="!hasClickedCreateRepo"
+              @click="emit('choice', 'new')"
+            >
               <i class="fas fa-arrow-right me-2"></i>
               Continue
             </button>
@@ -110,4 +120,5 @@ const emit = defineEmits<{
 
 const isCompleted = computed(() => props.selectedSyncType !== null);
 const isNewRepoPending = ref(false);
+const hasClickedCreateRepo = ref(false);
 </script>

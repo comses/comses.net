@@ -48,6 +48,7 @@
       help="Add tags to categorize your model and make it more discoverable. Press enter after entering each tag."
     />
     <TextField
+      v-if="!fromGitHub"
       class="mb-3"
       name="repositoryUrl"
       label="Version Control Repository URL (reference only)"
@@ -56,16 +57,18 @@
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     <div v-if="!asModal" class="d-flex gap-2">
       <button type="submit" class="btn btn-primary" :disabled="isLoading" data-cy="next">
+        <i class="fas fa-upload"></i>
         {{ props.identifier ? "Update" : "Continue to upload model" }}
       </button>
       <button
         v-if="!props.identifier"
         type="submit"
-        class="btn btn-outline-gray"
+        class="btn btn-secondary"
         :disabled="isLoading"
         data-cy="go-github-config"
         @click="goToGithubConfig = true"
       >
+        <i class="fab fa-github"></i>
         Import model from GitHub
       </button>
     </div>
@@ -114,6 +117,8 @@ type CodebaseEditFields = yup.InferType<typeof schema>;
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useCodebaseAPI();
 const { editUrl } = useReleaseEditorAPI();
 const goToGithubConfig = ref(false);
+
+const fromGitHub = new URLSearchParams(window.location.search).get("github") === "true";
 
 const {
   errors,
