@@ -1179,14 +1179,15 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     def create_remote(self, owner, repo_name, **kwargs):
         """create a new remote for this codebase, or get an existing one if there is a
-        matching remote that failed to actually be created at the remote location"""
+        matching remote that was previously deactivated"""
         existing_remote = CodebaseGitRemote.objects.filter(
             codebase=self,
             owner=owner,
             repo_name=repo_name,
-            url__isnull=True,  # proxy for a successful remote creation
         ).first()
         if existing_remote:
+            existing_remote.is_active = True
+            existing_remote.save(update_fields=["is_active", "last_modified"])
             return existing_remote
         remote = CodebaseGitRemote.objects.create(
             codebase=self,

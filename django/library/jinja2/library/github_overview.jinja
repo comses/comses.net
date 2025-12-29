@@ -27,12 +27,9 @@
     {% if video.title %}
     <h5 class="mb-2 fw-bold">{{ video.title }}</h5>
     {% endif %}
-    <iframe src="https://www.youtube.com/embed/{{ video.youtube_id }}"
-        title="{{ video.title or '' }}"
-        style="display: block; width: 100%; aspect-ratio: 16 / 9; border: 0;"
-        allow="picture-in-picture; web-share"
-        referrerpolicy="strict-origin-when-cross-origin"
-        allowfullscreen></iframe>
+    <iframe src="https://www.youtube.com/embed/{{ video.youtube_id }}" title="{{ video.title or '' }}"
+        style="display: block; width: 100%; aspect-ratio: 16 / 9; border: 0;" allow="picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     {% if video.caption and video.caption.raw %}
     <div class="text-muted small">{{ video.caption.rendered|safe }}</div>
     {% endif %}
@@ -54,7 +51,8 @@
                 </button>
             </h5>
         </div>
-        <div id="{{ entry_id }}" class="collapse" aria-labelledby="{{ heading_id }}" data-bs-parent="#{{ accordion_id }}">
+        <div id="{{ entry_id }}" class="collapse" aria-labelledby="{{ heading_id }}"
+            data-bs-parent="#{{ accordion_id }}">
             <div class="card-body">
                 {{ entry.answer.rendered|safe }}
             </div>
@@ -75,12 +73,14 @@
                 </p>
                 <p>
                     Get started by pressing
-                    <span class="text-secondary opacity-75">
+                    <small class="text-secondary opacity-75">
                         <i class="fas fa-cog"></i> Connect a repository
-                    </span>
-                    for one of your models listed below or on the <strong><i class="fab fa-github"></i> GitHub</strong>
-                    tab on a model's
-                    page. Once you have an active synced repository, it will be linked in the same tab and
+                    </small>
+                    for one of your models listed below or on the model's
+                    page. You can also import directly from an existing GitHub repository when submitting a new model by selecting
+                    <span class="badge bg-secondary opacity-50"><i class="fab fa-github"></i> Import model from GitHub</span>
+                    on the new model form.
+                    Once you have a connected repository, it will be linked on the model's page and
                     visible to others.
                 </p>
             </div>
@@ -98,8 +98,8 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-column">
                             <h4 class="h6 mb-2">Import model code from GitHub</h4>
-                            <p class="text-muted small mb-0">Already use GitHub? You can import GitHub releases straight
-                                into the CoMSES Model Library.</p>
+                            <p class="text-muted small mb-0">Have an existing GitHub repository for your model? Connect
+                                it to import releases straight into the CoMSES Model Library.</p>
                             <div class="mt-auto">
                                 <a class="text-decoration-none" href="#import-existing">
                                     Read more <i class="fas fa-arrow-right small ms-1"></i>
@@ -112,8 +112,8 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-column">
                             <h4 class="h6 mb-2">Set up a new GitHub repository</h4>
-                            <p class="text-muted small mb-0">New to GitHub? We'll build a git repository for your model
-                                and let you push it to your own GitHub account.</p>
+                            <p class="text-muted small mb-0">Don't have a repository yet? We'll build a git repository
+                                from your existing releases and let you push it to your own GitHub account.</p>
                             <div class="mt-auto">
                                 <a class="text-decoration-none" href="#connect-new">
                                     Read more <i class="fas fa-arrow-right small ms-1"></i>

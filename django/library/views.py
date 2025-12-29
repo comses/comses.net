@@ -646,7 +646,7 @@ class CodebaseGitRemoteViewSet(
         if "single_active_remote" in msg:
             raise ValidationError("There can only be one active repository for a codebase at a time.")
         else:
-            raise ValidationError("A repository already exists at this location.")
+            raise ValidationError("This repository is already connected to another model.")
 
     def update(self, request, *args, **kwargs):
         try:

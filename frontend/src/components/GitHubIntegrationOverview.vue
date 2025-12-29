@@ -1,7 +1,12 @@
 <template>
   <div class="row">
-    <h4 class="fw-bold">Your submitted models</h4>
     <div class="col-md-8 col-12 order-2 order-md-1">
+      <div class="d-flex flex-row justify-content-between mb-2">
+        <h4 class="fw-bold">Your submitted models</h4>
+        <a href="/codebases/add/?github=true" class="btn btn-sm btn-secondary"
+          >Submit a new model</a
+        >
+      </div>
       <div class="card" style="height: 15rem">
         <div v-if="loadingCodebases" class="card-body text-center">
           <i class="fas fa-spinner fa-spin"></i> Loading...
@@ -17,8 +22,8 @@
           >
             <div class="w-100" style="max-width: 60%">
               <h6 class="mb-0 text-truncate">
-                <span v-if="!codebase.live" class="me-2 text-muted" title="Unpublished">
-                  <i class="fas fa-lock"></i>
+                <span v-if="!codebase.live" class="badge bg-gray me-1">
+                  <i class="fas fa-lock"></i> Private
                 </span>
                 <a :href="codebase.absoluteUrl" :title="codebase.title" class="fw-bold">
                   {{ codebase.title }}
@@ -47,6 +52,10 @@
       </div>
     </div>
     <div class="col-md-4 col-12 order-1 order-md-2">
+      <div class="d-flex flex-row justify-content-between mb-2 invisible">
+        <h4 class="fw-bold">&nbsp;</h4>
+        <span class="btn btn-sm">&nbsp;</span>
+      </div>
       <ConnectGitHubStep :installation-status="installationStatus" style="height: 15rem" />
     </div>
   </div>
