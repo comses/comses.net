@@ -11,6 +11,7 @@ from core.utils import confirm
 
 DEFAULT_LIBRARY_BASENAME = os.path.basename(settings.LIBRARY_ROOT)
 DEFAULT_MEDIA_BASENAME = os.path.basename(settings.MEDIA_ROOT)
+DEFAULT_REPOSITORY_BASENAME = os.path.basename(settings.REPOSITORY_ROOT)
 
 
 @task(aliases=["init"])
@@ -48,12 +49,14 @@ def backup(ctx):
     archive = "{utcnow}"
     library = os.path.relpath(settings.LIBRARY_ROOT, share)
     media = os.path.relpath(settings.MEDIA_ROOT, share)
+    repository = os.path.relpath(settings.REPOSITORY_ROOT, share)
     database = os.path.relpath(os.path.join(settings.BACKUP_ROOT, "latest"), share)
 
     error_msgs = []
     for p in (
         settings.LIBRARY_ROOT,
         settings.MEDIA_ROOT,
+        settings.REPOSITORY_ROOT,
         os.path.join(settings.BACKUP_ROOT, "latest"),
     ):
         if not os.path.exists(p):
@@ -63,44 +66,57 @@ def backup(ctx):
 
     with ctx.cd(share):
         ctx.run(
-            f'borg create --stats --compression lz4 {repo}::"{archive}" {library} {media} {database}',
+            f'borg create --stats --compression lz4 {repo}::"{archive}" {library} {media} {repository} {database}',
             echo=True,
             env=environment(),
         )
 
 
 def delete_latest_uncompressed_backup(
-    src_library=DEFAULT_LIBRARY_BASENAME, src_media=DEFAULT_MEDIA_BASENAME
+    src_library=DEFAULT_LIBRARY_BASENAME,
+    src_media=DEFAULT_MEDIA_BASENAME,
+    src_repository=DEFAULT_REPOSITORY_BASENAME,
 ):
     latest_dest_library = os.path.join(settings.PREVIOUS_SHARE_ROOT, src_library)
     latest_dest_media = os.path.join(settings.PREVIOUS_SHARE_ROOT, src_media)
+    latest_dest_repository = os.path.join(settings.PREVIOUS_SHARE_ROOT, src_repository)
 
     shutil.rmtree(latest_dest_library, ignore_errors=True)
     shutil.rmtree(latest_dest_media, ignore_errors=True)
+    shutil.rmtree(latest_dest_repository, ignore_errors=True)
 
 
 def rotate_library_and_media_files(
     working_directory,
     src_library=DEFAULT_LIBRARY_BASENAME,
     src_media=DEFAULT_MEDIA_BASENAME,
+    src_repository=DEFAULT_REPOSITORY_BASENAME,
 ):
     """
-    Rotate the current library and media files
+    Rotate the current library, media, and repository files
 
-    Current library and media files are moved to the '.latest' folder in case of problems during the restore process.
+    Current library, media, and repository files are moved to the '.latest' folder in case of problems during the restore process.
     Files in .latest can be deleted if the restore was successful
     """
-    print("rotating library and media files")
-    delete_latest_uncompressed_backup(src_library=src_library, src_media=src_media)
+    print("rotating library, media, and repository files")
+    delete_latest_uncompressed_backup(
+        src_library=src_library, src_media=src_media, src_repository=src_repository
+    )
 
     os.makedirs(settings.PREVIOUS_SHARE_ROOT, exist_ok=True)
     if os.path.exists(settings.LIBRARY_ROOT):
         shutil.move(settings.LIBRARY_ROOT, settings.PREVIOUS_SHARE_ROOT)
     if os.path.exists(settings.MEDIA_ROOT):
         shutil.move(settings.MEDIA_ROOT, settings.PREVIOUS_SHARE_ROOT)
+    if os.path.exists(settings.REPOSITORY_ROOT):
+        shutil.move(settings.REPOSITORY_ROOT, settings.PREVIOUS_SHARE_ROOT)
 
     shutil.move(os.path.join(working_directory, src_library), settings.SHARE_DIR)
     shutil.move(os.path.join(working_directory, src_media), settings.SHARE_DIR)
+    # repository dir may not exist in older backups
+    src_repository_path = os.path.join(working_directory, src_repository)
+    if os.path.exists(src_repository_path):
+        shutil.move(src_repository_path, settings.SHARE_DIR)
 
 
 def environment():
