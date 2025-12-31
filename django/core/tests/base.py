@@ -8,6 +8,7 @@ import subprocess
 from datetime import date, timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
@@ -18,6 +19,11 @@ from core.serializers import EventSerializer, JobSerializer
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
+
+
+def update_index():
+    """rebuild ES indices for tests that need search/pagination"""
+    call_command("update_index", verbosity=0)
 
 
 class ContentModelFactory(ABC):

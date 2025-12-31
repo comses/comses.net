@@ -1,11 +1,10 @@
-from django.core.management import call_command
 from django.urls import resolve
 from guardian.shortcuts import assign_perm
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import AnonymousUser
 
-from core.tests.base import UserFactory
+from core.tests.base import UserFactory, update_index
 
 import logging
 
@@ -287,8 +286,7 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
         self.check_create_permissions(self.anonymous_user, create_data)
 
     def check_list(self):
-        # ask elasticsearch to reindex before checking the list
-        call_command("update_index", verbosity=0)
+        update_index()
         for user in self.users_able_to_login:
             self.with_logged_in(user, self.instance, self.check_list_permissions)
             assign_perm(

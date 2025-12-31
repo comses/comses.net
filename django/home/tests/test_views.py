@@ -36,7 +36,7 @@ class WagtailAdminLoginTestCase(TestCase):
             regular_user, status.HTTP_302_FOUND
         )
         message = response.context["message"]
-        self.assertEqual(message, "You do not have permission to access the admin")
+        self.assertEqual(message, "You do not have permission to access the admin.")
 
     def test_superuser_login(self):
         superuser = self.user_factory.create(is_superuser=True)
@@ -46,7 +46,7 @@ class WagtailAdminLoginTestCase(TestCase):
         staff = self.user_factory.create(is_staff=True)
         response = self.assertLoginStatusCodeMatchForUser(staff, status.HTTP_302_FOUND)
         message = response.context["message"]
-        self.assertEqual(message, "You do not have permission to access the admin")
+        self.assertEqual(message, "You do not have permission to access the admin.")
 
     def test_access_admin_login(self):
         content_type = ContentType.objects.get(model="admin")
