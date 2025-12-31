@@ -1,7 +1,7 @@
 from datetime import timedelta, date
 
 from allauth.account.models import EmailAddress
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 from taggit.models import Tag
 from rest_framework.exceptions import ValidationError
 
@@ -50,6 +50,7 @@ class MemberProfileSerializerTestCase(TestCase):
         self.user = self.user_factory.create()
         self.user.first_name = "Foo"
         self.user.last_name = "Bar"
+        self.request_factory = RequestFactory()
         ComsesGroups.initialize()
 
     def test_email_address_update(self):
@@ -66,24 +67,43 @@ class MemberProfileSerializerTestCase(TestCase):
         )
         email_address.set_as_primary()
 
+        # create a mock request for allauth email verification
+        request = self.request_factory.get("/")
+        request.user = self.user
+        # allauth add_new_email requires session and messages middleware
+        from django.contrib.sessions.middleware import SessionMiddleware
+        from django.contrib.messages.middleware import MessageMiddleware
+
+        SessionMiddleware(lambda r: None).process_request(request)
+        request.session.save()
+        MessageMiddleware(lambda r: None).process_request(request)
+
+        context = {"request": request}
+
         data = MemberProfileSerializer(member_profile).data
 
         # no change to email address
-        serializer = MemberProfileSerializer(instance=member_profile, data=data)
+        serializer = MemberProfileSerializer(
+            instance=member_profile, data=data, context=context
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         self.assertEqual(EmailAddress.objects.count(), 1)
 
         # acceptable address
         data["email"] = "foo2@email.com"
-        serializer = MemberProfileSerializer(instance=member_profile, data=data)
+        serializer = MemberProfileSerializer(
+            instance=member_profile, data=data, context=context
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         self.assertTrue(EmailAddress.objects.filter(email=data["email"]).exists())
 
         # conflicting address
         data["email"] = other_email
-        serializer = MemberProfileSerializer(instance=member_profile, data=data)
+        serializer = MemberProfileSerializer(
+            instance=member_profile, data=data, context=context
+        )
         serializer.is_valid(raise_exception=True)
         with self.assertRaises(ValidationError):
             serializer.save()

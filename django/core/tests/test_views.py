@@ -6,11 +6,10 @@ from rest_framework.test import APIClient
 from django.urls import reverse
 from django.test import TestCase
 
-from .base import create_test_user
+from .base import create_test_user, update_index, JobFactory, EventFactory
 from .permissions_base import BaseViewSetTestCase
 from core.views import EventViewSet, JobViewSet
 from core.models import Job, Event, SpamModeration, ComsesGroups
-from .base import JobFactory, EventFactory
 
 
 logger = logging.getLogger(__name__)
@@ -81,6 +80,7 @@ class JobPageRenderTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_list(self):
+        update_index()
         response = self.client.get(reverse("core:job-list"))
         self.assertEqual(response.status_code, 200)
 
@@ -100,6 +100,7 @@ class EventPageRenderTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_list(self):
+        update_index()
         response = self.client.get(reverse("core:event-list"))
         self.assertEqual(response.status_code, 200)
 
@@ -126,6 +127,7 @@ class ProfilePageRenderTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_list(self):
+        update_index()
         response = self.client.get(reverse("core:profile-list"))
         self.assertEqual(response.status_code, 200)
 
