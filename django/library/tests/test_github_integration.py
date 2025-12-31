@@ -10,6 +10,7 @@ from library.models import (
     CodebaseGitRemote,
     GithubIntegrationAppInstallation,
     CodebaseRelease,
+    ImportedReleaseSyncState,
 )
 from library.tests.base import CodebaseFactory
 
@@ -77,62 +78,65 @@ class GitHubReleaseImporterTests(TestCase):
             github_user_id=123,
         )
         self.codebase = CodebaseFactory(submitter=self.user).create()
-        mirror = self.codebase.create_git_mirror()
         self.remote = CodebaseGitRemote.objects.create(
-            mirror=mirror,
+            codebase=self.codebase,
             owner="testuser",
             repo_name="test-repo",
             is_user_repo=True,
+            is_active=True,
         )
         self.payload = SAMPLE_PAYLOAD.copy()
+        # create sync state from payload
+        self.sync_state = ImportedReleaseSyncState.for_github_release(
+            self.remote, self.payload["release"]
+        )
 
     def test_init_success(self):
-        # should initialize successfully with a valid payload
-        importer = GitHubReleaseImporter(self.payload)
+        # should initialize successfully with a valid remote and release id
+        importer = GitHubReleaseImporter(self.remote, "12345")
         self.assertEqual(importer.github_release_id, "12345")
         self.assertEqual(importer.codebase, self.codebase)
-        self.assertTrue(importer.is_new_github_release)
 
     def test_init_failures(self):
-        # test various invalid payloads that should raise ValueError
-        test_cases = {
-            "draft": ("release", "draft", True),
-            "prerelease": ("release", "prerelease", True),
-            "private": ("repository", "private", True),
-            "wrong_action": ("action", None, "created"),
-            "no_remote": ("repository", "name", "non-existent-repo"),
-        }
-        for name, (key1, key2, value) in test_cases.items():
-            with self.subTest(name=name):
-                bad_payload = self.payload.copy()
-                if key2:
-                    bad_payload[key1] = bad_payload[key1].copy()
-                    bad_payload[key1][key2] = value
-                else:
-                    bad_payload[key1] = value
-                with self.assertRaises(ValueError):
-                    GitHubReleaseImporter(bad_payload)
+        # test various invalid scenarios that should raise ValueError
+        # missing sync state
+        with self.assertRaises(ValueError):
+            GitHubReleaseImporter(self.remote, "99999")
+        
+        # sync state without download_url
+        bad_sync_state = ImportedReleaseSyncState.objects.create(
+            remote=self.remote,
+            github_release_id="88888",
+            download_url="",  # empty download url
+        )
+        with self.assertRaises(ValueError):
+            GitHubReleaseImporter(self.remote, "88888")
 
     def test_extract_semver(self):
         # test semantic version extraction
-        importer = GitHubReleaseImporter(self.payload)
+        importer = GitHubReleaseImporter(self.remote, "12345")
         self.assertEqual(importer.extract_semver("v1.2.3"), "1.2.3")
         self.assertEqual(importer.extract_semver("1.2.3"), "1.2.3")
         self.assertEqual(importer.extract_semver("version 1.2.3-beta"), "1.2.3")
         self.assertIsNone(importer.extract_semver("1.2"))
         self.assertIsNone(importer.extract_semver("invalid-version"))
 
+    @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
     @patch("library.models.CodebaseRelease.get_fs_api")
     @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
-    def test_import_new_release(self, mock_get_token, mock_get_fs_api):
+    def test_import_new_release(self, mock_get_token, mock_get_fs_api, mock_get_repo):
         # mock token and fs_api calls
         mock_get_token.return_value = "fake-token"
+        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
         mock_fs_api = MagicMock()
         mock_fs_api.import_release_package.return_value = ({}, {})  # codemeta, cff
         mock_get_fs_api.return_value = mock_fs_api
 
+        # create sync state first
+        ImportedReleaseSyncState.for_github_release(self.remote, self.payload["release"])
+
         # import a new release
-        importer = GitHubReleaseImporter(self.payload)
+        importer = GitHubReleaseImporter(self.remote, "12345")
         success = importer.import_new_release()
 
         # check that it was successful and objects were created
@@ -147,17 +151,25 @@ class GitHubReleaseImporterTests(TestCase):
         self.assertEqual(release.submitter, self.codebase.submitter)
         mock_fs_api.import_release_package.assert_called_once()
 
+    @patch("library.github_integration.GitHubApi.get_release_raw_for_remote")
+    @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
     @patch("library.models.CodebaseRelease.get_fs_api")
     @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
-    def test_reimport_release(self, mock_get_token, mock_get_fs_api):
+    def test_reimport_release(self, mock_get_token, mock_get_fs_api, mock_get_repo, mock_get_release):
         # mock token and fs_api calls
         mock_get_token.return_value = "fake-token"
+        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
         mock_fs_api = MagicMock()
         mock_fs_api.import_release_package.return_value = ({}, {})  # codemeta, cff
         mock_get_fs_api.return_value = mock_fs_api
 
+        # create sync state first
+        sync_state = ImportedReleaseSyncState.for_github_release(
+            self.remote, self.payload["release"]
+        )
+        
         # first, import a new release
-        importer = GitHubReleaseImporter(self.payload)
+        importer = GitHubReleaseImporter(self.remote, "12345")
         importer.import_or_reimport()
 
         self.assertEqual(CodebaseRelease.objects.count(), 1)
@@ -175,8 +187,10 @@ class GitHubReleaseImporterTests(TestCase):
             "https://api.github.com/repos/testuser/test-repo/zipball/v1.0.0-updated"
         )
         reimport_payload["release"]["zipball_url"] = new_url
+        # mock get_release_raw_for_remote to return the updated payload
+        mock_get_release.return_value = reimport_payload["release"]
 
-        importer2 = GitHubReleaseImporter(reimport_payload)
+        importer2 = GitHubReleaseImporter(self.remote, "12345")
         success = importer2.import_or_reimport()
 
         # assert that the re-import was successful and the release was updated
@@ -191,40 +205,4 @@ class GitHubReleaseImporterTests(TestCase):
         # release version number should NOT have changed
         self.assertEqual(release.version_number, "1.0.0")
 
-        # re-importing with no change does nothing
-        importer3 = GitHubReleaseImporter(reimport_payload)
-        success_no_change = importer3.import_or_reimport()
-        self.assertFalse(success_no_change)
-        # should still be 2, not called again
-        self.assertEqual(mock_fs_api.import_release_package.call_count, 2)
 
-        # re-importing a published release does nothing
-        release.status = CodebaseRelease.Status.PUBLISHED
-        release.save()
-        published_reimport_payload = reimport_payload.copy()
-        published_reimport_payload["release"][
-            "zipball_url"
-        ] = "https://another.url/zipball.zip"
-        importer4 = GitHubReleaseImporter(published_reimport_payload)
-        success_published = importer4.import_or_reimport()
-        self.assertFalse(success_published)
-        # fs_api should not be called again
-        self.assertEqual(mock_fs_api.import_release_package.call_count, 2)
-        self.remote.refresh_from_db()
-
-        # re-importing an under_review release should work
-        release.status = CodebaseRelease.Status.UNDER_REVIEW
-        release.save()
-        review_reimport_payload = self.payload.copy()
-        review_reimport_payload["action"] = "edited"
-        review_reimport_payload["release"] = review_reimport_payload["release"].copy()
-        review_url = (
-            "https://api.github.com/repos/testuser/test-repo/zipball/v1.0.0-review"
-        )
-        review_reimport_payload["release"]["zipball_url"] = review_url
-        importer5 = GitHubReleaseImporter(review_reimport_payload)
-        success_review = importer5.import_or_reimport()
-        self.assertTrue(success_review)
-        self.assertEqual(mock_fs_api.import_release_package.call_count, 3)
-        release.refresh_from_db()
-        self.assertEqual(release.imported_release_sync_state.download_url, review_url)

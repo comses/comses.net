@@ -142,7 +142,7 @@ class CodeMetaConverter:
             name=codebase.title,
             codeRepository=(
                 codebase.git_remotes.first().url
-                if codebase.git_remotes.first()
+                if codebase.pk and codebase.git_remotes.first()
                 else codebase.repository_url
             )
             or None,
