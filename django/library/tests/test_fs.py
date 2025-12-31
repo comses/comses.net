@@ -18,7 +18,7 @@ from library.fs import (
     CodebaseGitRepositoryApi,
 )
 from library.tests.base import CodebaseFactory, TEST_SAMPLES_DIR
-from library.models import License
+from library.models import License, GitRefSyncState
 
 
 import logging
@@ -102,7 +102,6 @@ class GitRepoApiTestCase(TestCase):
         self.codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = self.codebase_factory.create()
         self.release_1 = self.codebase.create_release()
-        self.git_mirror = self.codebase.create_git_mirror()
 
     def tearDown(self):
         clear_test_shared_folder(settings.REPOSITORY_ROOT)
@@ -116,9 +115,11 @@ class GitRepoApiTestCase(TestCase):
         self.assertEqual(public_release_count, 1)
         api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
-        # check that the mirror model is updated and the repo is built
-        self.assertIsNotNone(self.git_mirror.last_modified)
-        self.assertEqual(self.git_mirror.built_releases.count(), 1)
+        # check that the git ref sync states are created and the repo is built
+        built_releases_count = GitRefSyncState.objects.filter(
+            release__codebase=self.codebase, built_commit_sha__isnull=False
+        ).count()
+        self.assertEqual(built_releases_count, 1)
         self.assertTrue(os.path.exists(api.repo_dir))
         # check git stuff
         repo = Repo(api.repo_dir)
@@ -153,7 +154,10 @@ class GitRepoApiTestCase(TestCase):
         self.release_2.publish()
         api.append_releases()
 
-        self.assertEqual(self.git_mirror.built_releases.count(), 2)
+        built_releases_count = GitRefSyncState.objects.filter(
+            release__codebase=self.codebase, built_commit_sha__isnull=False
+        ).count()
+        self.assertEqual(built_releases_count, 2)
         # check git stuff
         repo = Repo(api.repo_dir)
         self.assertFalse(repo.is_dirty())
@@ -204,7 +208,10 @@ class GitRepoApiTestCase(TestCase):
         self.release_2.publish()
         api.build()
 
-        self.assertEqual(self.git_mirror.built_releases.count(), 2)
+        built_releases_count = GitRefSyncState.objects.filter(
+            release__codebase=self.codebase, built_commit_sha__isnull=False
+        ).count()
+        self.assertEqual(built_releases_count, 2)
         # check git stuff
         repo = Repo(api.repo_dir)
         self.assertFalse(repo.is_dirty())

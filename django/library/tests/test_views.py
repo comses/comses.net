@@ -788,7 +788,7 @@ class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase)
         }
         request = self._create_signed_request(payload)
         response = github_sync_webhook(request)
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(GithubIntegrationAppInstallation.objects.count(), 0)
 
     @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")

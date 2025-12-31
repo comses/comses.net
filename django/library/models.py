@@ -1245,6 +1245,8 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         """
         Returns a unique, unordered set of Contributor objects given an initial filtered set of ReleaseContributors for this Codebase.
         """
+        if not self.pk:
+            return Contributor.objects.none()
         return Contributor.objects.filter(
             id__in=release_contributors.for_codebase(self).values("contributor_id")
         )
@@ -1449,6 +1451,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         # see https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         source_release.id = None
         source_release.imported_release_sync_state = None
+        source_release.git_ref_sync_state = None
         source_release._state.adding = True
         source_release.__dict__.update(**release_metadata)
         source_release.save()
