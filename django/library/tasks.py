@@ -112,6 +112,7 @@ def push_all_releases_to_github(codebase_id: int, remote_id: int):
             commit_sha, summary = gh_api.push_main(local_repo)
             main_state.record_push_success(commit_sha, summary)
         except Exception as e:
+            main_state.log_failure(str(e))
             logger.exception("Failed to push main: %s", e)
 
     # iterate releases in ascending semver order
