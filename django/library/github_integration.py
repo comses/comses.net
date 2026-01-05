@@ -68,6 +68,7 @@ class GitHubRepoValidator:
         self.repo_name = repo_name
 
     def validate_format(self):
+        """validate repository name format to match GitHub rules"""
         if not re.fullmatch(r"[A-Za-z0-9_.-]+", self.repo_name):
             raise ValueError(
                 "The repository name can only contain ASCII letters, digits, and the characters ., -, and _"
@@ -79,27 +80,12 @@ class GitHubRepoValidator:
         if "github" in self.repo_name:
             raise ValueError("Repository name cannot contain 'github'")
 
-    def check_org_repo_name_unused(self):
-        if settings.GITHUB_MODEL_LIBRARY_ORG_NAME in self.repo_name:
-            raise ValueError(
-                f"Repository name cannot contain the organization name: '{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}'"
-            )
-        github = Github(GitHubApi.get_org_installation_access_token())
-        full_name = f"{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}/{self.repo_name}"
-        try:
-            github.get_organization(settings.GITHUB_MODEL_LIBRARY_ORG_NAME).get_repo(
-                self.repo_name
-            )
-            raise ValueError(
-                f"Repository already exists at https://github.com/{full_name}"
-            )
-        except UnknownObjectException:
-            return True
+    def get_url_for_connectable_user_repo(self, installation: GithubIntegrationAppInstallation, is_preexisting: bool) -> str:
+        """validate that a repository exists, is public, and the app has been granted access to it.
+        If the repository is not pre-existing, it must be empty.
 
-    def get_existing_user_repo_url(
-        self, installation: GithubIntegrationAppInstallation
-    ) -> str:
-        """get the HTML URL of an existing user repository"""
+        returns the HTML URL of the repository if it is valid, otherwise raises an error
+        """
         token = GitHubApi.get_user_installation_access_token(installation)
         full_name = f"{installation.github_login}/{self.repo_name}"
         github_repo = GitHubApi.get_existing_repo(token, full_name)
@@ -107,33 +93,37 @@ class GitHubRepoValidator:
             raise ValueError(
                 f"Repository at https://github.com/{full_name} is private. Only public repositories can be synced."
             )
+        self._check_installation_access(installation)
+        if not is_preexisting:
+            try:
+                # this should raise a 404 if the repository is empty
+                github_repo.get_contents("")
+                raise ValueError(
+                    f"Repository at https://github.com/{full_name} is not empty"
+                )
+            except GithubException as e:
+                if e.status == 404:
+                    return github_repo.html_url
+                raise e
         return github_repo.html_url
 
-    def check_user_repo_empty(
-        self, installation: GithubIntegrationAppInstallation
-    ) -> str:
-        """make sure a user repository is empty, raise an error if not, and return the HTML URL of the repository"""
-        token = GitHubApi.get_user_installation_access_token(installation)
-        full_name = f"{installation.github_login}/{self.repo_name}"
-        github_repo = GitHubApi.get_existing_repo(
-            token,
-            full_name,
+    def _check_installation_access(self, installation: GithubIntegrationAppInstallation) -> None:
+        """check that the GitHub app installation has access to the repository"""
+        auth = Auth.AppAuth(
+            settings.GITHUB_INTEGRATION_APP_ID,
+            settings.GITHUB_INTEGRATION_APP_PRIVATE_KEY,
         )
-        if github_repo.private:
-            raise ValueError(
-                f"Repository at https://github.com/{full_name} is private. Only public repositories can be synced."
-            )
+        integration = GithubIntegration(auth=auth)
         try:
-            # this should raise a 404 if the repository is empty
-            github_repo.get_contents("")
-            raise ValueError(
-                f"Repository at https://github.com/{full_name} is not empty"
-            )
+            # try to get the installation for this specific repository
+            # if the installation has access, this will succeed
+            integration.get_repo_installation(installation.github_login, self.repo_name)
         except GithubException as e:
             if e.status == 404:
-                return github_repo.html_url
-            raise e
-        return github_repo.html_url
+                raise ValueError(
+                    f"The CoMSES Integration GitHub app does not have access to the repository at https://github.com/{installation.github_login}/{self.repo_name}. "
+                    f"Use the 'Manage permissions' link above to grant access to this repository (or all repositories)."
+                )
 
 
 class GitHubApi:
@@ -279,7 +269,7 @@ class GitHubApi:
             return github.get_repo(full_name)
         except:
             raise ValueError(
-                f"Github repository https://github.com/{full_name} does not exist or is inaccessible"
+                f"Github repository https://github.com/{full_name} does not exist or is private"
             )
 
     def _create_org_repo(self):
