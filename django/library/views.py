@@ -806,11 +806,7 @@ class CodebaseGitRemoteViewSet(
         validator = GitHubRepoValidator(repo_name)
         try:
             validator.validate_format()
-            repo_html_url = None
-            if is_preexisting:
-                repo_html_url = validator.get_existing_user_repo_url(installation)
-            else:
-                repo_html_url = validator.check_user_repo_empty(installation)
+            repo_html_url = validator.get_url_for_connectable_user_repo(installation, is_preexisting)
         except ValueError as e:
             error_message = e.args[0] if e.args else "Invalid repository configuration"
             raise ValidationError(error_message)

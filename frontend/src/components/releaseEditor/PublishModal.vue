@@ -50,10 +50,13 @@
         </TextField>
         <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
       </form>
-      <div v-if="store.release.importedReleaseSyncState" class="alert alert-danger my-2">
+      <div
+        v-if="store.release.importedReleaseSyncState && !store.release.reviewStatus"
+        class="alert alert-danger my-2"
+      >
         <p class="mb-0">
           <i class="fas fa-exclamation-triangle text-danger"></i>
-          Releases imported from GitHub cannot be peer reviewed once they have been published.
+          Model releases cannot be peer reviewed once they have been published.
         </p>
       </div>
       <p class="mb-0">Publishing a release cannot be undone. Proceed?</p>
