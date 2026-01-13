@@ -48,7 +48,7 @@
       help="Add tags to categorize your model and make it more discoverable. Press enter after entering each tag."
     />
     <TextField
-      v-if="!fromGitHub"
+      v-if="!showGitHubImportFirst"
       class="mb-3"
       name="repositoryUrl"
       label="Version Control Repository URL (reference only)"
@@ -61,7 +61,7 @@
         {{ props.identifier ? "Update" : "Continue to upload model" }}
       </button>
       <button
-        v-if="!props.identifier"
+        v-if="!props.identifier && props.canUseGithubIntegration"
         type="submit"
         class="btn btn-secondary"
         :disabled="isLoading"
@@ -93,10 +93,12 @@ const props = withDefaults(
     identifier?: string;
     asModal?: boolean;
     id?: string;
+    canUseGithubIntegration?: boolean;
   }>(),
   {
     asModal: false,
     id: "edit-codebase-form",
+    canUseGithubIntegration: false,
   }
 );
 
@@ -118,7 +120,7 @@ const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = u
 const { editUrl } = useReleaseEditorAPI();
 const goToGithubConfig = ref(false);
 
-const fromGitHub = new URLSearchParams(window.location.search).get("github") === "true";
+const showGitHubImportFirst = new URLSearchParams(window.location.search).get("github") === "true";
 
 const {
   errors,

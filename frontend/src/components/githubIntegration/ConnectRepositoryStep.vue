@@ -12,8 +12,8 @@
     </template>
 
     <template #actions="{ isCompleted }">
-      <button v-if="isCompleted" class="btn btn-link btn-sm p-0" @click="handleChange">
-        <i class="fas fa-edit"></i>
+      <button v-if="isCompleted" class="btn btn-link btn-sm p-0" @click="handleDisconnect">
+        <i class="fas fa-trash"></i>
       </button>
     </template>
 
@@ -74,7 +74,7 @@ const props = withDefaults(defineProps<ConnectRepositoryStepProps>(), {
 const emit = defineEmits<{
   connect: [];
   "update:repoName": [value: string];
-  change: [];
+  disconnect: [];
 }>();
 
 const updateRepoUrl = (event: Event) => {
@@ -87,7 +87,7 @@ const handleConnect = () => {
   emit("connect");
 };
 
-const handleChange = () => {
-  emit("change");
+const handleDisconnect = () => {
+  emit("disconnect");
 };
 </script>

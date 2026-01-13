@@ -12,6 +12,14 @@ FAQ_ENTRIES = [
         "question": "Can I connect with a private GitHub repository?",
         "answer": "No, only public GitHub repositories are supported at the moment.",
     },
+    {
+        "question": "Can I connect with a repository owned by another user or organization?",
+        "answer": "Currently, no. We suggest forking the repository to your own account.",
+    },
+    {
+        "question": "If I have a repository connected to a model, what happens if I change the repository name, transfer ownership, make it private, or delete it?",
+        "answer": "If the repository is deleted or made private, you should disconnect the repository. If you need to change the name, you can disconnect and then reconnect with the new name. If the repository is transferred to a new owner, we suggest maintaining a fork of the repository.",
+    },
 ]
 
 EXISTING_REPO_INFO_ITEMS = [
@@ -75,12 +83,12 @@ NEW_REPO_INFO_ITEMS = [
 EXISTING_REPO_TUTORIAL_VIDEOS = [
     {
         "title": "",
-        "youtube_id": "dQw4w9WgXcQ",
+        "youtube_id": "-",
         "caption": "How to set up an existing repository and import releases into the model library",
     },
     {
         "title": "",
-        "youtube_id": "dQw4w9WgXcQ",
+        "youtube_id": "-",
         "caption": "How to update a GitHub release and re-import it",
     },
 ]
@@ -88,7 +96,7 @@ EXISTING_REPO_TUTORIAL_VIDEOS = [
 NEW_REPO_TUTORIAL_VIDEOS = [
     {
         "title": "",
-        "youtube_id": "y6120QOlsfU",
+        "youtube_id": "-",
         "caption": "How to set up and push a new git repository for your model in the library",
     }
 ]
@@ -100,6 +108,25 @@ def _get_github_config_for_default_site(apps):
     default_site = Site.objects.get(is_default_site=True)
     config, _ = GitHubIntegrationConfiguration.objects.get_or_create(site=default_site)
     return config
+
+
+def delete_existing_content(apps, schema_editor):
+    config = _get_github_config_for_default_site(apps)
+    apps.get_model("library", "GitHubIntegrationFaqEntry").objects.filter(
+        configuration=config
+    ).delete()
+    apps.get_model("library", "GitHubIntegrationExistingRepoInfoItem").objects.filter(
+        configuration=config
+    ).delete()
+    apps.get_model("library", "GitHubIntegrationNewRepoInfoItem").objects.filter(
+        configuration=config
+    ).delete()
+    apps.get_model("library", "GitHubIntegrationExistingRepoTutorialVideo").objects.filter(
+        configuration=config
+    ).delete()
+    apps.get_model("library", "GitHubIntegrationNewRepoTutorialVideo").objects.filter(
+        configuration=config
+    ).delete()
 
 
 def populate_initial_content(apps, schema_editor):
@@ -162,5 +189,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(populate_initial_content, migrations.RunPython.noop),
+        migrations.RunPython(populate_initial_content, delete_existing_content),
     ]
