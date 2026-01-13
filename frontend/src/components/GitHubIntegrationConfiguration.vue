@@ -27,7 +27,7 @@
           :installation-url="installationStatus.installationUrl"
           :collapse="!showRepoConnectStep"
           @connect="handleConnectRepo"
-          @change="showChangeRemoteModal"
+          @disconnect="showDisconnectRemoteModal"
         />
       </div>
       <FormAlert :validation-errors="[]" :server-errors="serverErrors" />
@@ -49,25 +49,31 @@
       />
     </div>
     <BootstrapModal
-      id="changeRemoteModal"
-      ref="changeRemoteModal"
-      title="Switch to a different repository?"
+      id="disconnectRemoteModal"
+      ref="disconnectRemoteModal"
+      title="Disconnect repository?"
       centered
     >
       <template #body>
         <p>
-          This will disconnect the current repository allowing you to select a different one.
-          Releases that you imported from GitHub will remain.
+          This will deactivate the connection to
+          <b>{{ activeRemote?.owner }}/{{ activeRemote?.repoName }}</b
+          >.
         </p>
         <p>
-          However, once you connect a different repository, any information about which releases you
-          already pushed <b>to</b> the current repository will be lost.
+          If you reconnect to the <b>same</b> repository later, your push history will be preserved.
+          However, if you connect to a <b>different</b> repository, push history will be reset.
         </p>
       </template>
       <template #footer>
         <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger" @click="confirmChangeRemote">
-          Disconnect
+        <button
+          type="button"
+          class="btn btn-danger"
+          :disabled="isDisconnecting"
+          @click="confirmDisconnectRemote"
+        >
+          {{ isDisconnecting ? "Disconnecting..." : "Disconnect" }}
         </button>
       </template>
     </BootstrapModal>
@@ -100,6 +106,7 @@ const {
   getActiveRemote,
   buildLocalRepo,
   setupUserGithubRemote,
+  disconnectRemote,
   serverErrors,
 } = useGitRemotesAPI(props.codebaseIdentifier);
 
@@ -151,33 +158,41 @@ const handleRepoChoice = (syncType: "existing" | "new") => {
   selectedSyncType.value = syncType;
 };
 
-const changeRemoteModal = ref();
-const pendingAfterChangeRemote = ref<null | (() => void)>(null);
+const disconnectRemoteModal = ref();
+const pendingAfterDisconnect = ref<null | (() => void)>(null);
+const isDisconnecting = ref(false);
 
-function showChangeRemoteModal() {
-  changeRemoteModal.value?.show();
+function showDisconnectRemoteModal(afterDisconnect?: () => void) {
+  pendingAfterDisconnect.value = afterDisconnect || null;
+  disconnectRemoteModal.value?.show();
 }
 
-function confirmChangeRemote() {
-  activeRemote.value = null;
-  repoName.value = "";
-  if (pendingAfterChangeRemote.value) {
-    try {
-      pendingAfterChangeRemote.value();
-    } finally {
-      pendingAfterChangeRemote.value = null;
-    }
-  }
-  changeRemoteModal.value?.hide();
+async function confirmDisconnectRemote() {
+  isDisconnecting.value = true;
+  await disconnectRemote({
+    onSuccess: () => {
+      activeRemote.value = null;
+      repoName.value = "";
+      justConnectedRemote.value = false;
+      if (pendingAfterDisconnect.value) {
+        try {
+          pendingAfterDisconnect.value();
+        } finally {
+          pendingAfterDisconnect.value = null;
+        }
+      }
+      disconnectRemoteModal.value?.hide();
+    },
+  });
+  isDisconnecting.value = false;
 }
 
 function onRequestChangeSyncType() {
   if (hasActiveRemote.value) {
-    // defer clearing selectedSyncType until after confirm
-    pendingAfterChangeRemote.value = () => {
+    // disconnect first, then clear selectedSyncType
+    showDisconnectRemoteModal(() => {
       selectedSyncType.value = null;
-    };
-    showChangeRemoteModal();
+    });
   } else {
     selectedSyncType.value = null;
   }

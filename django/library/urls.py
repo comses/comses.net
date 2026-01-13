@@ -54,12 +54,7 @@ urlpatterns = [
     path("github-sync-webhook/", views.github_sync_webhook, name="github-sync-webhook"),
     path(
         "github/",
-        TemplateView.as_view(
-            template_name="library/github_overview.jinja",
-            extra_context={
-                "github_model_library_org_name": settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
-            },
-        ),
+        views.GitHubSyncOverviewView.as_view(),
         name="github-sync-overview",
     ),
     path(

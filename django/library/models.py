@@ -16,6 +16,7 @@ from datetime import date, timedelta
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.postgres.fields import ArrayField
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
@@ -751,6 +752,23 @@ class GitRefSyncState(BaseReleaseSyncState):
             update_fields=["main_git_ref_sync_state", "last_modified"],
         )
         return state
+
+    @classmethod
+    def get_last_remote_for_codebase(cls, codebase):
+        """return the remote that git ref sync states are currently bound to, if any.
+
+        checks the main branch state first, then falls back to the first release state.
+        returns None if no states have a remote assigned.
+        """
+        main_state = getattr(codebase, "main_git_ref_sync_state", None)
+        if main_state and main_state.remote:
+            return main_state.remote
+        release_state = cls.objects.filter(
+            release__codebase=codebase, remote__isnull=False
+        ).first()
+        if release_state:
+            return release_state.remote
+        return None
 
     @classmethod
     def reassign_remotes_for_codebase(cls, codebase, remote):
@@ -3870,6 +3888,34 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
     is_beta = models.BooleanField(
         default=True, help_text=_("Mark the GitHub integration feature as a beta feature")
     )
+    is_enabled_globally = models.BooleanField(
+        default=False,
+        help_text=_("Enable GitHub integration for all users. When enabled, approved_users whitelist is ignored")
+    )
+    approved_users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="github_integration_approved",
+        help_text=_("Whitelist of users who can access GitHub integration. Superusers/staff are implicitly included")
+    )
+    
+    def can_use_github_integration(self, user):
+        """
+        Check if a user can use the GitHub integration feature.
+
+        returns True if:
+        - globally enabled (allows anonymous users)
+        - user is superuser or staff
+        - user is in the approved_users
+        """
+        if self.is_enabled_globally:
+            return True
+        if user is None or not user.is_authenticated:
+            return False
+        if user.is_superuser or user.is_staff:
+            return True
+        return self.approved_users.filter(id=user.id).exists()
+    
     @staticmethod
     def github_app_settings_help_content():
         """Create formatted content for a configuration help panel on the GitHub Integration settings page"""
@@ -3904,6 +3950,8 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
     panels = [
         HelpPanel(content=github_app_settings_help_content()),
         FieldPanel("is_beta"),
+        FieldPanel("is_enabled_globally"),
+        FieldPanel("approved_users", widget=FilteredSelectMultiple("approved users", is_stacked=False)),
         InlinePanel("faq_entries", label="FAQ Entries"),
         InlinePanel("existing_repo_info_items", label="Existing Repo Info Items"),
         InlinePanel("existing_repo_tutorial_videos", label="Existing Repo Tutorial Videos"),

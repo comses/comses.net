@@ -17,7 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import FormView
+from django.views.generic import FormView, TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import UpdateView
@@ -88,8 +88,9 @@ from .models import (
     ReviewStatus,
     GitHubIntegrationConfiguration,
 )
+from wagtail.models import Site
 from .models import GitRefSyncState, ImportedReleaseSyncState
-from .permissions import CodebaseReleaseUnpublishedFilePermissions
+from .permissions import CodebaseReleaseUnpublishedFilePermissions, GitHubIntegrationPermission
 from .serializers import (
     CodebaseGitRemoteSerializer,
     CodebaseSerializer,
@@ -624,7 +625,7 @@ class CodebaseGitRemoteViewSet(
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
 ):
     queryset = CodebaseGitRemote.objects.all()
-    permission_classes = (CanChangeCodebase,)
+    permission_classes = (CanChangeCodebase, GitHubIntegrationPermission)
     pagination_class = None
     serializer_class = CodebaseGitRemoteSerializer
 
@@ -827,8 +828,11 @@ class CodebaseGitRemoteViewSet(
                     is_active=True,
                     url=repo_html_url,
                 )
-                if current_remote:
-                    # reset git ref sync states for the new remote
+                # check if the refs were previously bound to a different remote and reassign
+                # this handles both: switching from an active remote, and reconnecting after
+                # a manual disconnect (where the refs still point to the old remote)
+                previous_remote = GitRefSyncState.get_last_remote_for_codebase(codebase)
+                if previous_remote and previous_remote.id != new_remote.id:
                     GitRefSyncState.reassign_remotes_for_codebase(
                         codebase=codebase, remote=new_remote
                     )
@@ -840,11 +844,51 @@ class CodebaseGitRemoteViewSet(
         )
 
     @action(detail=False, methods=["post"])
+    def disconnect_remote(self, request, *args, **kwargs):
+        """Deactivate the current active remote without reassigning refs.
+
+        This allows users to disconnect without losing push state, so they can
+        reconnect to the same remote later if desired.
+        """
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            raise ValidationError("No active remote to disconnect")
+
+        active_remote.is_active = False
+        active_remote.save(update_fields=["is_active", "last_modified"])
+        return Response(
+            status=status.HTTP_200_OK,
+            data="Repository disconnected.",
+        )
+
+    @action(detail=False, methods=["post"])
     def build_local_repo(self, request, *args, **kwargs):
         """Build or update the local git mirror for this codebase without pushing."""
         codebase = self.get_codebase()
         build_local_git_repo(codebase.id)
         return Response(status=status.HTTP_202_ACCEPTED, data="Local repository build started.")
+
+
+class GitHubSyncOverviewView(TemplateView):
+    """View for GitHub integration overview page with permission check."""
+    template_name = "library/github_overview.jinja"
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            site = Site.objects.get(is_default_site=True)
+            config = GitHubIntegrationConfiguration.for_site(site)
+        except (Site.DoesNotExist, GitHubIntegrationConfiguration.DoesNotExist):
+            raise PermissionDenied("GitHub integration is not available")
+        
+        if not config.can_use_github_integration(request.user):
+            raise PermissionDenied("GitHub integration is not available")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["github_model_library_org_name"] = settings.GITHUB_MODEL_LIBRARY_ORG_NAME
+        return context
 
 
 @csrf_exempt

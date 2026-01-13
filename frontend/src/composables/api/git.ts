@@ -85,6 +85,10 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     return post(url(["push_all"]), {}, options);
   }
 
+  async function disconnectRemote(options?: RequestOptions) {
+    return post(url(["disconnect_remote"]), {}, options);
+  }
+
   return {
     ...toRefs(state),
     detailUrl,
@@ -97,5 +101,6 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
     listGitHubReleases,
     importGitHubRelease,
     pushAllReleasesToGitHub,
+    disconnectRemote,
   };
 }

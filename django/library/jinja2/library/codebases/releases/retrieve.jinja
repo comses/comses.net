@@ -294,39 +294,39 @@
 
 
 {% with remote = codebase.active_git_remote %}
-    {% if has_change_perm or remote %}
-    <div class="card-metadata">
-        <div class="card-body">
-            <div class="section mb-0">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <b class="card-title mb-0">
-                        GitHub
-                        {% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
+    {% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
+        {% if github_config.can_use_github_integration(user) and (has_change_perm or remote) %}
+        <div class="card-metadata">
+            <div class="card-body">
+                <div class="section mb-0">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <b class="card-title mb-0">
+                            GitHub
                             {% if github_config.is_beta %}
                                 <span class="beta-badge ms-1">Beta</span>
                             {% endif %}
-                        {% endwith %}
-                    </b>
-                    <a class="small me-2" href="/github/" target="_blank">
-                        <i class="fas fa-question-circle"></i>
-                    </a>
+                        </b>
+                        <a class="small me-2" href="/github/" target="_blank">
+                            <i class="fas fa-question-circle"></i>
+                        </a>
+                    </div>
+                    {% if remote %}
+                        <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate w-100 badge bg-dark">
+                            <i class="fab fa-github"></i> {{ remote.owner }}/{{ remote.repo_name }}
+                        </a>
+                    {% endif %}
+                    {% if has_change_perm %} 
+                        <a class="card-text d-inline-flex align-items-center gap-1 mt-2 text-decoration-none"
+                            href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
+                            <i class="fas fa-cog"></i>
+                            {{ "Manage" if remote else "Connect a repository" }}
+                        </a>
+                    {% endif %}
                 </div>
-                {% if remote %}
-                    <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate w-100 badge bg-dark">
-                        <i class="fab fa-github"></i> {{ remote.owner }}/{{ remote.repo_name }}
-                    </a>
-                {% endif %}
-                {% if has_change_perm %} 
-                    <a class="card-text d-inline-flex align-items-center gap-1 mt-2 text-decoration-none"
-                        href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
-                        <i class="fas fa-cog"></i>
-                        {{ "Manage" if remote else "Connect a repository" }}
-                    </a>
-                {% endif %}
             </div>
         </div>
-    </div>
-    {% endif %}
+        {% endif %}
+    {% endwith %}
 {% endwith %}
 
 <div class="card-metadata">
