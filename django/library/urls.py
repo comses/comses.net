@@ -14,6 +14,11 @@ router.register(r"codebases/(?P<identifier>[\w\-.]+)/media", views.CodebaseImage
 router.register(
     r"codebases/(?P<identifier>[\w\-.]+)/releases", views.CodebaseReleaseViewSet
 )
+router.register(
+    r"codebases/(?P<identifier>[\w\-.]+)/git/remotes",
+    views.CodebaseGitRemoteViewSet,
+    basename="codebase-git-remotes",
+)
 router.register(r"reviewers", views.PeerReviewerViewSet),
 router.register(
     r"reviews/(?P<slug>[\da-f\-]+)/editor/invitations",
@@ -46,6 +51,12 @@ if settings.DEPLOY_ENVIRONMENT.is_development:
     )
 
 urlpatterns = [
+    path("github-sync-webhook/", views.github_sync_webhook, name="github-sync-webhook"),
+    path(
+        "github/",
+        views.GitHubSyncOverviewView.as_view(),
+        name="github-sync-overview",
+    ),
     path(
         "reviews/",
         TemplateView.as_view(template_name="library/review/peer-review-overview.jinja"),

@@ -1,15 +1,23 @@
+import hashlib
+import hmac
 import json
+from allauth.socialaccount.models import SocialAccount
 from django.forms import Form
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import transaction, IntegrityError
+from django.db.models import Q
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.text import slugify
 from django.views import View
-from django.views.generic import FormView
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import FormView, TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import UpdateView
@@ -27,6 +35,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import (
     PermissionDenied as DrfPermissionDenied,
     ValidationError,
+    NotFound,
 )
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -45,7 +54,13 @@ from core.views import (
     HtmlNoDeleteViewSet,
 )
 from core.pagination import SmallResultSetPagination
-from core.serializers import RelatedMemberProfileSerializer
+from .github_integration import (
+    GitHubReleaseImporter,
+    GitHubRepoValidator,
+    get_github_installation_status,
+    list_github_releases_for_remote,
+    GitHubApi,
+)
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -53,23 +68,35 @@ from .forms import (
     PeerReviewerFeedbackEditorForm,
     PeerReviewFilterForm,
 )
-from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
+from .fs import (
+    FileCategories,
+    StagingDirectories,
+    MessageLevels,
+)
 from .models import (
     Codebase,
+    CodebaseGitRemote,
     CodebaseRelease,
     Contributor,
     CodebaseImage,
+    GithubIntegrationAppInstallation,
     License,
     PeerReview,
     PeerReviewer,
     PeerReviewerFeedback,
     PeerReviewInvitation,
     ReviewStatus,
+    GitHubIntegrationConfiguration,
 )
-from .permissions import CodebaseReleaseUnpublishedFilePermissions
+from wagtail.models import Site
+from .models import GitRefSyncState, ImportedReleaseSyncState
+from .permissions import CodebaseReleaseUnpublishedFilePermissions, GitHubIntegrationPermission
 from .serializers import (
+    CodebaseGitRemoteSerializer,
     CodebaseSerializer,
     CodebaseReleaseSerializer,
+    CodebaseReleaseWithGitRefSyncStateSerializer,
+    RelatedCodebaseSerializer,
     ContributorSerializer,
     DownloadRequestSerializer,
     PeerReviewerSerializer,
@@ -80,9 +107,11 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
+from .tasks import import_github_release_task, push_all_releases_to_github, build_local_git_repo
 
 import logging
 import pathlib
+from packaging.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -487,6 +516,28 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(
+        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
+    )
+    def submitted_codebases(self, request, *args, **kwargs):
+        """
+        Returns a list of codebases submitted by the requesting user
+        """
+        queryset = (
+            self.get_queryset().filter(submitter=request.user).order_by("-date_created")
+        )
+        serializer = RelatedCodebaseSerializer(
+            queryset,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def github_installation_status(self, request, *args, **kwargs):
+        data = get_github_installation_status(request.user)
+        return Response(data=data, status=status.HTTP_200_OK)
+
     def get_queryset(self):
         if self.action == "list":
             return self.queryset.public()
@@ -496,7 +547,8 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
     def perform_create(self, serializer):
         super().perform_create(serializer)
         codebase = serializer.instance
-        return codebase.get_or_create_draft()
+        initial_version = self.request.query_params.get("initial_version")
+        return codebase.get_or_create_draft(initial_version=initial_version)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -563,10 +615,335 @@ class CodebaseVersionRedirectView(RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
-class CodebaseImagePermission(permissions.BasePermission):
+class CanChangeCodebase(permissions.BasePermission):
     def has_permission(self, request, view):
         codebase = get_object_or_404(Codebase, identifier=view.kwargs["identifier"])
         return request.user.has_perm("library.change_codebase", codebase)
+
+
+class CodebaseGitRemoteViewSet(
+    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
+):
+    queryset = CodebaseGitRemote.objects.all()
+    permission_classes = (CanChangeCodebase, GitHubIntegrationPermission)
+    pagination_class = None
+    serializer_class = CodebaseGitRemoteSerializer
+
+    def get_queryset(self):
+        resolved = resolve(self.request.path)
+        identifier = resolved.kwargs["identifier"]
+        return self.queryset.filter(codebase__identifier=identifier).prefetch_related(
+            "git_ref_sync_states", "imported_sync_states"
+        )
+
+    def get_codebase(self):
+        try:
+            return Codebase.objects.get(identifier=self.kwargs.get("identifier"))
+        except Codebase.DoesNotExist:
+            raise NotFound("Codebase not found.")
+
+    def _forward_integrity_error(self, e: IntegrityError):
+        msg = str(e)
+        if "single_active_remote" in msg:
+            raise ValidationError("There can only be one active repository for a codebase at a time.")
+        else:
+            raise ValidationError("This repository is already connected to another model.")
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if request.accepted_renderer.format == "html":
+            context = {
+                "codebase": self.get_codebase(),
+                "remotes": queryset,
+                "github_org_name": settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
+            }
+            return Response(
+                context,
+                template_name="library/codebases/git.jinja",
+            )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["post"])
+    def push_all(self, request, *args, **kwargs):
+        """Manually push all releases to GitHub for the active remote.
+
+        Immediately marks each release's GitRefSyncState as RUNNING for UI feedback,
+        then enqueues an async task to perform the push and create GitHub releases.
+        """
+        codebase = self.get_codebase()
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            raise ValidationError("Active remote not found")
+
+        # prevent concurrent push jobs for the same codebase
+        if GitRefSyncState.objects.filter(
+            Q(release__codebase=codebase) | Q(codebase=codebase),
+            status=GitRefSyncState.Status.RUNNING,
+        ).exists():
+            raise ValidationError("Push already in progress for this codebase. Please wait.")
+
+        # start all push jobs for this remote (set remotes and mark running)
+        started = GitRefSyncState.start_all_push_jobs_for_codebase(
+            codebase, active_remote
+        )
+        if not started:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        # enqueue task to carry out all the push jobs we just started
+        push_all_releases_to_github(codebase.id, active_remote.id)
+        return Response(status=status.HTTP_202_ACCEPTED, data="Push started.")
+
+    @action(detail=False, methods=["get"])
+    def active_remote(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if active_remote:
+            serializer = self.get_serializer(active_remote)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(data=None, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"])
+    def local_releases(self, request, *args, **kwargs):
+        """Return all local releases for this codebase with git ref sync states."""
+        codebase = self.get_codebase()
+        qs = (
+            CodebaseRelease.objects.filter(codebase=codebase)
+            .select_related("codebase", "git_ref_sync_state")
+        )
+        releases = list(qs)
+        releases.sort(key=lambda r: Version(r.version_number), reverse=True)
+        serializer = CodebaseReleaseWithGitRefSyncStateSerializer(
+            releases, many=True, context=self.get_serializer_context()
+        )
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def github_releases(self, request, *args, **kwargs):
+        """fetch releases from the connected GitHub repository for this codebase
+
+        requires an active remote. returns minimal release info suitable for client display
+        and import selection.
+        """
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            return Response([], status=status.HTTP_200_OK)
+        try:
+            releases = list_github_releases_for_remote(active_remote)
+            return Response(releases, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.exception("Failed to fetch GitHub releases: %s", e)
+            raise ValidationError("Unable to fetch GitHub releases for the active remote")
+
+    @action(detail=False, methods=["post"])
+    def import_github_release(self, request, *args, **kwargs):
+        """Start an async import for a specific GitHub release id for the active remote.
+
+        body params:
+        - github_release_id: str | int (required)
+        - custom_version: str (optional) when the release tag/name has no semver
+        """
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            raise ValidationError("Active remote not found")
+        github_release_id = request.data.get("github_release_id")
+        if not github_release_id:
+            raise ValidationError("'github_release_id' is required")
+        custom_version = request.data.get("custom_version")
+        # require existing sync state
+        sync_state = (
+            ImportedReleaseSyncState.objects.filter(
+                remote=active_remote, github_release_id=str(github_release_id)
+            ).first()
+        )
+        if not sync_state:
+            raise ValidationError(
+                "Import not prepared. refresh GitHub releases and try again."
+            )
+        if sync_state.status == ImportedReleaseSyncState.Status.RUNNING:
+            raise ValidationError("GitHub release import is already in progress")
+        # mark as RUNNING and dispatch import task
+        sync_state.mark_running()
+        import_github_release_task(
+            active_remote.codebase_id,
+            active_remote.id,
+            str(github_release_id),
+            custom_version,
+        )
+        return Response(status=status.HTTP_202_ACCEPTED, data="Import started.")
+
+    @action(detail=False, methods=["get"])
+    def submitter_installation_status(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        submitter = codebase.submitter
+        data = get_github_installation_status(submitter)
+        return Response(data=data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"])
+    def setup_user_github_remote(self, request, *args, **kwargs):
+        codebase = self.get_codebase()
+        installation = codebase.submitter.github_integration_app_installation
+        if not installation:
+            raise ValidationError(
+                "Installation of the Github integration app is required"
+            )
+
+        is_preexisting = bool(request.data.get("is_preexisting", False))
+        if not codebase.live and not is_preexisting:
+            raise ValidationError("This model does not have any published releases")
+
+        repo_name = request.data.get("repo_name")
+        if not repo_name:
+            raise ValidationError("Repository name is required")
+
+        validator = GitHubRepoValidator(repo_name)
+        try:
+            validator.validate_format()
+            repo_html_url = validator.get_url_for_connectable_user_repo(installation, is_preexisting)
+        except ValueError as e:
+            error_message = e.args[0] if e.args else "Invalid repository configuration"
+            raise ValidationError(error_message)
+
+        # swap out a new active remote for the old one
+        queryset = self.get_queryset()
+        current_remote = queryset.filter(is_active=True).first()
+        try:
+            with transaction.atomic():
+                if current_remote:
+                    current_remote.is_active = False
+                    current_remote.save(update_fields=["is_active", "last_modified"])
+                new_remote = codebase.create_remote(
+                    owner=installation.github_login,
+                    repo_name=repo_name,
+                    is_user_repo=True,
+                    is_preexisting=is_preexisting,
+                    is_active=True,
+                    url=repo_html_url,
+                )
+                # check if the refs were previously bound to a different remote and reassign
+                # this handles both: switching from an active remote, and reconnecting after
+                # a manual disconnect (where the refs still point to the old remote)
+                previous_remote = GitRefSyncState.get_last_remote_for_codebase(codebase)
+                if previous_remote and previous_remote.id != new_remote.id:
+                    GitRefSyncState.reassign_remotes_for_codebase(
+                        codebase=codebase, remote=new_remote
+                    )
+        except IntegrityError as e:
+            self._forward_integrity_error(e)
+        return Response(
+            status=status.HTTP_200_OK,
+            data="Repository connection successful.",
+        )
+
+    @action(detail=False, methods=["post"])
+    def disconnect_remote(self, request, *args, **kwargs):
+        """Deactivate the current active remote without reassigning refs.
+
+        This allows users to disconnect without losing push state, so they can
+        reconnect to the same remote later if desired.
+        """
+        queryset = self.get_queryset()
+        active_remote = queryset.filter(is_active=True).first()
+        if not active_remote:
+            raise ValidationError("No active remote to disconnect")
+
+        active_remote.is_active = False
+        active_remote.save(update_fields=["is_active", "last_modified"])
+        return Response(
+            status=status.HTTP_200_OK,
+            data="Repository disconnected.",
+        )
+
+    @action(detail=False, methods=["post"])
+    def build_local_repo(self, request, *args, **kwargs):
+        """Build or update the local git mirror for this codebase without pushing."""
+        codebase = self.get_codebase()
+        build_local_git_repo(codebase.id)
+        return Response(status=status.HTTP_202_ACCEPTED, data="Local repository build started.")
+
+
+class GitHubSyncOverviewView(TemplateView):
+    """View for GitHub integration overview page with permission check."""
+    template_name = "library/github_overview.jinja"
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            site = Site.objects.get(is_default_site=True)
+            config = GitHubIntegrationConfiguration.for_site(site)
+        except (Site.DoesNotExist, GitHubIntegrationConfiguration.DoesNotExist):
+            raise PermissionDenied("GitHub integration is not available")
+        
+        if not config.can_use_github_integration(request.user):
+            raise PermissionDenied("GitHub integration is not available")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["github_model_library_org_name"] = settings.GITHUB_MODEL_LIBRARY_ORG_NAME
+        return context
+
+
+@csrf_exempt
+def github_sync_webhook(request):
+    """
+    Handle GitHub app webhook events:
+    - new installations (match to connected socialaccount and save the installation record)
+
+    for local testing, use smee.io or similar to forward webhooks:
+    https://docs.github.com/en/webhooks/using-webhooks/handling-webhook-deliveries#setup
+    """
+    # verify the request signature
+    signature_header = request.headers.get("X-Hub-Signature-256")
+    if not signature_header:
+        return HttpResponse("Missing signature header", status=403)
+    secret = settings.GITHUB_INTEGRATION_APP_WEBHOOK_SECRET
+    hash_object = hmac.new(
+        secret.encode("utf-8"),
+        msg=request.body,
+        digestmod=hashlib.sha256,
+    )
+    expected_signature = f"sha256={hash_object.hexdigest()}"
+    if not hmac.compare_digest(expected_signature, signature_header):
+        return HttpResponse("Invalid signature", status=403)
+
+    # parse the event
+    event = request.headers.get("X-GitHub-Event")
+    if event == "installation":
+        payload = json.loads(request.body)
+        action = payload["action"]
+        sender = payload["sender"]
+        # match based on the uid
+        uid = sender["id"]
+        social_account = SocialAccount.objects.filter(
+            provider="github", uid=str(uid)
+        ).first()
+        if not social_account:
+            return HttpResponse(status=404)
+        if action == "deleted":
+            installation = GithubIntegrationAppInstallation.objects.filter(
+                user=social_account.user,
+            ).delete()
+            return HttpResponse("OK", status=200)
+        else:
+            installation = GithubIntegrationAppInstallation.objects.update_or_create(
+                user=social_account.user,
+                defaults={
+                    "github_user_id": uid,
+                    "github_login": sender["login"],
+                    "installation_id": payload["installation"]["id"],
+                },
+            )
+            return HttpResponse("OK", status=200)
+
+    return HttpResponse(status=202)
 
 
 class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -574,7 +951,7 @@ class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_value_regex = r"\d+"
     queryset = CodebaseImage.objects.all()
     serializer_class = CodebaseImageSerializer
-    permission_classes = (CodebaseImagePermission,)
+    permission_classes = (CanChangeCodebase,)
 
     def get_queryset(self):
         resolved = resolve(self.request.path)
@@ -880,7 +1257,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @transaction.atomic
     def request_peer_review(self, request, identifier, version_number):
         """
-        If a peer review is requestable (publishable, not reviewed, no related review exists):
+        If a peer review is requestable (publishable, not reviewed, no related review exists, and not imported+published):
         - Create a new "under review" draft release if the release from which the request was made is published
         - Otherwise, update the existing draft release to be "under review"
         - Create a new peer review object and send an email to the author
@@ -890,25 +1267,40 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             codebase__identifier=identifier,
             version_number=version_number,
         )
+        if codebase_release.is_imported and codebase_release.is_published:
+            raise ValidationError(
+                "Cannot request a peer review for an imported release that has already been published. As a workaround, you can make another release on GitHub and request a peer review for that."
+            )
         codebase_release.validate_publishable()
         existing_review = PeerReview.get_codebase_latest_active_review(
             codebase_release.codebase
         )
+        # if there is an existing active review, simply redirect to that release
         if existing_review:
             review = existing_review
             review_release = existing_review.codebase_release
             created = False
+        # if not create a new review
         else:
-            if codebase_release.is_draft:
-                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
-                codebase_release.save(update_fields=["status"])
-                review_release = codebase_release
-            else:
+            # first, check if this release status is already under or completed review
+            # if so, something went wrong so we'll 
+            if codebase_release.is_under_review or codebase_release.is_review_complete:
+                raise ValidationError(
+                    "Cannot re-request a review on a release that has already completed or is undergoing review."
+                )
+            # if the release is published, make a new draft copy
+            elif codebase_release.is_published:
                 review_release = (
                     codebase_release.codebase.create_review_draft_from_release(
                         codebase_release
                     )
                 )
+            # if the release is a draft/unpublished, change the status
+            else:
+                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
+                codebase_release.save(update_fields=["status"])
+                review_release = codebase_release
+
             review = PeerReview.objects.create(
                 codebase_release=review_release,
                 submitter=request.user.member_profile,
@@ -1022,7 +1414,7 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
                 r"codebases/(?P<identifier>[\w\-.]+)",
                 r"/releases/(?P<version_number>\d+\.\d+\.\d+)",
                 r"/files/{}/(?P<category>{})".format(
-                    cls.stage.name, "|".join(c.name for c in FileCategoryDirectories)
+                    cls.stage.name, "|".join(c.name for c in FileCategories)
                 ),
             ]
         )
@@ -1033,19 +1425,19 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
         queryset = self.queryset.filter(codebase__identifier=identifier)
         return queryset.accessible(user=self.request.user)
 
-    def get_category(self) -> FileCategoryDirectories:
-        category = self.get_parser_context(self.request)["kwargs"]["category"]
-        try:
-            return FileCategoryDirectories[category]
-        except KeyError:
-            raise ValidationError(
-                "Target folder name {} invalid. Must be one of {}".format(
-                    category, list(d.name for d in FileCategoryDirectories)
-                )
-            )
-
     def get_list_url(self, api):
         raise NotImplementedError
+
+    def get_category(self) -> FileCategories:
+        category = self.get_parser_context(self.request)["kwargs"]["category"]
+        try:
+            return FileCategories[category]
+        except KeyError:
+            raise ValidationError(
+                "Target category name {} invalid. Must be one of {}".format(
+                    category, list(d.name for d in FileCategories)
+                )
+            )
 
     def list(self, request, *args, **kwargs):
         codebase_release = self.get_object()
@@ -1084,6 +1476,35 @@ class CodebaseReleaseFilesSipViewSet(BaseCodebaseReleaseFilesViewSet):
 
     def get_list_url(self, api):
         return api.get_sip_list_url
+
+    @action(detail=False, methods=["post"])
+    def update_category(self, request, **kwargs):
+        """update a file's category, currently only for imported releases
+
+        Note: the category given in the request data is the new category for the file
+        and the category in the URL is the current category of the file (or anything,
+        it is ignored here)
+        """
+        codebase_release = self.get_object()
+        if not codebase_release.is_imported:
+            raise ValidationError("Cannot update file category on non-imported release")
+        fs_api = codebase_release.get_fs_api()
+        file_path = request.data.get("path")
+        new_category_str = request.data.get("category")
+        if not file_path or not new_category_str:
+            raise ValidationError("Both a file 'path' and 'category' are required")
+        try:
+            new_category = FileCategories[new_category_str]
+        except KeyError:
+            raise ValidationError(
+                f"Target category name {new_category_str} invalid. Must be one of {[c.name for c in FileCategories]}"
+            )
+        try:
+            fs_api.manifest.update_file_category(file_path, new_category)
+        except ValueError as e:
+            error_message = e.args[0] if e.args else "Unable to update file category"
+            raise ValidationError(error_message)
+        return Response(status=status.HTTP_200_OK)
 
 
 class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):

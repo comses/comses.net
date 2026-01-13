@@ -188,5 +188,13 @@ def initialize_test_shared_folders():
     )
 
 
+def clear_test_shared_folder(dir=settings.REPOSITORY_ROOT):
+    for fs in os.scandir(dir):
+        if fs.is_dir():
+            shutil.rmtree(os.path.join(dir, fs.name), ignore_errors=True)
+        elif fs.is_file():
+            os.remove(os.path.join(dir, fs.name))
+
+
 def destroy_test_shared_folders():
     shutil.rmtree(settings.SHARE_DIR, ignore_errors=True)

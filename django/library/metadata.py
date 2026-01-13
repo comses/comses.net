@@ -140,7 +140,12 @@ class CodeMetaConverter:
         return dict(
             type_="SoftwareSourceCode",
             name=codebase.title,
-            codeRepository=codebase.repository_url or None,
+            codeRepository=(
+                codebase.git_remotes.first().url
+                if codebase.pk and codebase.git_remotes.first()
+                else codebase.repository_url
+            )
+            or None,
             applicationCategory="Computational Model",
             citation=[
                 cls.to_textual_creative_work(text)
@@ -376,19 +381,199 @@ class DataCiteConverter:
         )
 
 
-def coerce_codemeta(codemeta: dict | CodeMeta, codebase=None, release=None) -> CodeMeta:
-    """make sure that codemeta is a CodeMeta object. If we didn't receive anything,
-    try to re-generate it from whichever object is given (codebase or release)"""
+class ReleaseMetadataConverter:
+    """Extract CoMSES CodebaseRelease metadata from various sources."""
+
+    def __init__(
+        self,
+        codemeta: CodeMeta | dict | None = None,
+        cff: CitationFileFormat | dict | None = None,
+        github_repository: dict | None = None,
+        github_release: dict | None = None,
+    ) -> dict:
+        self.codemeta = coerce_codemeta(codemeta)
+        self.cff = coerce_cff(cff)
+        self.github_repository = github_repository
+        self.github_release = github_release
+
+    def _get_field(self, source, key: str):
+        """helper to retrieve a field from either a dict or object, returning
+        None if the source either doesn't exist or doesn't contain the field"""
+        if source is None:
+            return None
+        if isinstance(source, dict):
+            return source.get(key, None)
+        return getattr(source, key, None)
+
+    def _ensure_list(self, value):
+        """return a list containing the value if it is not a list,
+        or the value if it is already a list"""
+        if isinstance(value, list):
+            return value
+        elif value is None:
+            return []
+        return [value]
+
+    def _extract_license_from_github(self) -> str | None:
+        gh_license = self._get_field(self.github_repository, "license")
+        if isinstance(gh_license, dict):
+            spdx_id = gh_license.get("spdx_id", None)
+            if spdx_id:
+                return spdx_id
+        return None
+
+    def _extract_license_from_cff(self) -> str | None:
+        cff_licenses = self._ensure_list(self._get_field(self.cff, "license"))
+        for cff_license in cff_licenses:
+            if cff_license and hasattr(cff_license, "value"):
+                return cff_license.value
+        return None
+
+    def _extract_release_notes_from_codemeta(self) -> str | None:
+        release_notes = self._get_field(self.codemeta, "releaseNotes")
+        if release_notes:
+            if isinstance(release_notes, list):
+                release_notes = release_notes[0]
+                return release_notes if isinstance(release_notes, str) else None
+            elif isinstance(release_notes, str):
+                return release_notes
+        return None
+
+    def _extract_release_notes_from_github(self) -> str | None:
+        body = self._get_field(self.github_release, "body")
+        return body if isinstance(body, str) else None
+
+    def _extract_os_from_codemeta(self) -> str:
+        codemeta_os = self._get_field(self.codemeta, "operatingSystem")
+        if not codemeta_os:
+            return ""
+        if isinstance(codemeta_os, list):
+            if not codemeta_os:
+                return ""
+            os_value = codemeta_os[0]
+        else:
+            os_value = codemeta_os
+
+        if isinstance(os_value, str):
+            os_str = os_value
+        else:
+            # try to extract a name from a structured object (e.g., {"name": "Linux"})
+            os_name = self._get_field(os_value, "name")
+            os_str = os_name if isinstance(os_name, str) else ""
+
+        if os_str:
+            normalized = os_str.lower()
+            # attempt to match the given os string to a known platform
+            if "linux" in normalized:
+                return "linux"
+            elif "mac" in normalized or "os x" in normalized:
+                return "macos"
+            elif "windows" in normalized:
+                return "windows"
+            elif "independent" in normalized or "any" in normalized:
+                return "platform_independent"
+            else:
+                return "other"
+        return ""
+
+    def _extract_programming_languages_from_codemeta(self) -> list[str] | None:
+        codemeta_langs = self._ensure_list(
+            self._get_field(self.codemeta, "programmingLanguage")
+        )
+        langs = []
+        for codemeta_lang in codemeta_langs:
+            if isinstance(codemeta_lang, str):
+                langs.append(codemeta_lang)
+            else:  # try to get the name from a ComputerLanguage object
+                lang_name = self._get_field(codemeta_lang, "name")
+                if lang_name:
+                    langs.append(lang_name)
+        return langs if langs else None
+
+    def _extract_programming_languages_from_github(self) -> list[str] | None:
+        gh_lang = self._get_field(self.github_repository, "language")
+        if gh_lang and isinstance(gh_lang, str):
+            return [gh_lang]
+        return None
+
+    def _extract_platforms_from_codemeta(self) -> list[str] | None:
+        runtime_platforms = self._ensure_list(
+            self._get_field(self.codemeta, "runtimePlatform")
+        )
+        platforms = []
+        for runtime_platform in runtime_platforms:
+            if isinstance(runtime_platform, str):
+                platforms.append(runtime_platform)
+        return platforms if platforms else None
+
+    def convert(self) -> dict:
+        """return a dictionary with the metadata fields for a codebase release from
+        given sources"""
+        # set priority
+        license_spdx_id = (
+            self._extract_license_from_github() or self._extract_license_from_cff()
+        )
+        release_notes = (
+            self._extract_release_notes_from_codemeta()
+            or self._extract_release_notes_from_github()
+        )
+        programming_languages = (
+            self._extract_programming_languages_from_codemeta()
+            or self._extract_programming_languages_from_github()
+        )
+
+        return {
+            "license_spdx_id": license_spdx_id,
+            "release_notes": release_notes,
+            "os": self._extract_os_from_codemeta(),
+            "programming_languages": programming_languages,
+            "platforms": self._extract_platforms_from_codemeta(),
+        }
+
+
+def coerce_codemeta(
+    codemeta: dict | CodeMeta | None, codebase=None, release=None
+) -> CodeMeta | None:
+    """
+    Ensure the returned value is a CodeMeta object or None.
+    - if given a CodeMeta instance, return it
+    - if given a dictionary, parse it into a CodeMeta object
+    - if given None, attempt to generate codemeta from the given codebase or release
+    - return None if the input cannot be converted or generated
+    """
     if isinstance(codemeta, CodeMeta):
         return codemeta
-    if codebase is None:
+    if isinstance(codemeta, dict):
+        try:
+            return CodeMeta(**codemeta)
+        except Exception:
+            return None
+    if codemeta is None:
         if codebase:
             return CodeMetaConverter.convert_codebase(codebase)
         elif release:
             return CodeMetaConverter.convert_release(release)
-    if isinstance(codemeta, dict):
+    return None
+
+
+def coerce_cff(
+    cff: dict | CitationFileFormat | None, release=None
+) -> CitationFileFormat | None:
+    """
+    Ensure the returned value is a CitationFileFormat object or None.
+    - if given a CitationFileFormat instance, return it
+    - if given a dictionary, parse it into a CitationFileFormat object
+    - if given None, attempt to generate cff from the given release
+    - return None if the input cannot be converted or generated
+    """
+    if isinstance(cff, CitationFileFormat):
+        return cff
+    if isinstance(cff, dict):
         try:
-            return CodeMeta(**codemeta)
-        except Exception as e:
-            raise ValueError("Invalid codemeta dictionary") from e
-    raise TypeError("codemeta must be a valid dictionary or CodeMeta instance")
+            return CitationFileFormat(**cff)
+        except Exception:
+            return None
+    if cff is None:
+        if release:
+            return CitationFileFormatConverter.convert_release(release)
+    return None

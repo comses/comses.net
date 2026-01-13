@@ -12,7 +12,12 @@
     Let's walk through the steps needed to generate a citable software archive that broadly follows the 
     <a target='_blank' href='https://doi.org/10.15497/RDA00068'>FAIR Principles for Research Software</a>.
 </p>
-<div id="codebase-form" {% if object %} data-identifier="{{ object.identifier }}" {% endif %}></div>
+{% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
+<div id="codebase-form" 
+     {% if object %} data-identifier="{{ object.identifier }}" {% endif %}
+     data-can-use-github-integration="{{ github_config.can_use_github_integration(user) }}">
+</div>
+{% endwith %}
 {% endblock %}
 
 {% block js %}
