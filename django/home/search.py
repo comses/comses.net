@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_content_type(result):
-    content_type_strs = result["_source"]["content_type"]
+    content_type_strs = result["_source"]["_django_content_type"]
     model = apps.get_model(content_type_strs[-1])
     return model
 
