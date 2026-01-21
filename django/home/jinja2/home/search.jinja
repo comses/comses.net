@@ -15,7 +15,7 @@
 
 {% block content %}
 {% for result in results %}
-<div class="card">
+<div data-cy="search-result" class="card">
     <div class="card-header">{{ result.type.title() }} - <a href="{{ result.url }}">{{ result.title|default("Not
             available") }}</a></div>
     <div class="card-body">
