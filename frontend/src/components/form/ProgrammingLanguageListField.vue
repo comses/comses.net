@@ -91,30 +91,28 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, onMounted, reactive, computed, watch } from "vue";
+import { inject, ref, onMounted, reactive, computed } from "vue";
 import { Sortable } from "sortablejs-vue3";
 import type { SortableEvent } from "sortablejs";
 import VueMultiSelect from "vue-multiselect";
 import { useField } from "@/composables/form";
 import { useProgrammingLanguageAPI } from "@/composables/api/programmingLanguage";
-import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import type { ProgrammingLanguage, ReleaseLanguage } from "@/types";
 
-const store = useReleaseEditorStore();
 const { list: fetchProgrammingLanguages } = useProgrammingLanguageAPI();
 
-const programmingLanguageOptions = ref<ProgrammingLanguage[]>([]);
+let programmingLanguageOptions: ProgrammingLanguage[] = [];
 const isLoadingOptions = ref(false);
 
 async function loadProgrammingLanguages() {
   try {
     isLoadingOptions.value = true;
     const response = await fetchProgrammingLanguages();
-    programmingLanguageOptions.value = response.data;
+    programmingLanguageOptions = response.data;
   } catch (error) {
     console.error("Failed to fetch programming languages:", error);
   } finally {
@@ -133,7 +131,6 @@ export interface ProgrammingLanguageListFieldProps {
 }
 
 const props = defineProps<ProgrammingLanguageListFieldProps>();
-const emit = defineEmits(["change"]);
 onMounted(() => {
   if (!languages.value) {
     // force initialize to empty array
@@ -186,11 +183,6 @@ function sort(event: SortableEvent) {
     const item = languages.value.splice(oldIndex, 1)[0];
     languages.value.splice(newIndex, 0, item);
   }
-}
-
-function sortToTop(index: number) {
-  const item = languages.value.splice(index, 1)[0];
-  languages.value.splice(0, 0, item);
 }
 
 const { id, value: languages, attrs, error } = useField<ReleaseLanguage[]>(props, "name");

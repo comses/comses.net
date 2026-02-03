@@ -478,6 +478,9 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
                 logger.debug(
                     "Appending language_facets to response: %s", language_facets
                 )
+                # remove '0' key which represents releases with no programming languages
+                if "0" in language_facets:
+                    del language_facets["0"]
                 context["language_facets"] = json.dumps(language_facets)
 
             return Response(context)
