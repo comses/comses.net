@@ -466,6 +466,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
         """
         return self.get_social_account_profile_url("github")
 
+    @property
+    def github_username(self):
+        github_account = self.get_social_account("github")
+        if github_account:
+            return github_account.extra_data.get("login")
+        else:
+            return None
+
     def get_social_account_profile_url(self, provider_name):
         social_acct = self.get_social_account(provider_name)
         if social_acct:

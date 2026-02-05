@@ -18,7 +18,7 @@ from core.tests.permissions_base import (
     ApiAccountMixin,
 )
 from library.forms import PeerReviewerFeedbackReviewerForm
-from library.fs import FileCategoryDirectories
+from library.fs import FileCategories
 from library.models import Codebase, CodebaseRelease, License, PeerReview
 from library.tests.base import ReviewSetup
 from .base import (
@@ -28,7 +28,18 @@ from .base import (
     PeerReviewInvitationFactory,
     ReleaseSetup,
 )
-from ..views import CodebaseViewSet, CodebaseReleaseViewSet, PeerReviewInvitationViewSet
+from ..views import (
+    CodebaseViewSet,
+    CodebaseReleaseViewSet,
+    PeerReviewInvitationViewSet,
+    github_sync_webhook,
+)
+from allauth.socialaccount.models import SocialAccount
+import json
+import hmac
+import hashlib
+from django.test import override_settings
+from library.models import GithubIntegrationAppInstallation
 
 import logging
 
@@ -324,7 +335,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
 
         # Unpublished codebase release permissions
         response = self.client.post(
-            api.get_originals_list_url(category=FileCategoryDirectories.code)
+            api.get_originals_list_url(category=FileCategories.code)
         )
         self.assertResponseNotFound(response)
         for user, expected_status_code in [
@@ -334,7 +345,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         ]:
             self.login(user, self.user_factory.password)
             response = self.client.post(
-                api.get_originals_list_url(category=FileCategoryDirectories.code),
+                api.get_originals_list_url(category=FileCategories.code),
                 HTTP_ACCEPT="application/json",
             )
             self.assertEqual(
@@ -349,7 +360,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         # Published codebase release permissions
         self.client.logout()
         response = self.client.post(
-            api.get_originals_list_url(category=FileCategoryDirectories.code)
+            api.get_originals_list_url(category=FileCategories.code)
         )
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [
@@ -359,7 +370,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         ]:
             self.login(user, self.user_factory.password)
             response = self.client.post(
-                api.get_originals_list_url(category=FileCategoryDirectories.code),
+                api.get_originals_list_url(category=FileCategories.code),
                 HTTP_ACCEPT="application/json",
             )
             self.assertEqual(
@@ -373,7 +384,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
 
         # Unpublished codebase release permissions
         response = self.client.get(
-            api.get_originals_list_url(category=FileCategoryDirectories.code)
+            api.get_originals_list_url(category=FileCategories.code)
         )
         self.assertResponseNotFound(response)
         for user, expected_status_code in [
@@ -383,7 +394,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         ]:
             self.login(user, self.user_factory.password)
             response = self.client.get(
-                api.get_originals_list_url(FileCategoryDirectories.code),
+                api.get_originals_list_url(FileCategories.code),
                 HTTP_ACCEPT="application/json",
             )
             self.assertEqual(
@@ -398,7 +409,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
 
         # Published codebase release permissions
         response = self.client.get(
-            api.get_originals_list_url(FileCategoryDirectories.code)
+            api.get_originals_list_url(FileCategories.code)
         )
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [
@@ -408,7 +419,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         ]:
             self.login(user, self.user_factory.password)
             response = self.client.get(
-                api.get_originals_list_url(FileCategoryDirectories.code),
+                api.get_originals_list_url(FileCategories.code),
                 HTTP_ACCEPT="application/json",
             )
             self.assertEqual(
@@ -423,7 +434,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         # Unpublished codebase release permissions
         response = self.client.delete(
             api.get_absolute_url(
-                category=FileCategoryDirectories.code, relpath=path_to_foo
+                category=FileCategories.code, relpath=path_to_foo
             )
         )
         self.assertResponseNotFound(response)
@@ -435,7 +446,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
             self.login(user, self.user_factory.password)
             response = self.client.delete(
                 api.get_absolute_url(
-                    category=FileCategoryDirectories.code, relpath=path_to_foo
+                    category=FileCategories.code, relpath=path_to_foo
                 ),
                 HTTP_ACCEPT="application/json",
             )
@@ -448,7 +459,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         # Published codebase release permissions
         response = self.client.delete(
             api.get_absolute_url(
-                category=FileCategoryDirectories.code, relpath=path_to_foo
+                category=FileCategories.code, relpath=path_to_foo
             )
         )
         self.assertResponsePermissionDenied(response)
@@ -459,7 +470,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         ]:
             self.login(user, self.user_factory.password)
             response = self.client.delete(
-                api.get_absolute_url(FileCategoryDirectories.code, path_to_foo),
+                api.get_absolute_url(FileCategories.code, path_to_foo),
                 HTTP_ACCEPT="application/json",
             )
             self.assertEqual(response.status_code, expected_status_code, msg=repr(user))
@@ -544,8 +555,8 @@ class CodebaseReleasePublishTestCase(TestCase):
         docs_file.name = "README.md"
 
         api = self.codebase_release.get_fs_api()
-        api.add(content=code_file, category=FileCategoryDirectories.code)
-        api.add(content=docs_file, category=FileCategoryDirectories.docs)
+        api.add(content=code_file, category=FileCategories.code)
+        api.add(content=docs_file, category=FileCategories.docs)
 
         with self.assertRaises(
             ValidationError, msg="Codebase has no metadata, should fail publish"
@@ -741,6 +752,101 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         data = PeerReviewerFeedbackReviewerForm(instance=feedback).initial
         form = PeerReviewerFeedbackReviewerForm(data.copy(), instance=feedback)
         self.assertFalse(form.is_valid())
+
+
+class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase):
+    def setUp(self):
+        self.user_factory = UserFactory()
+        self.user = self.user_factory.create()
+        self.path = reverse("library:github-sync-webhook")
+        self.secret = "test-secret"
+        self.factory = RequestFactory()
+
+    def _create_signed_request(self, payload, signature=None):
+        body = json.dumps(payload).encode("utf-8")
+        if signature is None:
+            hash_object = hmac.new(
+                self.secret.encode("utf-8"), msg=body, digestmod=hashlib.sha256
+            )
+            signature = f"sha256={hash_object.hexdigest()}"
+        request = self.factory.post(
+            self.path,
+            data=body,
+            content_type="application/json",
+            HTTP_X_GITHUB_EVENT="installation",
+            HTTP_X_HUB_SIGNATURE_256=signature,
+        )
+        return request
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_installation_webhook_no_matching_social_account(self):
+        # if the github account doesn't match a social account user nothing happens
+        payload = {
+            "action": "created",
+            "installation": {"id": 12345},
+            "sender": {"id": 99999, "login": "newuser"},
+        }
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(GithubIntegrationAppInstallation.objects.count(), 0)
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_installation_webhook_creates_installation(self):
+        # if it does, it creates a installation object for them
+        SocialAccount.objects.create(
+            user=self.user,
+            provider="github",
+            uid="54321",
+        )
+        payload = {
+            "action": "created",
+            "installation": {"id": 12345},
+            "sender": {"id": 54321, "login": "testuser"},
+        }
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(GithubIntegrationAppInstallation.objects.count(), 1)
+        installation = GithubIntegrationAppInstallation.objects.first()
+        self.assertEqual(installation.user, self.user)
+        self.assertEqual(installation.installation_id, 12345)
+        self.assertEqual(installation.github_login, "testuser")
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_installation_webhook_updates_existing_installation(self):
+        # re-installing the app on a user acc that already has the link will update the existing installation object
+        SocialAccount.objects.create(
+            user=self.user,
+            provider="github",
+            uid="54321",
+        )
+        GithubIntegrationAppInstallation.objects.create(
+            user=self.user,
+            installation_id=11111,
+            github_user_id=54321,
+            github_login="testuser",
+        )
+        payload = {
+            "action": "created",
+            "installation": {"id": 22222},
+            "sender": {"id": 54321, "login": "testuser-renamed"},
+        }
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(GithubIntegrationAppInstallation.objects.count(), 1)
+        installation = GithubIntegrationAppInstallation.objects.first()
+        self.assertEqual(installation.installation_id, 22222)
+        self.assertEqual(installation.github_login, "testuser-renamed")
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_bad_signature(self):
+        # requests with a bad signature should be rejected
+        payload = {"action": "created"}
+        request = self._create_signed_request(payload, signature="sha256=bad-sig")
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 403)
 
 
 def tearDownModule():

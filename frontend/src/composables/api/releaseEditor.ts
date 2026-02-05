@@ -110,6 +110,19 @@ export function useReleaseEditorAPI() {
     return del(path);
   }
 
+  async function updateFileCategory(
+    identifier: string,
+    versionNumber: string,
+    category: string,
+    path: string,
+    newCategory: string
+  ) {
+    return post(
+      releaseDetailUrl(identifier, versionNumber, ["files", "sip", category, "update_category"]),
+      { path, category: newCategory }
+    );
+  }
+
   // requests - download
   async function downloadPreview(identifier: string, versionNumber: string) {
     return get(downloadPreviewUrl(identifier, versionNumber));
@@ -148,6 +161,7 @@ export function useReleaseEditorAPI() {
     listOriginalFiles,
     uploadFile,
     deleteFile,
+    updateFileCategory,
     downloadPreview,
     download,
     requestDownload,

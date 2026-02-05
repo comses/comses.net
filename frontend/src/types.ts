@@ -209,6 +209,7 @@ export interface CodebaseReleaseFiles {
     docs: FileInfo[];
     code: FileInfo[];
     results: FileInfo[];
+    metadata: FileInfo[];
   };
   media: FileInfo[];
 }
@@ -269,8 +270,17 @@ export interface RelatedUser {
   memberProfile: RelatedMemberProfile;
 }
 
+export interface ImportedReleasePackage {
+  service: string;
+  uid: string;
+  name: string;
+  displayName: string;
+  htmlUrl: string;
+}
+
 export interface CodebaseRelease {
   absoluteUrl: string;
+  status: "DRAFT" | "UNDER_REVIEW" | "REVIEW_COMPLETE" | "PUBLISHED" | "UNPUBLISHED";
   canEditOriginals: boolean;
   citationText?: string;
   codebase: Codebase;
@@ -304,6 +314,26 @@ export interface CodebaseRelease {
     notifyReviewersOfChanges: string | null;
   };
   versionNumber: string;
+  importedReleaseSyncState?: ImportedReleaseSyncState | null;
+}
+
+export interface RelatedCodebase {
+  absoluteUrl: string;
+  allContributors: Contributor[];
+  githubConfigUrl: string;
+  activeGitRemote: CodebaseGitRemote | null;
+  tags: Tag[];
+  title: string;
+  firstPublishedAt: Date | null;
+  lastPublishedOn: Date | null;
+  identifier: string;
+  versionNumber?: string;
+  featuredImage: string | null;
+  summarizedDescription: string;
+  description: string;
+  live: boolean;
+  peerReviewed?: boolean;
+  repositoryUrl?: string;
 }
 
 interface Codebase {
@@ -360,6 +390,9 @@ export interface UploadFailure {
 
 export interface File {
   label: string;
+  category: FileCategory;
+  pendingCategory?: FileCategory;
+  path: string;
 }
 
 export interface Folder {
@@ -396,3 +429,91 @@ export interface FeedProps {
   datePrefix?: string;
   authorPrefix?: string;
 }
+
+export interface GithubAccount {
+  id: string | number;
+  username: string;
+  profileUrl: string;
+  installationId?: number;
+}
+
+export interface GitHubAppInstallationStatus {
+  githubAccount: GithubAccount | null;
+  connectUrl: string;
+  installationUrl: string | null;
+}
+
+export type ReleaseSyncStatus = "PENDING" | "RUNNING" | "SUCCESS" | "ERROR";
+
+export interface BaseReleaseSyncState {
+  id: number;
+  status: ReleaseSyncStatus;
+  lastLog: string;
+  fullLog: any[];
+  errorMessage: string;
+  httpStatus: number | null;
+  lastSyncStartedAt: string | null;
+  lastSyncFinishedAt: string | null;
+  batchId?: string | null;
+  tagName: string;
+  dateCreated: string;
+  lastModified: string;
+}
+
+export interface GitRefSyncState extends BaseReleaseSyncState {
+  remote: number | null;
+  builtCommitSha: string;
+  lastBuiltAt: string | null;
+  pushedCommitSha: string;
+  canPush: boolean;
+}
+
+export interface ImportedReleaseSyncState extends BaseReleaseSyncState {
+  remote: number | null;
+  categoryManifest: Record<string, string>;
+  githubReleaseId: string;
+  displayName: string;
+  htmlUrl: string;
+  downloadUrl: string;
+  extraData: Record<string, any>;
+  canReimport: boolean;
+}
+
+export interface CodebaseGitRemote {
+  id: number;
+  owner: string;
+  repoName: string;
+  url: string;
+  shouldPush: boolean;
+  shouldImport: boolean;
+  isUserRepo: boolean;
+  isPreexisting: boolean;
+  isActive: boolean;
+}
+
+export interface CodebaseReleaseWithGitRefSyncState extends CodebaseRelease {
+  gitRefSyncState: GitRefSyncState | null;
+}
+
+export interface GitHubRelease {
+  id: string | number;
+  name: string;
+  tagName: string;
+  htmlUrl: string;
+  zipballUrl: string;
+  draft: boolean;
+  prerelease: boolean;
+  createdAt: string | null;
+  publishedAt: string | null;
+  hasSemanticVersioning: boolean;
+  version: string;
+  createdByIntegration: boolean;
+  importedSyncState?: ImportedReleaseSyncState | null;
+}
+
+export type ReleaseAlignment = {
+  [versionOrTagName: string]: {
+    githubRelease: GitHubRelease | null;
+    localRelease: CodebaseReleaseWithGitRefSyncState | null;
+  };
+};

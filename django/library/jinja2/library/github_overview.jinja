@@ -1,0 +1,190 @@
+{% extends "base.jinja" %}
+
+{% block introduction %}
+{% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
+<h1>GitHub Integration Overview{% if github_config.is_beta %} <span
+        class="beta-badge border-white text-white ms-1">Beta</span>{% endif %}</h1>
+{% endwith %}
+{% endblock %}
+
+{% block content %}
+{% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
+{% macro icon_bullets(items) -%}
+<ul class="px-1 mb-0">
+    {%- for item in items %}
+    {% set icon = item.icon or "fas fa-chevron-right" %}
+    <li class="d-flex mb-2">
+        <i class="{{ icon }} pt-1 text-muted" style="width: 1rem"></i>
+        <div class="ps-3 flex-grow-1">{{ item.text.rendered|safe }}</div>
+    </li>
+    {%- endfor %}
+</ul>
+{%- endmacro %}
+
+{% macro tutorial_videos(videos) -%}
+{%- for video in videos %}
+<div class="{% if not loop.first %}mt-4{% endif %}">
+    {% if video.title %}
+    <h5 class="mb-2 fw-bold">{{ video.title }}</h5>
+    {% endif %}
+    <iframe src="https://www.youtube.com/embed/{{ video.youtube_id }}" title="{{ video.title or '' }}"
+        style="display: block; width: 100%; aspect-ratio: 16 / 9; border: 0;" allow="picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    {% if video.caption and video.caption.raw %}
+    <div class="text-muted small">{{ video.caption.rendered|safe }}</div>
+    {% endif %}
+</div>
+{%- endfor %}
+{%- endmacro %}
+
+{% macro faq_accordion(entries, accordion_id="github-faq-accordion") -%}
+<div id="{{ accordion_id }}" role="tablist" aria-multiselectable="true">
+    {% for entry in entries %}
+    {% set entry_id = accordion_id ~ "_entry_" ~ loop.index %}
+    {% set heading_id = accordion_id ~ "_heading_" ~ loop.index %}
+    <div class="card mb-2">
+        <div class="card-header" role="tab" id="{{ heading_id }}">
+            <h5 class="mb-0">
+                <button class="btn btn-link text-start" data-bs-toggle="collapse" data-bs-target="#{{ entry_id }}"
+                    aria-expanded="false" aria-controls="{{ entry_id }}">
+                    {{ entry.question }}
+                </button>
+            </h5>
+        </div>
+        <div id="{{ entry_id }}" class="collapse" aria-labelledby="{{ heading_id }}"
+            data-bs-parent="#{{ accordion_id }}">
+            <div class="card-body">
+                {{ entry.answer.rendered|safe }}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{%- endmacro %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="mb-4">
+                <p>
+                    The <b>CoMSES Model Library GitHub integration</b>
+                    allows you to transfer releases of your model to or from a GitHub
+                    repository by connecting an existing repository or by having one created for you.
+                </p>
+                <p>
+                    Get started by pressing
+                    <small class="text-secondary opacity-75">
+                        <i class="fas fa-cog"></i> Connect a repository
+                    </small>
+                    for one of your models listed below or on the model's
+                    page. You can also import directly from an existing GitHub repository when submitting a new model by selecting
+                    <span class="badge bg-secondary opacity-50"><i class="fab fa-github"></i> Import model from GitHub</span>
+                    on the new model form.
+                    Once you have a connected repository, it will be linked on the model's page and
+                    visible to others.
+                </p>
+            </div>
+            {% if user.is_authenticated %}
+            <div id="github-overview"></div>
+            {% else %}
+            <div class="alert alert-dark text-center" role="alert">
+                You must be <a href="{{ url('account_login') }}?next={{ request.path }}" class="alert-link">signed
+                    in</a> to manage the GitHub integration for your models.
+            </div>
+            {% endif %}
+            <div class="row mt-4">
+                <h1 class="mb-3 fw-bold">Learn more about how it works</h1>
+                <div class="col-12 col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h4 class="h6 mb-2">Import model code from GitHub</h4>
+                            <p class="text-muted small mb-0">Have an existing GitHub repository for your model? Connect
+                                it to import releases straight into the CoMSES Model Library.</p>
+                            <div class="mt-auto">
+                                <a class="text-decoration-none" href="#import-existing">
+                                    Read more <i class="fas fa-arrow-right small ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h4 class="h6 mb-2">Set up a new GitHub repository</h4>
+                            <p class="text-muted small mb-0">Don't have a repository yet? We'll build a git repository
+                                from your existing releases and let you push it to your own GitHub account.</p>
+                            <div class="mt-auto">
+                                <a class="text-decoration-none" href="#connect-new">
+                                    Read more <i class="fas fa-arrow-right small ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h4 class="h6 mb-2">Have questions? Concerns?</h4>
+                            <p class="text-muted small mb-0">Check out the list of frequently ask questions. If you
+                                don't find an answer, we are happy to help, just <a
+                                    href="{{ slugurl('contact') }}">contact us</a>.</p>
+                            <div class="mt-auto">
+                                <a class="text-decoration-none" href="#overview-faqs">
+                                    FAQs <i class="fas fa-arrow-right small ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr class="full-bleed my-5">
+            <div class="row mt-5">
+                <div class="col-12" id="import-existing">
+                    <h1 class="mb-3 fw-bold">Import models from an existing GitHub repository</h1>
+                    <div class="mt-4">
+                        <div class="float-lg-end ms-lg-5 mb-3" style="width: 500px; max-width: 100%;">
+                            {% if github_config %}
+                            {{ tutorial_videos(github_config.existing_repo_tutorial_videos.all()) }}
+                            {% endif %}
+                        </div>
+                        {% if github_config %}
+                        {{ icon_bullets(github_config.existing_repo_info_items.all()) }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <hr class="full-bleed my-5">
+            <div class="row">
+                <div class="col-12" id="connect-new">
+                    <h1 class="mb-3 fw-bold">Set up a new GitHub repository for your submitted model</h1>
+                    <div class="mt-4">
+                        <div class="float-lg-end ms-lg-5 mb-3" style="width: 500px; max-width: 100%;">
+                            {% if github_config %}
+                            {{ tutorial_videos(github_config.new_repo_tutorial_videos.all()) }}
+                            {% endif %}
+                        </div>
+                        {% if github_config %}
+                        {{ icon_bullets(github_config.new_repo_info_items.all()) }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <hr class="full-bleed my-5">
+            <div class="row">
+                <div class="col-12" id="overview-faqs">
+                    <h1 class="mb-3 fw-bold">Frequently asked questions</h1>
+                    {% if github_config and github_config.faq_entries.exists() %}
+                    {{ faq_accordion(github_config.faq_entries.all()) }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endwith %}
+{% endblock %}
+
+{% block js %}
+{{ vite_asset("apps/github_overview.ts") }}
+{% endblock %}

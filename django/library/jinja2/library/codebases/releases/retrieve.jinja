@@ -1,6 +1,7 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href, render_ogp_tags, alert_if_spam, mark_spam_confirm_modal %}
 {% from "library/review/includes/macros.jinja" import confirm_change_closed_modal %}
+{% from "library/codebases/macros.jinja" import imported_release_indicator %}
 
 {% set open_code_badge_png_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
 {% set open_code_badge_svg_url = request.build_absolute_uri(static("images/icons/open-code-badge.svg")) %}
@@ -102,7 +103,9 @@
         {% else %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.</div>
         {% endif %}
-        <h1 class='codebase-title mb-3'>{{ codebase.title }} <span class="badge bg-gray py-1 px-2">{{ release.version_number }}</span></h1>
+        <h1 class='codebase-title mb-3'>
+            {{ codebase.title }} <span class="badge bg-gray py-1 px-2">{{ release.version_number }}</span>
+        </h1>
         <div class='metadata text-muted mb-2'>
             <span class="me-3">
                 <b>Submitted by</b>
@@ -289,6 +292,43 @@
     {% endif %}
 {% endwith %}
 
+
+{% with remote = codebase.active_git_remote %}
+    {% with github_config=settings("library.GitHubIntegrationConfiguration", use_default_site=True) %}
+        {% if github_config.can_use_github_integration(user) and (has_change_perm or remote) %}
+        <div class="card-metadata">
+            <div class="card-body">
+                <div class="section mb-0">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <b class="card-title mb-0">
+                            GitHub
+                            {% if github_config.is_beta %}
+                                <span class="beta-badge ms-1">Beta</span>
+                            {% endif %}
+                        </b>
+                        <a class="small me-2" href="/github/" target="_blank">
+                            <i class="fas fa-question-circle"></i>
+                        </a>
+                    </div>
+                    {% if remote %}
+                        <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate w-100 badge bg-dark">
+                            <i class="fab fa-github"></i> {{ remote.owner }}/{{ remote.repo_name }}
+                        </a>
+                    {% endif %}
+                    {% if has_change_perm %} 
+                        <a class="card-text d-inline-flex align-items-center gap-1 mt-2 text-decoration-none"
+                            href="{{ url('library:codebase-git-remotes-list', identifier=codebase.identifier) }}">
+                            <i class="fas fa-cog"></i>
+                            {{ "Manage" if remote else "Connect a repository" }}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endwith %}
+{% endwith %}
+
 <div class="card-metadata">
     <div class="card-body">
         <div class="section">
@@ -307,7 +347,7 @@
             </div>
         </div>
         <div class="section">
-            {% if codebase.repository_url %}
+            {% if codebase.repository_url and not remote %}
                 <b class='card-title'>External Repository</b>
                 <div class="card-text mb-3">
                     <a href="{{ codebase.repository_url }}" class="d-block text-truncate">
@@ -356,9 +396,24 @@
             <div class="card-text mb-3">
                 {{ release.version_number }}
             </div>
+            {% with imported_sync_state = release.imported_release_sync_state %}
+            {% if imported_sync_state and imported_sync_state.display_name and imported_sync_state.html_url %}
+                <b class='card-title'>Imported From</b>
+                <div class="card-text mb-3">
+                    <a href='{{ imported_sync_state.html_url }}'>
+                        <i class="fas fa-tag"></i>
+                        {{ imported_sync_state.display_name }} on GitHub
+                    </a>
+                </div>
+            {% endif %}
+            {% endwith %}
             <b class='card-title'>License</b>
             <div class="card-text mb-3">
-                <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
+                {% if release.license %}
+                    <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
+                {% else %}
+                    None
+                {% endif %}
             </div>
             <b class='card-title'>Programming Language</b>
             <div class="card-text mb-3">
@@ -426,7 +481,7 @@
                 </button>
                 <div class='modal fade' id='confirm-peer-review' tabindex='-1' role='dialog'
                         aria-labelledby='confirm-peer-review-label' aria-hidden='true'>
-                    <div class='modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg' role='document'>
+                    <div class='modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl' role='document'>
                         <div class='modal-content'>
                             <div class='modal-header'>
                                 <h4 class='modal-title text-danger' id='confirm-peer-review-label'>
@@ -506,7 +561,7 @@
                 <tbody>
                     {% for related_release in codebase.ordered_releases_list(has_change_perm, asc=False) %}
                         <tr>
-                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a></td>
+                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }} {{ imported_release_indicator(related_release) }}</a></td>
                             <td>
                                 {% if release.live or has_change_perm %}
                                     {{ member_profile_href(related_release.submitter.member_profile) }}
