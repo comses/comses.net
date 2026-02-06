@@ -102,6 +102,9 @@ class ProgrammingLanguage(models.Model):
     is_pinned = models.BooleanField(default=False)
     is_user_defined = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f"{self.name} {' 📌' if self.is_pinned else ''} {' (user-defined)' if self.is_user_defined else ''}"
+
 
 class ReleaseLanguage(models.Model):
     programming_language = models.ForeignKey(

@@ -184,6 +184,16 @@ class CodeMetaConverter:
         )
 
     @classmethod
+    def _convert_release_language(cls, release_language) -> dict:
+        lang = {
+            "@type": "ComputerLanguage",
+            "name": release_language.programming_language.name,
+        }
+        if release_language.programming_language.url:
+            lang["url"] = release_language.programming_language.url
+        return lang
+
+    @classmethod
     def _convert_release(cls, release) -> CodeMeta:
         codebase = release.codebase
         return CodeMeta(
@@ -195,8 +205,7 @@ class CodeMetaConverter:
                 else release.permanent_url
             ),
             programmingLanguage=[
-                # FIXME: this can include "version" when langs are refactored
-                {"@type": "ComputerLanguage", "name": rl.programming_language.name}
+                cls._convert_release_language(rl)
                 for rl in release.release_languages.all().order_by(
                     "programming_language__name"
                 )
