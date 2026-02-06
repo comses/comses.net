@@ -568,8 +568,9 @@ class CodebaseReleasePublishTestCase(TestCase):
         )
         self.assertRaises(ValidationError, lambda: self.codebase_release.publish())
 
+        java, _created = ProgrammingLanguage.objects.get_or_create(name="Java")
         ReleaseLanguage.objects.create(
-            programming_language=ProgrammingLanguage.objects.get_or_create(name="Java"),
+            programming_language=java,
             release=self.codebase_release,
             version="8",
         )

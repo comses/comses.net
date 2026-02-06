@@ -92,7 +92,7 @@ programming_languages = [
         "is_pinned": False,
         "aliases": [],
     },
-    {"name": "Julia", "url": "https://julialang.org", "is_pinned": False, "aliases": ["julia-lang"]},
+    {"name": "Julia", "url": "https://julialang.org", "is_pinned": True, "aliases": ["julia-lang"]},
     {"name": "Kotlin", "url": "https://kotlinlang.org", "is_pinned": False, "aliases": []},
     {
         "name": "NetLogo",
@@ -141,7 +141,7 @@ programming_languages = [
     {"name": "ReLogo", "url": "https://repast.github.io/docs/ReLogoGettingStarted.pdf", "is_pinned": False, "aliases": []},
     {"name": "Mathematica", "url": "https://www.wolfram.com/mathematica/", "is_pinned": False, "aliases": []},
     {"name": "Cormas", "url": "https://cormas.org/", "is_pinned": False, "aliases": ["Cormas"]},
-    {"name": "Arc Macro Language", "url": "", "is_pinned": False, "aliases": ["AML(Arc Macro Language)"]},
+    {"name": "Arc Macro Language", "url": "", "is_pinned": False, "is_user_defined": True, "aliases": ["AML(Arc Macro Language)"]},
     {"name": "SeSAm", "url": "https://multiagentsimulation.com/", "is_pinned": False, "aliases": []},
     {"name": "HTML", "url": "https://html.spec.whatwg.org/", "is_user_defined": True, "is_pinned": False, "aliases": []},
     {"name": "Stata", "url": "https://www.stata.com/", "is_pinned": False, "aliases": []},

@@ -86,8 +86,8 @@ class CodebaseTest(BaseModelTestCase):
             set(source_release.platform_tags.all()),
         )
         self.assertEqual(
-            set(review_draft.programming_languages.all()),
-            set(source_release.programming_languages.all()),
+            set(review_draft.release_languages.all()),
+            set(source_release.release_languages.all()),
         )
 
         # check file contents
@@ -254,8 +254,9 @@ class CodebaseReleaseTest(BaseModelTestCase):
             ValidationError, lambda: self.codebase_release.validate_publishable()
         )
 
+        java, _created = ProgrammingLanguage.objects.get_or_create(name="Java")
         ReleaseLanguage.objects.create(
-            programming_language=ProgrammingLanguage.objects.get_or_create(name="Java"),
+            programming_language=java,
             release=self.codebase_release,
             version="8",
         )

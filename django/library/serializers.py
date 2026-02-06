@@ -599,7 +599,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     can_edit_originals = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source="get_os_display")
     platforms = TagSerializer(many=True, source="platform_tags")
-    programming_language_tags = TagSerializer(many=True)
+    programming_language_tags = TagSerializer(many=True, read_only=True)
     release_languages = ReleaseLanguageSerializer(read_only=True, many=True)
     submitter = RelatedUserSerializer(read_only=True, label="Submitter")
     version_number = serializers.ReadOnlyField()
@@ -646,6 +646,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
             "os_display",
             "peer_reviewed",
             "platforms",
+            "programming_language_tags",
             "release_languages",
             "submitted_package",
             "submitter",
