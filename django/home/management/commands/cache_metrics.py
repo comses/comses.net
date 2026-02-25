@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 
 from home.metrics import Metrics
 
-
 logger = logging.getLogger(__name__)
 
 

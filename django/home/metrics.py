@@ -8,7 +8,6 @@ from django.db.models import Count, F
 from core.models import MemberProfile, ComsesGroups
 from library.models import CodebaseRelease, CodebaseReleaseDownload, Codebase
 
-
 logger = logging.getLogger(__name__)
 
 

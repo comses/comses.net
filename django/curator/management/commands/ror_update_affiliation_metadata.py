@@ -8,7 +8,6 @@ from django.core.management.base import BaseCommand
 
 from core.models import MemberProfile
 
-
 logger = logging.getLogger(__name__)
 
 

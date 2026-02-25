@@ -3,7 +3,6 @@ from markdown import Extension
 from markdown.inlinepatterns import InlineProcessor
 import xml.etree.ElementTree as etree
 
-
 PROVIDERS = {
     "youtube": {
         "re": r"youtube\.com/watch\?\S*v=(?P<youtube>[A-Za-z0-9_&=-]+)",

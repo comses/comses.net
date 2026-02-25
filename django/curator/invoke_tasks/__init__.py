@@ -14,7 +14,6 @@ from .base import (
     prepare,
 )
 
-
 ns = Collection()
 ns.add_task(clean)
 ns.add_task(collectstatic)

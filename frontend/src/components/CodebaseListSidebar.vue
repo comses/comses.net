@@ -26,23 +26,18 @@
           </div>
         </div>
 
-        <div class="mb-3" v-if="parsedLanguageFacets.length > 0">
+        <div class="mb-3">
           <label class="form-label fw-bold"> Programming Languages </label>
           <div class="row">
-            <div v-for="lang in parsedLanguageFacets" :key="lang.value" class="col-12 col-md-12">
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  :id="lang.value"
-                  :value="lang.value"
-                  v-model="values.programmingLanguages"
-                />
-                <label class="form-check-label" :for="lang.value">
-                  {{ lang.label }}
-                </label>
-              </div>
-            </div>
+            <MultiSelectField
+              name="programmingLanguages"
+              label-with="name"
+              :options="programmingLanguageOptions.map(lang => lang.name)"
+              :custom-label="(option: string) => option"
+              :hide-selected="true"
+              :placeholder="isLoadingOptions ? 'Loading programming languages...' : ''"
+              multiple
+            />
           </div>
         </div>
 
@@ -66,13 +61,16 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { onMounted, computed } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { isEqual } from "lodash-es";
 import ListSidebar from "@/components/ListSidebar.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
+import MultiSelectField from "@/components/form/MultiSelectField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI } from "@/composables/api";
+import { useProgrammingLanguageAPI } from "@/composables/api/programmingLanguage";
+import type { ProgrammingLanguage } from "@/types";
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
@@ -103,31 +101,29 @@ const { handleSubmit, values } = useForm<SearchFields>({
 });
 
 const { searchUrl } = useCodebaseAPI();
+const { list: fetchProgrammingLanguages } = useProgrammingLanguageAPI();
 
-type LanguageFacet = {
-  value: string;
-  label: string;
-};
-const props = defineProps<{
-  languageFacets?: Record<string, number>;
-}>();
+const programmingLanguageOptions = ref<ProgrammingLanguage[]>([]);
+const isLoadingOptions = ref(false);
 
-let parsedLanguageFacets: LanguageFacet[] = [];
+async function loadProgrammingLanguages() {
+  try {
+    isLoadingOptions.value = true;
+    const response = await fetchProgrammingLanguages();
+    programmingLanguageOptions.value = response.data;
+  } catch (error) {
+    console.error("Failed to fetch programming languages:", error);
+  } finally {
+    isLoadingOptions.value = false;
+  }
+}
 
 const initialFilterValues = {
   value: { ...values },
 };
 
 onMounted(() => {
-  if (props.languageFacets) {
-    const localLanguageFacets = { ...props.languageFacets };
-    // console.log(localLanguageFacets);
-    parsedLanguageFacets = Object.entries(localLanguageFacets)
-      .sort(([, valueA], [, valueB]) => valueB - valueA) // Sort by value in descending order
-      .map(([name, value]) => ({ value: name, label: `${name} (${value})` }));
-  } else {
-    console.warn("languageFacets is undefined");
-  }
+  loadProgrammingLanguages();
   initializeFilterValues();
 });
 

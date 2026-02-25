@@ -362,8 +362,10 @@
             </div>
             <b class='card-title'>Programming Language</b>
             <div class="card-text mb-3">
-                {% for pl in release.programming_languages.all() %}
-                    {{ search_tag_href(pl, category='codebases') }}
+                {% for pl in release.release_languages.all() %}
+                    <a class='badge bg-info' href='/codebases/?programming_languages={{ pl.programming_language.name|urlencode }}'>
+                        {{ pl.label }}
+                    </a>
                 {% endfor %}
             </div>
             <b class='card-title'>Software Framework</b>

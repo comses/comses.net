@@ -60,6 +60,7 @@ from .models import (
     Contributor,
     CodebaseImage,
     License,
+    ProgrammingLanguage,
     PeerReview,
     PeerReviewer,
     PeerReviewerFeedback,
@@ -73,6 +74,7 @@ from .serializers import (
     ContributorSerializer,
     DownloadRequestSerializer,
     PeerReviewerSerializer,
+    ProgrammingLanguageSerializer,
     ReleaseContributorSerializer,
     CodebaseReleaseEditSerializer,
     CodebaseImageSerializer,
@@ -426,7 +428,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
         if programming_languages:
             # FIXME: this does not work for the same reason tags__name__in does not work, e.g.,
             # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
-            # criteria.update(releases__programming_languages__name__in=programming_languages)
+            # criteria.update(releases__release_languages__programming_language__name__in=programming_languages)
             codebases = Codebase.objects.public(
                 releases__programming_languages__name__in=programming_languages
             )
@@ -476,6 +478,9 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
                 logger.debug(
                     "Appending language_facets to response: %s", language_facets
                 )
+                # remove '0' key which represents releases with no programming languages
+                if "0" in language_facets:
+                    del language_facets["0"]
                 context["language_facets"] = json.dumps(language_facets)
 
             return Response(context)
@@ -765,7 +770,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @property
     def template_name(self):
         # FIXME: figure out why this is needed, CommonViewSetMixin is *supposed* to obviate the need for this
-        return "library/codebases/releases/{}.jinja".format(self.action)
+        return f"library/codebases/releases/{self.action}.jinja"
 
     def get_serializer_class(self):
         edit = self.request.query_params.get("edit")
@@ -1227,3 +1232,16 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse("core:profile-detail", kwargs={"pk": self.request.user.id})
+
+
+class ProgrammingLanguageViewSet(CommonViewSetMixin, NoDeleteViewSet):
+    """
+    ViewSet for ProgrammingLanguage model
+    """
+
+    queryset = ProgrammingLanguage.objects.all()
+    pagination_class = None
+    serializer_class = ProgrammingLanguageSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (OrderingFilter,)
+    ordering = ["-is_pinned", "name"]
