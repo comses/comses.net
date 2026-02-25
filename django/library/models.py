@@ -95,12 +95,30 @@ class ProgrammingLanguageTag(TaggedItemBase):
     )
 
 
+class ProgrammingLanguageQuerySet(models.QuerySet):
+    def pinned(self):
+        return self.filter(is_pinned=True)
+
+    def user_defined(self):
+        return self.filter(is_user_defined=True)
+
+    def get_or_create_by_name(self, name, user_defined=True):
+        sanitized_name = name.strip()
+        programming_language, created = self.get_or_create(
+            name=sanitized_name,
+            defaults={"name": sanitized_name, "is_user_defined": user_defined},
+        )
+        return programming_language, created
+
+
 @register_snippet
 class ProgrammingLanguage(models.Model):
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField(blank=True)
     is_pinned = models.BooleanField(default=False)
     is_user_defined = models.BooleanField(default=False)
+
+    objects = ProgrammingLanguageQuerySet.as_manager()
 
     def __str__(self):
         return f"{self.name} {' 📌' if self.is_pinned else ''} {' (user-defined)' if self.is_user_defined else ''}"
