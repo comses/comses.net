@@ -70,15 +70,13 @@ class Command(BaseCommand):
                 f"Failed to send emails to the following user ids: {unset_ids}"
             )
         else:
-            logger.info(
-                f"""
+            logger.info(f"""
 
 ====================================================================
 All emails sent successfully, {SENT_EMAILS_FILE_PATH} can be removed
 ====================================================================
 
-"""
-            )
+""")
 
     def _read_sent_user_ids(self):
         # read temp file that tracks which user ids have been sent emails

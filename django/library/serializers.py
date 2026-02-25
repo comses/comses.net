@@ -693,7 +693,7 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         release_languages_data = self.initial_data.pop("release_languages")
         if release_languages_data:
             # Clear existing programming languages
-            instance.release_languages.all().delete()
+            instance.programming_languages.all().delete()
 
             # Create new release languages
             for release_language_data in release_languages_data:

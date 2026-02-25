@@ -24,7 +24,6 @@ from .serializers import (
 )
 from .search import GeneralSearch
 
-
 logger = logging.getLogger(__name__)
 
 """

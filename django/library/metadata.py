@@ -206,9 +206,7 @@ class CodeMetaConverter:
             ),
             programmingLanguage=[
                 cls._convert_release_language(rl)
-                for rl in release.release_languages.all().order_by(
-                    "programming_language__name"
-                )
+                for rl in release.release_languages.all()
             ],
             runtimePlatform=[
                 tag.name for tag in release.platform_tags.all().order_by("name")
@@ -263,6 +261,9 @@ class CodeMetaConverter:
 
     @classmethod
     def convert_release(cls, release) -> CodeMeta:
+        if not release.live:
+            logger.info("unpublished release %s, return minimal codemeta", release)
+            return cls._convert_codebase_minimal(release.codebase)
         try:
             return cls._convert_release(release)
         except Exception as e:

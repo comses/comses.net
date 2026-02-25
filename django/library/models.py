@@ -106,6 +106,18 @@ class ProgrammingLanguage(models.Model):
         return f"{self.name} {' 📌' if self.is_pinned else ''} {' (user-defined)' if self.is_user_defined else ''}"
 
 
+class ReleaseLanguageQuerySet(models.QuerySet):
+    def for_release(self, release):
+        return self.filter(release=release)
+
+    def copy_to(self, target_release):
+        release_languages = list(self)
+        for rl in release_languages:
+            rl.id = None
+            rl.release = target_release
+        return self.bulk_create(release_languages)
+
+
 class ReleaseLanguage(models.Model):
     programming_language = models.ForeignKey(
         "library.ProgrammingLanguage",
@@ -114,14 +126,27 @@ class ReleaseLanguage(models.Model):
     )
     release = models.ForeignKey(
         "library.CodebaseRelease",
-        related_name="release_languages",
         on_delete=models.CASCADE,
     )
-    version = models.CharField(max_length=20)
+    version = models.CharField(max_length=20, blank=True)
+
+    objects = ReleaseLanguageQuerySet.as_manager()
 
     @property
     def name(self):
         return self.programming_language.name
+
+    @property
+    def label(self):
+        if self.version:
+            return f"{self.programming_language.name} {self.version}"
+        return self.programming_language.name
+
+    def __str__(self):
+        return f"{self.release.title} - {self.programming_language.name} {self.version}"
+
+    class Meta:
+        ordering = ["programming_language__name"]
 
 
 class CodebaseReleasePlatformTag(TaggedItemBase):
@@ -847,9 +872,9 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     @property
     def all_release_programming_languages(self):
         return list(
-            self.releases.exclude(release_languages__isnull=True)
-            .values_list("release_languages__programming_language__name", flat=True)
-            .distinct()
+            self.releases.values_list(
+                "programming_languages__name", flat=True
+            ).distinct()
         )
 
     def download_count(self):
@@ -1013,9 +1038,9 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     def create_release_from_source(self, source_release, release_metadata):
         # cache these before removing source release id to copy it over
-        contributors = ReleaseContributor.objects.filter(release_id=source_release.id)
+        release_contributors = source_release.release_contributors
+        release_languages = source_release.release_languages
         platform_tags = source_release.platform_tags.all()
-        release_languages = source_release.release_languages.all()
         # set source_release.id to None to create a new release
         # see https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         source_release.id = None
@@ -1023,8 +1048,9 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         source_release.__dict__.update(**release_metadata)
         source_release.save()
         source_release.platform_tags.add(*platform_tags)
-        source_release.release_languages.add(*release_languages)
-        contributors.copy_to(source_release)
+        # many to many relationships with intermediary models need to be copied over manually
+        release_languages.copy_to(source_release)
+        release_contributors.copy_to(source_release)
         return source_release
 
     @transaction.atomic
@@ -1078,7 +1104,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         """save the codebase and optionally rebuild metadata by updating codemeta_snapshot.
         If rebuild_release_metadata is True, all releases will be saved to trigger metadata updates
         """
-        if rebuild_metadata:
+        if rebuild_metadata and self.pk:
             logger.debug("Building codemeta for codebase: %s", self)
             self.codemeta_snapshot = self.codemeta.dict(serialize=True)
         super().save(**kwargs)
@@ -1172,12 +1198,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return self.prefetch_related("tagged_release_platforms__tag")
 
     def with_programming_languages(self):
-        return self.prefetch_related(
-            Prefetch(
-                "release_languages",
-                ReleaseLanguage.objects.prefetch_related("programming_language"),
-            )
-        )
+        return self.prefetch_related("programming_languages")
 
     def with_codebase(self):
         return self.prefetch_related(
@@ -1329,6 +1350,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         settings.AUTH_USER_MODEL, related_name="releases", on_delete=models.PROTECT
     )
     contributors = models.ManyToManyField(Contributor, through="ReleaseContributor")
+    programming_languages = models.ManyToManyField(
+        ProgrammingLanguage, through="ReleaseLanguage"
+    )
     submitted_package = models.FileField(
         upload_to=Codebase._release_upload_path,
         max_length=1000,
@@ -1375,7 +1399,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             ],
         ),
         index.RelatedFields(
-            "release_languages",
+            "programming_languages",
             [
                 index.SearchField("name"),
             ],
@@ -1611,6 +1635,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def release_contributors(self):
         return ReleaseContributor.objects.for_release(self)
+
+    @property
+    def release_languages(self):
+        return ReleaseLanguage.objects.for_release(self)
 
     @property
     def author_release_contributors(self):

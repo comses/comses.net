@@ -3,7 +3,6 @@ from django.test import TestCase
 from wagtail.contrib.search_promotions.models import Query
 from search.models import ArchivedQueryHits
 
-
 Q1_D1_HITS = 99
 Q1_D2_HITS = 7
 Q1_HITS = Q1_D1_HITS + Q1_D2_HITS

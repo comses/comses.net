@@ -8,7 +8,6 @@ from django.db.models import Count, F
 from core.models import MemberProfile, ComsesGroups
 from library.models import CodebaseRelease, CodebaseReleaseDownload, Codebase
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -352,7 +351,7 @@ class Metrics:
         programming_language_metrics = list(
             CodebaseRelease.objects.public()
             .values(
-                programming_language_names=F("release_languages__programming_language__name"),
+                programming_language_names=F("programming_languages__name"),
                 year=F("first_published_at__year"),
             )
             .annotate(count=Count("year"))
