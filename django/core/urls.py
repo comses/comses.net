@@ -3,7 +3,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
-from rest_framework_swagger.views import get_swagger_view
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail import urls as wagtail_urls
 from wagtail.contrib.sitemaps.views import sitemap
@@ -12,8 +12,6 @@ from curator import urls as curator_urls
 from home import urls as home_urls
 from library import urls as library_urls
 from . import views
-
-schema_view = get_swagger_view(title="CoMSES.net API")
 
 """
 Primary URLConf entry point into the comses.net website
@@ -78,7 +76,12 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("django/admin/", admin.site.urls),
     path("wagtail/admin/", include(wagtailadmin_urls)),
-    path("api/schema/", schema_view),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/schema/swagger-ui/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
     path("api-auth/", include("rest_framework.urls")),
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
     # https://docs.wagtail.org/en/stable/reference/contrib/sitemaps.html
