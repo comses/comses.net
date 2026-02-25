@@ -430,7 +430,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
             # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
             # criteria.update(releases__release_languages__programming_language__name__in=programming_languages)
             codebases = Codebase.objects.public(
-                releases__release_languages__programming_language__name__in=programming_languages
+                releases__programming_languages__name__in=programming_languages
             )
             criteria.update(id__in=codebases.values_list("id", flat=True))
 
@@ -770,7 +770,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @property
     def template_name(self):
         # FIXME: figure out why this is needed, CommonViewSetMixin is *supposed* to obviate the need for this
-        return "library/codebases/releases/{}.jinja".format(self.action)
+        return f"library/codebases/releases/{self.action}.jinja"
 
     def get_serializer_class(self):
         edit = self.request.query_params.get("edit")

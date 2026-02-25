@@ -21,7 +21,6 @@ import re
 import requests
 import sys
 
-
 DEFAULT_HOMEPAGE_FEED_MAX_ITEMS = settings.DEFAULT_HOMEPAGE_FEED_MAX_ITEMS
 DEFAULT_CACHE_TIMEOUT = 3600  # 1 hour cache timeout
 

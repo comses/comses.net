@@ -42,7 +42,7 @@ def get_through_tables():
 class TagCuratorProxyQuerySet(models.QuerySet):
     def with_comma(self):
         return self.filter(name__icontains=",")
-    
+
     def programming_language_tags(self):
         return self.filter(
             id__in=ProgrammingLanguageTag.objects.values_list("tag_id", flat=True)

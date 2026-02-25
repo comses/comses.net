@@ -228,8 +228,8 @@ export interface License {
 export interface ProgrammingLanguage {
   id?: number;
   name: string;
-  pinned?: boolean;
-  is_user_defined?: boolean;
+  isPinned?: boolean;
+  isUserDefined?: boolean;
 }
 
 export interface ReleaseLanguage {

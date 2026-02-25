@@ -11,7 +11,6 @@ from .permissions_base import BaseViewSetTestCase
 from core.views import EventViewSet, JobViewSet
 from core.models import Job, Event, SpamModeration, ComsesGroups
 
-
 logger = logging.getLogger(__name__)
 
 

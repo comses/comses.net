@@ -121,7 +121,6 @@ onMounted(async () => {
 async function retrieveInvitations() {
   const response = await listInvitations(props.reviewId);
   invitations.value = response.data.results;
-  console.log(invitations.value);
 }
 
 async function sendEmail() {

@@ -103,14 +103,14 @@ const { handleSubmit, values } = useForm<SearchFields>({
 const { searchUrl } = useCodebaseAPI();
 const { list: fetchProgrammingLanguages } = useProgrammingLanguageAPI();
 
-let programmingLanguageOptions: ProgrammingLanguage[] = [];
+const programmingLanguageOptions = ref<ProgrammingLanguage[]>([]);
 const isLoadingOptions = ref(false);
 
 async function loadProgrammingLanguages() {
   try {
     isLoadingOptions.value = true;
     const response = await fetchProgrammingLanguages();
-    programmingLanguageOptions = response.data;
+    programmingLanguageOptions.value = response.data;
   } catch (error) {
     console.error("Failed to fetch programming languages:", error);
   } finally {

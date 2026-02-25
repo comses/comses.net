@@ -66,7 +66,6 @@ from .view_helpers import (
 )
 from .utils import parse_date, parse_datetime
 
-
 logger = logging.getLogger(__name__)
 
 

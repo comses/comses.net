@@ -80,16 +80,6 @@ class ProgrammingLanguageSerializer(serializers.ModelSerializer):
 class ReleaseLanguageSerializer(serializers.ModelSerializer):
     programming_language = ProgrammingLanguageSerializer(read_only=True)
 
-    # def create(self, validated_data):
-    #     programming_language_data = self.initial_data.pop("programming_language")
-    #     programming_language, created = ProgrammingLanguage.objects.get_or_create(
-    #         name=programming_language_data['name']
-    #     )
-    #     validated_data["programming_language"] = programming_language
-    #     instance = ReleaseLanguage(**validated_data)
-    #     instance.save()
-    #     return instance
-
     class Meta:
         model = ReleaseLanguage
         fields = (
@@ -672,16 +662,6 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         )
         return serialized.data
 
-    def resolve_language(self, language_name):
-        programming_language = ProgrammingLanguage.objects.filter(
-            name__iexact=language_name
-        ).first()
-        if not programming_language:
-            programming_language = ProgrammingLanguage.objects.create(
-                name=language_name, is_user_defined=True
-            )
-        return programming_language
-
     def update(self, instance, validated_data):
         platform_tags = TagSerializer(
             many=True, data=validated_data.pop("platform_tags")
@@ -690,17 +670,21 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         set_tags(instance, platform_tags, "platform_tags")
 
         # Handle programming languages
-        release_languages_data = self.initial_data.pop("release_languages")
-        if release_languages_data:
+        release_languages_data = self.initial_data.pop("release_languages", None)
+        if release_languages_data is not None:
             # Clear existing programming languages
-            instance.release_languages.all().delete()
+            ReleaseLanguage.objects.clear(instance)
 
             # Create new release languages
             for release_language_data in release_languages_data:
                 language_data = release_language_data.get("programming_language")
                 if not language_data or "name" not in language_data:
                     raise ValidationError("Malformed programming language data")
-                programming_language = self.resolve_language(language_data["name"])
+                programming_language, _created = (
+                    ProgrammingLanguage.objects.get_or_create_by_name(
+                        language_data["name"]
+                    )
+                )
                 ReleaseLanguage.objects.create(
                     programming_language=programming_language,
                     release=instance,

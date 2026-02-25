@@ -14,7 +14,7 @@
       :label="labelWith"
       :placeholder="placeholder"
       :options="options"
-      :hide-selected="false"
+      :hide-selected="hideSelected"
       :searchable="true"
       @select="attrs.onInput()"
       :close-on-select="!multiple"
@@ -61,6 +61,7 @@ export interface MultiSelectFieldProps {
   placeholder?: string;
   required?: boolean;
   multiple?: boolean;
+  hideSelected?: boolean;
   trackBy?: string;
   labelWith?: string;
   customLabel?: (option: any, label: any) => string;
@@ -70,6 +71,7 @@ export interface MultiSelectFieldProps {
 const props = withDefaults(defineProps<MultiSelectFieldProps>(), {
   multiple: false,
   trackBy: "value",
+  hideSelected: false,
   labelWith: "label",
 });
 
