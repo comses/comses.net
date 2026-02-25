@@ -131,7 +131,7 @@ THIRD_PARTY_APPS = [
     "guardian",
     "huey.contrib.djhuey",
     "rest_framework",
-    "rest_framework_swagger",
+    "drf_spectacular",
     "robots",
     "timezone_field",
     "waffle",
@@ -497,6 +497,13 @@ REST_FRAMEWORK = {
     ),
     "EXCEPTION_HANDLER": "core.views.rest_exception_handler",
     "PAGE_SIZE": 10,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CoMSES.net API",
+    "DESCRIPTION": "OpenAPI schema for the CoMSES.net REST API.",
+    "VERSION": "1.0.0",
 }
 
 # add redis cache http://docs.wagtail.io/en/v2.8/advanced_topics/performance.html#cache

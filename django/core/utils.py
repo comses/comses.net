@@ -1,5 +1,3 @@
-from distutils.util import strtobool
-
 from dateutil import parser
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -36,6 +34,23 @@ def parse_date(date_str: str):
     if date_str:
         return parser.parse(date_str).date()
     return None
+
+
+# https://github.com/pypa/setuptools/blob/66b59b02a4ab431c2b3250547a2115d7bc44d86a/setuptools/_distutils/util.py#L331
+def strtobool(val: str) -> bool:
+    """Convert a string representation of truth to true (1) or false (0).
+
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return False
+    else:
+        raise ValueError(f"invalid truth value {val!r}")
 
 
 def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
