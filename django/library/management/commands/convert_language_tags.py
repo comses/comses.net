@@ -64,6 +64,12 @@ programming_languages = [
         "aliases": [],
     },
     {
+        "name": "AnyLogic",
+        "url": "https://www.anylogic.com/",
+        "is_pinned": False,
+        "aliases": [],
+    },
+    {
         "name": "C",
         "url": "https://www.c-language.org",
         "is_pinned": False,
@@ -73,9 +79,15 @@ programming_languages = [
         "name": "C#",
         "url": "https://dotnet.microsoft.com/en-us/languages/csharp",
         "is_pinned": False,
-        "aliases": [],
+        "aliases": ["csharp"],
     },
     {"name": "C++", "url": "https://isocpp.org", "is_pinned": False, "aliases": []},
+    {
+        "name": "Clojure",
+        "url": "https://clojure.org/",
+        "is_pinned": False,
+        "aliases": [],
+    },
     {
         "name": "Common Lisp",
         "url": "https://common-lisp.net",
@@ -83,6 +95,12 @@ programming_languages = [
         "aliases": [],
     },
     {"name": "Dart", "url": "https://dart.dev", "is_pinned": False, "aliases": []},
+    {
+        "name": "Erlang",
+        "url": "https://www.erlang.org/",
+        "is_pinned": False,
+        "aliases": ["erlang/otp", "elixir"],
+    },
     {
         "name": "Fortran",
         "url": "https://fortran-lang.org",
@@ -112,7 +130,7 @@ programming_languages = [
         "name": "JavaScript",
         "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
         "is_pinned": False,
-        "aliases": [],
+        "aliases": ["js"],
     },
     {
         "name": "Julia",
@@ -125,6 +143,12 @@ programming_languages = [
         "url": "https://kotlinlang.org",
         "is_pinned": False,
         "aliases": [],
+    },
+    {
+        "name": "MATLAB",
+        "url": "https://www.mathworks.com/products/matlab.html",
+        "is_pinned": True,
+        "aliases": ["matlab", "MATLAB 2019a", "MATLAB 2020a", "MATLAB 2020b"],
     },
     {
         "name": "NetLogo",
@@ -166,6 +190,12 @@ programming_languages = [
         "aliases": [],
     },
     {
+        "name": "Scheme",
+        "url": "https://www.scheme.org/",
+        "is_pinned": False,
+        "aliases": ["scheme", "racket", "guile", "chez"],
+    },
+    {
         "name": "Shell",
         "url": "https://www.gnu.org/software/bash/",
         "is_pinned": False,
@@ -177,18 +207,12 @@ programming_languages = [
         "is_pinned": False,
         "aliases": [],
     },
-    {
-        "name": "SQL",
-        "url": "https://www.iso.org/standard/63555.html",
-        "is_pinned": False,
-        "aliases": [],
-    },
     {"name": "Swift", "url": "https://swift.org", "is_pinned": False, "aliases": []},
     {
         "name": "TypeScript",
         "url": "https://www.typescriptlang.org",
         "is_pinned": False,
-        "aliases": [],
+        "aliases": ["ts"],
     },
     {
         "name": "Visual Basic",
@@ -199,12 +223,6 @@ programming_languages = [
     {
         "name": "Wolfram Language",
         "url": "https://www.wolfram.com/language/",
-        "is_pinned": False,
-        "aliases": [],
-    },
-    {
-        "name": "MATLAB",
-        "url": "https://www.mathworks.com/products/matlab.html",
         "is_pinned": False,
         "aliases": [],
     },

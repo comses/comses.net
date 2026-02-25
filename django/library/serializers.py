@@ -80,16 +80,6 @@ class ProgrammingLanguageSerializer(serializers.ModelSerializer):
 class ReleaseLanguageSerializer(serializers.ModelSerializer):
     programming_language = ProgrammingLanguageSerializer(read_only=True)
 
-    # def create(self, validated_data):
-    #     programming_language_data = self.initial_data.pop("programming_language")
-    #     programming_language, created = ProgrammingLanguage.objects.get_or_create(
-    #         name=programming_language_data['name']
-    #     )
-    #     validated_data["programming_language"] = programming_language
-    #     instance = ReleaseLanguage(**validated_data)
-    #     instance.save()
-    #     return instance
-
     class Meta:
         model = ReleaseLanguage
         fields = (
@@ -683,7 +673,7 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         release_languages_data = self.initial_data.pop("release_languages", None)
         if release_languages_data is not None:
             # Clear existing programming languages
-            instance.programming_languages.all().delete()
+            ReleaseLanguage.objects.clear(instance)
 
             # Create new release languages
             for release_language_data in release_languages_data:

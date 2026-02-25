@@ -125,6 +125,9 @@ class ProgrammingLanguage(models.Model):
 
 
 class ReleaseLanguageQuerySet(models.QuerySet):
+    def clear(self, release):
+        self.filter(release=release).delete()
+
     def for_release(self, release):
         return self.filter(release=release)
 
