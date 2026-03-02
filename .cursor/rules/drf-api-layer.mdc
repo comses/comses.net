@@ -1,0 +1,217 @@
+---
+globs: "**/views.py,**/serializers.py,**/viewsets.py"
+alwaysApply: false
+description: DRF viewset patterns, dual rendering, and API conventions
+---
+
+# DRF API Layer
+
+## Overview
+
+DRF viewsets serve both JSON API responses and server-rendered HTML pages through a dual-renderer pattern. The `CommonViewSetMixin` resolves Jinja2 templates by convention, and `RootContextHTMLRenderer` injects a `__all__` context variable for templates. See `comses-overview.mdc` for stack context.
+
+## Architecture
+
+### View Class Hierarchy
+
+```
+viewsets.GenericViewSet
+  |
+  +-- NoDeleteNoUpdateViewSet          (Create + List + Retrieve)
+  +-- HtmlNoDeleteNoUpdateViewSet      (Create + HtmlList + HtmlRetrieve)
+  +-- NoDeleteViewSet                  (Create + List + Retrieve + Update)
+  +-- HtmlNoDeleteViewSet              (Create + HtmlList + HtmlRetrieve + Update)
+  +-- OnlyObjectPermissionModelViewSet (Create + Destroy + List + Retrieve + Update)
+  +-- HtmlOnlyObjectPermissionModelViewSet (same but with HtmlList + HtmlRetrieve)
+
+PermissionRequiredByHttpMethodMixin + DetailView
+  +-- FormUpdateView     (method = "PUT")
+  +-- FormCreateView     (method = "POST", uses TemplateView)
+  +-- FormMarkDeletedView (method = "DELETE", soft-delete via is_deleted=True)
+```
+
+All `Html*` variants use `HtmlListModelMixin` and `HtmlRetrieveModelMixin` from `core/mixins.py`, which pass model instances directly to templates when the renderer is HTML (instead of serializing).
+
+### Key Files
+
+```
+django/core/
+  mixins.py       # CommonViewSetMixin, HtmlListModelMixin, HtmlRetrieveModelMixin,
+                  # SpamCatcherSerializerMixin, SpamCatcherViewSetMixin
+  renderers.py    # RootContextHTMLRenderer
+  permissions.py  # ObjectPermissions, ViewRestrictedObjectPermissions, ModeratorPermissions
+  views.py        # Base ViewSet classes, error handlers, MemberProfileViewSet, EventViewSet, JobViewSet
+  pagination.py   # SmallResultSetPagination
+  serializers.py  # RelatedMemberProfileSerializer and other shared serializers
+```
+
+## Patterns
+
+### `CommonViewSetMixin` -- Dual HTML/JSON Rendering
+
+Automatically resolves Jinja2 templates by convention:
+
+```python
+# core/mixins.py
+class CommonViewSetMixin:
+    ALLOWED_ACTIONS = ("list", "retrieve", "delete")
+    namespace = None    # Override or auto-derived from model._meta
+    ext = "jinja"       # Template file extension
+
+    # Convention: templates at django/<app>/jinja2/<namespace>/<action>.jinja
+    # Example: django/library/jinja2/library/codebases/list.jinja
+```
+
+**How it works:**
+1. If `namespace` is not set, it's derived from `model._meta` as `{app_label}/{verbose_name_plural}`
+2. Templates are discovered at `{namespace}/{action}.{ext}` (e.g., `library/codebases/list.jinja`)
+3. For HTML requests, `HtmlListModelMixin.list()` passes the queryset/page directly to the template
+4. For JSON requests, the standard DRF serializer pipeline runs
+
+### `RootContextHTMLRenderer`
+
+Extends DRF's `TemplateHTMLRenderer` to add a `__all__` variable containing the full response data:
+
+```python
+# core/renderers.py
+class RootContextHTMLRenderer(TemplateHTMLRenderer):
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        # ... resolves template, builds context ...
+        context["__all__"] = data   # <-- entire DRF response available as __all__
+        return template.render(context, request=request)
+```
+
+This means every Jinja2 template rendered by DRF has access to `{{ __all__ }}` containing the full serialized data, plus any individual context keys set by the view.
+
+### Default DRF Configuration
+
+```python
+# core/settings/defaults.py line 458
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": (
+        "core.renderers.RootContextHTMLRenderer",               # HTML first (browser default)
+        "djangorestframework_camel_case.render.CamelCaseJSONRenderer",  # JSON second
+    ),
+    "DEFAULT_PARSER_CLASSES": (
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
+    ),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "EXCEPTION_HANDLER": "core.views.rest_exception_handler",
+    "PAGE_SIZE": 10,
+}
+```
+
+### `HtmlListModelMixin` and `HtmlRetrieveModelMixin`
+
+These mixins short-circuit serialization for HTML responses:
+
+```python
+# core/mixins.py
+class HtmlRetrieveModelMixin:
+    context_object_name = "object"
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.accepted_renderer.format == "html":
+            return Response(self.get_retrieve_context(instance))  # raw model instance
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)                          # serialized JSON
+
+class HtmlListModelMixin:
+    context_list_name = "object"
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if request.accepted_renderer.format == "html":
+            context = self.get_list_context(page or queryset)   # raw queryset/page
+            return Response(context)
+        # ... standard serialized response for JSON
+```
+
+### Concrete ViewSet Example
+
+```python
+# core/views.py line 318
+class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
+    lookup_field = "user__pk"        # identifier-based, not default pk
+    lookup_url_kwarg = "pk"
+    queryset = MemberProfile.objects.public().with_tags()
+    pagination_class = SmallResultSetPagination
+    filter_backends = (MemberProfileFilter,)
+    permission_classes = (ObjectPermissions,)
+    context_object_name = "profile"
+    context_list_name = "profiles"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return RelatedMemberProfileSerializer   # lightweight for lists
+        return MemberProfileSerializer              # full for detail
+```
+
+### `SmallResultSetPagination`
+
+Custom paginator that respects Elasticsearch's `max_result_window` (default 2500):
+
+```python
+# core/pagination.py
+class SmallResultSetPagination(PageNumberPagination):
+    max_result_window = 2500
+    page_size = 10
+    page_size_query_param = "page_size"
+```
+
+Provides `get_context_data()` and `create_paginated_context_data()` for Jinja2 template pagination rendering.
+
+### `SpamCatcherViewSetMixin` + `SpamCatcherSerializerMixin`
+
+Two-part spam detection. The serializer detects spam (honeypot field + timing heuristic); the viewset records it:
+
+```python
+# Serializer side: adds hidden "content" honeypot field + "loaded_time" timing field
+class SpamCatcherSerializerMixin(serializers.Serializer):
+    # If "content" (honeypot) is filled in -> spam
+    # If submit time < SPAM_LIKELY_SECONDS_THRESHOLD (3s) after load -> spam
+
+# ViewSet side: records SpamModeration on create/update if spam detected
+class SpamCatcherViewSetMixin:
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self.handle_spam_detection(serializer)
+```
+
+### Custom Error Handler
+
+```python
+# core/views.py line 157
+def rest_exception_handler(exc, context):
+    # For HTML requests: renders Jinja2 error templates (403.jinja, 404.jinja, 500.jinja)
+    # For JSON requests: delegates to DRF's default exception_handler
+```
+
+## Gotchas
+
+- **HTML is the default renderer.** `RootContextHTMLRenderer` is listed first in `DEFAULT_RENDERER_CLASSES`. Browser requests get HTML; API clients must send `Accept: application/json`.
+- **camelCase conversion is automatic.** The `CamelCaseJSONParser`/`CamelCaseJSONRenderer` + `CamelCaseMiddleWare` handle all case conversion. Do NOT manually convert in serializers or views.
+- **`context_object_name` matters for templates.** ViewSets set `context_object_name` and `context_list_name` to control the template variable name (e.g., `"profile"`, `"codebases"`).
+- **`get_template_names()` raises `NotFound` for unhandled actions.** If you add a custom action, it won't have a template unless you extend `ALLOWED_ACTIONS` or override `get_template_names()`.
+- **`RelatedMemberProfileSerializer`** is a lightweight serializer used for nested user references across the codebase (defined in `core/serializers.py` line 275).
+
+## Extension
+
+### Adding a new ViewSet
+
+1. Choose a base class: `HtmlNoDeleteViewSet` (most common), `NoDeleteViewSet` (JSON-only), `HtmlOnlyObjectPermissionModelViewSet` (with delete)
+2. Mix in `CommonViewSetMixin` for dual rendering
+3. Mix in `SpamCatcherViewSetMixin` if the model accepts user-submitted content
+4. Set `namespace`, `context_object_name`, `context_list_name`, `pagination_class`
+5. Create templates at `django/<app>/jinja2/{namespace}/list.jinja` and `retrieve.jinja`
+6. Register in `urls.py` with a DRF router
+
+### Adding a custom action to an existing ViewSet
+
+1. Decorate with `@action(detail=True/False, methods=[...])`
+2. If action needs an HTML template, either add to `ALLOWED_ACTIONS` or return `Response` with explicit `template_name`
+3. Use `permission_classes` parameter on `@action` for action-specific permissions

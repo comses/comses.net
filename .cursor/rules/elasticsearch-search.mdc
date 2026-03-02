@@ -1,0 +1,97 @@
+---
+globs: "**/search/**,**/search.py"
+alwaysApply: false
+description: Elasticsearch 7 via Wagtail search — indexing, querying, analytics
+---
+
+## Overview
+
+Search uses Elasticsearch 7 via Wagtail's search backend (`wagtail.search.backends.elasticsearch7`). Models opt into indexing by mixing in `index.Indexed` and declaring `search_fields`. A hard `max_result_window: 2500` limit caps paginated results. See `comses-overview.mdc` for full stack context.
+
+## Architecture
+
+```
+core/settings/defaults.py          # WAGTAILSEARCH_BACKENDS config (ES7, atomic rebuild)
+core/pagination.py                 # SmallResultSetPagination (max_result_window: 2500)
+core/models.py                     # MemberProfile, Platform, Event, Job (index.Indexed)
+library/models.py                  # Codebase, CodebaseRelease, Contributor, PeerReviewer
+home/search.py                     # GeneralSearch — cross-model search
+home/views.py                      # SearchView (renders search.jinja)
+search/models.py                   # ArchivedQueryHits — search analytics
+search/management/commands/archive_search_query_hits.py
+curator/invoke_tasks/base.py       # `inv update_index`
+```
+
+## Patterns
+
+### Search Configuration (`core/settings/defaults.py`)
+
+```python
+WAGTAILSEARCH_BACKENDS = {
+    "default": {
+        "BACKEND": "wagtail.search.backends.elasticsearch7",
+        "URLS": ["http://elasticsearch:9200"],
+        "ATOMIC_REBUILD": True,    # New index, populate, swap alias -- no downtime
+        "AUTO_UPDATE": True,       # Save triggers index update
+        "TIMEOUT": 30,
+        "INDEX_SETTINGS": {"settings": {"index": {"max_result_window": 2500}}},
+    }
+}
+```
+
+### Making a Model Searchable
+
+Mix in `index.Indexed` and define `search_fields`:
+
+```python
+from wagtail.search import index
+
+class Codebase(index.Indexed, ClusterableModel):
+    search_fields = [
+        index.SearchField("title", boost=10.0),      # Full-text, boosted
+        index.SearchField("description", boost=8.0),
+        index.FilterField("peer_reviewed"),            # Exact match / range / sort
+        index.RelatedFields("tags", [index.SearchField("name")]),  # FK/M2M fields
+    ]
+```
+
+**Field types:** `SearchField` (full-text, optional `boost`), `FilterField` (exact match, range, sorting), `AutocompleteField` (prefix search), `RelatedFields` (index through FK/M2M). Callable fields supported -- `SearchField("get_all_contributors_search_fields")` indexes the method's return string.
+
+### Indexed Models
+
+- **core:** `MemberProfile`, `Platform`, `Event`, `Job`
+- **library:** `Codebase`, `CodebaseRelease`, `Contributor`, `PeerReviewer`
+- **home:** All Wagtail `Page` subclasses, `Journal`, `ComsesDigest`, `FaqEntry`
+
+### Cross-Model Search
+
+`GeneralSearch` (`home/search.py`) queries all the above models via `get_search_backend()`. Powers the site-wide `SearchView` (`home/views.py`).
+
+### Pagination, Analytics, and Index Management
+
+- `SmallResultSetPagination` (`core/pagination.py`) clamps results to `max_result_window` (2500) and page numbers to the valid range.
+- `ArchivedQueryHits` (`search/models.py`) aggregates `QueryDailyHits` by year. Run `archive_search_query_hits --expiry-days 7` via cron.
+- Rebuild indices: `inv update_index` (or `manage.py update_index`). Atomic rebuild swaps alias with no downtime.
+
+## Gotchas
+
+- **`max_result_window: 2500` is a hard limit.** ES refuses results beyond this offset. The paginator clamps silently. Do not raise without understanding ES memory implications.
+- **`AUTO_UPDATE: True` means saves trigger indexing.** Every `.save()` on an `index.Indexed` model hits ES. Bulk operations should use `manage.py update_index` instead.
+- **Index rebuild required after schema changes.** Adding/changing `search_fields` requires `manage.py update_index`. Changes do not take effect until reindexed.
+- **`check_list()` in tests calls `update_index`.** Tests that bypass `BaseViewSetTestCase.check_list()` and query list endpoints directly may get stale ES results.
+- **`ATOMIC_REBUILD` doubles memory temporarily.** Two index copies exist during rebuild. Ensure ES has sufficient heap on large datasets.
+- **`RelatedFields` updates are not automatic.** Changes to related models (e.g., tags) may not update the parent's ES document unless the parent is also saved or `update_index` is run.
+
+## Extension
+
+### Adding search to a new model
+
+1. Add `index.Indexed` to model bases
+2. Define `search_fields` with `SearchField` (full-text), `FilterField` (exact/range), `RelatedFields`
+3. Run `manage.py update_index`
+4. To include in site-wide search, add to `GeneralSearch.DEFAULT_MODELS` in `home/search.py`
+
+### Adding a filter field to an existing model
+
+1. Add `index.FilterField("field_name")` to the model's `search_fields`
+2. Run `manage.py update_index` to rebuild the mapping

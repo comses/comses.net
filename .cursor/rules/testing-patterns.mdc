@@ -1,0 +1,118 @@
+---
+globs: "**/tests/**,**/test_*.py,**/*_test.py"
+alwaysApply: false
+description: Testing conventions — Django TestCase, base classes, Cypress E2E
+---
+
+## Overview
+
+Tests use Django's test framework (not pytest). Backend tests live in each app's `tests/` directory and inherit from custom base classes that provide factory patterns and permission checking. E2E tests use Cypress 13 with a Borg-restored anonymized dataset.
+
+## Architecture
+
+```
+django/core/tests/
+  base.py                    # UserFactory, ContentModelFactory, BaseModelTestCase
+  permissions_base.py        # BaseViewSetTestCase, ApiAccountMixin, ResponseStatusCodesMixin
+  test_views.py, test_models.py, test_backends.py, test_discourse.py, test_serializers.py
+django/library/tests/
+  base.py                    # CodebaseFactory, ContributorFactory, ReleaseSetup, ReviewSetup
+  test_views.py, test_models.py, test_fs.py, test_metadata.py, test_codemeta.py, test_datacite_api.py
+e2e/cypress/
+  tests/                     # codebase.spec.ts, event.spec.ts, job.spec.ts, user.spec.ts
+  support/setup.ts           # loginBeforeEach(username, password)
+  support/util.ts            # getDataCy(value) helper
+  fixtures/data.json         # Test users + codebase data
+```
+
+## Patterns
+
+### Base Classes
+
+ViewSet tests inherit `BaseViewSetTestCase` (`core/tests/permissions_base.py`), combining `ApiAccountMixin`, `ResponseStatusCodesMixin`, and DRF's `APITestCase`:
+
+```python
+from core.tests.permissions_base import BaseViewSetTestCase
+
+class JobViewSetTestCase(BaseViewSetTestCase):
+    _view = JobViewSet
+
+    def setUp(self):
+        self.submitter = self.user_factory.create(username="submitter")
+        self.instance_factory = JobFactory(submitter=self.submitter)
+        self.create_representative_users(self.submitter)
+        self.instance = self.instance_factory.create()
+
+    def test_retrieve(self):
+        self.check_retrieve()  # Tests all user roles + anonymous + guardian perms
+```
+
+Model tests inherit `BaseModelTestCase` (`core/tests/base.py`) which provides `self.user`.
+
+### Factory Pattern (not factory_boy)
+
+Hand-rolled factories inherit from `ContentModelFactory` (ABC in `core/tests/base.py`):
+
+```python
+class JobFactory(ContentModelFactory):
+    model = Job
+    serializer = JobSerializer
+    def get_default_data(self):
+        return {"title": "PostDoc in ABM", "description": "...", "submitter": self.submitter}
+```
+
+Methods: `create()`, `create_unsaved()`, `get_request_data()`, `data_for_create_request()`.
+
+Library factories (`library/tests/base.py`): `CodebaseFactory`, `ContributorFactory`, `ReleaseContributorFactory`, `PeerReviewFactory`, `PeerReviewInvitationFactory`. `ReleaseSetup.setUpPublishableDraftRelease(codebase)` creates a publishable draft with license, contributors, and files.
+
+### Response Assertions and Permission Testing
+
+`ResponseStatusCodesMixin` provides: `assertResponseOk` (200), `assertResponseCreated` (201), `assertResponseDeleted` (204), `assertResponseFound` (302), `assertResponsePermissionDenied` (403), `assertResponseNotFound` (404), `assertResponseMethodNotAllowed` (405).
+
+`BaseViewSetTestCase` has `check_retrieve()`, `check_destroy()`, `check_update()`, `check_create()`, `check_list()` -- each tests all representative users (regular, superuser, submitter, anonymous) with and without guardian object permissions.
+
+### E2E Tests (Cypress)
+
+E2E tests run against a Borg-restored anonymized database. Use `data-cy` attributes for selection:
+
+```typescript
+import { getDataCy } from "../support/util";
+getDataCy("codebase-title").type(codebase.title);
+```
+
+## Running Tests
+
+```bash
+make test                                            # Django tests (full Docker stack)
+docker compose run --rm server /code/deploy/test.sh core  # Single app
+make e2e                                             # E2E: Borg restore + Cypress
+docker compose exec vite npm run test                # Frontend unit tests
+```
+
+Settings: `DJANGO_SETTINGS_MODULE=core.settings.test` -- temp dirs under `library/tests/tmp/`, console email backend.
+
+## Gotchas
+
+- **No pytest.** Uses `manage.py test` (Django runner). No `conftest.py` or `@pytest.mark`.
+- **Factories are not factory_boy.** Custom ABC subclasses. Do not install factory-boy.
+- **`check_list()` calls `update_index`.** Reindexes ES before asserting list visibility -- tests need ES running.
+- **Tests need Docker.** `make test` spins up db, redis, elasticsearch. Cannot run bare-metal.
+- **E2E uses Borg, not fixtures.** `make e2e` restores a Borg backup (`inv borg.restore --force`).
+- **`data-cy` for Cypress selectors.** Always use `data-cy` attributes, not CSS classes or IDs.
+- **`initialize_test_shared_folders()`** in `core/tests/base.py` inits temp dirs + Borg repo for library/fs tests.
+
+## Extension
+
+### Adding a new ViewSet test
+
+1. Create factory in app's `tests/base.py` extending `ContentModelFactory`
+2. Create test class extending `BaseViewSetTestCase`, set `_view = YourViewSet`
+3. In `setUp()`: create submitter, factory, call `create_representative_users()`, create instance
+4. Add `test_retrieve`, `test_destroy`, `test_update`, `test_create`, `test_list` calling `self.check_*()` methods
+
+### Adding a Cypress E2E test
+
+1. Create `e2e/cypress/tests/<feature>.spec.ts`
+2. Use `loginBeforeEach()` from `../support/setup` and `getDataCy()` from `../support/util`
+3. Add fixture data to `e2e/cypress/fixtures/data.json` if needed
+4. Add `data-cy` attributes to Vue components for new UI elements
