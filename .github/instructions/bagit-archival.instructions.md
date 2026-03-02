@@ -1,0 +1,147 @@
+---
+applyTo: "**/bagit/**,**/library/fs.py"
+---
+
+# BagIt Archival Packaging
+
+-> see: comses-overview.mdc
+
+## Overview
+
+Codebase releases are packaged using the BagIt standard. Every release goes through three
+staging directories — originals, SIP (Submission Information Package), and AIP (Archival
+Information Package) — before a downloadable `archive.zip` is produced. The entry point for
+all file operations is `CodebaseReleaseFsApi` in `django/library/fs.py`.
+
+## Staging Directory Layout
+
+```
+settings.LIBRARY_ROOT/
+  <codebase-uuid>/
+    releases/
+      <release-id>/
+        originals/          # raw uploads (archives kept as-is)
+          code/
+          data/
+          docs/
+          media/
+          results/
+        sip/                # BagIt bag — manifests live here
+          bag-info.txt
+          bagit.txt
+          manifest-md5.txt
+          data/             # sip_contents_dir — actual payload
+            code/
+            data/
+            docs/
+            media/
+            results/
+            codemeta.json
+            CITATION.cff
+            LICENSE
+        aip/                # copy of sip used to build the final archive
+          data/             # aip_contents_dir
+            ...
+        archive.zip         # archivepath — the published download
+        review_archive.zip  # review_archivepath — pre-publication download
+        audit.log
+        lock
+```
+
+## Key Classes
+
+| Class | Stage | Purpose |
+|---|---|---|
+| `CodebaseReleaseFsApi` | coordinator | All file operations for one release |
+| `CodebaseReleaseOriginalStorage` | `originals` | Stores raw uploads; validates archive conflicts |
+| `CodebaseReleaseSipStorage` | `sip` | Expands archives; writes to `sip/data/` |
+| `CodebaseReleaseAipStorage` | `aip` | Receives a copy of the SIP for final packaging |
+| `ArchiveExtractor` | SIP | Unpacks zip/tar/rar into the SIP during `_add_to_sip` |
+
+`CodebaseReleaseFsApi.__init__` takes a `CodebaseRelease` instance; use the classmethod
+`CodebaseReleaseFsApi.initialize(codebase_release)` to also create the sip bag on first use.
+
+## File Categories (`FileCategoryDirectories`)
+
+```python
+class FileCategoryDirectories(Enum):
+    code = 1      # any MIME type accepted
+    data = 2      # any MIME type accepted
+    docs = 3      # text/markdown, application/pdf, text/plain, ODT, RTF only
+    media = 4     # image/* or video/* only
+    originals = 5 # any MIME type accepted
+    results = 6   # any MIME type accepted
+```
+
+MIME validation runs in `CodebaseReleaseStorage.validate_mimetype` against `MIMETYPE_MATCHER`.
+Violations produce a configurable-level message (default `error`); mismatches reject the file.
+
+## File Upload Flow
+
+1. Client POSTs a file to the API with a target `category`.
+2. `CodebaseReleaseFsApi.add(category, content)` saves to `originals/<category>/`.
+3. `_add_to_sip(name, content, category)` is called immediately after:
+   - If the file is an archive (zip/tar/rar), `ArchiveExtractor.process` unpacks it into
+     a temp dir, strips a single-directory wrapper if present, then writes each member to
+     `sip/data/<category>/` via `CodebaseReleaseSipStorage.log_save`.
+   - Otherwise the file is copied directly into `sip/data/<category>/`.
+4. On publish, `build_published_archive(force=False)` adds metadata files, validates the
+   BagIt bag, then calls `build_archive` which copies the SIP to AIP and zips `aip/data/`
+   into `archive.zip`.
+
+## BagIt Packaging
+
+```python
+# SIP bag creation / update
+fs_api.get_or_create_sip_bag(bagit_info)   # calls fs.make_bag(sip_dir, metadata)
+
+# bagit_info dict (from CodebaseRelease.bagit_info cached_property)
+{
+    "Contact-Name": submitter.get_full_name(),
+    "Contact-Email": submitter.email,
+    "Author": contributor_names,
+    "Version-Number": version_number,
+    "Codebase-DOI": str(codebase.doi),
+    "DOI": str(doi),
+}
+```
+
+`CodebaseReleaseSipStorage.make_bag(metadata)` delegates to `core.fs.make_bag`.
+
+## Metadata Files Written Into the SIP
+
+| File | Property | Generator |
+|---|---|---|
+| `sip/data/codemeta.json` | `codemeta_path` | `create_or_update_codemeta(force=False)` |
+| `sip/data/CITATION.cff` | `cff_path` | `create_or_update_citation_cff(force=False)` |
+| `sip/data/LICENSE` | `license_path` | `create_or_update_license(force=False)` |
+
+Pass `force=True` to overwrite existing files (done automatically on publish and rebuild).
+
+## Downloads — Never Serve Directly from Django
+
+All file downloads use nginx's `X-Accel-Redirect` header. Django sets the header and returns
+an empty 200; nginx intercepts it and streams the file.
+
+```python
+# django/library/views.py (pattern used for archive downloads)
+response["X-Accel-Redirect"] = "/library/internal/{0}".format(archive_uri)
+# archive_uri = archivepath.relative_to(settings.LIBRARY_ROOT)
+```
+
+The nginx location `/library/internal/` maps to `settings.LIBRARY_ROOT` and is not
+publicly reachable. Never call `open()` on a release file and return its contents directly
+from a Django view.
+
+## Gotchas
+
+- **SIP vs AIP**: The SIP (`sip/`) is the working BagIt bag. The AIP (`aip/`) is a
+  snapshot copy created at publish time. Only `aip/data/` contents end up in `archive.zip`.
+- **Archive uploads expand on ingest**: uploading a zip to `code/` extracts its members into
+  `sip/data/code/`. A second upload to the same category is blocked until the first is removed.
+- **`build_sip` clears first**: `build_sip()` calls `sip_storage.clear()` before re-adding
+  originals — do not call it mid-session without understanding the side effects.
+- **`rebuild(metadata_only=True)`**: only regenerates codemeta/CFF/LICENSE and re-zips the
+  AIP if it already exists; safe to call on a published release to refresh metadata.
+- **MIME custom types**: four types are registered at module import (`text/x-rst`, `.nls`,
+  `.nlogo`, `text/markdown`, `text/x-r-source`) — rely on these being present in production.
