@@ -15,7 +15,6 @@ from django.utils import timezone
 from core.models import Job, Event
 from core.serializers import EventSerializer, JobSerializer
 
-
 logger = logging.getLogger(__name__)
 
 User = get_user_model()

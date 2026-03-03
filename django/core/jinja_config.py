@@ -25,7 +25,6 @@ from urllib.parse import parse_qsl
 from core.fields import render_sanitized_markdown
 from core.serializers import FULL_DATE_FORMAT, FULL_DATETIME_FORMAT
 
-
 logger = logging.getLogger(__name__)
 
 

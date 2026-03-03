@@ -538,7 +538,7 @@ ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 15
 # FIXME: deprecated
 # ACCOUNT_EMAIL_REQUIRED = True
 # ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = True
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'email2*', 'username*', 'password1*', 'password2*']
+ACCOUNT_SIGNUP_FIELDS = ["email*", "email2*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_FORM_CLASS = "core.forms.SignupForm"
 ACCOUNT_TEMPLATE_EXTENSION = "jinja"
