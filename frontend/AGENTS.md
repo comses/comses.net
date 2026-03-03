@@ -5,7 +5,7 @@ Extends root `AGENTS.md` — read that first.
 ## Key Files
 
 - `src/util.ts` — `extractDataParams()`, `parseDates()` — server-to-client data bridge
-- `src/composables/api/axios.ts` — `useAxios` — base composable with CSRF injection
+- `src/composables/api/` — API client composables (one per resource/endpoint area); `axios.ts` is the base with CSRF injection
 - `vite.config.ts` — Multi-entry auto-discovery, build output config
 - `../django/core/jinja2ext.py` — `ViteExtension` — `vite_asset()` Jinja2 tag
 - `../django/core/jinja_config.py` — Jinja2 environment globals (url, static, markdown, to_json)
@@ -21,9 +21,12 @@ Extends root `AGENTS.md` — read that first.
 7. `main.ts` is the global entry — Bootstrap CSS/JS included on every page. Do not duplicate Bootstrap imports in app entry points.
 8. Vite auto-discovers entry points from `src/apps/*.ts` — drop a new `.ts` file there, no config change needed.
 9. Use `{{ vite_asset("apps/<name>.ts") }}` in `{% block js %}` of Jinja2 templates to include a Vue app.
-10. Only one Pinia store exists (`useReleaseEditorStore`). All other apps use local component state.
-11. Prefer Bootstrap utility classes over custom CSS.
+10. Only one Pinia store exists (`useReleaseEditorStore`). All other apps use local component state or composables (`src/composables/`) for reusable logic.
+11. Prefer Bootstrap utility classes over custom CSS. Format with Prettier (`npm run style:fix`).
 12. Multiple Vue apps can mount independently on the same page — they share no state, each reads its own `data-*` attributes.
+13. Forms use `vorms` library (`useForm`/`useField`, inspired by React Hook Form), wrapped in `composables/form.ts`.
+14. Dates in incoming JSON are auto-parsed with `Date.parse()` via `parseDates()` in `util.ts` — be mindful of server-side date formatting.
+15. E2E selectors: use `data-cy-{}` attributes, selected via `getDataCy()` in `cypress/support/util.ts`.
 
 ## Architecture
 

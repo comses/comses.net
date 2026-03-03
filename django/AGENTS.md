@@ -12,6 +12,13 @@ Backend cluster detail. Root `AGENTS.md` covers commands, project structure, and
 
 ## Conventions
 
+### General
+
+- Follow PEP 8, use type hints
+- Models are fat; features spanning many models go in separate modules (e.g., `library/fs.py`, `home/metrics.py`)
+- Generate migrations (`manage.py makemigrations [app]`), never hand-write them
+- Huey tasks are defined and discovered in `tasks.py` modules within each app; consumer runs as a separate process — must be reloaded for changes to tasks or their dependencies
+
 ### DRF / API
 
 - HTML is the default renderer (`RootContextHTMLRenderer` listed first). API clients must send `Accept: application/json`.
