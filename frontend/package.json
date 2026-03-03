@@ -34,7 +34,7 @@
     "bootstrap": "5.2.3",
     "highcharts": "^11.4.8",
     "highcharts-vue": "^1.4.3",
-    "lodash-es": "^4.17.21",
+    "lodash-es": "^4.17.23",
     "pinia": "^2.1.7",
     "proj4": "^2.15.0",
     "query-string": "^8.2.0",
