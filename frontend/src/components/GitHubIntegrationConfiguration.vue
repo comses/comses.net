@@ -94,7 +94,6 @@ import type { GitHubAppInstallationStatus, CodebaseGitRemote } from "@/types";
 
 export interface GitHubSyncConfigurationNewProps {
   codebaseIdentifier: string;
-  githubOrgName: string;
   defaultRepoName: string;
   isCodebaseLive: boolean;
 }
@@ -235,7 +234,7 @@ const handleConnectRepo = async () => {
 async function refreshActiveRemote() {
   activeRemoteLoading.value = true;
   try {
-    activeRemote.value = (await getActiveRemote()).data;
+    activeRemote.value = (await getActiveRemote())?.data || null;
   } finally {
     activeRemoteLoading.value = false;
   }

@@ -180,8 +180,8 @@ class ReleaseMetadataConverterTestCase(TestCase):
         self.assertEqual(result["license_spdx_id"], "MIT")  # Github > CFF
         self.assertEqual(result["release_notes"], "From CodeMeta")  # CodeMeta > Github
         self.assertEqual(
-            result["programming_languages"], ["Python"]
-        )  # CodeMeta > Github
+            result["programming_languages"], ["Java"]
+        )  # Only pull languages from GitHub
 
     def test_convert_fallback(self):
         """Test the convert() method's fallback logic."""

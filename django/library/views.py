@@ -60,6 +60,7 @@ from .github_integration import (
     get_github_installation_status,
     list_github_releases_for_remote,
     GitHubApi,
+    extract_semver,
 )
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
@@ -666,7 +667,6 @@ class CodebaseGitRemoteViewSet(
             context = {
                 "codebase": self.get_codebase(),
                 "remotes": queryset,
-                "github_org_name": settings.GITHUB_MODEL_LIBRARY_ORG_NAME,
             }
             return Response(
                 context,
@@ -763,6 +763,21 @@ class CodebaseGitRemoteViewSet(
         if not github_release_id:
             raise ValidationError("'github_release_id' is required")
         custom_version = request.data.get("custom_version")
+        if custom_version is not None:
+            if not isinstance(custom_version, str):
+                raise ValidationError(
+                    "'custom_version' must be a semantic version like X.Y.Z"
+                )
+            candidate = custom_version.strip()
+            parsed_version = extract_semver(candidate)
+            is_exact_semver = parsed_version and (
+                candidate == parsed_version or candidate == f"v{parsed_version}"
+            )
+            if not is_exact_semver:
+                raise ValidationError(
+                    "'custom_version' must be a semantic version like X.Y.Z"
+                )
+            custom_version = parsed_version
         # require existing sync state
         sync_state = (
             ImportedReleaseSyncState.objects.filter(

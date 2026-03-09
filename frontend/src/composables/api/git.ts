@@ -46,7 +46,7 @@ export function useGitRemotesAPI(codebaseIdentifier: string) {
 
   async function getActiveRemote(
     options?: RequestOptions
-  ): Promise<AxiosResponse<CodebaseGitRemote>> {
+  ): Promise<AxiosResponse<CodebaseGitRemote | null>> {
     return get(url(["active_remote"]), options);
   }
 

@@ -1,7 +1,7 @@
 import logging
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone as datetime_timezone
 from github.GithubException import GithubException, UnknownObjectException
 from github.Repository import Repository as GithubRepo
 from git import PushInfo, Repo as GitRepo
@@ -33,6 +33,7 @@ from .fs import CodebaseGitRepositoryApi
 logger = logging.getLogger(__name__)
 
 INSTALLATION_ACCESS_TOKEN_REDIS_KEY = "github_installation_access_token"
+UTC = datetime_timezone.utc
 
 
 def get_github_installation_status(user):
@@ -41,15 +42,15 @@ def get_github_installation_status(user):
     Returns dict with github_account, connect_url, and installation_url.
     """
     installation_url = None
-    social_account = user.member_profile.get_social_account("github")
-    if social_account:
-        github_account = {
-            "id": social_account.uid,
-            "username": social_account.extra_data.get("login"),
-            "profile_url": social_account.get_profile_url(),
-        }
-    else:
-        github_account = None
+    github_account = None
+    if user.is_authenticated:
+        social_account = user.member_profile.get_social_account("github")
+        if social_account:
+            github_account = {
+                "id": social_account.uid,
+                "username": social_account.extra_data.get("login"),
+                "profile_url": social_account.get_profile_url(),
+            }
 
     if github_account:
         installation_url = f"https://github.com/apps/{slugify(settings.GITHUB_INTEGRATION_APP_NAME)}/installations/new/permissions?target_id={github_account['id']}"
@@ -121,11 +122,10 @@ class GitHubRepoValidator:
             # if the installation has access, this will succeed
             integration.get_repo_installation(installation.github_login, self.repo_name)
         except GithubException as e:
-            if e.status == 404:
-                raise ValueError(
-                    f"The CoMSES Integration GitHub app does not have access to the repository at https://github.com/{installation.github_login}/{self.repo_name}. "
-                    f"Use the 'Manage permissions' link above to grant access to this repository (or all repositories)."
-                )
+            raise ValueError(
+                f"The CoMSES Integration GitHub app does not have access to the repository at https://github.com/{installation.github_login}/{self.repo_name}. "
+                f"Use the 'Manage permissions' link above to grant access to this repository (or all repositories)."
+            )
 
 
 class GitHubApi:
@@ -374,6 +374,25 @@ class GitHubApi:
         commit_sha = repo.heads[CodebaseGitRepositoryApi.DEFAULT_BRANCH_NAME].commit.hexsha
         return (commit_sha, f"[{timezone.now().isoformat()}]:\n" + "\n".join(summaries))
 
+
+def _coerce_release_datetime(value) -> datetime:
+    default_dt = datetime.min.replace(tzinfo=UTC)
+    if not value:
+        return default_dt
+    if isinstance(value, datetime):
+        if timezone.is_aware(value):
+            return value
+        return value.replace(tzinfo=UTC)
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return default_dt
+        if timezone.is_aware(parsed):
+            return parsed
+        return parsed.replace(tzinfo=UTC)
+    return default_dt
+
     def create_release_for_tag(self, local_repo: GitRepo, tag_name: str):
         """create a GitHub release for a single tag if it does not already exist"""
         try:
@@ -485,9 +504,7 @@ def list_github_releases_for_remote(remote: CodebaseGitRemote) -> list[dict]:
 
     # order by published_at
     results.sort(
-        key=lambda d: datetime.fromisoformat(str(d.get("published_at")).replace("Z", "+00:00"))
-        if d.get("published_at")
-        else datetime.min.replace(tzinfo=timezone.utc),
+        key=lambda d: _coerce_release_datetime(d.get("published_at")),
         reverse=True,
     )
     return results

@@ -6,7 +6,6 @@ import GitHubIntegrationConfiguration from "@/components/GitHubIntegrationConfig
 
 const props = extractDataParams("github-config", [
   "codebaseIdentifier",
-  "githubOrgName",
   "defaultRepoName",
   "isCodebaseLive",
 ]);

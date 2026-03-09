@@ -18,7 +18,7 @@ from library.fs import (
     CodebaseGitRepositoryApi,
 )
 from library.tests.base import CodebaseFactory, TEST_SAMPLES_DIR
-from library.models import License, GitRefSyncState
+from library.models import License, GitRefSyncState, ProgrammingLanguage
 
 
 import logging
@@ -252,7 +252,8 @@ def upload_category(fs_api, release_dir: Path, category: str):
 
 def update_release_from_sample(release, sample_dir, version_number):
     release.os = "Linux"
-    release.programming_languages.add("Python")
+    python, _created = ProgrammingLanguage.objects.get_or_create_by_name("Python")
+    release.programming_languages.add(python)
     release.license = License.objects.create(name="MIT")
     release.release_notes = "Initial release"
     release.version_number = version_number
