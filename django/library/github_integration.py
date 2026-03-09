@@ -20,6 +20,8 @@ from .models import (
     CodebaseGitRemote,
     CodebaseRelease,
     Contributor,
+    ProgrammingLanguage,
+    ReleaseLanguage,
     ImportedReleaseSyncState,
     License,
     GithubIntegrationAppInstallation,
@@ -639,6 +641,25 @@ class GitHubReleaseImporter:
                 resolved_tags.append(tag_name)
         return resolved_tags
 
+    def _create_release_languages(
+        self, release: CodebaseRelease, language_names: list[str]
+    ) -> None:
+        # assign programming languages to the release
+        # since these come from github, we assume they are real languages and
+        # always create them if they don't already exist
+        for name in language_names:
+            if not isinstance(name, str):
+                continue
+            normalized_name = name.strip()
+            if not normalized_name:
+                continue
+            programming_language, _created = (
+                ProgrammingLanguage.objects.get_or_create_by_name(normalized_name)
+            )
+            ReleaseLanguage.objects.get_or_create(
+                release=release, programming_language=programming_language
+            )
+
     def _import_package_and_metadata(self, release) -> bool:
         # import the release package
         fs_api = release.get_fs_api()
@@ -660,9 +681,7 @@ class GitHubReleaseImporter:
         if platforms:
             release.platform_tags.add(*self._resolve_tags(platforms))
         if programming_languages:
-            release.programming_languages.add(
-                *self._resolve_tags(programming_languages)
-            )
+            self._create_release_languages(release, programming_languages)
         release.save()
 
         return self.log_success()

@@ -529,10 +529,7 @@ class ReleaseMetadataConverter:
             self._extract_release_notes_from_codemeta()
             or self._extract_release_notes_from_github()
         )
-        programming_languages = (
-            self._extract_programming_languages_from_codemeta()
-            or self._extract_programming_languages_from_github()
-        )
+        programming_languages = self._extract_programming_languages_from_github()
 
         return {
             "license_spdx_id": license_spdx_id,
