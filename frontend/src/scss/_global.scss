@@ -71,6 +71,22 @@ a.anchor {
   }
 }
 
+.w-100-with-icon {
+  width: 100%;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  .icon-left {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0.5rem;
+  }
+}
+
 .btn-group-xs > .btn,
 .btn-xs {
   padding: 0.25rem 0.4rem;
@@ -151,6 +167,10 @@ a.anchor {
 .bg-gray {
   color: $text-color;
   background-color: $gray-200 !important;
+}
+
+.bg-blue-gray {
+  background-color: $rules-color !important;
 }
 
 [v-cloak] {
@@ -383,6 +403,22 @@ nav {
   }
 }
 
+.card-bridge::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -100px;
+  left: 50%;
+  width: 1px;
+  background-color: #ccc;
+  z-index: -1;
+}
+
+.card-bridge .card {
+  position: relative;
+  z-index: 1;
+}
+
 .card-metadata {
   @extend .card;
   margin-top: 0.5em;
@@ -463,4 +499,17 @@ nav {
 
 .lead {
   font-weight: 400;
+}
+
+.beta-badge {
+  @extend .badge;
+  border: 1px solid $text-muted;
+  color: $text-muted;
+  padding: 0.15rem 0.3rem;
+  border-radius: 1rem;
+}
+
+hr.full-bleed {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
 }

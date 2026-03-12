@@ -144,6 +144,7 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
       data: [],
       docs: [],
       results: [],
+      metadata: [],
     },
     media: [],
   },
@@ -197,6 +198,7 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
     releaseNotes: "",
     reviewStatus: null,
     shareUrl: null,
+    status: "DRAFT",
     submittedPackage: null,
     submitter: DEFAULT_USER,
     urls: {
