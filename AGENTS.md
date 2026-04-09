@@ -1,110 +1,79 @@
-# CoMSES.net Development Guide for Agents
+# CoMSES.Net Agent Guide
 
-## Overview
+## Agent Operating Principles
 
-CoMSES.Net is an open science gateway designed to support an international community of scientists, researchers, and educators who use computational models to study social and ecological systems. A core component, the Computational Model Library, is a research software repository where modelers can publish their computational models with rich metadata, request peer review, and obtain versioned DOIs for citation and reuse. By providing infrastructure for model discovery, documentation, and reproducibility, CoMSES.Net aims to facilitate frictionless research exchange and promote transparent, reusable, and extensible computational science for the study of complex adaptive systems.
+This file defines mandatory rules for coding agents working in this repository.
 
-## Dev environment
+Decision priority:
 
-The app is designed to be run locally and deployed as a multi-docker-container application with `docker compose`. Always prefer doing things the "right" way as described below.
+1. Security, correctness, and data integrity
+2. Maintainability and readability
+3. Consistency with existing patterns
 
-- use `make deploy` to build services and start them
-- For local development, access the app at http://localhost:8000 (server service)
-- the `docker-compose.yml` is composed based on the environment set in config.mk's `DEPLOY_ENVIRONMENT` which can switch
-  between dev, staging, test, and prod
-- configs are in .env and secrets are in build/secrets
-- `docker/shared/:/shared` is a volume mount shared between services and holds model library files/media, backups, js bundles, etc.
+General approach:
 
-Invoke (django/curator/invoke_tasks) and django management commands (django/*/management/commands) are used for many common tasks, some of the most common are:
+- Make minimal, focused changes
+- Do not refactor unrelated code
+- Prefer extending existing patterns over introducing new abstractions
+- Avoid duplicate logic; centralize reusable behavior
+- If requirements are ambiguous, choose the simplest correct solution and state assumptions or ask for more input
+- Do not introduce new dependencies or architectural patterns without clear justification
 
-```bash
-docker compose exec server inv sh # django shell
-docker compose exec server inv db.sh # postgres shell
-docker compose exec server ./manage.py # django cli for running management commands, migrations, etc.
-docker compose logs [server|vite|...] # see service logs
-docker compose exec vite npm run tls # run vue component tests, lint, prettier
-```
+## Domain Invariants
 
-For backing up and restoring the database+file system use db/borg commands defined in `django/curator/invoke_tasks/`. For example, to back up a given state, restore from another, and then go back:
-```bash
-rm -rf docker/shared/backups/repo # delete or move the old borg repo
-docker compose exec server inv db.backup borg.init borg.backup # backup the database, init repo, and create borg repo with fs + db backup
-mv docker/shared/backups/repo ./working-repo # move it somewhere for safekeeping, repo/ will be root-owned
-make restore # restore from whatever is in build/repo.tar.xz or at BORG_REPO_URL if build/repo.tar.xz doesn't exist
-# --- do some work, now assuming we don't need to keep this current state ---
-mv ./working-repo docker/shared/backups/repo # move our desired backup back
-docker compose exec server inv borg.restore # and restore back
-```
-## General software engineering practices
+This platform manages scientific software artifacts and publication metadata. The following are non-negotiable:
 
-- ALWAYS prioritize security, correctness, and data integrity over convenience
-- prefer readable, maintainable, and testable code over clever solutions
-- follow framework conventions and general best practices for all technologies used in this project (e.g., Python, TypeScript, Django, Django Rest Framework, Docker, and Make)
-- avoid duplicating logic; centralize behavior where possible 
-- do not overengineer solutions
+- Published model releases are immutable archival objects
+- Never modify published artifacts in place; create a new version
+- DOI assignment is version-specific and must not be changed retroactively
+- Citation metadata must remain accurate and stable for each published version
+- Metadata is consumed by external systems; preserve schema integrity and avoid lossy transforms
+- Review and publication transitions must be explicit, auditable, and safe to retry without side effects (idempotent)
+- File storage and database state must remain consistent; avoid partial updates
+- Background tasks that affect publication or metadata must be safe to retry
+- Permission checks must be enforced in the backend at object level
+- Ensure consistent permission enforcement across views, APIs, and background tasks
+- Default deny: do not expose restricted or unpublished content without explicit authorization
 
-follow OWASP guidance (top 10, ASVS) for web application security. in particular:
+## Security and Engineering Baseline
 
-- prevent injection, no raw SQL unless justified
-- enforce proper authentication and authorization checks and permissions
-- protect sensitive data (no secrets in code, limit exposure)
-- ALWAYS validate and sanitize all external inputs
-- avoid common misconfigurations and unsafe defaults
+- Follow OWASP Top 10 and ASVS principles
+- Validate and sanitize all external inputs at the serializer or form layer before reaching model or business logic
+- Avoid raw SQL unless explicitly justified and reviewed
+- Protect sensitive data; never expose secrets in code or responses
+- Reuse existing permission and role-checking patterns
+- When in doubt, choose the more secure implementation
 
-## Django backend (`django/`)
+## Backend Conventions (Django)
 
-The backend is a wagtail (django) application that uses DRF, Postgres, ElasticSearch, Redis and Huey
+- Keep core domain logic in models; place cross-model workflows in dedicated modules
+- Put reusable or nontrivial query logic in QuerySet methods and expose via model managers
+- Compose QuerySet methods at call sites; avoid constructing complex ORM queries inline
+- Do not bypass ORM, serializers, or permissions without explicit justification
+- Generate migrations; do not hand-write migration files unless required and always review auto-generated migrations before committing
+- Huey task changes may require consumer restart
 
-- huey tasks are defined and discovered in tasks.py modules, the huey consumer runs as a seperate process in the server service, it must be reloaded for changes to tasks or their dependencies to take effect
-- be mindful of the app hierarchy that seperates concerns
-- models are fat, features that span many models should go in a seperate module (e.g., library/fs.py, home/metrics.py)
-- encapsulate reusable or nontrivial query logic in model `QuerySet` classes and managers. avoid complex inline
-  ORM logic at call sites
-- Jinja2 is used for templating
-- Follow PEP 8, use type hints
-- Use semantic commit messages
-- DRF endpoints transform snake_case into camelCase for consumption by the frontend
-- generate migrations (`docker compose exec server ./manage.py makemigrations [app]`) instead of hand-writing
+## Frontend Conventions (Vue)
 
-## Reactive frontend components (`frontend/`)
+- Use Vue 3 Composition API with script setup
+- Prefer Bootstrap utility classes before custom styling
+- Keep API client logic in composables
+- Ensure API shape compatibility with snake_case to camelCase transformations
+- Be careful with date parsing assumptions from API responses
 
-frontend/ contains vue 3 components that are mounted in pages rendered by django for interactive functionality
+## Testing Expectations
 
-- written with typescript and served/bundled with vite
-- Individual vue apps (`apps/`) are like widgets mounted in jinja templates
-- Vue 3 Composition API with `<script setup>` syntax
-- Boostrap 5 is used with some customization, always prefer bootstrap util classes over custom styling
-- Pinia for global state, composables for reusable logic
-- static data is passed to the components with data attributes (util.extractDataParams)
-- API clients in `composables/api/`
-- DRF endpoints transform snake_case into camelCase for consumption by the frontend
-- We attempt to parse dates in incoming data with Date.parse() automatically but be mindful of date formatting on the server-side
-- Format with prettier (npm run style:fix)
-- forms use a library called `vorms` inspired by react hook form that provides useForm and useField that is wrapped in composables/form.ts
+- Add or update tests for behavior changes, bug fixes, and nontrivial logic
+- Prefer targeted test execution during development
+- Use repository-standard containerized commands for running tests and tooling
+- Do not change existing behavior without updating or adding tests
 
-## Testing
+## Environment and Commands
 
-### Django tests (`django/*/tests`)
-
-```bash
-make test # run the full suite
-docker compose exec server inv test # in running container
-docker compose exec server inv test --tests=library.tests.test_models # run specific tests
-```
-
-- path differences in the `test` environment/settings will cause migrations to be created/applied to the test database, these can be removed
-
-### Cypress (`e2e/`)
-
-for running all e2e tests with full setup:
-
-```bash
-make e2e # build e2e setup
-cd e2e ; npm run test
-docker compose -f docker-compose.yml -f e2e.yml down # bring services down
-```
-
-- Tests in `e2e/cypress/tests/` - covers authentication, codebase creation/editing, events, jobs, peer review
-- e2e tests rely on a specific setup (see `e2e` make target) which uses the `test` environment/settings and includes a separate db container (e2edb) and a minimal backup (BORG_REPO_URL) that is assumed to match `cypress/fixtures/data.json`
-- for future tests, do not rely on a specific database state
-- data attributes (data-cy-{}) are preferred to select elements, see cypress/support/util.ts `getDataCy`
+- Use Docker Compose workflow for local development
+- Store agent runbooks, plans, checkpoints, and handoff artifacts in `docs/agents/`
+- Keep reusable templates in `docs/agents/templates/`
+- See `docs/agents/commands.md` for a minimal command index used by humans and agents
+- Prefer repo-root-relative paths for links (for example, `docs/agents/commands.md`), not machine-absolute paths (for example, `/home/...`).
+- Keep operational runbooks, backup and restore procedures, and full command catalogs in project docs
+- Keep this file policy-focused; avoid long procedural walkthroughs
