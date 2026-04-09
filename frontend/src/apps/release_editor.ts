@@ -6,6 +6,7 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import App from "@/components/releaseEditor/App.vue";
 import MetadataFormPage from "@/components/releaseEditor/MetadataFormPage.vue";
 import UploadFormPage from "@/components/releaseEditor/UploadFormPage.vue";
+import ImportedArchivePage from "@/components/releaseEditor/ImportedArchivePage.vue";
 import ContributorsPage from "@/components/releaseEditor/ContributorsPage.vue";
 import { extractDataParams } from "@/util";
 
@@ -15,6 +16,7 @@ const props = extractDataParams("release-editor", [
   "reviewStatus",
   "isLive",
   "canEditOriginals",
+  "isImported",
 ]);
 
 // check if ?publish or ?upload-image is in the url, set prop, and clear from the url
@@ -26,14 +28,21 @@ window.history.replaceState({}, "", window.location.pathname + window.location.h
 const app = createApp(App, props);
 const pinia = createPinia();
 
+const filesRouteName = props.isImported ? "package" : "upload";
+const filesRouteComponent = props.isImported ? ImportedArchivePage : UploadFormPage;
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    // only include upload route when original files are editable
-    { path: "/", redirect: { name: props.canEditOriginals ? "upload" : "metadata" } },
-    ...(props.canEditOriginals
-      ? [{ path: "/upload", component: UploadFormPage, name: "upload" }]
-      : []),
+    // only default to upload route when original files are editable
+    {
+      path: "/",
+      redirect: {
+        name: props.canEditOriginals ? filesRouteName : "metadata",
+      },
+    },
+    // use the imported archive page for imported releases
+    { path: `/${filesRouteName}`, component: filesRouteComponent, name: filesRouteName },
     { path: "/metadata", component: MetadataFormPage, name: "metadata" },
     { path: "/contributors", component: ContributorsPage, name: "contributors" },
   ],
