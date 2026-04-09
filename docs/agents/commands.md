@@ -2,6 +2,14 @@
 
 This page is a minimal index of commonly used operational commands.
 
+## Environment Quick Context
+
+- Local app URL: http://localhost:8000 (server service)
+- Compose environment is selected via config.mk DEPLOY_ENVIRONMENT (dev, staging, test, prod)
+- Runtime config is in .env and secrets are in build/secrets
+- Shared volume docker/shared/:/shared stores model files, media, backups, and bundles
+- Canonical deployment procedures: docs/source/deployment.rst
+
 Guidelines:
 
 - Run project commands from the repository root.
