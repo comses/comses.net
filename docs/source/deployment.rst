@@ -2,31 +2,124 @@
 Deployment
 ==========
 
----------------------------
-Compute Canada provisioning
----------------------------
+This project is deployed and run using a multi-container Docker Compose workflow generated from repository config.
 
-Our infrastructure is currently hosted on Compute Canada's east cloud (catalog app, staging) & west cloud (arbutus, result from Resource Allocation Grant with Dawn)
+Source of truth
+===============
 
-- production deployed on West Cloud allocation (arbutus)
-- create or import keypairs if necessary
-- launch desired instance (e.g., ubuntu 16.04 amd image) and make sure to associate the keypair with the image in the tab
-- create volume & attach to instance
-- associate floating IP to instance
+- ``make deploy`` is the default deployment entrypoint.
+- ``config.mk`` controls the active environment via ``DEPLOY_ENVIRONMENT``.
+- ``docker-compose.yml`` is generated from ``base.yml`` plus environment overlays.
+
+Environment selection
+=====================
+
+Set ``DEPLOY_ENVIRONMENT`` in ``config.mk``:
+
+.. code-block:: make
+
+	# dev|staging|test|prod
+	DEPLOY_ENVIRONMENT=dev
+
+Supported values:
+
+- ``dev``
+- ``staging``
+- ``test``
+- ``prod``
+
+Configuration and state
+=======================
+
+- Runtime config: ``.env``
+- Secrets: ``build/secrets/``
+- Shared container data: ``docker/shared/`` (library files, media, backups, vite bundles, logs, and other shared assets)
+
+Standard deployment workflow
+============================
+
+From repository root:
+
+.. code-block:: bash
+
+	make deploy
+
+What ``make deploy`` does:
+
+1. Builds and renders ``docker-compose.yml`` from selected environment files.
+2. Builds images and ensures generated secrets/config files exist.
+3. Pulls base services (and nginx for non-dev environments).
+4. Starts services with Docker Compose.
+5. Runs container preparation via ``docker compose exec server inv prepare``.
+
+Common operational commands
+===========================
+
+.. code-block:: bash
+
+	docker compose logs server
+	docker compose exec server inv sh
+	docker compose exec server ./manage.py <command>
+
+Backup and restore
+==================
+
+Restore with ``make restore``
+-----------------------------
+
+Use ``make restore`` when you need to rebuild local state from a borg backup bundle.
+
+.. code-block:: bash
+
+	make restore
+
+What it does:
+
+1. Runs build prerequisites and ensures generated compose/config artifacts exist.
+2. Uses ``build/repo.tar.xz`` if present, otherwise downloads from ``BORG_REPO_URL``.
+3. Moves any existing ``docker/shared/backups/repo`` to a temporary directory for safety.
+4. Extracts the selected backup archive into ``docker/shared/backups/``.
+5. Starts services and runs ``docker compose exec server inv borg.restore``.
+
+Set or update restore source in ``config.mk``:
+
+.. code-block:: make
+
+	BORG_REPO_URL=https://example.com/repo.tar.xz
+
+General backup workflow
+-----------------------
+
+Before risky changes, create a fresh backup of DB + filesystem state from the running stack:
+
+.. code-block:: bash
+
+	docker compose exec server inv db.backup borg.init borg.backup
+
+This creates/updates backup data under ``docker/shared/backups/repo``.
+
+If you need to preserve that snapshot while testing another restore:
+
+.. code-block:: bash
+
+	mv docker/shared/backups/repo "$(mktemp -d /tmp/comses.XXXXXX)"
+
+Later, move the saved repo back into ``docker/shared/backups/repo`` and run:
+
+.. code-block:: bash
+
+	docker compose exec server inv borg.restore
+
+Safety notes
+------------
+
+- Restore operations replace active application state (DB + shared files).
+- Treat restore as destructive to current local state unless you back up first.
+- Keep backup/restore operations containerized and run from repository root.
 
 Notes
 =====
 
-- Set docker location in ``/etc/docker/daemon.json`` to large volume mountpoint, e.g., `/mnt/docker` see https://github.com/moby/moby/issues/3127 for more details.
-
-Steps
-=====
-
-- checkout latest stable release from git
-- double check .env and appropriately symlinked docker-compose.yml file or run ``./build.sh`` first.
-- ``docker-compose pull --ignore-pull-failure``
-- ``docker-compose build --pull``
-- ``docker-compose up -d``
-- Upgrade DB if necessary: ``./manage.py makemigrations && ./manage.py migrate``
-- Rebuild elasticsearch index: ``./manage.py update_index``
-- Move generated javascript and static assets: ``./manage.py collectstatic -c --noinput``
+- Prefer ``docker compose`` (plugin) commands, not legacy ``docker-compose``.
+- Regenerate deployment artifacts by updating ``config.mk`` and rerunning ``make deploy``.
+- For a concise command index used by both humans and agents, see ``docs/agents/commands.md``.
