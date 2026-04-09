@@ -2,7 +2,7 @@
 
 ## Overview
 
-CoMSES.net is a web application that serves as a portal for modeling science in the social and ecological systems. The main component is the model library which archives model submissions. It also has curated resources and community postings.
+CoMSES.Net is an open science gateway designed to support an international community of scientists, researchers, and educators who use computational models to study social and ecological systems. A core component, the Computational Model Library, is a research software repository where modelers can publish their computational models with rich metadata, request peer review, and obtain versioned DOIs for citation and reuse. By providing infrastructure for model discovery, documentation, and reproducibility, CoMSES.Net aims to facilitate frictionless research exchange and promote transparent, reusable, and extensible computational science for the study of complex adaptive systems.
 
 ## Dev environment
 
@@ -10,7 +10,8 @@ The app is designed to be run locally and deployed as a multi-docker-container a
 
 - use `make deploy` to build services and start them
 - For local development, access the app at http://localhost:8000 (server service)
-- a `docker-compose.yml` is composed based on the environment set in config.mk's `DEPLOY_ENVIRONMENT`
+- the `docker-compose.yml` is composed based on the environment set in config.mk's `DEPLOY_ENVIRONMENT` which can switch
+  between dev, staging, test, and prod
 - configs are in .env and secrets are in build/secrets
 - `docker/shared/:/shared` is a volume mount shared between services and holds model library files/media, backups, js bundles, etc.
 
@@ -34,6 +35,21 @@ make restore # restore from whatever is in build/repo.tar.xz or at BORG_REPO_URL
 mv ./working-repo docker/shared/backups/repo # move our desired backup back
 docker compose exec server inv borg.restore # and restore back
 ```
+## General software engineering practices
+
+- ALWAYS prioritize security, correctness, and data integrity over convenience
+- prefer readable, maintainable, and testable code over clever solutions
+- follow framework conventions and general best practices for all technologies used in this project (e.g., Python, TypeScript, Django, Django Rest Framework, Docker, and Make)
+- avoid duplicating logic; centralize behavior where possible 
+- do not overengineer solutions
+
+follow OWASP guidance (top 10, ASVS) for web application security. in particular:
+
+- prevent injection, no raw SQL unless justified
+- enforce proper authentication and authorization checks and permissions
+- protect sensitive data (no secrets in code, limit exposure)
+- ALWAYS validate and sanitize all external inputs
+- avoid common misconfigurations and unsafe defaults
 
 ## Django backend (`django/`)
 
@@ -42,6 +58,8 @@ The backend is a wagtail (django) application that uses DRF, Postgres, ElasticSe
 - huey tasks are defined and discovered in tasks.py modules, the huey consumer runs as a seperate process in the server service, it must be reloaded for changes to tasks or their dependencies to take effect
 - be mindful of the app hierarchy that seperates concerns
 - models are fat, features that span many models should go in a seperate module (e.g., library/fs.py, home/metrics.py)
+- encapsulate reusable or nontrivial query logic in model `QuerySet` classes and managers. avoid complex inline
+  ORM logic at call sites
 - Jinja2 is used for templating
 - Follow PEP 8, use type hints
 - Use semantic commit messages
