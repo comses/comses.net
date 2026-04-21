@@ -447,6 +447,17 @@ nav {
     font-weight: 700;
   }
 
+  // Keep long URLs and identifiers readable without wasting space on short ones.
+  .metadata-link-badge {
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-align: left;
+    line-height: 1.15;
+  }
+
   .title {
     @extend .card-body;
     padding-top: 1rem;

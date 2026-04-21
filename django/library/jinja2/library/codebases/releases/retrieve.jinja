@@ -311,7 +311,7 @@
                         </a>
                     </div>
                     {% if remote %}
-                        <a href="{{ remote.url }}" target="_blank" class="me-2 text-truncate w-100 badge bg-dark">
+                        <a href="{{ remote.url }}" target="_blank" class="me-2 w-100 badge bg-dark metadata-link-badge" title="{{ remote.owner }}/{{ remote.repo_name }}">
                             <i class="fab fa-github"></i> {{ remote.owner }}/{{ remote.repo_name }}
                         </a>
                     {% endif %}
@@ -350,8 +350,8 @@
             {% if codebase.repository_url and not remote %}
                 <b class='card-title'>External Repository</b>
                 <div class="card-text mb-3">
-                    <a href="{{ codebase.repository_url }}" class="d-block text-truncate">
-                        <span class='badge bg-info'>
+                    <a href="{{ codebase.repository_url }}" class="d-block" title="{{ strip_url_scheme(codebase.repository_url) }}">
+                        <span class='badge bg-info metadata-link-badge'>
                         {{ strip_url_scheme(codebase.repository_url) }}
                         </span>
                     </a>
@@ -360,8 +360,8 @@
             {% if release.output_data_url %}
                 <b class='card-title'>Output Data</b>
                 <div class="card-text mb-3">
-                    <a href="{{ release.output_data_url }}" class="d-block text-truncate">
-                        <span class='badge bg-info'>
+                    <a href="{{ release.output_data_url }}" class="d-block" title="{{ strip_url_scheme(release.output_data_url) }}">
+                        <span class='badge bg-info metadata-link-badge'>
                         {{ strip_url_scheme(release.output_data_url) }}
                         </span>
                     </a>
@@ -371,12 +371,10 @@
             <b class='card-title'>DOI</b>
             <div class="card-text mb-3">
             {% if release.doi %}
-              <p>
-                <a href='{{release.permanent_url}}' class='d-block text-truncate'><span class='badge bg-info'>{{ release.doi }}</span></a>
-              </p>
+            <a href='{{release.permanent_url}}' class='d-block' title='{{ release.doi }}'><span class='badge bg-info metadata-link-badge'>{{ release.doi }}</span></a>
             {% elif codebase.doi %}
                 <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
-                <a href='{{codebase.permanent_url}}'><span class='badge bg-info'>{{ codebase.doi }}</span></a></p>
+                <a href='{{codebase.permanent_url}}' title='{{ codebase.doi }}'><span class='badge bg-info metadata-link-badge'>{{ codebase.doi }}</span></a></p>
             {% else %}
                 <div>No assigned DOI</div>
                 {% if has_change_perm %}
