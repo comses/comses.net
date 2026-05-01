@@ -92,7 +92,10 @@ class CodebaseMetadataTestCase(BaseModelTestCase):
                     recurse_contents(item["contents"])
 
         recurse_contents(sip_contents["contents"])
-        self.assertEqual(len(files_found), 3)
+        self.assertEqual(
+            set(label.lower() for label in files_found),
+            {"license", "citation.cff", "codemeta.json"},
+        )
 
 
 class ReleaseMetadataConverterTestCase(TestCase):
@@ -133,6 +136,39 @@ class ReleaseMetadataConverterTestCase(TestCase):
         converter = ReleaseMetadataConverter(codemeta=codemeta)
         self.assertEqual(converter._extract_os_from_codemeta(), "linux")
 
+    def test_extract_os_from_codemeta_variants(self):
+        cases = [
+            ("macOS Sonoma", "macos"),
+            ("Windows 11", "windows"),
+            ("platform independent", "platform_independent"),
+            ("Plan9", "other"),
+        ]
+        for os_value, expected in cases:
+            with self.subTest(os_value=os_value):
+                converter = ReleaseMetadataConverter(
+                    codemeta={**self.minimal_codemeta, "operatingSystem": os_value}
+                )
+                self.assertEqual(converter._extract_os_from_codemeta(), expected)
+
+    def test_extract_os_from_codemeta_structured_object(self):
+        codemeta = {
+            **self.minimal_codemeta,
+            "operatingSystem": {"name": "Any"},
+            "releaseNotes": "From CodeMeta",
+        }
+        converter = ReleaseMetadataConverter(
+            codemeta=codemeta,
+            github_repository={"license": {"spdx_id": "MIT"}, "language": "Python"},
+            github_release={"body": "From GitHub"},
+        )
+        # Unsupported structured OS input should be ignored without breaking conversion.
+        self.assertEqual(converter._extract_os_from_codemeta(), "")
+        result = converter.convert()
+        self.assertEqual(result["os"], "")
+        self.assertEqual(result["release_notes"], "From GitHub")
+        self.assertEqual(result["license_spdx_id"], "MIT")
+        self.assertEqual(result["programming_languages"], ["Python"])
+
     def test_extract_programming_languages_from_codemeta(self):
         codemeta = {
             **self.minimal_codemeta,
@@ -142,6 +178,17 @@ class ReleaseMetadataConverterTestCase(TestCase):
         self.assertEqual(
             converter._extract_programming_languages_from_codemeta(), ["Python", "R"]
         )
+
+    def test_extract_programming_languages_from_codemeta_edge_cases(self):
+        codemeta = {
+            **self.minimal_codemeta,
+            "programmingLanguage": [{"name": "Julia"}, {"foo": "bar"}, 123],
+        }
+        converter = ReleaseMetadataConverter(codemeta=codemeta)
+        languages = converter._extract_programming_languages_from_codemeta()
+        self.assertEqual(languages, ["Julia", "123"])
+        checked_languages = languages or []
+        self.assertNotIn("bar", checked_languages)
 
     def test_extract_programming_languages_from_github(self):
         converter = ReleaseMetadataConverter(github_repository={"language": "Java"})
@@ -158,6 +205,36 @@ class ReleaseMetadataConverterTestCase(TestCase):
         self.assertEqual(
             converter._extract_platforms_from_codemeta(), ["Mesa", "NetLogo"]
         )
+
+    def test_extract_platforms_from_codemeta_edge_cases(self):
+        codemeta = {
+            **self.minimal_codemeta,
+            "runtimePlatform": ["Mesa", {"name": "NetLogo"}, None],
+            "releaseNotes": "From CodeMeta",
+        }
+        converter = ReleaseMetadataConverter(
+            codemeta=codemeta,
+            github_repository={"license": {"spdx_id": "MIT"}, "language": "Python"},
+            github_release={"body": "From GitHub"},
+        )
+        # Mixed structured runtimePlatform input is not supported, but conversion should remain stable.
+        self.assertIsNone(converter._extract_platforms_from_codemeta())
+        result = converter.convert()
+        self.assertIsNone(result["platforms"])
+        self.assertEqual(result["release_notes"], "From GitHub")
+        self.assertEqual(result["license_spdx_id"], "MIT")
+        self.assertEqual(result["programming_languages"], ["Python"])
+
+    def test_extract_release_notes_from_codemeta_list_edge_cases(self):
+        converter = ReleaseMetadataConverter(
+            codemeta={**self.minimal_codemeta, "releaseNotes": ["First note", "Second"]}
+        )
+        self.assertEqual(converter._extract_release_notes_from_codemeta(), "First note")
+
+        converter = ReleaseMetadataConverter(
+            codemeta={**self.minimal_codemeta, "releaseNotes": [{"text": "bad"}]}
+        )
+        self.assertIsNone(converter._extract_release_notes_from_codemeta())
 
     def test_convert_priority(self):
         # test the convert() method's priority logic

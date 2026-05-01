@@ -776,6 +776,9 @@ class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase)
 
     def _create_signed_request(self, payload, signature=None):
         body = json.dumps(payload).encode("utf-8")
+        return self._create_signed_raw_request(body, signature=signature)
+
+    def _create_signed_raw_request(self, body, signature=None):
         if signature is None:
             hash_object = hmac.new(
                 self.secret.encode("utf-8"), msg=body, digestmod=hashlib.sha256
@@ -859,6 +862,30 @@ class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase)
         request = self._create_signed_request(payload, signature="sha256=bad-sig")
         response = github_sync_webhook(request)
         self.assertEqual(response.status_code, 403)
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_malformed_installation_payload_invalid_json(self):
+        request = self._create_signed_raw_request(b"{not-json")
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 400)
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_malformed_installation_payload_missing_sender(self):
+        payload = {"action": "created", "installation": {"id": 12345}}
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 400)
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_malformed_installation_payload_missing_installation_id(self):
+        payload = {
+            "action": "created",
+            "installation": {},
+            "sender": {"id": 54321, "login": "testuser"},
+        }
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 400)
 
 
 def tearDownModule():

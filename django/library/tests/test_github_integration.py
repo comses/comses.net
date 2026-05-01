@@ -91,9 +91,12 @@ class GitHubReleaseImporterTests(TestCase):
             self.remote, self.payload["release"]
         )
 
+    def create_importer(self, github_release_id="12345"):
+        return GitHubReleaseImporter(self.remote, github_release_id)
+
     def test_init_success(self):
         # should initialize successfully with a valid remote and release id
-        importer = GitHubReleaseImporter(self.remote, "12345")
+        importer = self.create_importer("12345")
         self.assertEqual(importer.github_release_id, "12345")
         self.assertEqual(importer.codebase, self.codebase)
 
@@ -101,20 +104,20 @@ class GitHubReleaseImporterTests(TestCase):
         # test various invalid scenarios that should raise ValueError
         # missing sync state
         with self.assertRaises(ValueError):
-            GitHubReleaseImporter(self.remote, "99999")
+            self.create_importer("99999")
         
         # sync state without download_url
-        bad_sync_state = ImportedReleaseSyncState.objects.create(
+        ImportedReleaseSyncState.objects.create(
             remote=self.remote,
             github_release_id="88888",
             download_url="",  # empty download url
         )
         with self.assertRaises(ValueError):
-            GitHubReleaseImporter(self.remote, "88888")
+            self.create_importer("88888")
 
     def test_extract_semver(self):
         # test semantic version extraction
-        importer = GitHubReleaseImporter(self.remote, "12345")
+        importer = self.create_importer("12345")
         self.assertEqual(importer.extract_semver("v1.2.3"), "1.2.3")
         self.assertEqual(importer.extract_semver("1.2.3"), "1.2.3")
         self.assertEqual(importer.extract_semver("version 1.2.3-beta"), "1.2.3")
@@ -132,11 +135,8 @@ class GitHubReleaseImporterTests(TestCase):
         mock_fs_api.import_release_package.return_value = ({}, {})  # codemeta, cff
         mock_get_fs_api.return_value = mock_fs_api
 
-        # create sync state first
-        ImportedReleaseSyncState.for_github_release(self.remote, self.payload["release"])
-
         # import a new release
-        importer = GitHubReleaseImporter(self.remote, "12345")
+        importer = self.create_importer("12345")
         success = importer.import_new_release()
 
         # check that it was successful and objects were created
@@ -163,13 +163,8 @@ class GitHubReleaseImporterTests(TestCase):
         mock_fs_api.import_release_package.return_value = ({}, {})  # codemeta, cff
         mock_get_fs_api.return_value = mock_fs_api
 
-        # create sync state first
-        sync_state = ImportedReleaseSyncState.for_github_release(
-            self.remote, self.payload["release"]
-        )
-        
         # first, import a new release
-        importer = GitHubReleaseImporter(self.remote, "12345")
+        importer = self.create_importer("12345")
         importer.import_or_reimport()
 
         self.assertEqual(CodebaseRelease.objects.count(), 1)
@@ -190,7 +185,7 @@ class GitHubReleaseImporterTests(TestCase):
         # mock get_release_raw_for_remote to return the updated payload
         mock_get_release.return_value = reimport_payload["release"]
 
-        importer2 = GitHubReleaseImporter(self.remote, "12345")
+        importer2 = self.create_importer("12345")
         success = importer2.import_or_reimport()
 
         # assert that the re-import was successful and the release was updated
@@ -204,5 +199,35 @@ class GitHubReleaseImporterTests(TestCase):
 
         # release version number should NOT have changed
         self.assertEqual(release.version_number, "1.0.0")
+
+    @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
+    @patch("library.models.CodebaseRelease.get_fs_api")
+    @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
+    def test_import_new_release_version_collision(
+        self, mock_get_token, mock_get_fs_api, mock_get_repo
+    ):
+        # even with valid metadata/api mocks, import should fail when version already exists
+        mock_get_token.return_value = "fake-token"
+        mock_get_repo.return_value = {
+            "name": "test-repo",
+            "full_name": "testuser/test-repo",
+        }
+        mock_fs_api = MagicMock()
+        mock_fs_api.import_release_package.return_value = ({}, {})
+        mock_get_fs_api.return_value = mock_fs_api
+
+        existing_release = self.codebase.create_release()
+        existing_release.version_number = "1.0.0"
+        existing_release.save()
+
+        importer = self.create_importer("12345")
+        success = importer.import_new_release()
+
+        self.assertFalse(success)
+        self.assertEqual(
+            CodebaseRelease.objects.filter(codebase=self.codebase, version_number="1.0.0").count(),
+            1,
+        )
+        mock_fs_api.import_release_package.assert_not_called()
 
 

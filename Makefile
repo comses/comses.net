@@ -136,7 +136,7 @@ clean_deploy: clean
 
 .PHONY: test
 test: build
-	docker compose run --rm server /code/deploy/test.sh
+	docker compose run --rm server /code/deploy/test.sh $(TEST_ARGS)
 
 # e2e testing setup
 
@@ -157,3 +157,7 @@ e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
 	docker compose -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \
 		inv prepare"
+
+.PHONY: gen-secret
+gen-secret:
+	docker compose run --rm server python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"

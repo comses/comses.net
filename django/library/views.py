@@ -937,9 +937,14 @@ def github_sync_webhook(request):
     # parse the event
     event = request.headers.get("X-GitHub-Event")
     if event == "installation":
-        payload = json.loads(request.body)
-        action = payload["action"]
-        sender = payload["sender"]
+        try:
+            payload = json.loads(request.body)
+            action = payload["action"]
+            sender = payload["sender"]
+            installation_id = payload["installation"]["id"]
+            sender_login = sender["login"]
+        except (json.JSONDecodeError, KeyError, TypeError):
+            return HttpResponse("Malformed payload", status=400)
         # match based on the uid
         uid = sender["id"]
         social_account = SocialAccount.objects.filter(
@@ -957,8 +962,8 @@ def github_sync_webhook(request):
                 user=social_account.user,
                 defaults={
                     "github_user_id": uid,
-                    "github_login": sender["login"],
-                    "installation_id": payload["installation"]["id"],
+                    "github_login": sender_login,
+                    "installation_id": installation_id,
                 },
             )
             return HttpResponse("OK", status=200)
