@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 from git import Repo
 from django.test import TestCase
 from django.conf import settings
@@ -120,16 +119,16 @@ class GitRepoApiTestCase(TestCase):
             release__codebase=self.codebase, built_commit_sha__isnull=False
         ).count()
         self.assertEqual(built_releases_count, 1)
-        self.assertTrue(os.path.exists(api.repo_dir))
+        self.assertTrue(api.repo_dir.exists())
         # check git stuff
         repo = Repo(api.repo_dir)
         self.assertFalse(repo.is_dirty())
         self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
         self.assertEqual(len(repo.tags), public_release_count)
         # check contents
-        self.assertTrue(os.path.exists(api.repo_dir / "codemeta.json"))
-        self.assertTrue(os.path.exists(api.repo_dir / "CITATION.cff"))
-        self.assertTrue(os.path.exists(api.repo_dir / "LICENSE"))
+        self.assertTrue((api.repo_dir / "codemeta.json").exists())
+        self.assertTrue((api.repo_dir / "CITATION.cff").exists())
+        self.assertTrue((api.repo_dir / "LICENSE").exists())
         fs_api = self.release_1.get_fs_api()
         fs_api.list(StagingDirectories.sip, FileCategories.code)
         for category in ["code", "data", "docs"]:
@@ -165,9 +164,9 @@ class GitRepoApiTestCase(TestCase):
         self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
         self.assertEqual(len(repo.tags), public_release_count)
         # check contents
-        self.assertTrue(os.path.exists(api.repo_dir / "codemeta.json"))
-        self.assertTrue(os.path.exists(api.repo_dir / "CITATION.cff"))
-        self.assertTrue(os.path.exists(api.repo_dir / "LICENSE"))
+        self.assertTrue((api.repo_dir / "codemeta.json").exists())
+        self.assertTrue((api.repo_dir / "CITATION.cff").exists())
+        self.assertTrue((api.repo_dir / "LICENSE").exists())
         fs_api = self.release_2.get_fs_api()
         fs_api.list(StagingDirectories.sip, FileCategories.code)
         for category in ["code", "data", "docs"]:
@@ -219,9 +218,9 @@ class GitRepoApiTestCase(TestCase):
         self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
         self.assertEqual(len(repo.tags), public_release_count)
         # check contents
-        self.assertTrue(os.path.exists(api.repo_dir / "codemeta.json"))
-        self.assertTrue(os.path.exists(api.repo_dir / "CITATION.cff"))
-        self.assertTrue(os.path.exists(api.repo_dir / "LICENSE"))
+        self.assertTrue((api.repo_dir / "codemeta.json").exists())
+        self.assertTrue((api.repo_dir / "CITATION.cff").exists())
+        self.assertTrue((api.repo_dir / "LICENSE").exists())
         fs_api = self.release_2.get_fs_api()
         fs_api.list(StagingDirectories.sip, FileCategories.code)
         for category in ["code", "data", "docs"]:

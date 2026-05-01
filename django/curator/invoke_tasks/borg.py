@@ -1,5 +1,4 @@
-import os
-import pathlib
+from pathlib import Path
 import shutil
 import tempfile
 
@@ -9,14 +8,14 @@ from invoke import task
 from . import database as db
 from core.utils import confirm
 
-DEFAULT_LIBRARY_BASENAME = os.path.basename(settings.LIBRARY_ROOT)
-DEFAULT_MEDIA_BASENAME = os.path.basename(settings.MEDIA_ROOT)
-DEFAULT_REPOSITORY_BASENAME = os.path.basename(settings.REPOSITORY_ROOT)
+DEFAULT_LIBRARY_BASENAME = Path(settings.LIBRARY_ROOT).name
+DEFAULT_MEDIA_BASENAME = Path(settings.MEDIA_ROOT).name
+DEFAULT_REPOSITORY_BASENAME = Path(settings.REPOSITORY_ROOT).name
 
 
 @task(aliases=["init"])
 def initialize_repo(ctx):
-    if not os.path.exists(settings.BORG_ROOT):
+    if not Path(settings.BORG_ROOT).exists():
         ctx.run(f"borg init --encryption=none {settings.BORG_ROOT}", echo=True)
 
 
@@ -47,19 +46,20 @@ def backup(ctx):
     # Borg recognizes {now} as the current timestamp
     #  http://borgbackup.readthedocs.io/en/stable/usage/help.html#borg-help-placeholders
     archive = "{utcnow}"
-    library = os.path.relpath(settings.LIBRARY_ROOT, share)
-    media = os.path.relpath(settings.MEDIA_ROOT, share)
-    repository = os.path.relpath(settings.REPOSITORY_ROOT, share)
-    database = os.path.relpath(os.path.join(settings.BACKUP_ROOT, "latest"), share)
+    share_path = Path(share)
+    library_root = Path(settings.LIBRARY_ROOT)
+    media_root = Path(settings.MEDIA_ROOT)
+    repository_root = Path(settings.REPOSITORY_ROOT)
+    backup_latest_root = Path(settings.BACKUP_ROOT) / "latest"
+
+    library = library_root.relative_to(share_path)
+    media = media_root.relative_to(share_path)
+    repository = repository_root.relative_to(share_path)
+    database = backup_latest_root.relative_to(share_path)
 
     error_msgs = []
-    for p in (
-        settings.LIBRARY_ROOT,
-        settings.MEDIA_ROOT,
-        settings.REPOSITORY_ROOT,
-        os.path.join(settings.BACKUP_ROOT, "latest"),
-    ):
-        if not os.path.exists(p):
+    for p in (library_root, media_root, repository_root, backup_latest_root):
+        if not p.exists():
             error_msgs.append(f"Path {p} does not exist.")
     if error_msgs:
         raise IOError("Create archive failed. {}".format(" ".join(error_msgs)))
@@ -77,9 +77,10 @@ def delete_latest_uncompressed_backup(
     src_media=DEFAULT_MEDIA_BASENAME,
     src_repository=DEFAULT_REPOSITORY_BASENAME,
 ):
-    latest_dest_library = os.path.join(settings.PREVIOUS_SHARE_ROOT, src_library)
-    latest_dest_media = os.path.join(settings.PREVIOUS_SHARE_ROOT, src_media)
-    latest_dest_repository = os.path.join(settings.PREVIOUS_SHARE_ROOT, src_repository)
+    previous = Path(settings.PREVIOUS_SHARE_ROOT)
+    latest_dest_library = previous / src_library
+    latest_dest_media = previous / src_media
+    latest_dest_repository = previous / src_repository
 
     shutil.rmtree(latest_dest_library, ignore_errors=True)
     shutil.rmtree(latest_dest_media, ignore_errors=True)
@@ -103,20 +104,27 @@ def rotate_library_and_media_files(
         src_library=src_library, src_media=src_media, src_repository=src_repository
     )
 
-    os.makedirs(settings.PREVIOUS_SHARE_ROOT, exist_ok=True)
-    if os.path.exists(settings.LIBRARY_ROOT):
-        shutil.move(settings.LIBRARY_ROOT, settings.PREVIOUS_SHARE_ROOT)
-    if os.path.exists(settings.MEDIA_ROOT):
-        shutil.move(settings.MEDIA_ROOT, settings.PREVIOUS_SHARE_ROOT)
-    if os.path.exists(settings.REPOSITORY_ROOT):
-        shutil.move(settings.REPOSITORY_ROOT, settings.PREVIOUS_SHARE_ROOT)
+    previous = Path(settings.PREVIOUS_SHARE_ROOT)
+    share_root = Path(settings.SHARE_DIR)
+    library_root = Path(settings.LIBRARY_ROOT)
+    media_root = Path(settings.MEDIA_ROOT)
+    repository_root = Path(settings.REPOSITORY_ROOT)
+    working_root = Path(working_directory)
 
-    shutil.move(os.path.join(working_directory, src_library), settings.SHARE_DIR)
-    shutil.move(os.path.join(working_directory, src_media), settings.SHARE_DIR)
+    previous.mkdir(exist_ok=True)
+    if library_root.exists():
+        shutil.move(library_root, previous)
+    if media_root.exists():
+        shutil.move(media_root, previous)
+    if repository_root.exists():
+        shutil.move(repository_root, previous)
+
+    shutil.move(working_root / src_library, share_root)
+    shutil.move(working_root / src_media, share_root)
     # repository dir may not exist in older backups
-    src_repository_path = os.path.join(working_directory, src_repository)
-    if os.path.exists(src_repository_path):
-        shutil.move(src_repository_path, settings.SHARE_DIR)
+    src_repository_path = working_root / src_repository
+    if src_repository_path.exists():
+        shutil.move(src_repository_path, share_root)
 
 
 def environment():
@@ -131,11 +139,8 @@ def _restore_files(working_directory):
 
 
 def _restore_database(ctx, working_directory, target_database):
-    dumpfile_dir = pathlib.Path(
-        os.path.join(
-            working_directory, os.path.basename(settings.BACKUP_ROOT), "latest"
-        )
-    )
+    backup_root_name = Path(settings.BACKUP_ROOT).name
+    dumpfile_dir = Path(working_directory) / backup_root_name / "latest"
     if not dumpfile_dir.exists():
         raise IOError("dumpfile_dir {} not found".format(dumpfile_dir))
     dumpfile = str(list(dumpfile_dir.glob("comsesnet*"))[0])
