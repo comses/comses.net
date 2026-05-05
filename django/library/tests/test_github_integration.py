@@ -1,10 +1,13 @@
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
+from github.GithubException import UnknownObjectException
 
 from core.tests.base import UserFactory
 from library.github_integration import (
+    GitHubApi,
     GitHubRepoValidator,
     GitHubReleaseImporter,
+    _serialize_github_release_listing_item,
 )
 from library.models import (
     CodebaseGitRemote,
@@ -229,5 +232,87 @@ class GitHubReleaseImporterTests(TestCase):
             1,
         )
         mock_fs_api.import_release_package.assert_not_called()
+
+
+class GitHubIntegrationHelpersTests(TestCase):
+    def test_serialize_github_release_listing_item_prefers_raw_data(self):
+        release = MagicMock()
+        release.id = 999
+        release.raw_data = {
+            "id": 12345,
+            "tag_name": "v1.2.3",
+            "name": "Release 1.2.3",
+            "html_url": "https://github.com/acme/repo/releases/tag/v1.2.3",
+            "zipball_url": "https://api.github.com/repos/acme/repo/zipball/v1.2.3",
+            "draft": False,
+            "prerelease": False,
+            "created_at": "2025-01-01T00:00:00Z",
+            "published_at": "2025-01-02T00:00:00Z",
+        }
+
+        data, raw = _serialize_github_release_listing_item(release)
+
+        self.assertEqual(raw["id"], 12345)
+        self.assertEqual(data["id"], "12345")
+        self.assertEqual(data["tag_name"], "v1.2.3")
+        self.assertEqual(data["version"], "1.2.3")
+        self.assertTrue(data["has_semantic_versioning"])
+
+    def test_serialize_github_release_listing_item_falls_back_to_attributes(self):
+        release = MagicMock()
+        release.raw_data = {}
+        release.id = 555
+        release.tag_name = "2.0.1"
+        release.title = None
+        release.name = "Project Release 2.0.1"
+        release.html_url = "https://github.com/acme/repo/releases/tag/2.0.1"
+        release.zipball_url = "https://api.github.com/repos/acme/repo/zipball/2.0.1"
+        release.draft = True
+        release.prerelease = False
+        release.created_at = "2025-03-01T00:00:00Z"
+        release.published_at = "2025-03-02T00:00:00Z"
+
+        data, _ = _serialize_github_release_listing_item(release)
+
+        self.assertEqual(data["id"], "555")
+        self.assertEqual(data["name"], "Project Release 2.0.1")
+        self.assertEqual(data["version"], "2.0.1")
+        self.assertTrue(data["has_semantic_versioning"])
+        self.assertTrue(data["draft"])
+
+    def test_create_release_for_tag_skips_when_release_exists(self):
+        api = GitHubApi.__new__(GitHubApi)
+        api._github_repo = MagicMock()
+        local_repo = MagicMock()
+
+        api._github_repo.get_release.return_value = MagicMock()
+
+        api.create_release_for_tag(local_repo, "v1.0.0")
+
+        api._github_repo.get_release.assert_called_once_with("v1.0.0")
+        api._github_repo.create_git_release.assert_not_called()
+
+    def test_create_release_for_tag_creates_with_tag_message(self):
+        api = GitHubApi.__new__(GitHubApi)
+        api._github_repo = MagicMock()
+        local_repo = MagicMock()
+
+        api._github_repo.get_release.side_effect = UnknownObjectException(
+            404, {"message": "Not Found"}, None
+        )
+        tag = MagicMock()
+        tag.name = "v1.0.0"
+        tag.commit.message = "Release notes"
+        local_repo.tags = [tag]
+
+        api.create_release_for_tag(local_repo, "v1.0.0")
+
+        api._github_repo.create_git_release.assert_called_once_with(
+            "v1.0.0",
+            name="v1.0.0",
+            message="Release notes",
+            draft=False,
+            prerelease=False,
+        )
 
 

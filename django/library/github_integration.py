@@ -90,6 +90,8 @@ class GitHubRepoValidator:
         returns the HTML URL of the repository if it is valid, otherwise raises an error
         """
         token = GitHubApi.get_user_installation_access_token(installation)
+        if not token:
+            raise ValueError("Unable to acquire installation token")
         full_name = f"{installation.github_login}/{self.repo_name}"
         github_repo = GitHubApi.get_existing_repo(token, full_name)
         if github_repo.private:
@@ -107,7 +109,7 @@ class GitHubRepoValidator:
             except GithubException as e:
                 if e.status == 404:
                     return github_repo.html_url
-                raise e
+                raise
         return github_repo.html_url
 
     def _check_installation_access(self, installation: GithubIntegrationAppInstallation) -> None:
@@ -168,12 +170,13 @@ class GitHubApi:
 
     @property
     def installation_access_token(self):
-        if self.is_user_repo:
-            return self.get_user_installation_access_token(self.remote.installation)
-        return self.get_org_installation_access_token()
+        token = self.get_installation_access_token_for_remote(self.remote)
+        if not token:
+            raise ValueError("Unable to acquire installation token")
+        return token
 
     @staticmethod
-    def get_access_token_for_remote(remote: CodebaseGitRemote) -> str | None:
+    def get_installation_access_token_for_remote(remote: CodebaseGitRemote) -> str | None:
         """Return an installation access token appropriate for the given remote."""
         if remote.is_user_repo:
             return GitHubApi.get_user_installation_access_token(
@@ -186,7 +189,7 @@ class GitHubApi:
         remote: CodebaseGitRemote, github_release_id: str | int
     ) -> dict:
         """Fetch a GitHub release raw dict for owner/repo of the remote."""
-        token = GitHubApi.get_access_token_for_remote(remote)
+        token = GitHubApi.get_installation_access_token_for_remote(remote)
         if not token:
             raise ValueError("Unable to acquire installation token")
         gh = Github(token)
@@ -198,7 +201,7 @@ class GitHubApi:
     @staticmethod
     def get_repo_raw_for_remote(remote: CodebaseGitRemote) -> dict:
         """Fetch a GitHub repository raw dict for owner/repo of the remote."""
-        token = GitHubApi.get_access_token_for_remote(remote)
+        token = GitHubApi.get_installation_access_token_for_remote(remote)
         if not token:
             raise ValueError("Unable to acquire installation token")
         gh = Github(token)
@@ -256,7 +259,7 @@ class GitHubApi:
         """get or create the Github repository for a user or organization"""
         try:
             return self.github_repo
-        except:
+        except ValueError:
             if self.is_user_repo:
                 raise ValueError("User-owned repositories must be created beforehand")
             else:
@@ -269,10 +272,10 @@ class GitHubApi:
         github = Github(access_token)
         try:
             return github.get_repo(full_name)
-        except:
+        except UnknownObjectException as exc:
             raise ValueError(
                 f"Github repository https://github.com/{full_name} does not exist or is private"
-            )
+            ) from exc
 
     def _create_org_repo(self):
         """create a new repository in the CoMSES model library organization
@@ -358,8 +361,10 @@ class GitHubApi:
         remote = local_repo.remote(name="origin")
         repo = local_repo
         try:
-            _ = repo.heads[CodebaseGitRepositoryApi.DEFAULT_BRANCH_NAME]
-        except Exception:
+            main_branch = repo.heads[CodebaseGitRepositoryApi.DEFAULT_BRANCH_NAME]
+        except (IndexError, AttributeError):
+            main_branch = None
+        if main_branch is None:
             return  ("", f"[{timezone.now().isoformat()}]: main not found locally")
         success_mask = PushInfo.NEW_HEAD | PushInfo.FAST_FORWARD | PushInfo.UP_TO_DATE
         summaries: list[str] = []
@@ -371,8 +376,30 @@ class GitHubApi:
                     summaries.append("main: did not push")
         if not summaries:
             summaries.append("main: no refs pushed")
-        commit_sha = repo.heads[CodebaseGitRepositoryApi.DEFAULT_BRANCH_NAME].commit.hexsha
+        commit_sha = main_branch.commit.hexsha
         return (commit_sha, f"[{timezone.now().isoformat()}]:\n" + "\n".join(summaries))
+
+    def create_release_for_tag(self, local_repo: GitRepo, tag_name: str):
+        """create a GitHub release for a single tag if it does not already exist"""
+        try:
+            self.github_repo.get_release(tag_name)
+            return
+        except UnknownObjectException:
+            pass
+
+        try:
+            tag = next((t for t in local_repo.tags if t.name == tag_name), None)
+            message = tag.commit.message if tag else ""
+        except (AttributeError, ValueError, TypeError):
+            message = ""
+
+        self.github_repo.create_git_release(
+            tag_name,
+            name=tag_name,
+            message=message or "",
+            draft=False,
+            prerelease=False,
+        )
 
 
 def _coerce_release_datetime(value) -> datetime:
@@ -393,26 +420,36 @@ def _coerce_release_datetime(value) -> datetime:
         return parsed.replace(tzinfo=UTC)
     return default_dt
 
-    def create_release_for_tag(self, local_repo: GitRepo, tag_name: str):
-        """create a GitHub release for a single tag if it does not already exist"""
-        try:
-            self.github_repo.get_release(tag_name)
-            return  # already exists
-        except Exception:
-            pass
-        # try to pull a commit message from local tag for description
-        try:
-            tag = next((t for t in local_repo.tags if t.name == tag_name), None)
-            message = tag.commit.message if tag else ""
-        except Exception:
-            message = ""
-        self.github_repo.create_git_release(
-            tag_name,
-            name=tag_name,
-            message=message or "",
-            draft=False,
-            prerelease=False,
-        )
+
+def _serialize_github_release_listing_item(release) -> tuple[dict, dict]:
+    """Serialize a PyGithub release object into the listing payload shape."""
+    raw = getattr(release, "raw_data", {}) or {}
+    release_id = str(raw.get("id") or getattr(release, "id", ""))
+    tag = raw.get("tag_name") or getattr(release, "tag_name", "") or ""
+    name = (
+        raw.get("name")
+        or getattr(release, "title", None)
+        or getattr(release, "name", "")
+        or ""
+    )
+    version = extract_semver(tag or name or "")
+    data = {
+        "id": release_id,
+        "name": name,
+        "tag_name": tag,
+        "html_url": raw.get("html_url") or getattr(release, "html_url", ""),
+        "zipball_url": raw.get("zipball_url") or getattr(release, "zipball_url", ""),
+        "draft": bool(raw.get("draft", getattr(release, "draft", False))),
+        "prerelease": bool(
+            raw.get("prerelease", getattr(release, "prerelease", False))
+        ),
+        "created_at": raw.get("created_at") or getattr(release, "created_at", None),
+        "published_at": raw.get("published_at")
+        or getattr(release, "published_at", None),
+        "has_semantic_versioning": bool(version),
+        "version": version or "",
+    }
+    return data, raw
 
 
 def list_github_releases_for_remote(remote: CodebaseGitRemote) -> list[dict]:
@@ -423,14 +460,7 @@ def list_github_releases_for_remote(remote: CodebaseGitRemote) -> list[dict]:
 
     includes a `created_by_integration` flag when the release was created (pushed) by the integration app
     """
-    # select appropriate installation token (user vs org)
-    if remote.is_user_repo:
-        token = GitHubApi.get_user_installation_access_token(
-            getattr(remote, "installation", None)
-        )
-    else:
-        token = GitHubApi.get_org_installation_access_token()
-
+    token = GitHubApi.get_installation_access_token_for_remote(remote)
     if not token:
         return []
 
@@ -441,35 +471,8 @@ def list_github_releases_for_remote(remote: CodebaseGitRemote) -> list[dict]:
 
     results: list[dict] = []
     for r in releases:
-        raw = getattr(r, "raw_data", {}) or {}
-        release_id = str(raw.get("id") or getattr(r, "id", ""))
-        tag = (
-            raw.get("tag_name")
-            or getattr(r, "tag_name", "")
-            or getattr(r, "tag_name", "")
-        )
-        name = (
-            raw.get("name") or getattr(r, "title", None) or getattr(r, "name", "") or ""
-        )
-        html_url = raw.get("html_url") or getattr(r, "html_url", "")
-        zipball_url = raw.get("zipball_url") or getattr(r, "zipball_url", "")
-        created_at = raw.get("created_at") or getattr(r, "created_at", None)
-        published_at = raw.get("published_at") or getattr(r, "published_at", None)
-        version = extract_semver(tag or name or "")
-        has_semver = bool(version)
-        data = {
-            "id": release_id,
-            "name": name,
-            "tag_name": tag,
-            "html_url": html_url,
-            "zipball_url": zipball_url,
-            "draft": bool(raw.get("draft", getattr(r, "draft", False))),
-            "prerelease": bool(raw.get("prerelease", getattr(r, "prerelease", False))),
-            "created_at": created_at,
-            "published_at": published_at,
-            "has_semantic_versioning": has_semver,
-            "version": version or "",
-        }
+        data, raw = _serialize_github_release_listing_item(r)
+        release_id = data["id"]
         # annotate whether this release has already been imported for this remote
         imported_state = (
             ImportedReleaseSyncState.objects.filter(
@@ -514,13 +517,11 @@ def _is_release_created_by_integration(
     gh_release_raw: dict, remote: CodebaseGitRemote
 ) -> bool:
     """skip releases created by the integration app"""
-    try:
-        author_login = gh_release_raw.get("author", {}).get("login", "").lower()
-        if slugify(settings.GITHUB_INTEGRATION_APP_NAME) in author_login:
-            return True
-    except Exception:
+    author = gh_release_raw.get("author") or {}
+    if not isinstance(author, dict):
         return False
-    return False
+    author_login = str(author.get("login", "")).lower()
+    return slugify(settings.GITHUB_INTEGRATION_APP_NAME) in author_login
 
 
 def extract_semver(value) -> str | None:

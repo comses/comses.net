@@ -1177,6 +1177,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         )
 
     @property
+    def code_repository(self):
+        git_remote = self.active_git_remote
+        if self.pk and git_remote:
+            return git_remote.url
+        return self.repository_url
+
+    @property
     def is_replication(self):
         return bool(self.replication_text.strip())
 
@@ -3393,9 +3400,7 @@ class CommonMetadata:
             # raise ValueError("Invalid release with no License")
 
         # FIXME: set all of these fields explicitly
-        self.code_repository = (
-            codebase.repository_url or "https://github.com/comses-model-library/"
-        )
+        self.code_repository = codebase.code_repository
         self.permanent_url = release.permanent_url
 
     def convert_keywords(self):
