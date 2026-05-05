@@ -24,6 +24,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+CODEBASE_CONTENT_CATEGORIES = ["code", "data", "docs"]
+
 
 def setUpModule():
     initialize_test_shared_folders()
@@ -84,6 +86,9 @@ class ArchiveExtractorTestCase(TestCase):
         self.assertEqual(level, MessageLevels.error)
         self.assertEqual(len(logs), 1)
 
+    def tearDown(self):
+        clear_test_shared_folder(settings.REPOSITORY_ROOT)
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -105,6 +110,17 @@ class GitRepoApiTestCase(TestCase):
     def tearDown(self):
         clear_test_shared_folder(settings.REPOSITORY_ROOT)
 
+    def _verify_git_repo_status(self, api, release_count):
+        """Verify git repo structure and contents are correct."""
+        repo = Repo(api.repo_dir)
+        self.assertFalse(repo.is_dirty())
+        self.assertEqual(sum(1 for _ in repo.iter_commits()), release_count)
+        self.assertEqual(len(repo.tags), release_count)
+        # check contents
+        self.assertTrue((api.repo_dir / "codemeta.json").exists())
+        self.assertTrue((api.repo_dir / "CITATION.cff").exists())
+        self.assertTrue((api.repo_dir / "LICENSE").exists())
+
     def test_repo_build(self):
         update_release_from_sample(
             self.release_1, self.release_1_dir, version_number="1.0.0"
@@ -120,18 +136,9 @@ class GitRepoApiTestCase(TestCase):
         ).count()
         self.assertEqual(built_releases_count, 1)
         self.assertTrue(api.repo_dir.exists())
-        # check git stuff
-        repo = Repo(api.repo_dir)
-        self.assertFalse(repo.is_dirty())
-        self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
-        self.assertEqual(len(repo.tags), public_release_count)
-        # check contents
-        self.assertTrue((api.repo_dir / "codemeta.json").exists())
-        self.assertTrue((api.repo_dir / "CITATION.cff").exists())
-        self.assertTrue((api.repo_dir / "LICENSE").exists())
+        self._verify_git_repo_status(api, public_release_count)
         fs_api = self.release_1.get_fs_api()
-        fs_api.list(StagingDirectories.sip, FileCategories.code)
-        for category in ["code", "data", "docs"]:
+        for category in CODEBASE_CONTENT_CATEGORIES:
             self.assertTrue(
                 api.dirs_equal(
                     fs_api.sip_contents_dir / category,
@@ -157,19 +164,10 @@ class GitRepoApiTestCase(TestCase):
             release__codebase=self.codebase, built_commit_sha__isnull=False
         ).count()
         self.assertEqual(built_releases_count, 2)
-        # check git stuff
-        repo = Repo(api.repo_dir)
-        self.assertFalse(repo.is_dirty())
         public_release_count = self.codebase.releases.public().count()
-        self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
-        self.assertEqual(len(repo.tags), public_release_count)
-        # check contents
-        self.assertTrue((api.repo_dir / "codemeta.json").exists())
-        self.assertTrue((api.repo_dir / "CITATION.cff").exists())
-        self.assertTrue((api.repo_dir / "LICENSE").exists())
+        self._verify_git_repo_status(api, public_release_count)
         fs_api = self.release_2.get_fs_api()
-        fs_api.list(StagingDirectories.sip, FileCategories.code)
-        for category in ["code", "data", "docs"]:
+        for category in CODEBASE_CONTENT_CATEGORIES:
             self.assertTrue(
                 api.dirs_equal(
                     fs_api.sip_contents_dir / category,
@@ -211,19 +209,10 @@ class GitRepoApiTestCase(TestCase):
             release__codebase=self.codebase, built_commit_sha__isnull=False
         ).count()
         self.assertEqual(built_releases_count, 2)
-        # check git stuff
-        repo = Repo(api.repo_dir)
-        self.assertFalse(repo.is_dirty())
         public_release_count = self.codebase.releases.public().count()
-        self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
-        self.assertEqual(len(repo.tags), public_release_count)
-        # check contents
-        self.assertTrue((api.repo_dir / "codemeta.json").exists())
-        self.assertTrue((api.repo_dir / "CITATION.cff").exists())
-        self.assertTrue((api.repo_dir / "LICENSE").exists())
+        self._verify_git_repo_status(api, public_release_count)
         fs_api = self.release_2.get_fs_api()
-        fs_api.list(StagingDirectories.sip, FileCategories.code)
-        for category in ["code", "data", "docs"]:
+        for category in CODEBASE_CONTENT_CATEGORIES:
             self.assertTrue(
                 api.dirs_equal(
                     fs_api.sip_contents_dir / category,
@@ -258,6 +247,6 @@ def update_release_from_sample(release, sample_dir, version_number):
     release.version_number = version_number
     release.save()
     fs_api = release.get_fs_api()
-    for category in ["code", "data", "docs"]:
+    for category in CODEBASE_CONTENT_CATEGORIES:
         upload_category(fs_api, sample_dir, category)
     return release
