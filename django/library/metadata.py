@@ -551,12 +551,19 @@ def coerce_codemeta(
         try:
             return CodeMeta(**codemeta)
         except Exception:
+            logger.exception("Error when parsing codemeta from dict: %s", codemeta)
             return None
     if codemeta is None:
         if codebase:
             return CodeMetaConverter.convert_codebase(codebase)
         elif release:
             return CodeMetaConverter.convert_release(release)
+    logger.debug(
+        "unable to coerce codemeta from inputs: codemeta=%s, codebase=%s, release=%s",
+        codemeta,
+        codebase,
+        release,
+    )
     return None
 
 
@@ -576,8 +583,10 @@ def coerce_cff(
         try:
             return CitationFileFormat(**cff)
         except Exception:
+            logger.exception("Error when parsing cff from dict: %s", cff)
             return None
     if cff is None:
         if release:
             return CitationFileFormatConverter.convert_release(release)
+    logger.debug("unable to coerce cff from inputs: cff=%s, release=%s", cff, release)
     return None
