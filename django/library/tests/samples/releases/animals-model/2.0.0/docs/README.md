@@ -1,0 +1,5 @@
+# instructions:
+
+```
+python model.py
+```

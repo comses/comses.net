@@ -1,0 +1,377 @@
+from unittest.mock import patch, MagicMock
+from django.test import TestCase
+from github.GithubException import UnknownObjectException
+
+from core.tests.base import UserFactory
+from library.github_integration import (
+    GitHubApi,
+    GitHubRepoValidator,
+    GitHubReleaseImporter,
+    _serialize_github_release_listing_item,
+    extract_semver,
+)
+from library.models import (
+    CodebaseGitRemote,
+    GithubIntegrationAppInstallation,
+    CodebaseRelease,
+    ImportedReleaseSyncState,
+)
+from library.tests.base import CodebaseFactory
+
+SAMPLE_PAYLOAD = {
+    "action": "released",
+    "release": {
+        "id": 12345,
+        "tag_name": "v1.0.0",
+        "name": "Version 1.0.0",
+        "body": "Initial release",
+        "draft": False,
+        "prerelease": False,
+        "zipball_url": "https://api.github.com/repos/testuser/test-repo/zipball/v1.0.0",
+        "html_url": "https://github.com/testuser/test-repo/releases/tag/v1.0.0",
+    },
+    "repository": {
+        "name": "test-repo",
+        "owner": {"login": "testuser"},
+        "private": False,
+    },
+    "installation": {"id": 54321},
+}
+
+
+class GitHubRepoValidatorTests(TestCase):
+    def setUp(self):
+        # set up a user and installation for testing validator methods
+        self.user = UserFactory().create()
+        self.installation = GithubIntegrationAppInstallation.objects.create(
+            user=self.user,
+            github_login="testuser",
+            installation_id=1,
+            github_user_id=123,
+        )
+
+    def test_validate_format(self):
+        # test valid repo names
+        for name in ["repo", "repo-1", "repo.1", "my_repo"]:
+            with self.subTest(name=name):
+                validator = GitHubRepoValidator(name)
+                self.assertIsNone(validator.validate_format())
+
+        # test invalid repo names
+        for name in [
+            "repo with space",
+            "repo!",
+            "a" * 101,
+            "repo.git",
+            "contains-github",
+        ]:
+            with self.subTest(name=name):
+                validator = GitHubRepoValidator(name)
+                with self.assertRaises(ValueError):
+                    validator.validate_format()
+
+
+class GitHubReleaseImporterTests(TestCase):
+    def setUp(self):
+        # set up a user, codebase, and remote for importing releases
+        self.user = UserFactory().create()
+        self.installation = GithubIntegrationAppInstallation.objects.create(
+            user=self.user,
+            github_login="testuser",
+            installation_id=54321,
+            github_user_id=123,
+        )
+        self.codebase = CodebaseFactory(submitter=self.user).create()
+        self.remote = CodebaseGitRemote.objects.create(
+            codebase=self.codebase,
+            owner="testuser",
+            repo_name="test-repo",
+            is_user_repo=True,
+            is_active=True,
+        )
+        self.payload = SAMPLE_PAYLOAD.copy()
+        # create sync state from payload
+        self.sync_state = ImportedReleaseSyncState.for_github_release(
+            self.remote, self.payload["release"]
+        )
+
+    def create_importer(self, github_release_id="12345"):
+        return GitHubReleaseImporter(self.remote, github_release_id)
+
+    def test_init_success(self):
+        # should initialize successfully with a valid remote and release id
+        importer = self.create_importer("12345")
+        self.assertEqual(importer.github_release_id, "12345")
+        self.assertEqual(importer.codebase, self.codebase)
+
+    def test_init_failures(self):
+        # test various invalid scenarios that should raise ValueError
+        # missing sync state
+        with self.assertRaises(ValueError):
+            self.create_importer("99999")
+        
+        # sync state without download_url
+        ImportedReleaseSyncState.objects.create(
+            remote=self.remote,
+            github_release_id="88888",
+            download_url="",  # empty download url
+        )
+        with self.assertRaises(ValueError):
+            self.create_importer("88888")
+
+    def test_extract_semver(self):
+        # delegate test, see ExtractSemverTests for exhaustive coverage
+        importer = self.create_importer("12345")
+        self.assertEqual(importer.extract_semver("v1.2.3"), "1.2.3")
+
+    @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
+    @patch("library.models.CodebaseRelease.get_fs_api")
+    @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
+    def test_import_new_release(self, mock_get_token, mock_get_fs_api, mock_get_repo):
+        # mock token and fs_api calls
+        mock_get_token.return_value = "fake-token"
+        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
+        mock_fs_api = MagicMock()
+        mock_fs_api.import_release_package.return_value = ({}, {})  # codemeta, cff
+        mock_get_fs_api.return_value = mock_fs_api
+
+        # import a new release
+        importer = self.create_importer("12345")
+        success = importer.import_new_release()
+
+        # check that it was successful and objects were created
+        self.assertTrue(success)
+        self.assertTrue(
+            CodebaseRelease.objects.filter(
+                codebase=self.codebase, version_number="1.0.0"
+            ).exists()
+        )
+        release = CodebaseRelease.objects.get(version_number="1.0.0")
+        self.assertEqual(release.imported_release_sync_state.github_release_id, "12345")
+        self.assertEqual(release.submitter, self.codebase.submitter)
+        mock_fs_api.import_release_package.assert_called_once()
+
+    @patch("library.github_integration.GitHubApi.get_release_raw_for_remote")
+    @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
+    @patch("library.models.CodebaseRelease.get_fs_api")
+    @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
+    def test_reimport_release(self, mock_get_token, mock_get_fs_api, mock_get_repo, mock_get_release):
+        # mock token and fs_api calls
+        mock_get_token.return_value = "fake-token"
+        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
+        mock_fs_api = MagicMock()
+        mock_fs_api.import_release_package.return_value = ({}, {})  # codemeta, cff
+        mock_get_fs_api.return_value = mock_fs_api
+
+        # first, import a new release
+        importer = self.create_importer("12345")
+        importer.import_or_reimport()
+
+        self.assertEqual(CodebaseRelease.objects.count(), 1)
+        release = CodebaseRelease.objects.first()
+        self.assertEqual(
+            release.imported_release_sync_state.download_url,
+            "https://api.github.com/repos/testuser/test-repo/zipball/v1.0.0",
+        )
+
+        # now, create a new importer with an updated payload for an "edited" event
+        reimport_payload = self.payload.copy()
+        reimport_payload["action"] = "edited"
+        reimport_payload["release"] = reimport_payload["release"].copy()
+        new_url = (
+            "https://api.github.com/repos/testuser/test-repo/zipball/v1.0.0-updated"
+        )
+        reimport_payload["release"]["zipball_url"] = new_url
+        # mock get_release_raw_for_remote to return the updated payload
+        mock_get_release.return_value = reimport_payload["release"]
+
+        importer2 = self.create_importer("12345")
+        success = importer2.import_or_reimport()
+
+        # assert that the re-import was successful and the release was updated
+        self.assertTrue(success)
+        self.assertEqual(mock_fs_api.import_release_package.call_count, 2)
+
+        release.refresh_from_db()
+        self.assertEqual(release.imported_release_sync_state.download_url, new_url)
+        # release version number should NOT have changed
+        self.assertEqual(release.version_number, "1.0.0")
+
+    @patch("library.github_integration.GitHubApi.get_release_raw_for_remote")
+    @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
+    @patch("library.models.CodebaseRelease.get_fs_api")
+    @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
+    def test_reimport_skips_when_download_url_unchanged(
+        self, mock_get_token, mock_get_fs_api, mock_get_repo, mock_get_release
+    ):
+        # when the zipball URL has not changed, reimport_release should detect no
+        # changes and return without calling import_release_package
+        mock_get_token.return_value = "fake-token"
+        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
+        mock_fs_api = MagicMock()
+        mock_fs_api.import_release_package.return_value = ({}, {})
+        mock_get_fs_api.return_value = mock_fs_api
+
+        # perform an initial import so a linked release exists
+        importer = self.create_importer("12345")
+        first_success = importer.import_or_reimport()
+        self.assertTrue(first_success)
+        self.assertEqual(mock_fs_api.import_release_package.call_count, 1)
+
+        # mock get_release to return the same zipball_url as the cached sync state
+        original_url = self.sync_state.download_url
+        mock_get_release.return_value = {
+            "id": 12345,
+            "tag_name": "v1.0.0",
+            "name": "Version 1.0.0",
+            "zipball_url": original_url,
+            "html_url": "https://github.com/testuser/test-repo/releases/tag/v1.0.0",
+        }
+
+        importer2 = self.create_importer("12345")
+        success = importer2.import_or_reimport()
+
+        # import_release_package must NOT be called a second time
+        self.assertTrue(success)
+        self.assertEqual(mock_fs_api.import_release_package.call_count, 1)
+
+    @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
+    @patch("library.models.CodebaseRelease.get_fs_api")
+    @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
+    def test_import_new_release_version_collision(
+        self, mock_get_token, mock_get_fs_api, mock_get_repo
+    ):
+        # even with valid metadata/api mocks, import should fail when version already exists
+        mock_get_token.return_value = "fake-token"
+        mock_get_repo.return_value = {
+            "name": "test-repo",
+            "full_name": "testuser/test-repo",
+        }
+        mock_fs_api = MagicMock()
+        mock_fs_api.import_release_package.return_value = ({}, {})
+        mock_get_fs_api.return_value = mock_fs_api
+
+        existing_release = self.codebase.create_release()
+        existing_release.version_number = "1.0.0"
+        existing_release.save()
+
+        importer = self.create_importer("12345")
+        success = importer.import_new_release()
+
+        self.assertFalse(success)
+        self.assertEqual(
+            CodebaseRelease.objects.filter(codebase=self.codebase, version_number="1.0.0").count(),
+            1,
+        )
+        mock_fs_api.import_release_package.assert_not_called()
+
+
+class ExtractSemverTests(TestCase):
+    def test_standard_version(self):
+        self.assertEqual(extract_semver("1.2.3"), "1.2.3")
+
+    def test_leading_v(self):
+        self.assertEqual(extract_semver("v1.2.3"), "1.2.3")
+
+    def test_embedded_in_string(self):
+        self.assertEqual(extract_semver("version 1.2.3-beta"), "1.2.3")
+
+    def test_two_part_version_returns_none(self):
+        self.assertIsNone(extract_semver("1.2"))
+
+    def test_non_version_string_returns_none(self):
+        self.assertIsNone(extract_semver("invalid-version"))
+
+    def test_empty_string_returns_none(self):
+        self.assertIsNone(extract_semver(""))
+
+    def test_non_string_returns_none(self):
+        self.assertIsNone(extract_semver(None))
+        self.assertIsNone(extract_semver(123))
+
+    def test_oversized_input_returns_none(self):
+        self.assertIsNone(extract_semver("1.2.3" * 300))
+
+
+class GitHubIntegrationHelpersTests(TestCase):
+    def test_serialize_github_release_listing_item_prefers_raw_data(self):
+        release = MagicMock()
+        release.id = 999
+        release.raw_data = {
+            "id": 12345,
+            "tag_name": "v1.2.3",
+            "name": "Release 1.2.3",
+            "html_url": "https://github.com/acme/repo/releases/tag/v1.2.3",
+            "zipball_url": "https://api.github.com/repos/acme/repo/zipball/v1.2.3",
+            "draft": False,
+            "prerelease": False,
+            "created_at": "2025-01-01T00:00:00Z",
+            "published_at": "2025-01-02T00:00:00Z",
+        }
+
+        data, raw = _serialize_github_release_listing_item(release)
+
+        self.assertEqual(raw["id"], 12345)
+        self.assertEqual(data["id"], "12345")
+        self.assertEqual(data["tag_name"], "v1.2.3")
+        self.assertEqual(data["version"], "1.2.3")
+        self.assertTrue(data["has_semantic_versioning"])
+
+    def test_serialize_github_release_listing_item_falls_back_to_attributes(self):
+        release = MagicMock()
+        release.raw_data = {}
+        release.id = 555
+        release.tag_name = "2.0.1"
+        release.title = None
+        release.name = "Project Release 2.0.1"
+        release.html_url = "https://github.com/acme/repo/releases/tag/2.0.1"
+        release.zipball_url = "https://api.github.com/repos/acme/repo/zipball/2.0.1"
+        release.draft = True
+        release.prerelease = False
+        release.created_at = "2025-03-01T00:00:00Z"
+        release.published_at = "2025-03-02T00:00:00Z"
+
+        data, _ = _serialize_github_release_listing_item(release)
+
+        self.assertEqual(data["id"], "555")
+        self.assertEqual(data["name"], "Project Release 2.0.1")
+        self.assertEqual(data["version"], "2.0.1")
+        self.assertTrue(data["has_semantic_versioning"])
+        self.assertTrue(data["draft"])
+
+    def test_create_release_for_tag_skips_when_release_exists(self):
+        api = GitHubApi.__new__(GitHubApi)
+        api._github_repo = MagicMock()
+        local_repo = MagicMock()
+
+        api._github_repo.get_release.return_value = MagicMock()
+
+        api.create_release_for_tag(local_repo, "v1.0.0")
+
+        api._github_repo.get_release.assert_called_once_with("v1.0.0")
+        api._github_repo.create_git_release.assert_not_called()
+
+    def test_create_release_for_tag_creates_with_tag_message(self):
+        api = GitHubApi.__new__(GitHubApi)
+        api._github_repo = MagicMock()
+        local_repo = MagicMock()
+
+        api._github_repo.get_release.side_effect = UnknownObjectException(
+            404, {"message": "Not Found"}, None
+        )
+        tag = MagicMock()
+        tag.name = "v1.0.0"
+        tag.commit.message = "Release notes"
+        local_repo.tags = [tag]
+
+        api.create_release_for_tag(local_repo, "v1.0.0")
+
+        api._github_repo.create_git_release.assert_called_once_with(
+            "v1.0.0",
+            name="v1.0.0",
+            message="Release notes",
+            draft=False,
+            prerelease=False,
+        )
+
+

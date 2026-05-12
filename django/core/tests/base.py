@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 import logging
-import os
 import shlex
 import shutil
 import subprocess
@@ -179,7 +179,7 @@ def initialize_test_shared_folders():
         settings.BACKUP_ROOT,
         settings.MEDIA_ROOT,
     ]:
-        os.makedirs(d, exist_ok=True)
+        Path(d).mkdir(parents=True, exist_ok=True)
 
     subprocess.run(
         shlex.split("borg init --encryption=none {}".format(settings.BORG_ROOT)),
@@ -187,5 +187,13 @@ def initialize_test_shared_folders():
     )
 
 
+def clear_test_shared_folder(dir=settings.REPOSITORY_ROOT):
+    for fs in Path(dir).iterdir():
+        if fs.is_dir():
+            shutil.rmtree(fs, ignore_errors=True)
+        elif fs.is_file():
+            fs.unlink()
+
+
 def destroy_test_shared_folders():
-    shutil.rmtree(settings.SHARE_DIR, ignore_errors=True)
+    shutil.rmtree(Path(settings.SHARE_DIR), ignore_errors=True)

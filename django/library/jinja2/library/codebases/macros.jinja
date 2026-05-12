@@ -109,3 +109,9 @@
         </div>
     </div>
 {% endmacro %}
+
+{% macro imported_release_indicator(release) %}
+    {% if release.is_imported %}
+        <i class="small text-muted fab fa-github" title="This release was imported from GitHub"></i>
+    {% endif %}
+{% endmacro %}

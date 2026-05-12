@@ -15,6 +15,7 @@
     data-review-status="{{ release.get_review().get_status_display() if release.get_review() else 'Unreviewed' }}"
     data-is-live="{{ release.live }}"
     data-can-edit-originals="{{ release.can_edit_originals }}"
+    data-is-imported="{{ release.is_imported }}"
     >
 </div>
 {% endif %}

@@ -30,7 +30,7 @@
       v-if="clearAllFilters"
       type="button"
       :class="{ disabled: isClearingFiltersLoading || isApplyingFiltersLoading }"
-      class="btn btn-secondary mt-2 w-100"
+      class="btn btn-outline-gray mt-2 w-100"
       v-on:click="isClearingFiltersLoading = true"
       @click="clearAllFilters"
     >
