@@ -607,25 +607,27 @@ class CodebaseReleasePublishTestCase(TestCase):
 
 class CodebaseRenderPageTestCase(TestCase):
     def setUp(self):
-        user_factory = UserFactory()
-        self.submitter = user_factory.create()
+        self.user_factory = UserFactory()
+        self.submitter = self.user_factory.create()
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
+        self.codebase.create_release(
+            status=CodebaseRelease.Status.PUBLISHED, initialize=False
+        )
 
     def test_list(self):
         response = self.client.get(
             reverse(
-                "library:codebase-detail",
-                kwargs={"identifier": self.codebase.identifier},
+                "library:codebase-list"
             )
         )
-        self.assertTrue(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
 
 class CodebaseReleaseRenderPageTestCase(TestCase):
     def setUp(self):
-        user_factory = UserFactory()
-        self.submitter = user_factory.create()
+        self.user_factory = UserFactory()
+        self.submitter = self.user_factory.create()
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         contributor_factory = ContributorFactory(user=self.submitter)
         contributor = contributor_factory.create(user=self.submitter)
@@ -638,6 +640,9 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
         release_contributor_factory.create(contributor=contributor)
 
     def test_detail(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
         response = self.client.get(
             reverse(
                 "library:codebaserelease-detail",
@@ -647,7 +652,7 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
                 },
             )
         )
-        self.assertTrue(response.status_code, True)
+        self.assertEqual(response.status_code, 200)
 
 
 class CodebaseSearchTestCase(TestCase):
@@ -766,7 +771,7 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         self.assertFalse(form.is_valid())
 
 
-class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase):
+class GitHubWebhookTestCase(ResponseStatusCodesMixin, TestCase):
     def setUp(self):
         self.user_factory = UserFactory()
         self.user = self.user_factory.create()
@@ -778,7 +783,7 @@ class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase)
         body = json.dumps(payload).encode("utf-8")
         return self._create_signed_raw_request(body, signature=signature)
 
-    def _create_signed_raw_request(self, body, signature=None):
+    def _create_signed_raw_request(self, body, signature=None, event="installation"):
         if signature is None:
             hash_object = hmac.new(
                 self.secret.encode("utf-8"), msg=body, digestmod=hashlib.sha256
@@ -788,7 +793,7 @@ class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase)
             self.path,
             data=body,
             content_type="application/json",
-            HTTP_X_GITHUB_EVENT="installation",
+            HTTP_X_GITHUB_EVENT=event,
             HTTP_X_HUB_SIGNATURE_256=signature,
         )
         return request
@@ -886,6 +891,56 @@ class GitHubWebhookTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase)
         request = self._create_signed_request(payload)
         response = github_sync_webhook(request)
         self.assertEqual(response.status_code, 400)
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_missing_signature_header_returns_403(self):
+        # requests that omit the signature header entirely must be rejected
+        body = json.dumps({"action": "created"}).encode("utf-8")
+        request = self.factory.post(
+            self.path,
+            data=body,
+            content_type="application/json",
+            HTTP_X_GITHUB_EVENT="installation",
+            # deliberately no HTTP_X_HUB_SIGNATURE_256
+        )
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 403)
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_installation_webhook_deletes_installation(self):
+        # action=deleted removes the installation record matched by user (via social account uid),
+        # NOT by installation_id — the id in the payload is parsed but unused by the delete path.
+        SocialAccount.objects.create(
+            user=self.user,
+            provider="github",
+            uid="54321",
+        )
+        GithubIntegrationAppInstallation.objects.create(
+            user=self.user,
+            installation_id=12345,
+            github_user_id=54321,
+            github_login="testuser",
+        )
+        # use a mismatched installation id to confirm deletion is keyed on user, not installation_id
+        payload = {
+            "action": "deleted",
+            "installation": {"id": 99999},
+            "sender": {"id": 54321, "login": "testuser"},
+        }
+        request = self._create_signed_request(payload)
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            GithubIntegrationAppInstallation.objects.filter(user=self.user).exists()
+        )
+
+    @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
+    def test_non_installation_event_returns_202(self):
+        # unrecognised event types should be acknowledged but ignored
+        body = json.dumps({"action": "opened"}).encode("utf-8")
+        request = self._create_signed_raw_request(body, event="pull_request")
+        response = github_sync_webhook(request)
+        self.assertEqual(response.status_code, 202)
 
 
 def tearDownModule():

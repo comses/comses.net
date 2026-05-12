@@ -8,6 +8,7 @@ from library.github_integration import (
     GitHubRepoValidator,
     GitHubReleaseImporter,
     _serialize_github_release_listing_item,
+    extract_semver,
 )
 from library.models import (
     CodebaseGitRemote,
@@ -119,13 +120,9 @@ class GitHubReleaseImporterTests(TestCase):
             self.create_importer("88888")
 
     def test_extract_semver(self):
-        # test semantic version extraction
+        # delegate test, see ExtractSemverTests for exhaustive coverage
         importer = self.create_importer("12345")
         self.assertEqual(importer.extract_semver("v1.2.3"), "1.2.3")
-        self.assertEqual(importer.extract_semver("1.2.3"), "1.2.3")
-        self.assertEqual(importer.extract_semver("version 1.2.3-beta"), "1.2.3")
-        self.assertIsNone(importer.extract_semver("1.2"))
-        self.assertIsNone(importer.extract_semver("invalid-version"))
 
     @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
     @patch("library.models.CodebaseRelease.get_fs_api")
@@ -197,11 +194,46 @@ class GitHubReleaseImporterTests(TestCase):
 
         release.refresh_from_db()
         self.assertEqual(release.imported_release_sync_state.download_url, new_url)
-
-        self.remote.refresh_from_db()
-
         # release version number should NOT have changed
         self.assertEqual(release.version_number, "1.0.0")
+
+    @patch("library.github_integration.GitHubApi.get_release_raw_for_remote")
+    @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
+    @patch("library.models.CodebaseRelease.get_fs_api")
+    @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
+    def test_reimport_skips_when_download_url_unchanged(
+        self, mock_get_token, mock_get_fs_api, mock_get_repo, mock_get_release
+    ):
+        # when the zipball URL has not changed, reimport_release should detect no
+        # changes and return without calling import_release_package
+        mock_get_token.return_value = "fake-token"
+        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
+        mock_fs_api = MagicMock()
+        mock_fs_api.import_release_package.return_value = ({}, {})
+        mock_get_fs_api.return_value = mock_fs_api
+
+        # perform an initial import so a linked release exists
+        importer = self.create_importer("12345")
+        first_success = importer.import_or_reimport()
+        self.assertTrue(first_success)
+        self.assertEqual(mock_fs_api.import_release_package.call_count, 1)
+
+        # mock get_release to return the same zipball_url as the cached sync state
+        original_url = self.sync_state.download_url
+        mock_get_release.return_value = {
+            "id": 12345,
+            "tag_name": "v1.0.0",
+            "name": "Version 1.0.0",
+            "zipball_url": original_url,
+            "html_url": "https://github.com/testuser/test-repo/releases/tag/v1.0.0",
+        }
+
+        importer2 = self.create_importer("12345")
+        success = importer2.import_or_reimport()
+
+        # import_release_package must NOT be called a second time
+        self.assertTrue(success)
+        self.assertEqual(mock_fs_api.import_release_package.call_count, 1)
 
     @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
     @patch("library.models.CodebaseRelease.get_fs_api")
@@ -232,6 +264,33 @@ class GitHubReleaseImporterTests(TestCase):
             1,
         )
         mock_fs_api.import_release_package.assert_not_called()
+
+
+class ExtractSemverTests(TestCase):
+    def test_standard_version(self):
+        self.assertEqual(extract_semver("1.2.3"), "1.2.3")
+
+    def test_leading_v(self):
+        self.assertEqual(extract_semver("v1.2.3"), "1.2.3")
+
+    def test_embedded_in_string(self):
+        self.assertEqual(extract_semver("version 1.2.3-beta"), "1.2.3")
+
+    def test_two_part_version_returns_none(self):
+        self.assertIsNone(extract_semver("1.2"))
+
+    def test_non_version_string_returns_none(self):
+        self.assertIsNone(extract_semver("invalid-version"))
+
+    def test_empty_string_returns_none(self):
+        self.assertIsNone(extract_semver(""))
+
+    def test_non_string_returns_none(self):
+        self.assertIsNone(extract_semver(None))
+        self.assertIsNone(extract_semver(123))
+
+    def test_oversized_input_returns_none(self):
+        self.assertIsNone(extract_semver("1.2.3" * 300))
 
 
 class GitHubIntegrationHelpersTests(TestCase):
