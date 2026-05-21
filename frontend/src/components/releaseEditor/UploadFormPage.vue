@@ -2,19 +2,17 @@
   <div>
     <p v-if="store.release.canEditOriginals">
       A codebase release should ideally include the source code, documentation, input data and
-      dependencies necessary for someone else (including your future self) to understand, replicate,
-      or reuse the model. Please note that we impose a specific directory structure to organize your
-      uploaded files - you can view the active filesystem layout below. Source code is placed in
-      <code>project-root/code/</code>, data files are placed in <code>project-root/data/</code>, and
-      documentation files are placed in <code>project-root/docs/</code>, and simulation outputs are
-      placed in <code>project-root/results/</code>. This means that if your source code has
-      references to your uploaded data files you should consider using the relative path
-      <code>../data/&lt;datafile&gt;</code> to access those data files. This will make the lives of
-      others wishing to review, download and run your model easier.
+      dependencies necessary for someone else to understand, replicate, or reuse the model. Please
+      note the active filesystem layout used to organize your files. Uploaded source code are placed
+      in <code>project-root/code/</code>, data files go in <code>project-root/data/</code>,
+      documentation files go in <code>project-root/docs/</code>, and simulation outputs go in
+      <code>project-root/results/</code>. If your source code references uploaded data files please
+      consider using the relative path <code>../data/&lt;datafile&gt;</code> to access those data
+      files. This will make it easier for others to download, run, and review your model.
     </p>
     <p v-else>
-      Below is the current filesystem layout of the archival package. Since this release has already
-      been published, the files can no longer be edited.
+      The current filesystem layout of your published model is shown below. This release has already
+      been published so files are no longer editable.
     </p>
     <div class="card card-body bg-light">
       <h3 class="card-title">Current Archival Package Filesystem Layout</h3>
@@ -114,8 +112,8 @@ const configs: Config[] = [
     acceptedFileTypes: "*/*",
     title: "Upload Source Code (required)",
     instructions: `Upload a single plaintext source code file (e.g., a NetLogo .nlogo file) or a tarball or zip archive of
-            plaintext source code representing your codebase. A submitted archive will be unpacked with all files within
-            the archive extracted during the publishing process. System files will be removed but the archive's original
+            plaintext source code representing your codebase. Submitted archives are unpacked with all files within
+            the archive extracted during the publishing process. System files may be removed but your archive's original
             directory structure will be preserved. All file types are currently accepted though files should be stored
             in open or plaintext formats. We reserve the right to curate and remove executables, binaries, or
             inappropriate content.`,
@@ -125,9 +123,8 @@ const configs: Config[] = [
     acceptedFileTypes: "*/*",
     title: "Upload Narrative Documentation (required)",
     instructions: `Upload narrative documentation that comprehensively describes your computational model. The ODD
-            Protocol, although designed for individual based or agent based simulation models, may still serve as a
-            useful reference for properly describing your computational model. Effective narrative documentation often
-            includes equations, pseudocode, and flow diagrams. Only plain text formats are accepted and include
+            Protocol, although designed for individual based or agent based simulation models, may serve as a
+            useful reference for properly describing your computational model. Effective narrative documentation includes equations, pseudocode, and flow diagrams. Only open plaintext formats are accepted and include
             Markdown, OpenDocument Text files (ODT), and PDF documents.`,
   },
   {

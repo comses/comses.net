@@ -32,7 +32,7 @@ include .env
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
-	docker compose build --pull -q
+	docker compose --progress=plain build --pull --parallel
 
 $(BORG_REPO_PATH):
 	wget -c ${BORG_REPO_URL} -P ${BUILD_DIR}
