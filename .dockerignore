@@ -5,3 +5,5 @@ build
 incoming
 docker
 *.zip
+logs
+backups
