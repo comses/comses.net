@@ -92,7 +92,10 @@ from .models import (
 )
 from wagtail.models import Site
 from .models import GitRefSyncState, ImportedReleaseSyncState
-from .permissions import CodebaseReleaseUnpublishedFilePermissions, GitHubIntegrationPermission
+from .permissions import (
+    CodebaseReleaseUnpublishedFilePermissions,
+    GitHubIntegrationPermission,
+)
 from .serializers import (
     CodebaseGitRemoteSerializer,
     CodebaseSerializer,
@@ -110,7 +113,11 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
-from .tasks import import_github_release_task, push_all_releases_to_github, build_local_git_repo
+from .tasks import (
+    import_github_release_task,
+    push_all_releases_to_github,
+    build_local_git_repo,
+)
 
 import logging
 import pathlib
@@ -651,9 +658,13 @@ class CodebaseGitRemoteViewSet(
     def _forward_integrity_error(self, e: IntegrityError):
         msg = str(e)
         if "single_active_remote" in msg:
-            raise ValidationError("There can only be one active repository for a codebase at a time.")
+            raise ValidationError(
+                "There can only be one active repository for a codebase at a time."
+            )
         else:
-            raise ValidationError("This repository is already connected to another model.")
+            raise ValidationError(
+                "This repository is already connected to another model."
+            )
 
     def update(self, request, *args, **kwargs):
         try:
@@ -693,7 +704,9 @@ class CodebaseGitRemoteViewSet(
             Q(release__codebase=codebase) | Q(codebase=codebase),
             status=GitRefSyncState.Status.RUNNING,
         ).exists():
-            raise ValidationError("Push already in progress for this codebase. Please wait.")
+            raise ValidationError(
+                "Push already in progress for this codebase. Please wait."
+            )
 
         # start all push jobs for this remote (set remotes and mark running)
         started = GitRefSyncState.start_all_push_jobs_for_codebase(
@@ -718,9 +731,8 @@ class CodebaseGitRemoteViewSet(
     def local_releases(self, request, *args, **kwargs):
         """Return all local releases for this codebase with git ref sync states."""
         codebase = self.get_codebase()
-        qs = (
-            CodebaseRelease.objects.filter(codebase=codebase)
-            .select_related("codebase", "git_ref_sync_state")
+        qs = CodebaseRelease.objects.filter(codebase=codebase).select_related(
+            "codebase", "git_ref_sync_state"
         )
         releases = list(qs)
         releases.sort(key=lambda r: Version(r.version_number), reverse=True)
@@ -745,7 +757,9 @@ class CodebaseGitRemoteViewSet(
             return Response(releases, status=status.HTTP_200_OK)
         except Exception as e:
             logger.exception("Failed to fetch GitHub releases: %s", e)
-            raise ValidationError("Unable to fetch GitHub releases for the active remote")
+            raise ValidationError(
+                "Unable to fetch GitHub releases for the active remote"
+            )
 
     @action(detail=False, methods=["post"])
     def import_github_release(self, request, *args, **kwargs):
@@ -779,11 +793,9 @@ class CodebaseGitRemoteViewSet(
                 )
             custom_version = parsed_version
         # require existing sync state
-        sync_state = (
-            ImportedReleaseSyncState.objects.filter(
-                remote=active_remote, github_release_id=str(github_release_id)
-            ).first()
-        )
+        sync_state = ImportedReleaseSyncState.objects.filter(
+            remote=active_remote, github_release_id=str(github_release_id)
+        ).first()
         if not sync_state:
             raise ValidationError(
                 "Import not prepared. refresh GitHub releases and try again."
@@ -827,7 +839,9 @@ class CodebaseGitRemoteViewSet(
         validator = GitHubRepoValidator(repo_name)
         try:
             validator.validate_format()
-            repo_html_url = validator.get_url_for_connectable_user_repo(installation, is_preexisting)
+            repo_html_url = validator.get_url_for_connectable_user_repo(
+                installation, is_preexisting
+            )
         except ValueError as e:
             error_message = e.args[0] if e.args else "Invalid repository configuration"
             raise ValidationError(error_message)
@@ -887,11 +901,14 @@ class CodebaseGitRemoteViewSet(
         """Build or update the local git mirror for this codebase without pushing."""
         codebase = self.get_codebase()
         build_local_git_repo(codebase.id)
-        return Response(status=status.HTTP_202_ACCEPTED, data="Local repository build started.")
+        return Response(
+            status=status.HTTP_202_ACCEPTED, data="Local repository build started."
+        )
 
 
 class GitHubSyncOverviewView(TemplateView):
     """View for GitHub integration overview page with permission check."""
+
     template_name = "library/github_overview.jinja"
 
     def dispatch(self, request, *args, **kwargs):
@@ -900,14 +917,16 @@ class GitHubSyncOverviewView(TemplateView):
             config = GitHubIntegrationConfiguration.for_site(site)
         except (Site.DoesNotExist, GitHubIntegrationConfiguration.DoesNotExist):
             raise PermissionDenied("GitHub integration is not available")
-        
+
         if not config.can_use_github_integration(request.user):
             raise PermissionDenied("GitHub integration is not available")
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["github_model_library_org_name"] = settings.GITHUB_MODEL_LIBRARY_ORG_NAME
+        context["github_model_library_org_name"] = (
+            settings.GITHUB_MODEL_LIBRARY_ORG_NAME
+        )
         return context
 
 
@@ -939,6 +958,7 @@ def github_sync_webhook(request):
     if event == "installation":
         try:
             payload = json.loads(request.body)
+            logger.debug("received installation webhook %s", payload)
             action = payload["action"]
             sender = payload["sender"]
             installation_id = payload["installation"]["id"]
@@ -951,6 +971,9 @@ def github_sync_webhook(request):
             provider="github", uid=str(uid)
         ).first()
         if not social_account:
+            logger.warning(
+                "No matching social account found for installation event: %s", payload
+            )
             return HttpResponse(status=404)
         if action == "deleted":
             installation = GithubIntegrationAppInstallation.objects.filter(
@@ -966,6 +989,7 @@ def github_sync_webhook(request):
                     "installation_id": installation_id,
                 },
             )
+            logger.debug("Installation record updated/created: %s", installation)
             return HttpResponse("OK", status=200)
 
     return HttpResponse(status=202)
@@ -1308,7 +1332,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         # if not create a new review
         else:
             # first, check if this release status is already under or completed review
-            # if so, something went wrong so we'll 
+            # if so, something went wrong so we'll
             if codebase_release.is_under_review or codebase_release.is_review_complete:
                 raise ValidationError(
                     "Cannot re-request a review on a release that has already completed or is undergoing review."

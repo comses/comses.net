@@ -637,6 +637,9 @@ class GithubIntegrationAppInstallation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"{self.github_login} (installation_id={self.installation_id})"
+
 
 class CodebaseGitRemote(models.Model):
     """Represents a remote repository associated with a `Codebase` that can be pushed to or imported from"""
@@ -686,8 +689,6 @@ class CodebaseGitRemote(models.Model):
         ]
 
 
-
-
 class BaseReleaseSyncState(models.Model):
     class Status(models.TextChoices):
         PENDING = "PENDING", _("pending")
@@ -709,8 +710,8 @@ class BaseReleaseSyncState(models.Model):
     batch_id = models.CharField(max_length=36, blank=True, null=True)
     tag_name = models.CharField(max_length=128, blank=True)
 
-    class Meta:
-        abstract = True
+    def __str__(self):
+        return f"status: {self.status}, last_log: {self.last_log}, error_message: {self.error_message}"
 
     def _append_log(self, message: str, now):
         logs = list(self.full_log or [])
@@ -744,6 +745,9 @@ class BaseReleaseSyncState(models.Model):
             self._append_log(message, now)
         self.save()
         return self
+
+    class Meta:
+        abstract = True
 
 
 class GitRefSyncState(BaseReleaseSyncState):
@@ -793,9 +797,8 @@ class GitRefSyncState(BaseReleaseSyncState):
 
     @classmethod
     def releases_without_git_ref_sync_state(cls, codebase):
-        built_ids = (
-            cls.objects.filter(release__codebase=codebase)
-            .values_list("release__id", flat=True)
+        built_ids = cls.objects.filter(release__codebase=codebase).values_list(
+            "release__id", flat=True
         )
         return codebase.releases.internal().public().exclude(id__in=built_ids)
 
@@ -931,6 +934,7 @@ class GitRefSyncState(BaseReleaseSyncState):
             return True
         return False
 
+
 class ImportedReleaseSyncState(BaseReleaseSyncState):
     """Represents the state of the process involved in importing a release from GitHub.
     Will only exist for releases that have at least been attempted to be imported from GitHub
@@ -938,6 +942,7 @@ class ImportedReleaseSyncState(BaseReleaseSyncState):
     only one will exist for a given CodebaseRelease, since a release can only be imported once.
     though multiple can exist for a GitHub release, only if they are from different remotes.
     """
+
     # remote is the source repository this GitHub release came from
     remote = models.ForeignKey(
         "library.CodebaseGitRemote",
@@ -1021,7 +1026,7 @@ class ImportedReleaseSyncState(BaseReleaseSyncState):
         if changed:
             obj.save()
         return obj
-    
+
     def can_reimport(self) -> bool:
         """
         return true when a re-import should be allowed:
@@ -1031,11 +1036,12 @@ class ImportedReleaseSyncState(BaseReleaseSyncState):
         """
         if self.status not in [self.Status.SUCCESS, self.Status.ERROR]:
             return False
-        release = CodebaseRelease.objects.filter(imported_release_sync_state=self).first()
+        release = CodebaseRelease.objects.filter(
+            imported_release_sync_state=self
+        ).first()
         if not release:
             return True
         return not release.live
-
 
 
 @add_to_comses_permission_whitelist
@@ -1514,7 +1520,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             return existing_draft
 
         # allow for overriding the version number of the initial draft
-        # this is currently used to create a less conflict-prone 0.0.1 draft when 
+        # this is currently used to create a less conflict-prone 0.0.1 draft when
         # someone wants to import all their work with the github integration
         if initial_version:
             draft_release = self.create_release(version_number=initial_version)
@@ -3887,7 +3893,9 @@ class DataCiteRegistrationLog(models.Model):
 
 class GitHubIntegrationFaqEntry(index.Indexed, Orderable):
     configuration = ParentalKey(
-        "GitHubIntegrationConfiguration", related_name="faq_entries", on_delete=models.CASCADE
+        "GitHubIntegrationConfiguration",
+        related_name="faq_entries",
+        on_delete=models.CASCADE,
     )
     question = models.CharField(max_length=500, help_text=_("The FAQ question"))
     answer = MarkdownField(help_text=_("The FAQ answer in Markdown format"))
@@ -3971,22 +3979,28 @@ class GitHubIntegrationNewRepoTutorialVideo(GitHubIntegrationTutorialVideoBase):
         on_delete=models.CASCADE,
     )
 
+
 @register_setting
 class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
     is_beta = models.BooleanField(
-        default=True, help_text=_("Mark the GitHub integration feature as a beta feature")
+        default=True,
+        help_text=_("Mark the GitHub integration feature as a beta feature"),
     )
     is_enabled_globally = models.BooleanField(
         default=False,
-        help_text=_("Enable GitHub integration for all users. When enabled, approved_users whitelist is ignored")
+        help_text=_(
+            "Enable GitHub integration for all users. When enabled, approved_users whitelist is ignored"
+        ),
     )
     approved_users = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         blank=True,
         related_name="github_integration_approved",
-        help_text=_("Whitelist of users who can access GitHub integration. Superusers/staff are implicitly included")
+        help_text=_(
+            "Whitelist of users who can access GitHub integration. Superusers/staff are implicitly included"
+        ),
     )
-    
+
     def can_use_github_integration(self, user):
         """
         Check if a user can use the GitHub integration feature.
@@ -4003,7 +4017,7 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
         if user.is_superuser or user.is_staff:
             return True
         return self.approved_users.filter(id=user.id).exists()
-    
+
     @staticmethod
     def github_app_settings_help_content():
         """Create formatted content for a configuration help panel on the GitHub Integration settings page"""
@@ -4039,10 +4053,15 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
         HelpPanel(content=github_app_settings_help_content()),
         FieldPanel("is_beta"),
         FieldPanel("is_enabled_globally"),
-        FieldPanel("approved_users", widget=FilteredSelectMultiple("approved users", is_stacked=False)),
+        FieldPanel(
+            "approved_users",
+            widget=FilteredSelectMultiple("approved users", is_stacked=False),
+        ),
         InlinePanel("faq_entries", label="FAQ Entries"),
         InlinePanel("existing_repo_info_items", label="Existing Repo Info Items"),
-        InlinePanel("existing_repo_tutorial_videos", label="Existing Repo Tutorial Videos"),
+        InlinePanel(
+            "existing_repo_tutorial_videos", label="Existing Repo Tutorial Videos"
+        ),
         InlinePanel("new_repo_info_items", label="New Repo Info Items"),
         InlinePanel("new_repo_tutorial_videos", label="New Repo Tutorial Videos"),
     ]

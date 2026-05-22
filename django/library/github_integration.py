@@ -83,7 +83,9 @@ class GitHubRepoValidator:
         if "github" in self.repo_name:
             raise ValueError("Repository name cannot contain 'github'")
 
-    def get_url_for_connectable_user_repo(self, installation: GithubIntegrationAppInstallation, is_preexisting: bool) -> str:
+    def get_url_for_connectable_user_repo(
+        self, installation: GithubIntegrationAppInstallation, is_preexisting: bool
+    ) -> str:
         """validate that a repository exists, is public, and the app has been granted access to it.
         If the repository is not pre-existing, it must be empty.
 
@@ -91,7 +93,7 @@ class GitHubRepoValidator:
         """
         token = GitHubApi.get_user_installation_access_token(installation)
         if not token:
-            raise ValueError("Unable to acquire installation token")
+            raise ValueError("Unable to acquire user installation token")
         full_name = f"{installation.github_login}/{self.repo_name}"
         github_repo = GitHubApi.get_existing_repo(token, full_name)
         if github_repo.private:
@@ -112,7 +114,9 @@ class GitHubRepoValidator:
                 raise
         return github_repo.html_url
 
-    def _check_installation_access(self, installation: GithubIntegrationAppInstallation) -> None:
+    def _check_installation_access(
+        self, installation: GithubIntegrationAppInstallation
+    ) -> None:
         """check that the GitHub app installation has access to the repository"""
         auth = Auth.AppAuth(
             settings.GITHUB_INTEGRATION_APP_ID,
@@ -176,7 +180,9 @@ class GitHubApi:
         return token
 
     @staticmethod
-    def get_installation_access_token_for_remote(remote: CodebaseGitRemote) -> str | None:
+    def get_installation_access_token_for_remote(
+        remote: CodebaseGitRemote,
+    ) -> str | None:
         """Return an installation access token appropriate for the given remote."""
         if remote.is_user_repo:
             return GitHubApi.get_user_installation_access_token(
@@ -365,7 +371,7 @@ class GitHubApi:
         except (IndexError, AttributeError):
             main_branch = None
         if main_branch is None:
-            return  ("", f"[{timezone.now().isoformat()}]: main not found locally")
+            return ("", f"[{timezone.now().isoformat()}]: main not found locally")
         success_mask = PushInfo.NEW_HEAD | PushInfo.FAST_FORWARD | PushInfo.UP_TO_DATE
         summaries: list[str] = []
         for info in remote.push(CodebaseGitRepositoryApi.DEFAULT_BRANCH_NAME):
