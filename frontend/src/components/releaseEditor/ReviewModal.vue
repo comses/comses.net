@@ -7,7 +7,7 @@
       id="review-request-modal"
       title="Request Peer Review"
       ref="reviewRequestModal"
-      size="lg"
+      size="xl"
       scrollable
       centered
     >

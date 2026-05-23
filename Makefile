@@ -9,7 +9,7 @@ SECRETS_DIR=${BUILD_DIR}/secrets
 DB_PASSWORD_PATH=${SECRETS_DIR}/db_password
 PGPASS_PATH=${SECRETS_DIR}/.pgpass
 SECRET_KEY_PATH=${SECRETS_DIR}/django_secret_key
-EXT_SECRETS=hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret mail_api_key datacite_api_password youtube_api_key
+EXT_SECRETS=hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret mail_api_key datacite_api_password youtube_api_key github_integration_app_private_key github_integration_app_webhook_secret
 GENERATED_SECRETS=$(DB_PASSWORD_PATH) $(PGPASS_PATH) $(SECRET_KEY_PATH)
 
 ENVREPLACE := deploy/scripts/envreplace
@@ -32,7 +32,7 @@ include .env
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
-	docker compose build --pull -q
+	docker compose --progress=plain build --pull --parallel
 
 $(BORG_REPO_PATH):
 	wget -c ${BORG_REPO_URL} -P ${BUILD_DIR}
@@ -136,7 +136,7 @@ clean_deploy: clean
 
 .PHONY: test
 test: build
-	docker compose run --rm server /code/deploy/test.sh
+	docker compose run --rm server /code/deploy/test.sh $(TEST_ARGS)
 
 # e2e testing setup
 
@@ -157,3 +157,7 @@ e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
 	docker compose -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \
 		inv prepare"
+
+.PHONY: gen-secret
+gen-secret:
+	docker compose run --rm server python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"

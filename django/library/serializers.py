@@ -30,6 +30,9 @@ from core.serializers import (
     RelatedUserSerializer,
 )
 from .models import (
+    CodebaseGitRemote,
+    GitRefSyncState,
+    ImportedReleaseSyncState,
     PeerReviewer,
     ReleaseContributor,
     Codebase,
@@ -466,6 +469,9 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     Sparse codebase serializer
     """
 
+    absolute_url = serializers.URLField(source="get_absolute_url", read_only=True)
+    github_config_url = serializers.SerializerMethodField(read_only=True)
+    active_git_remote = serializers.SerializerMethodField(read_only=True)
     all_contributors = ContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
     version_number = serializers.ReadOnlyField(source="latest_version.version_number")
@@ -479,6 +485,15 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     live = serializers.ReadOnlyField()
     description = MarkdownField()
 
+    def get_github_config_url(self, instance):
+        return reverse("library:codebase-git-remotes-list", args=[instance.identifier])
+
+    def get_active_git_remote(self, instance):
+        active_git_remote = instance.active_git_remote
+        if active_git_remote:
+            return CodebaseGitRemoteSerializer(active_git_remote).data
+        return None
+
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)
 
@@ -488,7 +503,10 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     class Meta:
         model = Codebase
         fields = (
+            "absolute_url",
             "all_contributors",
+            "github_config_url",
+            "active_git_remote",
             "tags",
             "title",
             "first_published_at",
@@ -501,6 +519,53 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
             "live",
             "peer_reviewed",
             "repository_url",
+        )
+
+
+class GitRefSyncStateSerializer(serializers.ModelSerializer):
+    can_push = serializers.SerializerMethodField()
+
+    def get_can_push(self, instance):
+        return instance.can_push()
+
+    class Meta:
+        model = GitRefSyncState
+        fields = "__all__"
+
+
+class ImportedReleaseSyncStateSerializer(serializers.ModelSerializer):
+    can_reimport = serializers.SerializerMethodField()
+
+    def get_can_reimport(self, instance):
+        return instance.can_reimport()
+
+    class Meta:
+        model = ImportedReleaseSyncState
+        fields = "__all__"
+
+
+class CodebaseGitRemoteSerializer(serializers.ModelSerializer):
+    is_active = serializers.ReadOnlyField()
+
+    class Meta:
+        model = CodebaseGitRemote
+        fields = (
+            "id",
+            "owner",
+            "repo_name",
+            "url",
+            "is_user_repo",
+            "is_preexisting",
+            "is_active",
+        )
+        read_only_fields = (
+            "id",
+            "owner",
+            "repo_name",
+            "url",
+            "is_user_repo",
+            "is_preexisting",
+            "is_active",
         )
 
 
@@ -596,6 +661,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     release_notes = MarkdownField(max_length=2048)
     urls = serializers.SerializerMethodField()
     review_status = serializers.SerializerMethodField()
+    imported_release_sync_state = ImportedReleaseSyncStateSerializer(read_only=True)
 
     def get_urls(self, instance):
         request_peer_review_url = instance.get_request_peer_review_url()
@@ -617,6 +683,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         model = CodebaseRelease
         fields = (
             "absolute_url",
+            "status",
             "can_edit_originals",
             "citation_text",
             "release_contributors",
@@ -645,9 +712,19 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
             "output_data_url",
             "version_number",
             "id",
+            "imported_release_sync_state",
             "share_url",
             "urls",
         )
+
+
+class CodebaseReleaseWithGitRefSyncStateSerializer(CodebaseReleaseSerializer):
+    """Extends base release serializer to include git ref sync state for local mirror context"""
+
+    git_ref_sync_state = GitRefSyncStateSerializer(read_only=True)
+
+    class Meta(CodebaseReleaseSerializer.Meta):
+        fields = CodebaseReleaseSerializer.Meta.fields + ("git_ref_sync_state",)
 
 
 class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):

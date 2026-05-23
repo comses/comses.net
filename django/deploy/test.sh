@@ -8,4 +8,10 @@ initdb() {
     env DJANGO_SETTINGS_MODULE="core.settings.test" invoke db.init
 }
 initdb
-exec env DJANGO_SETTINGS_MODULE="core.settings.test" invoke collectstatic test --tests="$@" --coverage
+
+if [ "$#" -gt 0 ]; then
+    TEST_SELECTOR="$*"
+    exec env DJANGO_SETTINGS_MODULE="core.settings.test" invoke collectstatic test --tests="$TEST_SELECTOR" --coverage
+fi
+
+exec env DJANGO_SETTINGS_MODULE="core.settings.test" invoke collectstatic test --coverage

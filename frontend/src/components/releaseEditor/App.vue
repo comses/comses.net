@@ -6,9 +6,9 @@
           <span
             v-if="!isLive"
             title="This release is currently private and unpublished."
-            class="disabled btn btn-warning"
+            class="badge bg-gray"
           >
-            <i class="fas fa-lock"></i> Private
+            <small><i class="fas fa-lock"></i> Private</small>
           </span>
           {{ store.release.codebase.title }}
           <span class="badge bg-gray pt-1 px-2">
@@ -25,7 +25,7 @@
             Review Status:
             <span class="fw-bold">{{ reviewStatus }}</span>
           </span>
-          <ReviewModal button-class="btn btn-sm btn-outline-danger py-0 mb-1" />
+          <ReviewModal button-class="btn btn-sm btn-primary py-0 mb-1" />
         </span>
         <a href="//forum.comses.net/t/archiving-your-model-1-getting-started/7377">
           <i class="fas fa-question-circle"></i> Need help? Check out our archiving tutorial
@@ -35,21 +35,43 @@
     <div class="row">
       <div class="col d-flex justify-content-between">
         <span>
-          <CommonMetadataModal button-class="btn btn-primary me-2" :identifier="identifier" />
+          <CommonMetadataModal
+            button-class="btn btn-sm btn-secondary me-2"
+            :identifier="identifier"
+          />
           <CommonImagesModal
-            button-class="btn btn-primary me-2"
+            button-class="btn btn-sm btn-secondary me-2"
             :identifier="identifier"
             :files="store.files.media"
             :show="showUploadImageModal"
           />
         </span>
-        <PublishModal :show="showPublishModal" button-class="btn btn-danger" />
+        <PublishModal :show="showPublishModal" button-class="btn btn-primary" />
       </div>
     </div>
     <hr />
     <div class="row mt-3">
       <div class="col-md-3">
-        <ProgressSidebar :showUpload="canEditOriginals" />
+        <ProgressSidebar
+          v-if="isImported"
+          show-files
+          files-route="/package"
+          :files-title="store.release.canEditOriginals ? 'Review archive' : 'Preview archive'"
+          :metadata-title="store.release.canEditOriginals ? 'Review metadata' : 'Edit metadata'"
+          :contributors-title="
+            store.release.canEditOriginals ? 'Review contributors' : 'Edit contributors'
+          "
+        />
+        <ProgressSidebar
+          v-else
+          show-files
+          files-route="/upload"
+          :files-title="store.release.canEditOriginals ? 'Upload files' : 'Preview archive'"
+          :metadata-title="store.release.canEditOriginals ? 'Add metadata' : 'Edit metadata'"
+          :contributors-title="
+            store.release.canEditOriginals ? 'Add contributors' : 'Edit contributors'
+          "
+        />
       </div>
       <div class="col-md-9">
         <div>
@@ -79,6 +101,7 @@ const props = defineProps<{
   reviewStatus: string;
   isLive: boolean;
   canEditOriginals: boolean;
+  isImported: boolean;
   showPublishModal: boolean;
   showUploadImageModal: boolean;
 }>();

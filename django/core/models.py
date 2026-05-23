@@ -457,7 +457,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def avatar_url(self):
         if self.picture:
             return self.picture.get_rendition("fill-150x150").url
-        return None
 
     @property
     def github_url(self):
@@ -466,11 +465,16 @@ class MemberProfile(index.Indexed, ClusterableModel):
         """
         return self.get_social_account_profile_url("github")
 
+    @property
+    def github_username(self):
+        github_account = self.get_social_account("github")
+        if github_account:
+            return github_account.extra_data.get("login")
+
     def get_social_account_profile_url(self, provider_name):
         social_acct = self.get_social_account(provider_name)
         if social_acct:
             return social_acct.get_profile_url()
-        return None
 
     def get_social_account(self, provider_name):
         return self.user.socialaccount_set.filter(provider=provider_name).first()

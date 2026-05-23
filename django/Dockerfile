@@ -10,12 +10,13 @@ ENV PATH "${VIRTUAL_ENV}/bin:$PATH"
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    DEBIAN_FRONTEND=noninteractive \
     sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
-        && apt-get update \
-        && apt-get install -y postgresql-common --no-install-recommends \
+        && apt-get -q update \
+        && apt-get -q install -y postgresql-common --no-install-recommends \
         && yes | /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh \
-        && apt-get update \
-        && apt-get install -y --no-install-recommends \
+        && apt-get -q update \
+        && apt-get -q install -y --no-install-recommends \
         autopostgresqlbackup \
         binutils \
         borgbackup \

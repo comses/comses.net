@@ -19,7 +19,7 @@ from curator.invoke_tasks.database import create_pgpass_file
 from core.tests.base import EventFactory, JobFactory
 from library.fs import import_archive
 from library.models import Codebase
-from library.tests.base import CodebaseFactory
+from library.tests.base import CodebaseFactory, TEST_SAMPLES_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class DumpRestoreTestCase(TestCase):
         fs_api = self.release.get_fs_api()
         import_archive(
             codebase_release=self.release,
-            nested_code_folder_name="library/tests/archives/nestedcode",
+            nested_code_folder_name=TEST_SAMPLES_DIR / "archives" / "nestedcode",
             fs_api=fs_api,
         )
 

@@ -29,6 +29,12 @@
         </ul>
         If this model is not published, please do not share it with anyone else.
         </p>
+        {% if release.is_imported %}
+        <p><i>
+            Please note that this model release was imported from GitHub, so the file structure may differ from
+            a typical release package in the CoMSES Model Library.
+        </i></p>
+        {% endif %}
     </section>
 
     <section>

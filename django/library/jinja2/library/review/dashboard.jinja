@@ -1,6 +1,7 @@
 {% extends 'sidebar_layout.jinja' %}
 {% from "common.jinja" import breadcrumb, paginator %}
 {% from "library/review/includes/macros.jinja" import display_closed_status %}
+{% from "library/codebases/macros.jinja" import imported_release_indicator %}
 
 {% block introduction %}
     <h1>Peer Review Editor Dashboard</h1>
@@ -32,6 +33,7 @@
                     {% set review = release.review %}
                     <hr>
                     <h5 class="fw-bold">
+                        {{ imported_release_indicator(release) }}
                         <a href="{{ review.get_absolute_url() }}">Review for version {{ release.version_number }}</a>
                         {{ display_closed_status(review) }}
                     </h5>

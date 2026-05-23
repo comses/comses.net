@@ -2,18 +2,18 @@
   <div>
     <nav class="nav flex-md-column">
       <router-link
-        v-if="showUpload"
-        to="/upload"
+        v-if="showFiles"
+        :to="filesRoute"
         class="card text-decoration-none flex-grow-1 mb-3 me-3 me-md-0"
         active-class="border-secondary"
       >
         <div
           class="card-header nav-link d-flex justify-content-between align-items-center text-decoration-none"
         >
-          <b>Upload Files</b>
+          <b>{{ filesTitle }}</b>
           <i class="fas fa-angle-right text-secondary"></i>
         </div>
-        <div class="card-body pb-2 text-dark">
+        <div class="card-body pb-2 text-dark" v-if="store.release.canEditOriginals">
           <ProgressCheck :check="uploadProgress.code" label="Code" />
           <ProgressCheck :check="uploadProgress.docs" label="Documentation" />
           <ProgressCheck :check="uploadProgress.data" label="Input Data" optional />
@@ -29,7 +29,7 @@
           class="card-header nav-link d-flex justify-content-between align-items-center text-decoration-none"
           data-cy="add-metadata"
         >
-          <b>Add Metadata</b>
+          <b>{{ metadataTitle }}</b>
           <i class="fas fa-angle-right text-secondary"></i>
         </div>
         <div class="card-body pb-2 text-dark">
@@ -48,7 +48,7 @@
         <div
           class="card-header nav-link d-flex justify-content-between align-items-center text-decoration-none"
         >
-          <b>Add Contributors</b>
+          <b>{{ contributorsTitle }}</b>
           <i class="fas fa-angle-right text-secondary"></i>
         </div>
         <div class="card-body pb-2 text-dark">
@@ -68,9 +68,15 @@ import { computed } from "vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import ProgressCheck from "@/components/releaseEditor/ProgressCheck.vue";
 
-const props = defineProps<{
-  showUpload: boolean;
-}>();
+export interface ProgressSidebarProps {
+  showFiles: boolean;
+  filesRoute: string;
+  filesTitle: string;
+  metadataTitle: string;
+  contributorsTitle: string;
+}
+
+const props = defineProps<ProgressSidebarProps>();
 
 const store = useReleaseEditorStore();
 
