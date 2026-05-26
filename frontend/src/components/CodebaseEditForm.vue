@@ -8,7 +8,7 @@
       data-cy="codebase-title"
       required
     />
-    <HoneypotField />
+    <HoneypotField :show="false" />
     <MarkdownField
       class="mb-3"
       name="description"
@@ -25,13 +25,12 @@
       data-cy="codebase-replication-text"
       :rows="3"
     />
-    <TextareaField
+    <AssociatedPublicationListField
       class="mb-3"
-      name="associatedPublicationText"
+      name="associatedPublications"
       label="Associated Publications"
-      help="Is this model associated with any publications? Please enter a DOI or other permanent identifier, or citation text. Separate multiple entries with newlines."
-      data-cy="codebase-associated-publications"
-      :rows="3"
+      help="Add DOI links for publications related to this model. Check the box to include a publication in the citation area alongside the main model citation."
+      placeholder="https://doi.org/10.1234/example"
     />
     <TextareaField
       class="mb-3"
@@ -84,6 +83,7 @@ import MarkdownField from "@/components/form/MarkdownField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import HoneypotField from "@/components/form/HoneypotField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
+import AssociatedPublicationListField from "@/components/form/AssociatedPublicationListField.vue";
 import { useForm } from "@/composables/form";
 import { type RequestOptions, useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
 import { useGitRemotesAPI } from "@/composables/api/git";
@@ -109,7 +109,15 @@ const schema = yup.object().shape({
   description: yup.string().required(),
   latestVersionNumber: yup.string(),
   replicationText: yup.string(),
-  associatedPublicationText: yup.string(),
+  associatedPublications: yup
+    .array()
+    .of(
+      yup.object({
+        doi: yup.string().required(),
+        includeInCitation: yup.bool().required(),
+      })
+    )
+    .default([]),
   referencesText: yup.string(),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
   repositoryUrl: yup.string().url(),

@@ -1,5 +1,7 @@
 import logging
+import re
 from collections import defaultdict
+from urllib.parse import urlparse
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -49,6 +51,38 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+DOI_LINK_PATTERN = re.compile(
+    r"^(?:https?://(?:dx\.)?doi\.org/)?10\.\d{4,9}/[-._;()/:A-Z0-9]+$",
+    re.IGNORECASE,
+)
+
+
+def normalize_doi_link(value: str) -> str:
+    value = (value or "").strip()
+    if not value:
+        return value
+    if value.lower().startswith("doi:"):
+        value = value[4:].strip()
+    if value.lower().startswith("http://") or value.lower().startswith("https://"):
+        parsed = urlparse(value)
+        if parsed.netloc.endswith("doi.org") and parsed.path:
+            value = parsed.path.lstrip("/")
+    if not DOI_LINK_PATTERN.match(value):
+        raise ValidationError(_(f"Invalid DOI link: {value}"))
+    if value.lower().startswith("http://") or value.lower().startswith("https://"):
+        parsed = urlparse(value)
+        if parsed.netloc.endswith("doi.org") and parsed.path:
+            return f"https://doi.org/{parsed.path.lstrip('/')}"
+    return f"https://doi.org/{value}"
+
+
+class AssociatedPublicationSerializer(serializers.Serializer):
+    doi = serializers.CharField()
+    include_in_citation = serializers.BooleanField(default=False)
+
+    def validate_doi(self, value):
+        return normalize_doi_link(value)
 
 
 class LicenseSerializer(serializers.ModelSerializer):
@@ -408,6 +442,7 @@ class CodebaseSerializer(
     summarized_description = serializers.CharField(read_only=True)
     identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
+    associated_publications = AssociatedPublicationSerializer(many=True, required=False)
 
     description = MarkdownField()
 
@@ -436,6 +471,22 @@ class CodebaseSerializer(
     def update(self, instance, validated_data):
         return update(super().update, instance, validated_data)
 
+    def validate_associated_publications(self, value):
+        seen = set()
+        cleaned = []
+        for publication in value:
+            doi = publication["doi"]
+            if doi in seen:
+                raise ValidationError(_("Duplicate DOI links are not allowed."))
+            seen.add(doi)
+            cleaned.append(
+                {
+                    "doi": doi,
+                    "include_in_citation": bool(publication.get("include_in_citation")),
+                }
+            )
+        return cleaned
+
     class Meta:
         model = Codebase
         fields = (
@@ -445,6 +496,7 @@ class CodebaseSerializer(
             "download_count",
             "featured_image",
             "repository_url",
+            "youtube_url",
             "first_published_at",
             "last_published_on",
             "latest_version_number",
@@ -458,7 +510,7 @@ class CodebaseSerializer(
             "identifier",
             "id",
             "references_text",
-            "associated_publication_text",
+            "associated_publications",
             "replication_text",
             "peer_reviewed",
         )
@@ -519,6 +571,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
             "live",
             "peer_reviewed",
             "repository_url",
+            "youtube_url",
         )
 
 
@@ -710,6 +763,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
             "codebase",
             "review_status",
             "output_data_url",
+            "input_data_url",
             "version_number",
             "id",
             "imported_release_sync_state",

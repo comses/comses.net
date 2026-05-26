@@ -78,7 +78,18 @@
             <h2>Release Notes</h2>
             <p>{{ release.release_notes|safe }}</p>
             <h2>Associated Publications</h2>
-            <p>{{ markdown(codebase.associated_publication_text) }}</p>
+            {% if codebase.associated_publications %}
+                <ul>
+                    {% for publication in codebase.associated_publications %}
+                        <li>
+                            <a href="{{ publication.doi }}" target="_blank" rel="nofollow">{{ publication.doi }}</a>
+                            {% if publication.include_in_citation %}
+                                <span class="badge bg-info ms-1">cited</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
     {% endif %}
 
@@ -134,9 +145,19 @@
                 {{ codebase.description|safe }}
             </div>
             {% with featured_image=codebase.get_featured_image() %}
-                {% if featured_image is not none %}
-                <div id="image-gallery" class="my-4" data-title="{{ codebase.title }}" data-images="{{ codebase.get_image_urls()|tojson|forceescape }}">
-                    {{ image(featured_image, "max-900x600", class="img-fluid") }}
+                {% if featured_image is not none or codebase.youtube_url %}
+                <div
+                    id="image-gallery"
+                    class="my-4"
+                    data-title="{{ codebase.title }}"
+                    data-images="{{ codebase.get_image_urls()|tojson|forceescape }}"
+                    {% if codebase.youtube_url %}
+                    data-video-url="{{ codebase.youtube_url }}"
+                    {% endif %}
+                >
+                    {% if featured_image is not none %}
+                        {{ image(featured_image, "max-900x600", class="img-fluid") }}
+                    {% endif %}
                     {{ vite_asset("apps/image_gallery.ts") }}
                 </div>
                 {% endif %}
@@ -155,7 +176,23 @@
             <h2 class='card-title'><u>Cite this Model</u></h2>
             <div class='pb-3'>
                 <div id='citation-text'>
-                    {{ markdown(release.citation_text) }}
+                    <div class="mb-3">{{ markdown(release.citation_text) }}</div>
+                    {% if codebase.citable_associated_publication_links %}
+                    <p class="mb-1"><strong>Associated publications to cite</strong></p>
+                    <div class="mb-3">
+                        {% for publication in codebase.citable_associated_publication_links %}
+                        <div class="mb-2">
+                            <span
+                                class="doi-citation"
+                                data-doi-link="{{ publication }}"
+                                data-fallback-text="{{ publication }}"
+                            >
+                                <a href="{{ publication }}" target="_blank" rel="nofollow">{{ publication }}</a>
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
                     <i class='fas fa-copy'></i> Copy citation text to clipboard
@@ -186,17 +223,31 @@
             <p class='card-text'>{{ markdown(codebase.replication_text) }}</p>
         </div>
         {% endif %}
-        {% if codebase.associated_publication_text %}
+        {% if codebase.associated_publications %}
+        {% set ns = namespace(has_uncited_publications=false) %}
+        {% for publication in codebase.associated_publications %}
+            {% if not publication.include_in_citation %}
+                {% set ns.has_uncited_publications = true %}
+            {% endif %}
+        {% endfor %}
+        {% if ns.has_uncited_publications %}
         <div class='pt-1'>
             <h2 class='card-title'><i class='fas fa-book'></i> <u>Associated Publication(s)</u></h2>
             <p class='card-text'>
                 {% if release.live or has_change_perm %}
-                    {{ markdown(codebase.associated_publication_text) }}
+                    {% for publication in codebase.associated_publications %}
+                        {% if not publication.include_in_citation %}
+                            <div class="mb-1">
+                                <a href="{{ publication.doi }}" target="_blank" rel="nofollow">{{ publication.doi }}</a>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
                 {% else %}
                     <i class='fas fa-lock'>(private)</i>
                 {% endif %}
             </p>
         </div>
+        {% endif %}
         {% endif %}
         {% if codebase.references_text %}
         <div class='pt-1'>
@@ -357,6 +408,17 @@
                     </a>
                 </div>
             {% endif %}
+            {% if release.input_data_url %}
+                <b class='card-title'>Input Data</b>
+                <div class="card-text mb-3">
+                    <a href="{{ release.input_data_url }}" class="d-block text-truncate">
+                        <span class='badge bg-info'>
+                        {{ strip_url_scheme(release.input_data_url) }}
+                        </span>
+                    </a>
+                </div>
+            {% endif %}
+
             {% if release.output_data_url %}
                 <b class='card-title'>Output Data</b>
                 <div class="card-text mb-3">
@@ -620,6 +682,58 @@
     <script>
         document.addEventListener("DOMContentLoaded", function(event) {
             new ClipboardJS('.btn-clipboard');
+
+            const doiCitationElements = document.querySelectorAll(".doi-citation[data-doi-link]");
+
+            const toCanonicalDoiLink = (rawDoiLink) => {
+                if (!rawDoiLink) {
+                    return null;
+                }
+                const trimmed = rawDoiLink.trim();
+                if (!trimmed) {
+                    return null;
+                }
+                return trimmed.replace(/^http:\/\//i, "https://");
+            };
+
+            const toDoiValue = (doiLink) => {
+                if (!doiLink) {
+                    return null;
+                }
+                return doiLink.replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "").trim();
+            };
+
+            const renderFallbackLink = (element, doiLink, fallbackText) => {
+                const href = doiLink || fallbackText;
+                if (!href) {
+                    return;
+                }
+                element.innerHTML = `<a href="${href}" target="_blank" rel="nofollow">${fallbackText || href}</a>`;
+            };
+
+            doiCitationElements.forEach(async (element) => {
+                const doiLink = toCanonicalDoiLink(element.dataset.doiLink);
+                const doiValue = toDoiValue(doiLink);
+                const fallbackText = element.dataset.fallbackText || doiLink;
+
+                if (!doiLink || !doiValue) {
+                    renderFallbackLink(element, doiLink, fallbackText);
+                    return;
+                }
+
+                try {
+                    const citationUrl = `https://citation.doi.org/format?doi=${encodeURIComponent(doiValue)}&style=apa&lang=en-US`;
+                    const response = await fetch(citationUrl);
+                    const citationText = response.ok ? (await response.text()).trim() : "";
+                    if (citationText) {
+                        element.textContent = citationText;
+                    } else {
+                        renderFallbackLink(element, doiLink, fallbackText);
+                    }
+                } catch (error) {
+                    renderFallbackLink(element, doiLink, fallbackText);
+                }
+            });
         });
     </script>
     {% endscript %}

@@ -119,6 +119,13 @@ class CodeMetaConverter:
         }
 
     @classmethod
+    def to_url_creative_work(cls, url: str) -> dict:
+        return {
+            "@type": "CreativeWork",
+            "url": url,
+        }
+
+    @classmethod
     def license_to_creative_work(cls, license) -> dict:
         creative_work_license = {
             "@type": "CreativeWork",
@@ -137,6 +144,7 @@ class CodeMetaConverter:
 
     @classmethod
     def _common_codebase_fields(cls, codebase) -> dict:
+        associated_publication_links = codebase.associated_publication_links
         return dict(
             type_="SoftwareSourceCode",
             name=codebase.title,
@@ -150,12 +158,16 @@ class CodeMetaConverter:
                 ]
                 if text
             ]
+            + [
+                cls.to_url_creative_work(doi)
+                for doi in codebase.citable_associated_publication_links
+            ]
             or None,
             # tags are sorted so that comparisons are deterministic
             keywords=[tag.name for tag in codebase.tags.all().order_by("name")] or None,
             publisher=cls.COMSES_ORGANIZATION,
             description=codebase.description.raw,
-            referencePublication=codebase.associated_publication_text or None,
+            referencePublication=associated_publication_links or None,
         )
 
     @classmethod
@@ -196,6 +208,13 @@ class CodeMetaConverter:
     @classmethod
     def _convert_release(cls, release) -> CodeMeta:
         codebase = release.codebase
+        supporting = []
+        # prefer listing input data first, then output data
+        if getattr(release, "input_data_url", None):
+            supporting.append(cls.url_to_datafeed(release.input_data_url))
+        if release.output_data_url:
+            supporting.append(cls.url_to_datafeed(release.output_data_url))
+
         return CodeMeta(
             **cls._common_codebase_fields(codebase),
             id_=release.permanent_url,
@@ -218,11 +237,7 @@ class CodeMetaConverter:
             downloadUrl=f"{settings.BASE_URL}{release.get_download_url()}",
             operatingSystem=release.os,
             releaseNotes=release.release_notes.raw,
-            supportingData=(
-                cls.url_to_datafeed(release.output_data_url)
-                if release.output_data_url
-                else None
-            ),
+            supportingData=supporting or None,
             # FIXME: need better guidance on author vs contributor fields in CodeMeta
             author=cls.convert_contributors(
                 release.author_release_contributors, "author"

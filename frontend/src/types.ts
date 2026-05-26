@@ -246,6 +246,11 @@ export interface ReleaseContributor {
   roles?: string[];
 }
 
+export interface AssociatedPublication {
+  doi: string;
+  includeInCitation: boolean;
+}
+
 export interface Contributor {
   affiliations: any[];
   jsonAffiliations: any[];
@@ -310,6 +315,7 @@ export interface CodebaseRelease {
   os: string;
   osDisplay: string;
   outputDataUrl: string;
+  inputDataUrl?: string;
   peerReviewed: boolean;
   platforms: Tag[];
   possibleLicenses: License[];
@@ -351,7 +357,7 @@ export interface RelatedCodebase {
 interface Codebase {
   absoluteUrl: string;
   allContributors: Contributor[];
-  associatedPublicationText?: string;
+  associatedPublications: AssociatedPublication[];
   dateCreated: Date;
   description: string;
   doi?: string | null;
@@ -367,6 +373,7 @@ interface Codebase {
   releases?: any[];
   replicationText?: string;
   repositoryUrl?: string;
+  youtubeUrl?: string;
   submitter: RelatedUser;
   summarizedDescription: string;
   tags: Tag[];
@@ -375,7 +382,15 @@ interface Codebase {
 
 export type CodebaseReleaseMetadata = Pick<
   CodebaseRelease,
-  "releaseNotes" | "embargoEndDate" | "os" | "platforms" | "releaseLanguages" | "live" | "license"
+  | "releaseNotes"
+  | "embargoEndDate"
+  | "os"
+  | "platforms"
+  | "releaseLanguages"
+  | "live"
+  | "license"
+  | "outputDataUrl"
+  | "inputDataUrl"
 >;
 
 export interface UploadSuccess {
