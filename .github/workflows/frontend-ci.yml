@@ -3,37 +3,44 @@ name: Frontend CI (Vue3/TS)
 on:
   push:
     branches: [main]
-    paths: ["frontend/**"]
+    paths: ["frontend/**", ".github/workflows/frontend-ci.yml"]
   pull_request:
     branches: [main]
-    paths: ["frontend/**"]
+    paths: ["frontend/**", ".github/workflows/frontend-ci.yml"]
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
     env:
       DEPLOY_ENVIRONMENT: dev
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: build container
         run: |
           make docker-compose.yml
           docker compose build vite --pull --no-cache
           docker compose up vite -d
       - name: Lint
-        run: docker compose exec vite npm run lint
+        run: docker compose exec -T vite npm run lint
       - name: Check formatting
-        if: ${{ success() || failure() }}
-        run: docker compose exec vite npm run style
+        if: ${{ always() }}
+        run: docker compose exec -T vite npm run style
       - name: Unit tests
-        if: ${{ success() || failure() }}
-        run: docker compose exec vite npm run test
+        if: ${{ always() }}
+        run: docker compose exec -T vite npm run test
       - name: Type check
-        if: ${{ success() || failure() }}
-        run: docker compose exec vite npm run type-check
+        if: ${{ always() }}
+        run: docker compose exec -T vite npm run type-check
       - name: Build for production
-        if: ${{ success() || failure() }}
-        run: docker compose exec vite npm run build
+        if: ${{ always() }}
+        run: docker compose exec -T vite npm run build
       - name: bring down container
         if: ${{ always() }}
         run: docker compose down
