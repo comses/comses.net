@@ -137,7 +137,7 @@ clean_deploy: clean
 
 .PHONY: test
 test: build
-	docker compose run --rm server /code/deploy/test.sh $(TEST_ARGS)
+	docker compose run --quiet-pull --rm server /code/deploy/test.sh $(TEST_ARGS)
 
 # e2e testing setup
 
