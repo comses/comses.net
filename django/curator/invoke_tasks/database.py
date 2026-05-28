@@ -1,7 +1,9 @@
+from datetime import datetime
 import glob
 import logging
 import os
 import pathlib
+import subprocess
 
 from django.conf import settings
 from invoke import task
@@ -15,7 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 def _get_migration_timestamp():
-    return os.environ.get("DB_MIGRATION_TIMESTAMP")
+    return os.environ.get(
+        "DB_MIGRATION_TIMESTAMP", datetime.now().strftime("%Y%m%d_%H%M%S")
+    )
 
 
 def _get_migration_artifact_dir(timestamp=None):
@@ -26,6 +30,8 @@ def _get_migration_artifact_dir(timestamp=None):
 
 
 def _get_migration_dumpfile(db_name, timestamp=None):
+    if timestamp is None:
+        timestamp = _get_migration_timestamp()
     artifact_dir = _get_migration_artifact_dir(timestamp=timestamp)
     if artifact_dir is None:
         return None
@@ -78,20 +84,28 @@ def dump_migration(ctx, database=_DEFAULT_DATABASE, force=False):
     dumpfile = _get_migration_dumpfile(db_config["db_name"])
     if dumpfile is None:
         raise RuntimeError("DB_MIGRATION_TIMESTAMP must be set for dump_migration")
-
-    dumpfile.parent.mkdir(parents=True, exist_ok=True)
-
     if not force:
-        confirm(
-            "This will write a logical dump to {0}. Continue? (y/n) ".format(dumpfile)
+        confirm(f"This will write a postgres dump to {dumpfile}. Continue? (y/n)")
+    dumpfile.parent.mkdir(parents=True, exist_ok=True)
+    with open(dumpfile, "wb") as f:
+        pg = subprocess.Popen(
+            [
+                "pg_dump",
+                "-h",
+                db_config["db_host"],
+                "-U",
+                db_config["db_user"],
+                db_config["db_name"],
+            ],
+            stdout=subprocess.PIPE,
         )
-
-    ctx.run(
-        "pg_dump -h {db_host} -U {db_user} {db_name} | gzip > {dumpfile}".format(
-            dumpfile=dumpfile, **db_config
-        ),
-        echo=True,
-    )
+        try:
+            subprocess.run(["gzip"], stdin=pg.stdout, stdout=f, check=True)
+        finally:
+            pg.stdout.close()
+            pg.wait()
+        if pg.returncode != 0:
+            raise subprocess.CalledProcessError(pg.returncode, pg.args)
 
 
 @task(aliases=["r"])
