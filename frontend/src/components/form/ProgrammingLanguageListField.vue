@@ -55,9 +55,16 @@
       :class="{ 'is-invalid': error }"
     >
     </VueMultiSelect>
-    <Sortable :list="languages" :item-key="item => item" @end="sort($event)">
+    <Sortable
+      :list="languages"
+      :item-key="item => item.programmingLanguage.id ?? item.programmingLanguage.name"
+      @end="sort($event)"
+    >
       <template #item="{ element, index }">
-        <div :key="element" class="my-1 input-group">
+        <div
+          :key="element.programmingLanguage.id ?? element.programmingLanguage.name"
+          class="my-1 input-group"
+        >
           <input
             :value="element.programmingLanguage.name"
             class="form-control w-25"
