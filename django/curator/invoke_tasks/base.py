@@ -28,7 +28,8 @@ def deny_robots(ctx):
 
 @task(aliases=["cs"])
 def collectstatic(ctx, reload_uwsgi=False):
-    dj(ctx, "collectstatic -c --noinput", pty=True)
+    # Keep collectstatic output concise; errors still surface with verbosity 0.
+    dj(ctx, "collectstatic -c --noinput --verbosity 0", pty=True)
     if reload_uwsgi:
         restart_uwsgi(ctx)
 

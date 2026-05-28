@@ -12,11 +12,11 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
     DEBIAN_FRONTEND=noninteractive \
     sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
-        && apt-get -q update \
-        && apt-get -q install -y postgresql-common --no-install-recommends \
+        && apt-get -qq update \
+        && apt-get -qq install -y --no-install-recommends -o=Dpkg::Use-Pty=0 postgresql-common \
         && yes | /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh \
-        && apt-get -q update \
-        && apt-get -q install -y --no-install-recommends \
+        && apt-get -qq update \
+        && apt-get -qq install -y --no-install-recommends -o=Dpkg::Use-Pty=0 \
         autopostgresqlbackup \
         binutils \
         borgbackup \
@@ -44,7 +44,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         unzip \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
         && python -m venv ${VIRTUAL_ENV} \
-        && apt-get upgrade -q -y -o Dpkg::Options::="--force-confold" \
+        && apt-get -qq upgrade -y -o Dpkg::Use-Pty=0 -o Dpkg::Options::="--force-confold" \
         && mkdir -p /etc/service/django /etc/service/huey \
         && touch /etc/service/django/run /etc/service/huey/run /etc/postgresql-backup-pre \
         && chmod a+x /etc/service/django/run /etc/service/huey/run /etc/postgresql-backup-pre \
@@ -55,7 +55,7 @@ COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 
 # FIXME: change to container user
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    pip install -r /tmp/${REQUIREMENTS_FILE}
+    pip install --progress-bar off -r /tmp/${REQUIREMENTS_FILE}
 
 COPY ./deploy/cron.daily/* /etc/cron.daily/
 COPY ./deploy/cron.hourly/* /etc/cron.hourly/

@@ -9,11 +9,24 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "server", "testserver"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-LOGGING["loggers"]["core.views"] = {
-    "level": "ERROR",
-    "handlers": ["console"],
-    "propagate": False,
+logger_levels = {
+    # Keep dependency logs focused on actionable warnings/errors in tests.
+    "django_tasks": "WARNING",
+    "urllib3": "WARNING",
+    "elastic_transport": "WARNING",
+    "invoke": "WARNING",
+    # Keep application logs concise without hiding warnings that may indicate regressions.
+    "core": "WARNING",
+    "library": "WARNING",
+    "home": "WARNING",
 }
+
+for logger_name, logger_level in logger_levels.items():
+    LOGGING["loggers"][logger_name] = {
+        "level": logger_level,
+        "handlers": ["console"],
+        "propagate": False,
+    }
 
 SHARE_DIR = path.realpath("/shared/tests")
 LIBRARY_ROOT = path.join(SHARE_DIR, "library")

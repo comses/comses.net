@@ -25,7 +25,7 @@ jobs:
       - name: build container
         run: |
           make docker-compose.yml
-          docker compose build vite --pull --no-cache
+          docker compose build vite --pull --no-cache --quiet
           docker compose up vite -d
       - name: Lint
         run: docker compose exec -T vite npm run lint
