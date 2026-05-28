@@ -2,7 +2,6 @@
 
 from django.db import migrations
 
-
 FAQ_ENTRIES = [
     {
         "question": "What GitHub permissions do you request and why?",

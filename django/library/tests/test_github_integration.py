@@ -109,7 +109,7 @@ class GitHubReleaseImporterTests(TestCase):
         # missing sync state
         with self.assertRaises(ValueError):
             self.create_importer("99999")
-        
+
         # sync state without download_url
         ImportedReleaseSyncState.objects.create(
             remote=self.remote,
@@ -130,7 +130,10 @@ class GitHubReleaseImporterTests(TestCase):
     def test_import_new_release(self, mock_get_token, mock_get_fs_api, mock_get_repo):
         # mock token and fs_api calls
         mock_get_token.return_value = "fake-token"
-        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
+        mock_get_repo.return_value = {
+            "name": "test-repo",
+            "full_name": "testuser/test-repo",
+        }
         mock_fs_api = MagicMock()
         mock_fs_api.import_release_package.return_value = ({}, {})  # codemeta, cff
         mock_get_fs_api.return_value = mock_fs_api
@@ -155,10 +158,15 @@ class GitHubReleaseImporterTests(TestCase):
     @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
     @patch("library.models.CodebaseRelease.get_fs_api")
     @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
-    def test_reimport_release(self, mock_get_token, mock_get_fs_api, mock_get_repo, mock_get_release):
+    def test_reimport_release(
+        self, mock_get_token, mock_get_fs_api, mock_get_repo, mock_get_release
+    ):
         # mock token and fs_api calls
         mock_get_token.return_value = "fake-token"
-        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
+        mock_get_repo.return_value = {
+            "name": "test-repo",
+            "full_name": "testuser/test-repo",
+        }
         mock_fs_api = MagicMock()
         mock_fs_api.import_release_package.return_value = ({}, {})  # codemeta, cff
         mock_get_fs_api.return_value = mock_fs_api
@@ -207,7 +215,10 @@ class GitHubReleaseImporterTests(TestCase):
         # when the zipball URL has not changed, reimport_release should detect no
         # changes and return without calling import_release_package
         mock_get_token.return_value = "fake-token"
-        mock_get_repo.return_value = {"name": "test-repo", "full_name": "testuser/test-repo"}
+        mock_get_repo.return_value = {
+            "name": "test-repo",
+            "full_name": "testuser/test-repo",
+        }
         mock_fs_api = MagicMock()
         mock_fs_api.import_release_package.return_value = ({}, {})
         mock_get_fs_api.return_value = mock_fs_api
@@ -260,7 +271,9 @@ class GitHubReleaseImporterTests(TestCase):
 
         self.assertFalse(success)
         self.assertEqual(
-            CodebaseRelease.objects.filter(codebase=self.codebase, version_number="1.0.0").count(),
+            CodebaseRelease.objects.filter(
+                codebase=self.codebase, version_number="1.0.0"
+            ).count(),
             1,
         )
         mock_fs_api.import_release_package.assert_not_called()
@@ -373,5 +386,3 @@ class GitHubIntegrationHelpersTests(TestCase):
             draft=False,
             prerelease=False,
         )
-
-
