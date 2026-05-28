@@ -417,6 +417,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
                 index.FilterField("name"),
             ],
         ),
+        index.RelatedFields(
+            "user",
+            [
+                index.FilterField("date_joined"),
+                index.FilterField("is_active"),
+                index.FilterField("username"),
+            ],
+        ),
     ]
 
     # Proxies to related user object

@@ -5,7 +5,7 @@ from .defaults import *
 DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(Environment.TEST)
 TESTING = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "server"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "server", "testserver"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
