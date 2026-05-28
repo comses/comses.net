@@ -1175,7 +1175,9 @@ class CodebaseGitRepositoryApi:
         """checkout the default (main) branch and create/update the git ref sync state if requested"""
         self.repo.git.checkout(self.DEFAULT_BRANCH_NAME)
         if update_main_git_ref_sync_state:
-            main_state = self.codebase.get_or_create_main_git_ref_sync_state(self.DEFAULT_BRANCH_NAME)
+            main_state = self.codebase.get_or_create_main_git_ref_sync_state(
+                self.DEFAULT_BRANCH_NAME
+            )
             main_state.record_build(commit_sha=self.repo.head.commit.hexsha)
 
     def clear_existing_files(self):

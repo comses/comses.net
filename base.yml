@@ -80,7 +80,7 @@ services:
       db:
         condition: service_healthy
       elasticsearch:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_started
       vite:

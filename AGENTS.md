@@ -66,6 +66,8 @@ This platform manages scientific software artifacts and publication metadata. Th
 - Add or update tests for behavior changes, bug fixes, and nontrivial logic
 - Prefer targeted test execution during development
 - Use repository-standard containerized commands for running tests and tooling
+- For targeted Django tests, run exactly: `make test TEST_ARGS=<dotted.test.path>`
+- If `make test` fails in WSL with Docker daemon or credential-helper errors, prompt the user to start Docker Desktop for Windows and confirm before retrying
 - Do not change existing behavior without updating or adding tests
 
 ## Environment and Commands

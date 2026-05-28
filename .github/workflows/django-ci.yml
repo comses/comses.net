@@ -9,9 +9,12 @@ on:
 jobs:
   run_tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       DEPLOY_ENVIRONMENT: test
+      DOCKER_BUILD_FLAGS: --quiet
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: build containers and run Django tests
         run: make test

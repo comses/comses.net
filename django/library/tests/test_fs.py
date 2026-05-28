@@ -52,9 +52,7 @@ class ArchiveExtractorTestCase(TestCase):
         self.assertEqual(level, MessageLevels.warning)
         self.assertEqual(len(logs), 2)
         self.assertEqual(
-            set(
-                fs_api.list(StagingDirectories.originals, FileCategories.code)
-            ),
+            set(fs_api.list(StagingDirectories.originals, FileCategories.code)),
             {"nestedcode.zip"},
         )
         # Notice that .DS_Store and .svn folder file are eliminated
@@ -65,9 +63,7 @@ class ArchiveExtractorTestCase(TestCase):
         fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
         fs_api.clear_category(FileCategories.code)
         self.assertEqual(
-            set(
-                fs_api.list(StagingDirectories.originals, FileCategories.code)
-            ),
+            set(fs_api.list(StagingDirectories.originals, FileCategories.code)),
             set(),
         )
         self.assertEqual(
@@ -79,9 +75,7 @@ class ArchiveExtractorTestCase(TestCase):
         archive_name = str(TEST_SAMPLES_DIR / "archives" / "invalid.zip")
         fs_api = self.codebase_release.get_fs_api()
         with open(archive_name, "rb") as f:
-            msgs = fs_api.add(
-                FileCategories.code, content=f, name="invalid.zip"
-            )
+            msgs = fs_api.add(FileCategories.code, content=f, name="invalid.zip")
         logs, level = msgs.serialize()
         self.assertEqual(level, MessageLevels.error)
         self.assertEqual(len(logs), 1)

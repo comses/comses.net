@@ -18,7 +18,7 @@
         <small>Press enter to add</small>
       </button>
     </div>
-    <Sortable :list="items" :item-key="item => item" @end="sort($event)">
+    <Sortable :list="items" :item-key="item => String(item)" @end="sort($event)">
       <template #item="{ element, index }">
         <div :key="element" class="my-1 input-group">
           <span class="input-group-text bg-white text-gray" title="Drag entries to sort">

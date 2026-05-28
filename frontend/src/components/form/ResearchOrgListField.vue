@@ -57,9 +57,9 @@
       @select="create"
       :disabled="disabled"
     />
-    <Sortable :list="organizations" :item-key="item => item" @end="sort($event)">
+    <Sortable :list="organizations" :item-key="item => item.rorId ?? item.name" @end="sort($event)">
       <template #item="{ element, index }">
-        <div :key="element" class="my-1 input-group">
+        <div :key="element.rorId ?? element.name" class="my-1 input-group">
           <span class="primary-group-button">
             <button v-if="index === 0" type="button" class="btn btn-is-primary w-100">
               Primary

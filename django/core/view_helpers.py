@@ -98,7 +98,10 @@ def get_search_queryset(
     search_backend = get_search_backend()
 
     if not fields:
-        fields = []
+        # Passing an explicit empty list can be interpreted by some backends as
+        # "search across no fields", yielding empty results. Use None to allow
+        # backend defaults.
+        fields = None
 
     if not tags:
         tags = []

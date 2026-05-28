@@ -8,14 +8,14 @@ from library.models import GitHubIntegrationConfiguration
 
 class GitHubIntegrationPermission(BasePermission):
     """Permission class to check if user can use GitHub integration."""
-    
+
     def has_permission(self, request, view):
         try:
             site = Site.objects.get(is_default_site=True)
             config = GitHubIntegrationConfiguration.for_site(site)
         except (Site.DoesNotExist, GitHubIntegrationConfiguration.DoesNotExist):
             raise DrfPermissionDenied("GitHub integration is not available")
-        
+
         if not config.can_use_github_integration(request.user):
             raise DrfPermissionDenied("GitHub integration is not available")
         return True

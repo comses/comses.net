@@ -15,6 +15,7 @@ GENERATED_SECRETS=$(DB_PASSWORD_PATH) $(PGPASS_PATH) $(SECRET_KEY_PATH)
 ENVREPLACE := deploy/scripts/envreplace
 DEPLOY_CONF_DIR=deploy/conf
 ENV_TEMPLATE=${DEPLOY_CONF_DIR}/.env.template
+DOCKER_BUILD_FLAGS ?=
 
 # assumes a .tar.xz file
 BORG_REPO_URL := https://example.com/repo.tar.xz
@@ -32,29 +33,29 @@ include .env
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
-	docker compose --progress=plain build --pull --parallel
+	@docker compose build --pull --parallel $(DOCKER_BUILD_FLAGS)
 
 $(BORG_REPO_PATH):
 	wget -c ${BORG_REPO_URL} -P ${BUILD_DIR}
 
 config.mk:
-	envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
+	@envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
 
 .PHONY: $(DOCKER_SHARED_DIR)
 $(DOCKER_SHARED_DIR):
-	for d in ${DOCKER_SHARED_SUBDIRS} ; do \
+	@for d in ${DOCKER_SHARED_SUBDIRS} ; do \
 		mkdir -p ${DOCKER_SHARED_DIR}/$$d ; \
 	done
 
 ${SECRETS_DIR}:
-	mkdir -p ${SECRETS_DIR}
+	@mkdir -p ${SECRETS_DIR}
 
 $(SECRET_KEY_PATH): | ${SECRETS_DIR}
-	SECRET_KEY=$$(openssl rand -base64 48); \
+	@SECRET_KEY=$$(openssl rand -base64 48); \
 	echo "$${SECRET_KEY}" > $(SECRET_KEY_PATH)
 
 $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
-	DB_PASSWORD=$$(openssl rand -base64 48); \
+	@DB_PASSWORD=$$(openssl rand -base64 48); \
 	TODAY=$$(date +%Y-%m-%d-%H:%M:%S); \
 	if [ -f $(DB_PASSWORD_PATH) ]; \
 	then \
@@ -64,15 +65,15 @@ $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
 	@echo "db password at $(DB_PASSWORD_PATH) was reset, may need to manually update existing db password"
 
 $(PGPASS_PATH): $(DB_PASSWORD_PATH) | ${SECRETS_DIR}
-	echo "${DB_HOST}:5432:*:${DB_USER}:$$(cat $(DB_PASSWORD_PATH))" > $(PGPASS_PATH)
-	chmod 0600 $(PGPASS_PATH)
+	@echo "${DB_HOST}:5432:*:${DB_USER}:$$(cat $(DB_PASSWORD_PATH))" > $(PGPASS_PATH)
+	@chmod 0600 $(PGPASS_PATH)
 
 .PHONY: release-version
 release-version: .env
-	$(ENVREPLACE) RELEASE_VERSION $$(git describe --tags --abbrev=1) .env
+	@$(ENVREPLACE) RELEASE_VERSION $$(git describe --tags --abbrev=1 2>/dev/null || git rev-parse --short HEAD) .env
 
 .env: $(DB_PASSWORD_PATH) $(SECRET_KEY_PATH)
-	if [ ! -f .env ]; then \
+	@if [ ! -f .env ]; then \
 		cp $(ENV_TEMPLATE) .env; \
 	fi; \
 	# $(ENVREPLACE) DB_PASSWORD $$(cat $(DB_PASSWORD_PATH)) .env; \
@@ -81,7 +82,7 @@ release-version: .env
 
 .PHONY: docker-compose.yml
 docker-compose.yml: base.yml dev.yml staging.yml test.yml prod.yml config.mk $(PGPASS_PATH) release-version .env
-	case "$(DEPLOY_ENVIRONMENT)" in \
+	@case "$(DEPLOY_ENVIRONMENT)" in \
 	  dev|staging|test) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  *) echo "invalid environment. must be either dev, staging or prod" 1>&2; exit 1;; \
@@ -93,17 +94,17 @@ set-db-password: $(DB_PASSWORD_PATH) .env
 
 .PHONY: secrets
 secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
-	for secret_path in $(EXT_SECRETS); do \
+	@for secret_path in $(EXT_SECRETS); do \
 		touch ${SECRETS_DIR}/$$secret_path; \
 	done
 
 .PHONY: deploy
 deploy: build
-	docker compose pull db redis elasticsearch
+	docker compose pull -q db redis elasticsearch
 ifneq ($(DEPLOY_ENVIRONMENT),dev)
-	docker compose pull nginx
+	docker compose pull -q nginx
 endif
-	docker compose up -d 
+	docker compose up -d --quiet-pull
 	sleep 42
 	docker compose exec server inv prepare
 
@@ -122,7 +123,7 @@ restore: build $(BORG_REPO_PATH) | $(REPO_BACKUPS_PATH)
 	@echo "Backing existing ${REPO_BACKUPS_PATH}/repo to fresh mktemp directory in /tmp"
 	sudo mv $(REPO_BACKUPS_PATH)/repo $(shell mktemp -d)
 	tar -Jxf $(BORG_REPO_PATH) -C $(REPO_BACKUPS_PATH)
-	docker compose up -d
+	docker compose up -d --quiet-pull
 	docker compose exec server inv borg.restore
 
 .PHONY: clean
@@ -136,7 +137,7 @@ clean_deploy: clean
 
 .PHONY: test
 test: build
-	docker compose run --rm server /code/deploy/test.sh $(TEST_ARGS)
+	docker compose run --quiet-pull --rm server /code/deploy/test.sh $(TEST_ARGS)
 
 # e2e testing setup
 
@@ -152,7 +153,7 @@ $(E2E_REPO_PATH):
 .PHONY: e2e
 e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
 	docker compose -f docker-compose.yml -f e2e.yml build -q
-	docker compose -f docker-compose.yml -f e2e.yml up -d
+	docker compose -f docker-compose.yml -f e2e.yml up -d --quiet-pull
 	sleep 42
 	docker compose -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \

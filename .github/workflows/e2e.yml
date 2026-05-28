@@ -9,16 +9,18 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       DEPLOY_ENVIRONMENT: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: deploy services in e2e mode
         run: make e2e
 
       - name: run e2e tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: e2e
           wait-on: "http://localhost:8000"
@@ -30,7 +32,7 @@ jobs:
 
       - name: upload cypress videos
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cypress-videos
           path: e2e/cypress/videos

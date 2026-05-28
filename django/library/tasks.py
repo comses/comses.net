@@ -141,16 +141,41 @@ def push_all_releases_to_github(codebase_id: int, remote_id: int):
 
 @db_task(retries=1, retry_delay=30)
 def update_fs_release_metadata(release_id: int):
-    release = CodebaseRelease.objects.get(id=release_id)
+    logger.info("Starting metadata rebuild task release_id=%s", release_id)
+    try:
+        release = CodebaseRelease.objects.get(id=release_id)
+    except CodebaseRelease.DoesNotExist:
+        logger.warning(
+            "Skipping metadata rebuild for missing CodebaseRelease id=%s", release_id
+        )
+        return
     codebase = release.codebase
-    fs_api = release.get_fs_api()
-    fs_api.rebuild_metadata()
+    try:
+        fs_api = release.get_fs_api()
+        fs_api.rebuild_metadata()
+        logger.info(
+            "Completed metadata rebuild task release_id=%s codebase_id=%s version=%s",
+            release_id,
+            codebase.id,
+            release.version_number,
+        )
+    except Exception:
+        logger.exception(
+            "Metadata rebuild task failed release_id=%s codebase_id=%s version=%s",
+            release_id,
+            codebase.id,
+            release.version_number,
+        )
+        raise
     # if the release is published and there is a git ref sync state for this release, update it with
     # a new commit
-    if (
-        release.is_published
-        and getattr(release, "git_ref_sync_state", None)
-    ):
+    if release.is_published and getattr(release, "git_ref_sync_state", None):
+        logger.info(
+            "Queueing release branch update after metadata rebuild release_id=%s codebase_id=%s version=%s",
+            release_id,
+            codebase.id,
+            release.version_number,
+        )
         update_local_repo_release_branch(release_id)
 
 

@@ -510,7 +510,14 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         if request.accepted_renderer.format == "html":
             context = self.get_list_context(page or queryset)
 
-            language_facets = queryset.facet("all_release_programming_languages")
+            try:
+                language_facets = queryset.facet("all_release_programming_languages")
+            except NotImplementedError:
+                # Some backends (e.g. database search backend) do not implement facet support.
+                logger.info(
+                    "Skipping language facets for codebase list because backend does not support faceting"
+                )
+                language_facets = None
             if language_facets:
                 logger.debug(
                     "Appending language_facets to response: %s", language_facets

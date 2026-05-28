@@ -2541,7 +2541,18 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                     if defer_fs:
                         from .tasks import update_fs_release_metadata
 
-                        update_fs_release_metadata(self.id)
+                        # Schedule after transaction commit so the worker can reliably read the release row.
+                        logger.info(
+                            "Queueing async release metadata rebuild release_id=%s codebase_id=%s version=%s",
+                            self.id,
+                            self.codebase_id,
+                            self.version_number,
+                        )
+                        transaction.on_commit(
+                            lambda release_id=self.id: update_fs_release_metadata(
+                                release_id
+                            )
+                        )
                     else:
                         self.get_fs_api().rebuild_metadata()
 

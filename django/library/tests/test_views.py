@@ -415,9 +415,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         self.client.logout()
 
         # Published codebase release permissions
-        response = self.client.get(
-            api.get_originals_list_url(FileCategories.code)
-        )
+        response = self.client.get(api.get_originals_list_url(FileCategories.code))
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [
             (self.submitter, status.HTTP_403_FORBIDDEN),
@@ -440,9 +438,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         api = self.codebase_release.get_fs_api()
         # Unpublished codebase release permissions
         response = self.client.delete(
-            api.get_absolute_url(
-                category=FileCategories.code, relpath=path_to_foo
-            )
+            api.get_absolute_url(category=FileCategories.code, relpath=path_to_foo)
         )
         self.assertResponseNotFound(response)
         for user, expected_status_code in [
@@ -452,9 +448,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         ]:
             self.login(user, self.user_factory.password)
             response = self.client.delete(
-                api.get_absolute_url(
-                    category=FileCategories.code, relpath=path_to_foo
-                ),
+                api.get_absolute_url(category=FileCategories.code, relpath=path_to_foo),
                 HTTP_ACCEPT="application/json",
             )
             self.assertEqual(response.status_code, expected_status_code, msg=repr(user))
@@ -465,9 +459,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
 
         # Published codebase release permissions
         response = self.client.delete(
-            api.get_absolute_url(
-                category=FileCategories.code, relpath=path_to_foo
-            )
+            api.get_absolute_url(category=FileCategories.code, relpath=path_to_foo)
         )
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [
@@ -616,11 +608,7 @@ class CodebaseRenderPageTestCase(TestCase):
         )
 
     def test_list(self):
-        response = self.client.get(
-            reverse(
-                "library:codebase-list"
-            )
-        )
+        response = self.client.get(reverse("library:codebase-list"))
         self.assertEqual(response.status_code, 200)
 
 

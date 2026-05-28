@@ -1,7 +1,9 @@
+from datetime import datetime
 import glob
 import logging
 import os
 import pathlib
+import subprocess
 
 from django.conf import settings
 from invoke import task
@@ -12,6 +14,28 @@ from .utils import dj
 _DEFAULT_DATABASE = "default"
 
 logger = logging.getLogger(__name__)
+
+
+def _get_migration_timestamp():
+    return os.environ.get(
+        "DB_MIGRATION_TIMESTAMP", datetime.now().strftime("%Y%m%d_%H%M%S")
+    )
+
+
+def _get_migration_artifact_dir(timestamp=None):
+    timestamp = timestamp or _get_migration_timestamp()
+    if not timestamp:
+        return None
+    return pathlib.Path("/migration-artifacts") / timestamp
+
+
+def _get_migration_dumpfile(db_name, timestamp=None):
+    if timestamp is None:
+        timestamp = _get_migration_timestamp()
+    artifact_dir = _get_migration_artifact_dir(timestamp=timestamp)
+    if artifact_dir is None:
+        return None
+    return artifact_dir / f"{db_name}.sql.gz"
 
 
 def get_database_settings(db_key):
@@ -50,6 +74,38 @@ def create_pgpass_file(ctx, db_key=_DEFAULT_DATABASE, force=False):
 def backup(ctx):
     create_pgpass_file(ctx)
     ctx.run("/usr/sbin/autopostgresqlbackup")
+
+
+@task(aliases=["dm"])
+def dump_migration(ctx, database=_DEFAULT_DATABASE, force=False):
+    db_config = get_database_settings(database)
+    create_pgpass_file(ctx, db_key=database)
+
+    dumpfile = _get_migration_dumpfile(db_config["db_name"])
+    if dumpfile is None:
+        raise RuntimeError("DB_MIGRATION_TIMESTAMP must be set for dump_migration")
+    if not force:
+        confirm(f"This will write a postgres dump to {dumpfile}. Continue? (y/n)")
+    dumpfile.parent.mkdir(parents=True, exist_ok=True)
+    with open(dumpfile, "wb") as f:
+        pg = subprocess.Popen(
+            [
+                "pg_dump",
+                "-h",
+                db_config["db_host"],
+                "-U",
+                db_config["db_user"],
+                db_config["db_name"],
+            ],
+            stdout=subprocess.PIPE,
+        )
+        try:
+            subprocess.run(["gzip"], stdin=pg.stdout, stdout=f, check=True)
+        finally:
+            pg.stdout.close()
+            pg.wait()
+        if pg.returncode != 0:
+            raise subprocess.CalledProcessError(pg.returncode, pg.args)
 
 
 @task(aliases=["r"])
@@ -115,9 +171,14 @@ def restore_from_dump(
 ):
     db_config = get_database_settings(target_database)
     if dumpfile is None:
-        # XXX: core assumption about how autopostgresqlbackup names new dumps
-        dumpfile = glob.glob("/shared/backups/latest/comsesnet_*.sql.gz")[0]
-        logger.debug("Using latest autopostgresqlbackup dump %s", dumpfile)
+        migration_dumpfile = _get_migration_dumpfile(db_config["db_name"])
+        if migration_dumpfile is not None:
+            dumpfile = str(migration_dumpfile)
+            logger.debug("Using migration artifact dump %s", dumpfile)
+        else:
+            # XXX: core assumption about how autopostgresqlbackup names new dumps
+            dumpfile = glob.glob("/shared/backups/latest/comsesnet_*.sql.gz")[0]
+            logger.debug("Using latest autopostgresqlbackup dump %s", dumpfile)
 
     dumpfile_path = pathlib.Path(dumpfile)
     if dumpfile_path.is_file():
