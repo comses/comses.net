@@ -1,0 +1,62 @@
+CoMSES Net / comses.net
+Copyright 2007-2026 CoMSES Net / Arizona State University
+
+This product includes software developed by CoMSES Net (the Network for
+Computational Modeling in the Social and Ecological Sciences) and its
+contributors, originally launched as openabm.org in 2007.
+
+================================================================================
+LICENSING HISTORY
+================================================================================
+
+This software was licensed under the GNU General Public License, version 3.0
+(GPL-3.0) from 2018 through June 19, 2026.
+
+Beginning with June 19, 2026, this software is licensed under the Apache
+License, Version 2.0, as set out in the accompanying LICENSE file.
+
+Source releases published prior to this date remain available to recipients
+under the terms of GPL-3.0 under which they were originally distributed; the
+relicensing under Apache-2.0 applies prospectively and does not alter the
+license terms of any code as previously distributed. See the project's
+version control history and release notes at
+https://github.com/comses/comses.net for details on which releases are
+covered by which license.
+
+================================================================================
+FUNDING AND INFRASTRUCTURE ACKNOWLEDGMENTS
+================================================================================
+
+Development and operation of this software has been supported in part by
+the U.S. National Science Foundation (NSF) and the Alfred P. Sloan Foundation.
+
+Since 2016, the CoMSES.Net Science Gateway has been hosted on the Digital
+Research Alliance of Canada's Research Platforms and Portals (RPP) program,
+whose cyberinfrastructure supports the platform's reliability and long-term
+sustainability.
+
+This project has also benefited from collaboration and support from:
+  - Arizona State University (ASU)
+  - The Science Gateways Community Institute (SGCI) and Science Gateways Center for Excellence (SGX3)
+  - DataCite
+  - ORCID
+  - Research Organization Registry
+  - The Consortium of Scientific Software Registries and Repositories
+    (SciCodes)
+
+================================================================================
+THIRD-PARTY SOFTWARE NOTICES
+================================================================================
+
+This software depends on a number of open-source third-party libraries
+and frameworks, each governed by its own license terms. Notable
+dependencies include Django, Django REST Framework, Wagtail, PostgreSQL
+client libraries, Elasticsearch client libraries, Vue.js, and others as
+listed in the project's django/requirements.txt and frontend/package.json
+manifests. No attribution beyond standard license compliance is required
+for these dependencies unless otherwise noted below.
+
+--------------------------------------------------------------------------------
+The contents of this NOTICE file are provided for informational purposes
+only and do not modify the License. See the accompanying LICENSE file for
+the full terms governing use, reproduction, and distribution of this Work.
