@@ -1,5 +1,5 @@
 bagit==1.9.0
-bleach==6.3.0
+bleach==6.4.0
 datacite==1.4.0
 dedupe==3.0.3
 django-allauth==65.14.3
