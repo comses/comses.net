@@ -1,4 +1,18 @@
 #!/bin/sh
 
+LOGFILE=/shared/logs/prepare-db-backup.log
+exec >>"$LOGFILE" 2>&1
+
+# shellcheck disable=SC1091
+. /code/deploy/cron.common
+
 export DJANGO_SETTINGS_MODULE="core.settings.production"
-inv -r /code db.pgpass >> /shared/logs/prepare-db-backup.log 2>&1 
+
+printf '%s pre-backup start: PATH=%s VIRTUAL_ENV=%s INV_BIN=%s\n' "$(date -Iseconds)" "$PATH" "$VIRTUAL_ENV" "$INV_BIN"
+if [ ! -x "$INV_BIN" ]; then
+	printf '%s ERROR: inv missing or not executable at %s\n' "$(date -Iseconds)" "$INV_BIN"
+	exit 127
+fi
+
+printf '%s inv=%s\n' "$(date -Iseconds)" "$INV_BIN"
+exec "$INV_BIN" -r /code db.pgpass

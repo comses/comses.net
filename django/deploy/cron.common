@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Shared runtime setup for cron scripts that execute Invoke tasks.
+if [ -r /etc/default/comses-runtime ]; then
+    . /etc/default/comses-runtime
+fi
+
+COMSES_VENV_DEFAULT="/home/comses/virtualenvs/comses.venv"
+COMSES_VENV="${COMSES_VENV:-${VIRTUAL_ENV:-$COMSES_VENV_DEFAULT}}"
+
+export VIRTUAL_ENV="$COMSES_VENV"
+export PATH="$COMSES_VENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export INV_BIN="$COMSES_VENV/bin/inv"
