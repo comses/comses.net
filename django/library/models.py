@@ -1569,6 +1569,8 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         # reset fields that should not be copied over to a new draft
         draft_release.doi = None
         draft_release.release_notes = ""
+        draft_release.output_data_url = ""
+        draft_release.input_data_url = ""
         draft_release.save()
         return draft_release
 

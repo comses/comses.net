@@ -62,18 +62,22 @@ def normalize_doi_link(value: str) -> str:
     value = (value or "").strip()
     if not value:
         return value
+    
+    # Strip "doi:" prefix first
     if value.lower().startswith("doi:"):
         value = value[4:].strip()
+    
+    # Extract DOI from URL if present
     if value.lower().startswith("http://") or value.lower().startswith("https://"):
         parsed = urlparse(value)
         if parsed.netloc.endswith("doi.org") and parsed.path:
-            value = parsed.path.lstrip("/")
+            value = parsed.path.lstrip("/")  # Now value is just the DOI
+    
+    # Validate the DOI (not the URL)
     if not DOI_LINK_PATTERN.match(value):
         raise ValidationError(_(f"Invalid DOI link: {value}"))
-    if value.lower().startswith("http://") or value.lower().startswith("https://"):
-        parsed = urlparse(value)
-        if parsed.netloc.endswith("doi.org") and parsed.path:
-            return f"https://doi.org/{parsed.path.lstrip('/')}"
+    
+    # Return normalized URL
     return f"https://doi.org/{value}"
 
 

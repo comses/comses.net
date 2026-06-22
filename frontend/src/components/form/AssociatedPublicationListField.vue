@@ -1,14 +1,15 @@
 <template>
   <div>
     <slot name="label">
-      <FieldLabel v-if="label" :label="label" :id-for="id" :required="required" />
+      <FieldLabel v-if="label" :label="label" :id-for="candidateDoiId" :required="required" />
     </slot>
     <FormPlaceholder v-if="showPlaceholder" />
     <div v-else>
       <div class="input-group mb-2">
         <input
           v-model="candidateDoi"
-          :id="`${id}-candidate-doi`"
+          v-bind="attrs"
+          :id="candidateDoiId"
           :class="['form-control', { 'is-invalid': localErrors.doi }]"
           :placeholder="placeholder"
           @input="localErrors.doi = ''"
@@ -18,7 +19,7 @@
           <small>Press enter to add</small>
         </button>
       </div>
-      <FieldError v-if="localErrors.doi" :error="localErrors.doi" :id-for="id" />
+      <FieldError v-if="localErrors.doi" :error="localErrors.doi" :id-for="candidateDoiId" />
       <Sortable :list="publications" :item-key="item => item.doi" @end="sort($event)">
         <template #item="{ element, index }">
           <div :key="`${element.doi}-${index}`" class="my-1 input-group align-items-stretch">
@@ -49,16 +50,16 @@
       </Sortable>
     </div>
     <slot name="help">
-      <FieldHelp v-if="help" :help="help" :id-for="id" />
+      <FieldHelp v-if="help" :help="help" :id-for="candidateDoiId" />
     </slot>
     <slot name="error">
-      <FieldError v-if="error" :error="error" :id-for="id" />
+      <FieldError v-if="error" :error="error" :id-for="candidateDoiId" />
     </slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, reactive, ref } from "vue";
+import { computed, inject, onMounted, reactive, ref, useAttrs } from "vue";
 import { Sortable } from "sortablejs-vue3";
 import type { SortableEvent } from "sortablejs";
 import { useField } from "@/composables/form";
@@ -80,10 +81,14 @@ export interface AssociatedPublicationListFieldProps {
 const DOI_PATTERN = /^(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i;
 
 const props = defineProps<AssociatedPublicationListFieldProps>();
+const attrs = useAttrs();
 
 const showPlaceholder = inject("showPlaceholder", false);
 const candidateDoi = ref("");
 const localErrors = reactive({ doi: "" });
+
+const { id, value: publications, error } = useField<AssociatedPublication[]>(props, "name");
+const candidateDoiId = computed(() => `${id}-candidate-doi`);
 
 onMounted(() => {
   if (!publications.value) {
@@ -153,6 +158,4 @@ function sort(event: SortableEvent) {
     publications.value.splice(newIndex, 0, item);
   }
 }
-
-const { id, value: publications, error } = useField<AssociatedPublication[]>(props, "name");
 </script>

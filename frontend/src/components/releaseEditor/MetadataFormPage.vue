@@ -178,7 +178,6 @@ const { errors, handleSubmit, values, setValues } = useForm<ReleaseMetadataField
   initialValues: {},
   showPlaceholder: isLoading,
   onSubmit: async () => {
-    console.log(values);
     await update(store.identifier, store.versionNumber, values);
     if (serverErrors.value.length === 0) {
       store.setMetadata({ ...values } as CodebaseReleaseMetadata);
