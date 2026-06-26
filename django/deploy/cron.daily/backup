@@ -2,5 +2,19 @@
 #
 # Run backups over the model library filesystem and db
 
+LOGFILE=/shared/logs/comses-backup.log
+exec >>"$LOGFILE" 2>&1
+
+# shellcheck disable=SC1091
+. /code/deploy/cron.common
+
 export DJANGO_SETTINGS_MODULE="core.settings.production"
-inv -r /code db.backup borg.backup >> /shared/logs/comses-backup.log 2>&1
+
+printf '%s backup start: PATH=%s VIRTUAL_ENV=%s INV_BIN=%s\n' "$(date -Iseconds)" "$PATH" "$VIRTUAL_ENV" "$INV_BIN"
+if [ ! -x "$INV_BIN" ]; then
+	printf '%s ERROR: inv missing or not executable at %s\n' "$(date -Iseconds)" "$INV_BIN"
+	exit 127
+fi
+
+printf '%s inv=%s\n' "$(date -Iseconds)" "$INV_BIN"
+exec "$INV_BIN" -r /code db.backup borg.backup

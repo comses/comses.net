@@ -159,6 +159,21 @@ e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
 		inv borg.restore --force && \
 		inv prepare"
 
+E2E_NPM_COMPOSE_RUN = docker compose -f docker-compose.yml -f e2e.yml run --rm --no-deps -v "$(CURDIR)/e2e:/e2e" -w /e2e vite
+
+.PHONY: e2e-deps-install-lock
+e2e-deps-install-lock: docker-compose.yml
+	$(E2E_NPM_COMPOSE_RUN) npm install --package-lock-only --no-audit --no-fund --cache /tmp/npm-global
+	$(E2E_NPM_COMPOSE_RUN) npm ci --no-audit --no-fund --cache /tmp/npm-global
+
+.PHONY: e2e-deps-update-lock
+e2e-deps-update-lock: docker-compose.yml
+	$(E2E_NPM_COMPOSE_RUN) npm update --package-lock-only --no-audit --no-fund --cache /tmp/npm-global
+	$(E2E_NPM_COMPOSE_RUN) npm ci --no-audit --no-fund --cache /tmp/npm-global
+
+.PHONY: e2e-deps
+e2e-deps: e2e-deps-update-lock
+
 .PHONY: gen-secret
 gen-secret:
 	docker compose run --rm server python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"

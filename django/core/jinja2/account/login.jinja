@@ -17,18 +17,19 @@
     </div>
 {% endif %}
 <p class='lead'>
-Use the social sign in buttons below to sign in to CoMSES with your <a href='https://github.com'>GitHub</a>
-or <a href='https://orcid.org'>ORCID</a> account. If you don't have an existing CoMSES Net account this will create
-a new account and prompt you for additional information. If you <em>do</em> have an existing CoMSES Net account and want
-to link it with GitHub or ORCID, first sign in using your username / password below, then visit
-<a href='{{url("core:account-profile")}}#local-signin'>your account profile page</a> to link your accounts.
+Use the sign in buttons below to access CoMSES.Net with your <a href='https://github.com'>GitHub</a>
+or <a href='https://orcid.org'>ORCID</a> account.<br><br>
+<b>New users:</b> Sign in with GitHub or ORCID and complete the registration process to create an account.
+<br><br>
+<b>Existing users:</b> To link a GitHub or ORCID account, first sign in with your CoMSES.Net username and password, then visit your
+<a href='{{url("core:account-profile")}}#local-signin'>account settings page</a> to connect additional sign-in methods.
 </p>
 {% include "includes/socialauth_login.jinja" %}
 <hr>
 <div class='row'>
     <div class="col">
         <h3><a class='anchor' id='local-signin'></a>Sign in with your CoMSES Net Account</h3>
-        <p>New user? You can sign up using the social auth buttons above or <a href='/accounts/signup/'>fill out a brief form to create a new CoMSES Net account</a>.</p>
+        <p>New user? Sign up with GitHub or ORCID or <a href='/accounts/signup/'>fill out a brief form to create a new CoMSES Net account</a>.</p>
         <form id='signin-form' role="form" class="form-horizontal" method="post">
             {{ csrf_input }}
             <div id='login' class='mb-3'>
