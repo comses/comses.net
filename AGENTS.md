@@ -37,7 +37,6 @@ This platform manages scientific software artifacts and publication metadata. Th
 
 ## Security and Engineering Baseline
 
-- Follow OWASP Top 10 and ASVS principles
 - Validate and sanitize all external inputs at the serializer or form layer before reaching model or business logic
 - Avoid raw SQL unless explicitly justified and reviewed
 - Protect sensitive data; never expose secrets in code or responses
@@ -47,18 +46,40 @@ This platform manages scientific software artifacts and publication metadata. Th
 ## Backend Conventions (Django)
 
 - Keep core domain logic in models; place cross-model workflows in dedicated modules
-- Put reusable or nontrivial query logic in QuerySet methods and expose via model managers
+- Put reusable or nontrivial query logic in QuerySet methods and expose via model managers using `as_manager()`, for example:
+
+  ```python
+  class ProgrammingLanguageQuerySet(models.QuerySet):
+      def pinned(self):
+          return self.filter(is_pinned=True)
+
+  class ProgrammingLanguage(models.Model):
+      objects = ProgrammingLanguageQuerySet.as_manager()
+  ```
+
 - Compose QuerySet methods at call sites; avoid constructing complex ORM queries inline
 - Do not bypass ORM, serializers, or permissions without explicit justification
 - Generate migrations; do not hand-write migration files unless required and always review auto-generated migrations before committing
-- Huey task changes may require consumer restart
+- The Huey task queue runs `immediate: False`, so the consumer process does not auto-reload on code changes. After changing task code in `tasks.py`, restart the affected service before verifying behavior — do not assume a code change to a task took effect.
 
 ## Frontend Conventions (Vue)
 
 - Use Vue 3 Composition API with script setup
 - Prefer Bootstrap utility classes before custom styling
-- Keep API client logic in composables
-- Ensure API shape compatibility with snake_case to camelCase transformations
+- Keep API client logic in composables under `frontend/src/composables/api/`, for example:
+
+  ```ts
+  export function useContributorAPI() {
+    const { state, get, searchUrl } = useAxios("/contributors/");
+    async function search(params: UserSearchQueryParams) {
+      params.page = params.page || 1;
+      return get(searchUrl(params));
+    }
+    return { ...toRefs(state), search };
+  }
+  ```
+
+- The Django REST API is not consistently transformed between snake_case and camelCase; `frontend/src/types.ts` has both conventions depending on whether a field is raw API response shape or a mapped view type. Check the existing type definition before assuming a field's casing.
 - Be careful with date parsing assumptions from API responses
 
 ## Testing Expectations
@@ -67,6 +88,7 @@ This platform manages scientific software artifacts and publication metadata. Th
 - Prefer targeted test execution during development
 - Use repository-standard containerized commands for running tests and tooling
 - For targeted Django tests, run exactly: `make test TEST_ARGS=<dotted.test.path>`
+- `make test` destroys and reinitializes the database from scratch on every run (via `deploy/test.sh`); never run it against a database whose state needs to be preserved
 - If `make test` fails in WSL with Docker daemon or credential-helper errors, prompt the user to start Docker Desktop for Windows and confirm before retrying
 - Do not change existing behavior without updating or adding tests
 
@@ -79,3 +101,4 @@ This platform manages scientific software artifacts and publication metadata. Th
 - Prefer repo-root-relative paths for links (for example, `docs/agents/commands.md`), not machine-absolute paths (for example, `/home/...`).
 - Keep operational runbooks, backup and restore procedures, and full command catalogs in project docs
 - Keep this file policy-focused; avoid long procedural walkthroughs
+- `CLAUDE.md` should import this file (`@AGENTS.md`) rather than duplicate it, to avoid the two drifting apart
