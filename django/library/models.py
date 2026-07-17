@@ -1089,6 +1089,12 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             "URL to code repository, e.g., https://github.com/comses/wolf-sheep"
         ),
     )
+    youtube_url = models.URLField(
+        blank=True,
+        help_text=_(
+            "Optional YouTube URL showcasing this codebase (e.g., a demo or tutorial video)."
+        ),
+    )
     replication_text = models.TextField(
         blank=True,
         help_text=_("URL / DOI / citation for the original model being replicated"),
@@ -1104,6 +1110,19 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         blank=True,
         help_text=_(
             "DOI, Permanent URL, or citation to a publication associated with this codebase."
+        ),
+    )
+    preferred_citation = models.TextField(
+        blank=True,
+        help_text=_(
+            "Legacy preferred citation text. Use associated_publications to control what appears in the citation area."
+        ),
+    )
+    associated_publications = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "List of DOI links associated with this codebase. Each item should include a DOI link and whether it should appear in the citation area."
         ),
     )
     tags = ClusterTaggableManager(through=CodebaseTag)
@@ -1316,6 +1335,27 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return (
             self.last_published_on.year if self.last_published_on else date.today().year
         )
+
+    @staticmethod
+    def _publication_doi(publication: dict) -> str:
+        return (publication.get("doi") or "").strip()
+
+    @property
+    def associated_publication_links(self):
+        return [
+            doi
+            for publication in self.associated_publications
+            if (doi := self._publication_doi(publication))
+        ]
+
+    @property
+    def citable_associated_publication_links(self):
+        return [
+            doi
+            for publication in self.associated_publications
+            if publication.get("include_in_citation")
+            and (doi := self._publication_doi(publication))
+        ]
 
     @property
     def all_contributors(self):
@@ -1530,6 +1570,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         draft_release.doi = None
         draft_release.release_notes = ""
         draft_release.output_data_url = ""
+        draft_release.input_data_url = ""
         draft_release.save()
         return draft_release
 
@@ -1855,6 +1896,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     embargo_end_date = models.DateTimeField(null=True, blank=True)
     output_data_url = models.URLField(
         blank=True, help_text=_("Permanent URL to output data from this model.")
+    )
+    input_data_url = models.URLField(
+        blank=True, help_text=_("Permanent URL to input data used by this model.")
     )
     version_number = models.CharField(
         max_length=32, help_text=_("semver string, e.g., 1.0.5, see semver.org")
@@ -3389,10 +3433,9 @@ class CommonMetadata:
                 release.citation_text,
                 codebase.references_text,
                 codebase.replication_text,
-                codebase.associated_publication_text,
             ]
             if text
-        ]
+        ] + codebase.citable_associated_publication_links
 
         if release.live:
             self.first_published = release.first_published_at.date()
@@ -3748,7 +3791,7 @@ class CodebaseDataCiteSchema(DataCiteSchema):
         ```
         """
         # FIXME: establish CommonMetadata for Codebases as well and change signature to operate on CommonMetadata
-        # add references_text and associated_publication_text fields when better structured metadata for those fields are available
+        # add references_text and associated_publications fields when better structured metadata for those fields are available
         metadata = {
             "creators": cls.to_citable_authors(codebase.all_author_contributors),
             "titles": [{"title": codebase.title}],
