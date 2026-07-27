@@ -48,6 +48,10 @@
                             <li><a class="dropdown-item" href="{{ url('library:codebase-add') }}"><b>Publish a
                                         model</b></a></li>
                             <li><a class="dropdown-item" href="/reviews/">Peer review</a></li>
+                            {% set librarian_href = librarian_url(user) %}
+                            {% if librarian_href %}
+                            <li><a class="dropdown-item" href="{{ librarian_href }}">CoMSES Librarian</a></li>
+                            {% endif %}
                         </ul>
                     </li>
                     <li class="nav-item"><a class="nav-link" href="/resources/">Resources</a></li>
