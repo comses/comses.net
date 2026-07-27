@@ -70,6 +70,7 @@ services:
       - github_integration_app_private_key
       - github_integration_app_webhook_secret
       - hcaptcha_secret
+      - librarian_sso_secret
       - mail_api_key
       - youtube_api_key
     volumes:
@@ -107,6 +108,8 @@ secrets:
     file: ./build/secrets/github_integration_app_webhook_secret
   hcaptcha_secret:
     file: ./build/secrets/hcaptcha_secret
+  librarian_sso_secret:
+    file: ./build/secrets/librarian_sso_secret
   mail_api_key:
     file: ./build/secrets/mail_api_key
   orcid_client_secret:

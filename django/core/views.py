@@ -1,4 +1,5 @@
 import base64
+import binascii
 import hashlib
 import hmac
 import logging
@@ -41,7 +42,7 @@ from taggit.models import Tag
 from wagtail.images.models import Image
 
 from library.models import Codebase
-from .models import Event, FollowUser, Job, MemberProfile
+from .models import ComsesGroups, Event, FollowUser, Job, MemberProfile
 from .serializers import (
     EventSerializer,
     JobSerializer,
@@ -263,6 +264,94 @@ def discourse_sso(request):
     # Redirect back to Discourse
     discourse_sso_url = build_discourse_url(f"session/sso_login?{query_string}")
     return HttpResponseRedirect(discourse_sso_url)
+
+
+INVALID_LIBRARIAN_SSO_PAYLOAD = (
+    "Invalid payload. Please contact us if this problem persists."
+)
+
+
+@login_required
+def librarian_sso(request):
+    """
+    Single sign-on provider for the CoMSES Librarian, mirroring discourse_sso above.
+
+    The Librarian mints its own session from the signed claims returned here, so this view is the
+    only place group membership is established. Three deliberate differences from discourse_sso:
+
+    - the signature is verified before the payload is decoded, so malformed base64 or non-utf-8
+      plaintext returns 400 rather than raising past the handler
+    - `nonce` is checked as a parsed query parameter rather than as a substring of the decoded
+      payload, which is what the return payload actually needs
+    - access is restricted to the "Librarian Users" group and refused with an explanatory page
+
+    `groups` is filtered to ComsesGroups values rather than taken from user.groups, keeping it a
+    closed admin-managed set with no substring collisions.
+    """
+    if not settings.LIBRARIAN_BASE_URL or not settings.LIBRARIAN_SSO_SECRET:
+        # an empty secret is never a state to sign from
+        raise Http404("The CoMSES Librarian integration is not configured")
+
+    payload = request.GET.get("sso")
+    signature = request.GET.get("sig")
+
+    if not payload or not signature:
+        return HttpResponseBadRequest(
+            "No SSO payload or signature. Please contact us if this problem persists."
+        )
+
+    payload = bytes(parse.unquote(payload), encoding="utf-8")
+
+    key = bytes(settings.LIBRARIAN_SSO_SECRET, encoding="utf-8")  # must not be unicode
+    expected_signature = hmac.new(key, payload, digestmod=hashlib.sha256).hexdigest()
+    # compare as bytes: hmac.compare_digest raises TypeError on a non-ASCII str
+    if not hmac.compare_digest(
+        expected_signature.encode("utf-8"), signature.encode("utf-8")
+    ):
+        return HttpResponseBadRequest(INVALID_LIBRARIAN_SSO_PAYLOAD)
+
+    # only decode once the signature is verified. base64.decodebytes raises binascii.Error on
+    # malformed input and bytes.decode raises UnicodeDecodeError on non-utf-8 plaintext
+    try:
+        decoded = base64.decodebytes(payload).decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError):
+        return HttpResponseBadRequest(INVALID_LIBRARIAN_SSO_PAYLOAD)
+
+    qs = parse.parse_qs(decoded)
+    if "nonce" not in qs:
+        return HttpResponseBadRequest(INVALID_LIBRARIAN_SSO_PAYLOAD)
+
+    user = request.user
+    if not ComsesGroups.LIBRARIAN.is_member(user):
+        logger.info("refused librarian sso for non-member user %s", user.pk)
+        return permission_denied(
+            request, None, template_name="core/librarian_sso_denied.jinja"
+        )
+
+    member_group_names = set(user.groups.values_list("name", flat=True))
+    params = {
+        "nonce": qs["nonce"][0],
+        "external_id": user.pk,
+        "email": user.email,
+        "username": user.username,
+        "name": user.get_full_name(),
+        "groups": ",".join(
+            g.value for g in ComsesGroups if g.value in member_group_names
+        ),
+        # convenience for the Librarian's logs; non-members are refused above and it performs its
+        # own exact-match check against `groups` regardless
+        "is_librarian_user": "true",
+    }
+
+    return_payload = base64.encodebytes(bytes(parse.urlencode(params), "utf-8"))
+    h = hmac.new(key, return_payload, digestmod=hashlib.sha256)
+    query_string = parse.urlencode({"sso": return_payload, "sig": h.hexdigest()})
+
+    # the callback is configured server-side and never taken from the request, otherwise any
+    # signed payload could aim this endpoint anywhere
+    return HttpResponseRedirect(
+        f"{settings.LIBRARIAN_BASE_URL.rstrip('/')}/auth/sso/callback?{query_string}"
+    )
 
 
 class ProfileRedirectView(LoginRequiredMixin, RedirectView):

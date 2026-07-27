@@ -65,6 +65,7 @@ def get_core_urls():
         path("jobs/<int:pk>/edit/", views.JobUpdateView.as_view(), name="job-edit"),
         path("jobs/add/", views.JobCreateView.as_view(), name="job-add"),
         path("discourse/sso", views.discourse_sso, name="discourse-sso"),
+        path("librarian/sso", views.librarian_sso, name="librarian-sso"),
     ] + router.urls
 
 

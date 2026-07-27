@@ -603,6 +603,14 @@ DISCOURSE_SSO_SECRET = read_secret("discourse_sso_secret", "unconfigured")
 DISCOURSE_API_KEY = read_secret("discourse_api_key", "unconfigured")
 DISCOURSE_API_USERNAME = os.getenv("DISCOURSE_API_USERNAME", "unconfigured")
 
+# CoMSES Librarian single sign-on, see core.views.librarian_sso.
+# Unset disables the integration: /librarian/sso returns 404 and the navigation
+# entries stay hidden, so a deployment without a Librarian needs no configuration.
+LIBRARIAN_BASE_URL = os.getenv("LIBRARIAN_BASE_URL", "")
+# HMAC key shared with the Librarian deployment. No fallback: an empty key makes
+# every signature mismatch, which the Librarian rejects.
+LIBRARIAN_SSO_SECRET = read_secret("librarian_sso_secret")
+
 YOUTUBE_API_KEY = read_secret("youtube_api_key", "unconfigured")
 YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3"
 YOUTUBE_CHANNEL_ID = os.getenv("YOUTUBE_CHANNEL_ID", "UCF71Bt4eDubxf0wbA7fXPfg")

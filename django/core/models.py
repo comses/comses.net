@@ -42,6 +42,7 @@ class ComsesGroups(Enum):
     MODERATOR = "Moderators"
     EDITOR = "Editors"
     FULL_MEMBER = "Full Members"
+    LIBRARIAN = "Librarian Users"
 
     @staticmethod
     @transaction.atomic
