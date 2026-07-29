@@ -95,8 +95,7 @@ def environment(**options):
 def build_absolute_uri(relative_url):
     domain = Site.objects.get_current().domain
     protocol = "https" if settings.SECURE_SSL_REDIRECT else "http"
-    absolute_url = "{}://{}{}".format(protocol, domain, relative_url)
-    return absolute_url
+    return f"{protocol}://{domain}{relative_url}"
 
 
 def cookielaw(request):

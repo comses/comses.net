@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.exceptions import PermissionDenied
 from django.http import (
@@ -59,7 +60,6 @@ from .mixins import (
 )
 from .pagination import SmallResultSetPagination
 from .permissions import ObjectPermissions, ViewRestrictedObjectPermissions
-from .discourse import build_discourse_url
 from .view_helpers import (
     add_user_retrieve_perms,
     get_search_queryset,
@@ -68,6 +68,9 @@ from .view_helpers import (
 from .utils import parse_date, parse_datetime
 
 logger = logging.getLogger(__name__)
+
+INVALID_SSO_PAYLOAD = "Invalid payload. Please contact us if this problem persists."
+SSO_NONCE_TTL_SECONDS = 10 * 60
 
 
 class NoDeleteNoUpdateViewSet(
@@ -207,39 +210,87 @@ def server_error(request, template_name="500.jinja", context=None):
     return response
 
 
+def is_sso_secret_configured(secret):
+    return bool(secret) and secret != "unconfigured"
+
+
+def verify_sso_signature(payload: bytes, signature: str, secret: str) -> bool:
+    expected_signature = hmac.new(
+        secret.encode("utf-8"), payload, digestmod=hashlib.sha256
+    ).hexdigest()
+    try:
+        signature_bytes = signature.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return hmac.compare_digest(expected_signature.encode("utf-8"), signature_bytes)
+
+
+def decode_sso_payload(payload: bytes):
+    try:
+        decoded = base64.decodebytes(payload).decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError):
+        return None
+    qs = parse.parse_qs(decoded)
+    if "nonce" not in qs:
+        return None
+    return qs
+
+
+def check_and_consume_sso_nonce(nonce: str, namespace: str) -> bool:
+    digest = hashlib.sha256(nonce.encode("utf-8")).hexdigest()
+    # Ten minutes covers normal login round trips while bounding cache growth and
+    # replay windows.
+    return cache.add(
+        f"sso:{namespace}:consumed_nonce:{digest}", True, SSO_NONCE_TTL_SECONDS
+    )
+
+
+def build_signed_sso_redirect(
+    base_url: str, path: str, params: dict, secret: str
+) -> str:
+    return_payload = base64.encodebytes(bytes(parse.urlencode(params), "utf-8"))
+    signature = hmac.new(
+        secret.encode("utf-8"), return_payload, digestmod=hashlib.sha256
+    ).hexdigest()
+    query_string = parse.urlencode({"sso": return_payload, "sig": signature})
+    return f"{base_url.rstrip('/')}/{path.lstrip('/')}?{query_string}"
+
+
+def get_verified_sso_payload(request, secret: str):
+    payload = request.GET.get("sso")
+    signature = request.GET.get("sig")
+
+    if not payload or not signature:
+        return None, HttpResponseBadRequest(
+            "No SSO payload or signature. Please contact us if this problem persists."
+        )
+
+    payload = bytes(parse.unquote(payload), encoding="utf-8")
+    if not verify_sso_signature(payload, signature, secret):
+        return None, HttpResponseBadRequest(INVALID_SSO_PAYLOAD)
+
+    qs = decode_sso_payload(payload)
+    if qs is None:
+        return None, HttpResponseBadRequest(INVALID_SSO_PAYLOAD)
+
+    return qs, None
+
+
 @login_required
 def discourse_sso(request):
     """
     Code adapted from https://meta.discourse.org/t/sso-example-for-django/14258
     """
-    payload = request.GET.get("sso")
-    signature = request.GET.get("sig")
+    if not is_sso_secret_configured(settings.DISCOURSE_SSO_SECRET):
+        raise Http404("The Discourse integration is not configured")
 
-    if None in [payload, signature]:
-        return HttpResponseBadRequest(
-            "No SSO payload or signature. Please contact us if this problem persists."
-        )
-
-    # Validate the payload
-
-    payload = bytes(parse.unquote(payload), encoding="utf-8")
-    decoded = base64.decodebytes(payload).decode("utf-8")
-    if len(payload) == 0 or "nonce" not in decoded:
-        return HttpResponseBadRequest(
-            "Invalid payload. Please contact us if this problem persists."
-        )
-
-    key = bytes(settings.DISCOURSE_SSO_SECRET, encoding="utf-8")  # must not be unicode
-    h = hmac.new(key, payload, digestmod=hashlib.sha256)
-    this_signature = h.hexdigest()
-
-    if not hmac.compare_digest(this_signature, signature):
-        return HttpResponseBadRequest(
-            "Invalid payload. Please contact us if this problem persists."
-        )
+    qs, error_response = get_verified_sso_payload(
+        request, settings.DISCOURSE_SSO_SECRET
+    )
+    if error_response is not None:
+        return error_response
 
     # Build the return payload
-    qs = parse.parse_qs(decoded)
     user = request.user
     # FIXME: create a sync endpoint to sync up admins and groups (e.g., CoMSES full member Discourse group)
     # See https://meta.discourse.org/t/official-single-sign-on-for-discourse-sso/13045
@@ -257,18 +308,18 @@ def discourse_sso(request):
     if avatar_url:
         params.update(avatar_url=request.build_absolute_uri(avatar_url))
 
-    return_payload = base64.encodebytes(bytes(parse.urlencode(params), "utf-8"))
-    h = hmac.new(key, return_payload, digestmod=hashlib.sha256)
-    query_string = parse.urlencode({"sso": return_payload, "sig": h.hexdigest()})
+    if not check_and_consume_sso_nonce(qs["nonce"][0], "discourse"):
+        return HttpResponseBadRequest(INVALID_SSO_PAYLOAD)
 
     # Redirect back to Discourse
-    discourse_sso_url = build_discourse_url(f"session/sso_login?{query_string}")
-    return HttpResponseRedirect(discourse_sso_url)
-
-
-INVALID_LIBRARIAN_SSO_PAYLOAD = (
-    "Invalid payload. Please contact us if this problem persists."
-)
+    return HttpResponseRedirect(
+        build_signed_sso_redirect(
+            settings.DISCOURSE_BASE_URL,
+            "session/sso_login",
+            params,
+            settings.DISCOURSE_SSO_SECRET,
+        )
+    )
 
 
 @login_required
@@ -288,38 +339,17 @@ def librarian_sso(request):
     `groups` is filtered to ComsesGroups values rather than taken from user.groups, keeping it a
     closed admin-managed set with no substring collisions.
     """
-    if not settings.LIBRARIAN_BASE_URL or not settings.LIBRARIAN_SSO_SECRET:
+    if not settings.LIBRARIAN_BASE_URL or not is_sso_secret_configured(
+        settings.LIBRARIAN_SSO_SECRET
+    ):
         # an empty secret is never a state to sign from
         raise Http404("The CoMSES Librarian integration is not configured")
 
-    payload = request.GET.get("sso")
-    signature = request.GET.get("sig")
-
-    if not payload or not signature:
-        return HttpResponseBadRequest(
-            "No SSO payload or signature. Please contact us if this problem persists."
-        )
-
-    payload = bytes(parse.unquote(payload), encoding="utf-8")
-
-    key = bytes(settings.LIBRARIAN_SSO_SECRET, encoding="utf-8")  # must not be unicode
-    expected_signature = hmac.new(key, payload, digestmod=hashlib.sha256).hexdigest()
-    # compare as bytes: hmac.compare_digest raises TypeError on a non-ASCII str
-    if not hmac.compare_digest(
-        expected_signature.encode("utf-8"), signature.encode("utf-8")
-    ):
-        return HttpResponseBadRequest(INVALID_LIBRARIAN_SSO_PAYLOAD)
-
-    # only decode once the signature is verified. base64.decodebytes raises binascii.Error on
-    # malformed input and bytes.decode raises UnicodeDecodeError on non-utf-8 plaintext
-    try:
-        decoded = base64.decodebytes(payload).decode("utf-8")
-    except (binascii.Error, UnicodeDecodeError):
-        return HttpResponseBadRequest(INVALID_LIBRARIAN_SSO_PAYLOAD)
-
-    qs = parse.parse_qs(decoded)
-    if "nonce" not in qs:
-        return HttpResponseBadRequest(INVALID_LIBRARIAN_SSO_PAYLOAD)
+    qs, error_response = get_verified_sso_payload(
+        request, settings.LIBRARIAN_SSO_SECRET
+    )
+    if error_response is not None:
+        return error_response
 
     user = request.user
     if not ComsesGroups.LIBRARIAN.is_member(user):
@@ -343,14 +373,18 @@ def librarian_sso(request):
         "is_librarian_user": "true",
     }
 
-    return_payload = base64.encodebytes(bytes(parse.urlencode(params), "utf-8"))
-    h = hmac.new(key, return_payload, digestmod=hashlib.sha256)
-    query_string = parse.urlencode({"sso": return_payload, "sig": h.hexdigest()})
+    if not check_and_consume_sso_nonce(qs["nonce"][0], "librarian"):
+        return HttpResponseBadRequest(INVALID_SSO_PAYLOAD)
 
     # the callback is configured server-side and never taken from the request, otherwise any
     # signed payload could aim this endpoint anywhere
     return HttpResponseRedirect(
-        f"{settings.LIBRARIAN_BASE_URL.rstrip('/')}/auth/sso/callback?{query_string}"
+        build_signed_sso_redirect(
+            settings.LIBRARIAN_BASE_URL,
+            "auth/sso/callback",
+            params,
+            settings.LIBRARIAN_SSO_SECRET,
+        )
     )
 
 

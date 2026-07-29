@@ -176,4 +176,4 @@ e2e-deps: e2e-deps-update-lock
 
 .PHONY: gen-secret
 gen-secret:
-	docker compose run --rm server python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+	docker compose run --rm server python -c "import secrets; print(secrets.token_hex(32))"
