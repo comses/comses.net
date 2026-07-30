@@ -9,7 +9,7 @@ SECRETS_DIR=${BUILD_DIR}/secrets
 DB_PASSWORD_PATH=${SECRETS_DIR}/db_password
 PGPASS_PATH=${SECRETS_DIR}/.pgpass
 SECRET_KEY_PATH=${SECRETS_DIR}/django_secret_key
-EXT_SECRETS=hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret mail_api_key datacite_api_password youtube_api_key github_integration_app_private_key github_integration_app_webhook_secret
+EXT_SECRETS=hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret librarian_sso_secret mail_api_key datacite_api_password youtube_api_key github_integration_app_private_key github_integration_app_webhook_secret
 GENERATED_SECRETS=$(DB_PASSWORD_PATH) $(PGPASS_PATH) $(SECRET_KEY_PATH)
 
 ENVREPLACE := deploy/scripts/envreplace
@@ -176,4 +176,4 @@ e2e-deps: e2e-deps-update-lock
 
 .PHONY: gen-secret
 gen-secret:
-	docker compose run --rm server python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+	docker compose run --rm server python -c "import secrets; print(secrets.token_hex(32))"

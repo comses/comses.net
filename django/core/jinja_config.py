@@ -23,6 +23,7 @@ from datetime import datetime
 from urllib.parse import parse_qsl
 
 from core.fields import render_sanitized_markdown
+from core.models import ComsesGroups
 from core.serializers import FULL_DATE_FORMAT, FULL_DATETIME_FORMAT
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,7 @@ def environment(**options):
             "now": now,
             "generate_search_form_inputs": generate_search_form_inputs,
             "should_enable_discourse": should_enable_discourse,
+            "librarian_url": librarian_url,
             "is_production": is_production,
             "provider_login_url": provider_login_url,
             "provider_display_name": provider_display_name,
@@ -93,8 +95,7 @@ def environment(**options):
 def build_absolute_uri(relative_url):
     domain = Site.objects.get_current().domain
     protocol = "https" if settings.SECURE_SSL_REDIRECT else "http"
-    absolute_url = "{}://{}{}".format(protocol, domain, relative_url)
-    return absolute_url
+    return f"{protocol}://{domain}{relative_url}"
 
 
 def cookielaw(request):
@@ -149,6 +150,41 @@ def should_enable_discourse(is_public: bool):
     Model, e.g., Codebase/CodebaseRelease/Event/Job) is public.
     """
     return is_public and not settings.DEPLOY_ENVIRONMENT.is_development
+
+
+def librarian_url(user):
+    """
+    Returns the CoMSES Librarian URL for this user, or None if it should be hidden.
+
+    One function rather than a `constants` entry plus a separate visibility flag:
+    `constants` is built once when the Jinja Environment is constructed, so it is a
+    snapshot of settings at startup. A gate that reads settings at call time
+    alongside a URL that does not is two sources of truth that can disagree.
+
+    Hidden unless LIBRARIAN_BASE_URL is configured AND the user belongs to
+    "Librarian Users", so a deployment without the Librarian shows nothing rather
+    than a broken link.
+
+    The is_authenticated check is not redundant: it keeps this from issuing a group
+    lookup for every anonymous visitor, since the navbar renders on every page. For
+    authenticated users it costs one query per page view, which is the same shape as
+    the existing emailaddress_set check a few lines below it in base.jinja.
+    """
+    if not (user and user.is_authenticated):
+        return None
+    if not settings.LIBRARIAN_BASE_URL or not settings.LIBRARIAN_SSO_SECRET:
+        return None
+    if not ComsesGroups.LIBRARIAN.is_member(user):
+        return None
+    # Straight into the handshake, not the Librarian's front page. Everyone who
+    # sees this link is, by construction, signed in to comses.net AND in the
+    # group - so the handshake succeeds silently and they arrive signed in.
+    # Pointing at the front page instead guarantees a sign-in page they have to
+    # click through, having just clicked a link that said "CoMSES Librarian".
+    #
+    # rstrip because a trailing slash in the setting would otherwise produce a
+    # doubled path; Starlette matches on the literal path and 404s on `//auth`.
+    return f"{settings.LIBRARIAN_BASE_URL.rstrip('/')}/auth/sso/login"
 
 
 def is_production():

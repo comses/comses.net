@@ -1,0 +1,22 @@
+{% extends "base.jinja" %}
+
+{% block body_class %}template-403{% endblock %}
+
+{% block introduction %}
+    <h1>403 Forbidden</h1>
+{% endblock %}
+
+{% block content %}
+    <h2 class='title'><i class='fas fa-lock'></i> CoMSES Librarian access required</h2>
+
+    <p class='lead'>
+    Your account does not currently have access to the CoMSES Librarian.
+    </p>
+
+    <p>
+    The Librarian is an <em>experimental assistant</em> for exploring the CoMSES Computational Model Library
+    and access is currently limited to a small group of pilot participants. If interested in participating,
+    please <a href='{{ slugurl('contact') }}'>send us a brief note describing how you plan to use it</a>, and
+    we will review your request.
+    </p>
+{% endblock %}

@@ -29,6 +29,16 @@
                         <a href="{{ url('library:codebase-list') }}" class="btn btn-lg btn-secondary">
                             <h4 class="fw-bold mb-0">Browse the library</h4>
                         </a>
+                        {% set librarian_href = librarian_url(user) %}
+                        {% if librarian_href %}
+                        <a href="{{ librarian_href }}" class="text-start btn btn-lg btn-outline-light mt-2">
+                            <h4 class="fw-bold mb-0">
+                                <span class="badge bg-warning text-dark me-2">Experimental</span>
+                                CoMSES Librarian
+                            </h4>
+                            <small>chat with our peer reviewed models</small>
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
                 <a class="homepage-introduction-card text-decoration-none p-3 mb-3" href="#community">
