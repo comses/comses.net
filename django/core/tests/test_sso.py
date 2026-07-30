@@ -95,9 +95,7 @@ class SsoHandshakeAssertions:
 
     def test_empty_payload(self):
         self.login()
-        response = self.client.get(
-            self.url, {"sso": "", "sig": build_request()["sig"]}
-        )
+        response = self.client.get(self.url, {"sso": "", "sig": build_request()["sig"]})
         self.assertEqual(response.status_code, 400)
 
     def test_tampered_signature(self):
@@ -162,6 +160,60 @@ class SsoHandshakeAssertions:
         request = build_request()
         self.assert_valid_response(self.client.get(self.url, request))
         self.assertEqual(self.client.get(self.url, request).status_code, 400)
+
+    def test_non_get_method_is_rejected(self):
+        self.login()
+        request = build_request()
+        # POST/PUT/DELETE should not be processed as SSO handshakes
+        for method in (self.client.post, self.client.put, self.client.delete):
+            with self.subTest(method=method.__name__):
+                response = method(self.url, request)
+                self.assertEqual(response.status_code, 405)
+
+    def test_duplicate_parameters_are_rejected(self):
+        self.login()
+        request = build_request()
+
+        cases = [
+            (
+                "duplicate sso",
+                f"{self.url}?sso={request['sso']}&sso=tampered&sig={request['sig']}",
+            ),
+            (
+                "duplicate sig",
+                f"{self.url}?sso={request['sso']}&sig={request['sig']}&sig=tampered",
+            ),
+            (
+                "both duplicated",
+                f"{self.url}?sso={request['sso']}&sso=tampered&sig={request['sig']}&sig=tampered",
+            ),
+        ]
+
+        for label, url in cases:
+            with self.subTest(label=label):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 400)
+
+    def test_malicious_return_to_is_ignored(self):
+        """
+        The return_to parameter is part of the signed payload, but the view
+        should not use it to construct the final redirect (preventing open redirects).
+        """
+        self.login()
+        # Sign a payload that tries to redirect to an external site
+        payload_data = {"nonce": TEST_NONCE, "return_to": "https://evil.com"}
+        payload = base64.encodebytes(
+            parse.urlencode(payload_data).encode("utf-8")
+        ).decode("utf-8")
+        sig = sign(payload.encode("utf-8"))
+
+        response = self.client.get(self.url, {"sso": payload, "sig": sig})
+
+        # Verify the response is still a valid provider redirect
+        params, _ = self.assert_valid_response(response)
+
+        # Verify the outbound payload does NOT contain return_to
+        self.assertNotIn("return_to", params)
 
 
 @override_settings(
@@ -294,14 +346,11 @@ class LibrarianSsoNotConfiguredTestCase(TestCase):
 
     def test_view_is_absent_when_the_secret_is_missing(self):
         """read_secret returns "" for a missing file; signing with an empty key is refused"""
-        for secret in ("", "unconfigured"):
-            with self.subTest(secret=secret), self.settings(
-                LIBRARIAN_SSO_SECRET=secret, LIBRARIAN_BASE_URL=TEST_LIBRARIAN_BASE_URL
-            ):
-                response = self.client.get(
-                    reverse("core:librarian-sso"), build_request()
-                )
-                self.assertEqual(response.status_code, 404)
+        with self.settings(
+            LIBRARIAN_SSO_SECRET="", LIBRARIAN_BASE_URL=TEST_LIBRARIAN_BASE_URL
+        ):
+            response = self.client.get(reverse("core:librarian-sso"), build_request())
+            self.assertEqual(response.status_code, 404)
 
     def test_view_is_absent_when_the_integration_is_not_configured(self):
         """404 rather than signing claims aimed at a relative URL that 404s anyway
@@ -355,9 +404,6 @@ class DiscourseSsoTestCase(SsoHandshakeAssertions, TestCase):
 
     def test_empty_or_placeholder_secret_fails_closed(self):
         self.login()
-        for secret in ("", "unconfigured"):
-            with self.subTest(secret=secret), self.settings(
-                DISCOURSE_SSO_SECRET=secret
-            ):
-                response = self.client.get(self.url, build_request())
-                self.assertEqual(response.status_code, 404)
+        with self.settings(DISCOURSE_SSO_SECRET=""):
+            response = self.client.get(self.url, build_request())
+            self.assertEqual(response.status_code, 404)

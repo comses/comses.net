@@ -11,7 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.images import ImageFile
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.http import (
     Http404,
     HttpResponseBadRequest,
@@ -19,6 +19,7 @@ from django.http import (
     HttpResponseServerError,
 )
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, TemplateView, RedirectView
 from django.urls import reverse
 from rest_framework import (
@@ -214,6 +215,14 @@ def is_sso_secret_configured(secret):
     return bool(secret) and secret != "unconfigured"
 
 
+class SsoVerificationError(SuspiciousOperation):
+    """Raised when an SSO handshake fails protocol verification."""
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 def verify_sso_signature(payload: bytes, signature: str, secret: str) -> bool:
     expected_signature = hmac.new(
         secret.encode("utf-8"), payload, digestmod=hashlib.sha256
@@ -257,26 +266,33 @@ def build_signed_sso_redirect(
 
 
 def get_verified_sso_payload(request, secret: str):
+    # Reject duplicate sso or sig parameters to prevent parameter smuggling
+    if len(request.GET.getlist("sso")) > 1 or len(request.GET.getlist("sig")) > 1:
+        raise SsoVerificationError(
+            "Duplicate SSO parameters detected. Please contact us if this problem persists."
+        )
+
     payload = request.GET.get("sso")
     signature = request.GET.get("sig")
 
     if not payload or not signature:
-        return None, HttpResponseBadRequest(
+        raise SsoVerificationError(
             "No SSO payload or signature. Please contact us if this problem persists."
         )
 
     payload = bytes(parse.unquote(payload), encoding="utf-8")
     if not verify_sso_signature(payload, signature, secret):
-        return None, HttpResponseBadRequest(INVALID_SSO_PAYLOAD)
+        raise SsoVerificationError(INVALID_SSO_PAYLOAD)
 
     qs = decode_sso_payload(payload)
     if qs is None:
-        return None, HttpResponseBadRequest(INVALID_SSO_PAYLOAD)
+        raise SsoVerificationError(INVALID_SSO_PAYLOAD)
 
-    return qs, None
+    return qs
 
 
 @login_required
+@require_GET
 def discourse_sso(request):
     """
     Code adapted from https://meta.discourse.org/t/sso-example-for-django/14258
@@ -284,11 +300,10 @@ def discourse_sso(request):
     if not is_sso_secret_configured(settings.DISCOURSE_SSO_SECRET):
         raise Http404("The Discourse integration is not configured")
 
-    qs, error_response = get_verified_sso_payload(
-        request, settings.DISCOURSE_SSO_SECRET
-    )
-    if error_response is not None:
-        return error_response
+    try:
+        qs = get_verified_sso_payload(request, settings.DISCOURSE_SSO_SECRET)
+    except SsoVerificationError as e:
+        return HttpResponseBadRequest(e.message)
 
     # Build the return payload
     user = request.user
@@ -323,6 +338,7 @@ def discourse_sso(request):
 
 
 @login_required
+@require_GET
 def librarian_sso(request):
     """
     Single sign-on provider for the CoMSES Librarian, mirroring discourse_sso above.
@@ -345,11 +361,10 @@ def librarian_sso(request):
         # an empty secret is never a state to sign from
         raise Http404("The CoMSES Librarian integration is not configured")
 
-    qs, error_response = get_verified_sso_payload(
-        request, settings.LIBRARIAN_SSO_SECRET
-    )
-    if error_response is not None:
-        return error_response
+    try:
+        qs = get_verified_sso_payload(request, settings.LIBRARIAN_SSO_SECRET)
+    except SsoVerificationError as e:
+        return HttpResponseBadRequest(e.message)
 
     user = request.user
     if not ComsesGroups.LIBRARIAN.is_member(user):
