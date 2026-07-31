@@ -38,9 +38,6 @@ services:
     command: ["npm", "run", "build"]
     environment:
       NODE_ENV: "production"
-    volumes:
-      - ./frontend/src:/code/src
-      - ./frontend/package-lock.json:/code/package-lock.json
   nginx:
     image: nginx:stable
     restart: always

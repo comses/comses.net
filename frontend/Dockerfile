@@ -9,15 +9,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY package.json package-lock.json /code/
-RUN set -ex;  \
-    if [ "$NODE_ENV" = "production" ]; then \
-        npm install --production --no-progress --loglevel=warn; \
-    elif [ "$NODE_ENV" = "test" ] || [ "$NODE_ENV" = "e2e" ]; then \
-        npm ci --no-progress --loglevel=warn; \
-    else \
-        npm install --no-progress --loglevel=warn; \
-    fi
-# Separating to ensure that changes to the below files won't cause dependency reinstall
-COPY vite.config.ts vitest.config.ts eslint.config.mjs tsconfig.json tsconfig.app.json tsconfig.node.json tsconfig.vitest.json .prettierrc /code/
+RUN npm ci --no-progress --loglevel=warn
+COPY . /code/
 # USER node
 CMD ["npm", "start"]
