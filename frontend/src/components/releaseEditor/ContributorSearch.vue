@@ -70,7 +70,7 @@ const fetchMatchingContributors = useDebounceFn(async (query: string) => {
     try {
       const response = await search({ query });
       matchingContributors.value = response.data.results;
-    } catch (e) {
+    } catch {
       // no-op
     } finally {
       isLoading.value = false;

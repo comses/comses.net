@@ -19,7 +19,7 @@ export function extractDataParams(elementId: string, names: string[]): Extracted
         try {
           const parsedValue = JSON.parse(attrValue);
           acc[name] = parsedValue;
-        } catch (error) {
+        } catch {
           if (attrValue === "False") {
             acc[name] = false;
           } else if (attrValue === "True") {

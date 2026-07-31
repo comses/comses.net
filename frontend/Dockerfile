@@ -18,6 +18,6 @@ RUN set -ex;  \
         npm install --no-progress --loglevel=warn; \
     fi
 # Separating to ensure that changes to the below files won't cause dependency reinstall
-COPY vite.config.ts vitest.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json tsconfig.vitest.json .eslintrc.cjs .prettierrc /code/
+COPY vite.config.ts vitest.config.ts eslint.config.mjs tsconfig.json tsconfig.app.json tsconfig.node.json tsconfig.vitest.json .prettierrc /code/
 # USER node
 CMD ["npm", "start"]

@@ -26,7 +26,7 @@
           label="Start Date"
           help="The date this event begins"
           required
-          :max-date="(values.endDate as Date)"
+          :max-date="values.endDate as Date"
         />
       </div>
       <div class="col-6">
@@ -48,7 +48,7 @@
           name="earlyRegistrationDeadline"
           label="Early Registration Deadline"
           help="The last day for early registration for this event (inclusive)"
-          :max-date="(values.startDate as Date)"
+          :max-date="values.startDate as Date"
         />
       </div>
       <div class="col-6 d-inline">
@@ -58,8 +58,8 @@
           name="registrationDeadline"
           label="Registration Deadline"
           help="The last day to register for this event (inclusive)"
-          :min-date="(values.earlyRegistrationDeadline as Date)"
-          :max-date="(values.endDate as Date)"
+          :min-date="values.earlyRegistrationDeadline as Date"
+          :max-date="values.endDate as Date"
         />
       </div>
     </div>
@@ -69,7 +69,7 @@
       name="submissionDeadline"
       label="Submission Deadline"
       help="The last day to make a submission for this event (inclusive)"
-      :max-date="(values.endDate as Date)"
+      :max-date="values.endDate as Date"
     />
     <MarkdownField
       class="mb-3"

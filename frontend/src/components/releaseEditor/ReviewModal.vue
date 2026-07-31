@@ -83,7 +83,7 @@ const reviewRequestErrors = ref<string[]>([]);
 
 async function submitReviewRequest() {
   isLoading.value = true;
-  let requestReviewUrl = store.release.urls.requestPeerReview ?? "";
+  const requestReviewUrl = store.release.urls.requestPeerReview ?? "";
   await post(requestReviewUrl, null, {
     onSuccess(response) {
       store.release.reviewStatus = response.data.reviewStatus;

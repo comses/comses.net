@@ -9,7 +9,7 @@
       v-model="date"
       format="yyyy-MM-dd"
       :id="id"
-      v-bind="attrs"
+      v-bind="filteredAttrs"
       :placeholder="placeholder"
       :class="{ 'is-invalid': error }"
       :input-class-name="error ? 'is-invalid' : ''"
@@ -32,8 +32,8 @@
 </template>
 
 <script setup lang="ts">
-import { inject } from "vue";
-import VueDatePicker from "@vuepic/vue-datepicker";
+import { inject, computed } from "vue";
+import { VueDatePicker } from "@vuepic/vue-datepicker";
 import { useField } from "@/composables/form";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import FieldHelp from "@/components/form/FieldHelp.vue";
@@ -56,4 +56,13 @@ const props = defineProps<DatepickerFieldProps>();
 const { id, value: date, attrs, error } = useField<Date>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
+
+type FieldAttrs = typeof attrs.value;
+type DatepickerAttrs = Omit<FieldAttrs, "onBlur">;
+
+const filteredAttrs = computed<DatepickerAttrs>(() => {
+  return Object.fromEntries(
+    Object.entries(attrs.value).filter(([name]) => name !== "onBlur")
+  ) as DatepickerAttrs;
+});
 </script>

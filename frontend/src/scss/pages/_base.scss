@@ -36,7 +36,9 @@
   min-height: $navbar-height;
   background-color: white;
   color: white;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
   position: fixed;
   top: 0;
   width: 100%;

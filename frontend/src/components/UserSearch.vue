@@ -127,7 +127,7 @@ const fetchMatchingUsers = useDebounceFn(async (query: string) => {
     try {
       const response = await props.searchFn({ query });
       matchingUsers.value = response.data.results;
-    } catch (e) {
+    } catch {
       // no-op
     } finally {
       isLoading.value = false;
