@@ -50,8 +50,8 @@ describe("Visit codebases page", () => {
       getDataCy("next").click();
       // make sure the release editor is initialized
       cy.wait(2000);
-      //add images
-      getDataCy("add-image").click();
+      // add media (images + optional YouTube)
+      getDataCy("add-media").click();
       getDataCy("upload-image")
         .first()
         .selectFile("cypress/fixtures/codebase/codebasetestimage.png", { force: true });

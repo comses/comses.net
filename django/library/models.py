@@ -1089,6 +1089,12 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             "URL to code repository, e.g., https://github.com/comses/wolf-sheep"
         ),
     )
+    youtube_url = models.URLField(
+        blank=True,
+        help_text=_(
+            "Optional YouTube URL showcasing this codebase (e.g., a demo or tutorial video)."
+        ),
+    )
     replication_text = models.TextField(
         blank=True,
         help_text=_("URL / DOI / citation for the original model being replicated"),

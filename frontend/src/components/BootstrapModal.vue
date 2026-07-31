@@ -62,14 +62,37 @@ const props = withDefaults(defineProps<BootstrapModalProps>(), {
   size: "md",
 });
 
+const emit = defineEmits(["show", "shown", "hide", "hidden"]);
+
 const modalElement = ref<Element>();
 let modal: Modal;
 
+const onShow = () => emit("show");
+const onShown = () => emit("shown");
+const onHide = () => emit("hide");
+const onHidden = () => emit("hidden");
+
 onMounted(() => {
-  modal = new Modal(modalElement.value!);
+  const el = modalElement.value;
+  if (!el) return;
+
+  modal = new Modal(el);
+
+  el.addEventListener("show.bs.modal", onShow);
+  el.addEventListener("shown.bs.modal", onShown);
+  el.addEventListener("hide.bs.modal", onHide);
+  el.addEventListener("hidden.bs.modal", onHidden);
 });
 
 onUnmounted(() => {
+  const el = modalElement.value;
+  if (!el) return;
+
+  el.removeEventListener("show.bs.modal", onShow);
+  el.removeEventListener("shown.bs.modal", onShown);
+  el.removeEventListener("hide.bs.modal", onHide);
+  el.removeEventListener("hidden.bs.modal", onHidden);
+
   modal.dispose();
   modal = null!;
 });

@@ -39,8 +39,8 @@
             button-class="btn btn-sm btn-secondary me-2"
             :identifier="identifier"
           />
-          <CommonImagesModal
-            button-class="btn btn-sm btn-secondary me-2"
+          <CommonMediaModal
+            button-class="btn btn-primary me-2"
             :identifier="identifier"
             :files="store.files.media"
             :show="showUploadImageModal"
@@ -90,7 +90,7 @@
 import { onMounted } from "vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import ProgressSidebar from "@/components/releaseEditor/ProgressSidebar.vue";
-import CommonImagesModal from "@/components/releaseEditor/CommonImagesModal.vue";
+import CommonMediaModal from "@/components/releaseEditor/CommonMediaModal.vue";
 import CommonMetadataModal from "@/components/releaseEditor/CommonMetadataModal.vue";
 import ReviewModal from "@/components/releaseEditor/ReviewModal.vue";
 import PublishModal from "@/components/releaseEditor/PublishModal.vue";

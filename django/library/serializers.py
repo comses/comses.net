@@ -445,6 +445,7 @@ class CodebaseSerializer(
             "download_count",
             "featured_image",
             "repository_url",
+            "youtube_url",
             "first_published_at",
             "last_published_on",
             "latest_version_number",
@@ -519,6 +520,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
             "live",
             "peer_reviewed",
             "repository_url",
+            "youtube_url",
         )
 
 
