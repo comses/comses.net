@@ -1,5 +1,6 @@
 services:
   vite:
+    command: ["npm", "run", "build"]
     environment:
       NODE_ENV: "production"
   nginx:

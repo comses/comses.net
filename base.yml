@@ -50,7 +50,9 @@ services:
       POSTGRES_DB: "${DB_NAME}"
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
   vite:
-    build: frontend
+    build:
+      context: ./frontend
+      target: dev
     image: comses/vite
     volumes:
       - ./docker/shared:/shared
