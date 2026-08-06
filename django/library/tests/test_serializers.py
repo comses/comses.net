@@ -4,6 +4,7 @@ import rest_framework.exceptions as rf
 from core.tests.base import BaseModelTestCase
 from ..models import Codebase
 from ..serializers import (
+    CodebaseSerializer,
     ContributorSerializer,
     ReleaseContributorSerializer,
     DownloadRequestSerializer,
@@ -169,6 +170,17 @@ class SerializerTestCase(BaseModelTestCase):
         download_request.is_valid()
         with self.assertRaises(rf.ValidationError):
             download_request.save()
+
+    def test_codebase_serializer_rejects_non_youtube_url(self):
+        codebase = self.create_codebase(title="YouTube URL validation test")
+        serializer = CodebaseSerializer(
+            codebase,
+            data={"youtube_url": "https://example.com/not-a-youtube-video"},
+            partial=True,
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("youtube_url", serializer.errors)
 
     def test_multiple_release_contributor_same_user_raises_validation_error(self):
         codebase = Codebase.objects.create(
