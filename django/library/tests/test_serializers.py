@@ -171,16 +171,49 @@ class SerializerTestCase(BaseModelTestCase):
         with self.assertRaises(rf.ValidationError):
             download_request.save()
 
+    def test_codebase_serializer_accepts_youtube_urls(self):
+        codebase = self.create_codebase(title="Valid YouTube URL test")
+        urls = [
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "https://m.youtube.com/shorts/dQw4w9WgXcQ",
+        ]
+
+        for url in urls:
+            with self.subTest(url=url):
+                serializer = CodebaseSerializer(
+                    codebase,
+                    data={"youtube_url": url},
+                    partial=True,
+                )
+
+                self.assertTrue(serializer.is_valid(), serializer.errors)
+
     def test_codebase_serializer_rejects_non_youtube_url(self):
         codebase = self.create_codebase(title="YouTube URL validation test")
-        serializer = CodebaseSerializer(
-            codebase,
-            data={"youtube_url": "https://example.com/not-a-youtube-video"},
-            partial=True,
-        )
+        urls = [
+            "https://example.com/not-a-youtube-video",
+            "https://example.com/youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://example.com/?next=https://youtu.be/dQw4w9WgXcQ",
+            "https://youtube.com.example.com/watch?v=dQw4w9WgXcQ",
+            "https://example-youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://youtu.be.example.com/dQw4w9WgXcQ",
+            "https://www.youtube.com.evil.example/watch?v=dQw4w9WgXcQ",
+            "https://www.youtube.com@evil.example/watch?v=dQw4w9WgXcQ",
+            "https://evil.example/@youtu.be/dQw4w9WgXcQ",
+        ]
 
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("youtube_url", serializer.errors)
+        for url in urls:
+            with self.subTest(url=url):
+                serializer = CodebaseSerializer(
+                    codebase,
+                    data={"youtube_url": url},
+                    partial=True,
+                )
+
+                self.assertFalse(serializer.is_valid())
+                self.assertIn("youtube_url", serializer.errors)
 
     def test_multiple_release_contributor_same_user_raises_validation_error(self):
         codebase = Codebase.objects.create(
