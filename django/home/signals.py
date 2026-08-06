@@ -8,10 +8,19 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from wagtail.models import Site as WagtailSite
 
-from core.discourse import create_discourse_user
+from core.discourse import sync_discourseconnect_user
 from core.models import MemberProfile, EXCLUDED_USERNAMES
 
 logger = logging.getLogger(__name__)
+
+
+def should_sync_discourse_user(user: User):
+    return (
+        settings.DEPLOY_ENVIRONMENT.is_staging_or_production
+        and settings.DISCOURSE_SSO_SECRET
+        and settings.DISCOURSE_SSO_SECRET != "unconfigured"
+        and bool(user.email)
+    )
 
 
 def sync_member_profile(user: User):
@@ -22,16 +31,28 @@ def sync_member_profile(user: User):
 
 
 def sync_discourse_user(user: User):
-    response = create_discourse_user(user)
-    # dont think we want to raise an exception
-    # response.raise_for_status()
-    data = response.json()
-    success = data.get("success")
-    if success:
+    if not should_sync_discourse_user(user):
+        return False
+
+    member_profile = user.member_profile
+    if not member_profile.short_uuid:
+        member_profile.short_uuid = shortuuid.uuid()
+        member_profile.save(update_fields=["short_uuid"])
+
+    try:
+        response = sync_discourseconnect_user(user)
+        response.raise_for_status()
+        data = response.json()
+    except Exception:
+        logger.exception("failed to sync user %s with discourse", user)
+        return False
+
+    if data.get("success"):
         logger.debug("synced user %s with discourse: %s", user, data)
-    else:
-        logger.error("failed to sync user %s with discourse: %s", user, data)
-    return success
+        return True
+
+    logger.error("failed to sync user %s with discourse: %s", user, data)
+    return False
 
 
 @receiver(post_save, sender=User, dispatch_uid="member_profile_sync")
@@ -43,20 +64,20 @@ def on_user_save(sender, instance: User, created, **kwargs):
         return
     if created:
         sync_member_profile(instance)
-    if instance.email:
-        # sync with discourse
-        # to test discourse synchronization locally eliminate the DEPLOY_ENVIRONMENT check
-        # but this will produce many test accounts if enabled in testing
-        if not settings.DEPLOY_ENVIRONMENT.is_staging_or_production:
-            return
-        member_profile = instance.member_profile
-        if member_profile.short_uuid:
-            return
-        else:
-            member_profile.short_uuid = shortuuid.uuid()
-            successful_discourse_sync = sync_discourse_user(instance)
-            if successful_discourse_sync:
-                member_profile.save()
+        return
+    sync_discourse_user(instance)
+
+
+@receiver(post_save, sender=MemberProfile, dispatch_uid="member_profile_discourse_sync")
+def on_member_profile_save(sender, instance: MemberProfile, **kwargs):
+    """
+    Keep DiscourseConnect user data in sync when profile-backed fields change.
+    """
+    if instance.user.username in EXCLUDED_USERNAMES:
+        return
+    if kwargs.get("update_fields") == frozenset({"short_uuid"}):
+        return
+    sync_discourse_user(instance.user)
 
 
 @receiver(post_save, sender=WagtailSite, dispatch_uid="wagtail_site_sync")

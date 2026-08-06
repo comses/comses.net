@@ -3,9 +3,13 @@ import re
 import requests
 import shortuuid
 
+from base64 import encodebytes
 from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from hashlib import sha256
+from hmac import new
+from urllib import parse
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +138,46 @@ def create_discourse_user(user):
         },
     )
     return response
+
+
+def get_discourse_sso_user_params(user, avatar_url=None):
+    if avatar_url is None:
+        avatar_url = user.member_profile.avatar_url
+    params = {
+        "external_id": user.id,
+        "email": user.email,
+        "username": user.member_profile.discourse_username,
+        "require_activation": "false",
+        "name": user.get_full_name(),
+    }
+    if avatar_url:
+        params.update(avatar_url=avatar_url)
+    return params
+
+
+def build_discourse_sso_payload(params):
+    payload = encodebytes(bytes(parse.urlencode(params), "utf-8"))
+    signature = new(
+        settings.DISCOURSE_SSO_SECRET.encode("utf-8"), payload, digestmod=sha256
+    ).hexdigest()
+    return payload, signature
+
+
+def sync_discourseconnect_user(user):
+    avatar_url = user.member_profile.avatar_url
+    if avatar_url:
+        avatar_url = f"{settings.BASE_URL}{avatar_url}"
+    payload, signature = build_discourse_sso_payload(
+        get_discourse_sso_user_params(user, avatar_url=avatar_url)
+    )
+    return requests.post(
+        build_discourse_url("admin/users/sync_sso"),
+        data={"sso": payload, "sig": signature},
+        headers={
+            "Api-Key": settings.DISCOURSE_API_KEY,
+            "Api-Username": settings.DISCOURSE_API_USERNAME,
+        },
+    )
 
 
 def sanitize_username(username, uid=None):

@@ -43,6 +43,7 @@ from rest_framework.views import APIView, exception_handler
 from taggit.models import Tag
 from wagtail.images.models import Image
 
+from core.discourse import get_discourse_sso_user_params
 from library.models import Codebase
 from .models import ComsesGroups, Event, FollowUser, Job, MemberProfile
 from .serializers import (
@@ -310,18 +311,13 @@ def discourse_sso(request):
     # FIXME: create a sync endpoint to sync up admins and groups (e.g., CoMSES full member Discourse group)
     # See https://meta.discourse.org/t/official-single-sign-on-for-discourse-sso/13045
     # for full description of params that can be added
-    params = {
-        "nonce": qs["nonce"][0],
-        "email": user.email,
-        "external_id": user.id,
-        "username": user.member_profile.discourse_username,
-        "require_activation": "false",
-        "name": user.get_full_name(),
-    }
-    # add an avatar_url to the params if the user has one
     avatar_url = user.member_profile.avatar_url
     if avatar_url:
-        params.update(avatar_url=request.build_absolute_uri(avatar_url))
+        avatar_url = request.build_absolute_uri(avatar_url)
+    params = {
+        "nonce": qs["nonce"][0],
+        **get_discourse_sso_user_params(user, avatar_url=avatar_url),
+    }
 
     if not check_and_consume_sso_nonce(qs["nonce"][0], "discourse"):
         return HttpResponseBadRequest(INVALID_SSO_PAYLOAD)
