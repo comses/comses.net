@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from wagtail.models import Site as WagtailSite
 
-from core.discourse import sync_discourseconnect_user
+from core.discourse import sync_discourse_sso_user
 from core.models import MemberProfile, EXCLUDED_USERNAMES
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def sync_discourse_user(user: User):
         member_profile.save(update_fields=["short_uuid"])
 
     try:
-        response = sync_discourseconnect_user(user)
+        response = sync_discourse_sso_user(user)
         response.raise_for_status()
         data = response.json()
     except Exception:

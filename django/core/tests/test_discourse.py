@@ -58,7 +58,7 @@ class DiscourseTestCase(TestCase):
 
 @override_settings(BASE_URL="https://www.example.net", DISCOURSE_SSO_SECRET="secret")
 class DiscourseConnectSyncTestCase(TestCase):
-    def test_sync_sso_payload_uses_discourseconnect_identity(self):
+    def test_sync_sso_payload_uses_discourse_identity(self):
         user, _ = create_test_user(
             username="discourse user", first_name="Discourse", last_name="User"
         )
@@ -85,6 +85,4 @@ class DiscourseConnectSyncTestCase(TestCase):
             user, avatar_url="https://www.example.net/avatar.png"
         )
 
-        self.assertEqual(
-            params["avatar_url"], "https://www.example.net/avatar.png"
-        )
+        self.assertEqual(params["avatar_url"], "https://www.example.net/avatar.png")

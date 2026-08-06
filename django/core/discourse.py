@@ -163,7 +163,7 @@ def build_discourse_sso_payload(params):
     return payload, signature
 
 
-def sync_discourseconnect_user(user):
+def sync_discourse_sso_user(user):
     avatar_url = user.member_profile.avatar_url
     if avatar_url:
         avatar_url = f"{settings.BASE_URL}{avatar_url}"
