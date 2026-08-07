@@ -134,14 +134,14 @@
                 {{ codebase.description|safe }}
             </div>
             {% with featured_image=codebase.get_featured_image() %}
-                {% if featured_image is not none or codebase.youtube_url %}
+                {% if featured_image is not none or codebase.video_source_url %}
                 <div
                     id="image-gallery"
                     class="my-4"
                     data-title="{{ codebase.title }}"
                     data-images="{{ codebase.get_image_urls()|tojson|forceescape }}"
-                    {% if codebase.youtube_url %}
-                    data-video-url="{{ codebase.youtube_url }}"
+                    {% if codebase.video_source_url %}
+                    data-video-url="{{ codebase.video_source_url }}"
                     {% endif %}
                 >
                     {% if featured_image is not none %}

@@ -439,7 +439,7 @@ class CodebaseSerializer(
 
     description = MarkdownField()
 
-    def validate_youtube_url(self, value):
+    def validate_video_source_url(self, value):
         if value and not is_valid_youtube_url(value):
             raise ValidationError("Must be a valid YouTube URL")
         return value
@@ -478,7 +478,7 @@ class CodebaseSerializer(
             "download_count",
             "featured_image",
             "repository_url",
-            "youtube_url",
+            "video_source_url",
             "first_published_at",
             "last_published_on",
             "latest_version_number",
@@ -553,7 +553,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
             "live",
             "peer_reviewed",
             "repository_url",
-            "youtube_url",
+            "video_source_url",
         )
 
 

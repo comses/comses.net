@@ -164,6 +164,22 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         self.action = "update"
         self.check_update()
 
+    def test_partial_update_accepts_video_source_url_only(self):
+        codebase = self.instance_factory.create()
+        video_source_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        self.login(self.submitter)
+
+        response = self.client.patch(
+            codebase.get_absolute_url(),
+            {"video_source_url": video_source_url},
+            HTTP_ACCEPT="application/json",
+            format="json",
+        )
+
+        self.assertResponseOk(response)
+        codebase.refresh_from_db()
+        self.assertEqual(codebase.video_source_url, video_source_url)
+
     def test_destroy(self):
         self.action = "destroy"
         self.check_destroy()

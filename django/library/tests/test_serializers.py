@@ -171,7 +171,7 @@ class SerializerTestCase(BaseModelTestCase):
         with self.assertRaises(rf.ValidationError):
             download_request.save()
 
-    def test_codebase_serializer_accepts_youtube_urls(self):
+    def test_codebase_serializer_accepts_supported_youtube_video_source_urls(self):
         codebase = self.create_codebase(title="Valid YouTube URL test")
         urls = [
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -184,13 +184,13 @@ class SerializerTestCase(BaseModelTestCase):
             with self.subTest(url=url):
                 serializer = CodebaseSerializer(
                     codebase,
-                    data={"youtube_url": url},
+                    data={"video_source_url": url},
                     partial=True,
                 )
 
                 self.assertTrue(serializer.is_valid(), serializer.errors)
 
-    def test_codebase_serializer_rejects_non_youtube_url(self):
+    def test_codebase_serializer_rejects_unsupported_video_source_urls(self):
         codebase = self.create_codebase(title="YouTube URL validation test")
         urls = [
             "https://example.com/not-a-youtube-video",
@@ -208,12 +208,12 @@ class SerializerTestCase(BaseModelTestCase):
             with self.subTest(url=url):
                 serializer = CodebaseSerializer(
                     codebase,
-                    data={"youtube_url": url},
+                    data={"video_source_url": url},
                     partial=True,
                 )
 
                 self.assertFalse(serializer.is_valid())
-                self.assertIn("youtube_url", serializer.errors)
+                self.assertIn("video_source_url", serializer.errors)
 
     def test_multiple_release_contributor_same_user_raises_validation_error(self):
         codebase = Codebase.objects.create(

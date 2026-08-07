@@ -26,7 +26,7 @@
         />
         <div
           v-else-if="activeItem?.type === 'video'"
-          class="gallery-video-preview position-relative w-100 ratio ratio-16x9 rounded overflow-hidden"
+          class="gallery-video-preview position-relative w-100 ratio ratio-16x9 rounded overflow-hidden align-self-center"
           role="button"
           tabindex="0"
           aria-label="Open video to watch"
@@ -122,7 +122,10 @@
             class="img-fluid"
             alt="Full Size Image"
           />
-          <div v-else-if="activeItem?.type === 'video'" class="ratio ratio-16x9 w-100">
+          <div
+            v-else-if="activeItem?.type === 'video'"
+            class="gallery-video-modal ratio ratio-16x9 w-100"
+          >
             <iframe
               v-if="videoEmbedUrl"
               ref="videoIframe"

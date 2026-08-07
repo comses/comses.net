@@ -12,10 +12,10 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="codebase",
-            name="youtube_url",
+            name="video_source_url",
             field=models.URLField(
                 blank=True,
-                help_text="Optional YouTube URL showcasing this codebase (e.g., a demo or tutorial video).",
+                help_text="Optional video URL showcasing this codebase (currently supports YouTube).",
             ),
         ),
     ]

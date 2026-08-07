@@ -18,6 +18,20 @@
   object-fit: scale-down;
 }
 
+.gallery-video-preview {
+  max-height: 35vh;
+  max-width: calc(35vh * 16 / 9);
+
+  @include media-breakpoint-down(md) {
+    max-height: 20vh;
+    max-width: calc(20vh * 16 / 9);
+  }
+}
+
+.gallery-video-modal {
+  max-width: min(100%, calc(80vh * 16 / 9));
+}
+
 .gallery-img-thumbnail {
   @extend .img-thumbnail;
   height: 5rem;

@@ -11,21 +11,17 @@
   <BootstrapModal id="media-modal" title="Media" ref="mediaModal" size="lg" centered>
     <template #body>
       <div>
-        <form class="mb-4" @submit="handleYoutubeSubmit">
+        <form class="mb-4" @submit="handleVideoSubmit">
           <TextField
-            name="youtubeUrl"
-            label="YouTube URL (optional)"
+            name="videoSourceUrl"
+            label="Video URL (optional)"
             help="If provided, this video appears alongside images on the codebase detail page."
           />
           <div class="mt-2 d-flex align-items-center gap-2">
-            <button
-              type="submit"
-              class="btn btn-outline-primary btn-sm"
-              :disabled="isSavingYoutube"
-            >
+            <button type="submit" class="btn btn-outline-primary btn-sm" :disabled="isSavingVideo">
               Save video
             </button>
-            <small v-if="youtubeSaveMessage" class="text-muted">{{ youtubeSaveMessage }}</small>
+            <small v-if="videoSaveMessage" class="text-muted">{{ videoSaveMessage }}</small>
           </div>
         </form>
         <FileUpload
@@ -67,25 +63,25 @@ const store = useReleaseEditorStore();
 
 const mediaModal = ref<Modal>();
 
-const { data, mediaListUrl, mediaDelete, mediaClear, retrieve, update } = useCodebaseAPI();
+const { data, mediaListUrl, mediaDelete, mediaClear, retrieve, partialUpdate } = useCodebaseAPI();
 
 const uploadUrl = computed(() => mediaListUrl(props.identifier));
 
-const youtubeSaveMessage = ref<string>("");
-const isSavingYoutube = ref(false);
+const videoSaveMessage = ref<string>("");
+const isSavingVideo = ref(false);
 
 /** Matches common YouTube watch, embed, shorts, and youtu.be URLs (optional field: empty allowed). */
 const youtubeUrlRegex =
   /^(?:https?:\/\/)?(?:m\.)?(?:youtu\.be\/|www\.youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|.*[?&]v=))([a-zA-Z0-9_-]{11})(?:\S*)?$/;
 
 const youtubeSchema = yup.object().shape({
-  youtubeUrl: yup.string().test("youtube-or-empty", "Must be a valid YouTube URL", value => {
+  videoSourceUrl: yup.string().test("youtube-or-empty", "Must be a valid YouTube URL", value => {
     if (!value || value.trim() === "") return true;
     return youtubeUrlRegex.test(value.trim());
   }),
 });
 
-type YoutubeFields = yup.InferType<typeof youtubeSchema>;
+type VideoFields = yup.InferType<typeof youtubeSchema>;
 
 const {
   handleSubmit,
@@ -93,25 +89,25 @@ const {
   setValuesWithLoadTime,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
-} = useForm<YoutubeFields>({
+} = useForm<VideoFields>({
   schema: youtubeSchema,
   initialValues: {
-    youtubeUrl: "",
+    videoSourceUrl: "",
   },
   onSubmit: async () => {
-    isSavingYoutube.value = true;
-    youtubeSaveMessage.value = "";
+    isSavingVideo.value = true;
+    videoSaveMessage.value = "";
     try {
-      await update(props.identifier, values);
+      await partialUpdate(props.identifier, { videoSourceUrl: values.videoSourceUrl });
       await store.fetchCodebaseRelease(props.identifier, store.release.versionNumber);
-      youtubeSaveMessage.value = "Saved.";
+      videoSaveMessage.value = "Saved.";
     } finally {
-      isSavingYoutube.value = false;
+      isSavingVideo.value = false;
     }
   },
 });
 
-const handleYoutubeSubmit = handleSubmit;
+const handleVideoSubmit = handleSubmit;
 
 onMounted(async () => {
   if (props.show) {

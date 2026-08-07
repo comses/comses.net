@@ -108,6 +108,10 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     return request(url, "PUT", data, options);
   }
 
+  async function patch(url: string, data: any, options?: RequestOptions) {
+    return request(url, "PATCH", data, options);
+  }
+
   async function del(url: string, options?: RequestOptions) {
     return request(url, "DELETE", null, options);
   }
@@ -145,6 +149,7 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     post,
     postForm,
     put,
+    patch,
     del,
     detailUrl,
     searchUrl,

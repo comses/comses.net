@@ -170,7 +170,7 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
       releases: [],
       replicationText: "",
       repositoryUrl: "",
-      youtubeUrl: "",
+      videoSourceUrl: "",
       submitter: DEFAULT_USER,
       summarizedDescription: "",
       tags: [],
