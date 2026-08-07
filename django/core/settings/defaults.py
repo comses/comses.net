@@ -20,12 +20,17 @@ from pathlib import Path
 from django.contrib.messages import constants as messages
 
 
-def read_secret(file, fallback=""):
-    secrets_file_path = Path("/run/secrets", file)
-    if secrets_file_path.is_file():
-        return secrets_file_path.read_text().strip()
-    else:
-        return fallback
+from pathlib import Path
+
+_SECRETS_DIR = Path("/run/secrets")
+
+
+def read_secret(name: str, default: str | None = None) -> str | None:
+    path = _SECRETS_DIR / name
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return default
 
 
 EnvConfig = namedtuple("EnvConfig", ["base_url", "label"])

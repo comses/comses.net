@@ -1,6 +1,6 @@
 import "vite/modulepreload-polyfill"; // Ensure that this is needed based on your project setup
 
-import { isEmpty } from "lodash";
+import { isEmpty } from "lodash-es";
 import { createApp } from "vue";
 import CodebaseListSidebar from "@/components/CodebaseListSidebar.vue";
 import SortBy from "@/components/ListSortBy.vue";

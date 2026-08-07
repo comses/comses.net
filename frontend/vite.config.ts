@@ -1,8 +1,10 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import fs from "fs";
+import fs from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const { resolve } = require("path");
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const resolvePath = (relativePath: string) => {
   return resolve(__dirname, relativePath);
 };
@@ -46,7 +48,7 @@ export default defineConfig({
   },
   build: {
     outDir: "/shared/vite/bundles",
-    manifest: true,
+    manifest: "manifest.json",
     rollupOptions: {
       external: [/holder\.js.*/],
       input: getAppEntries(),

@@ -62,7 +62,7 @@ export function useEventAPI() {
       } else {
         throw new Error("Error fetching calendar events");
       }
-    } catch (e) {
+    } catch {
       throw new Error("Error fetching calendar events");
     }
   }

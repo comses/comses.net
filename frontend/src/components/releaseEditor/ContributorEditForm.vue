@@ -243,7 +243,7 @@ const { errors, handleSubmit, handleReset, values, setValues } = useForm<Contrib
   onSubmit: async () => {
     if (!hasName.value) return;
     isLoading.value = true;
-    let contributors = JSON.parse(JSON.stringify(store.releaseContributors));
+    const contributors = JSON.parse(JSON.stringify(store.releaseContributors));
     const newContributor = {
       contributor: {
         user: values.user,

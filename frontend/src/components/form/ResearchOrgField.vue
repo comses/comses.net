@@ -113,7 +113,7 @@ const fetchMatchingOrgs = useDebounceFn(async (query: string) => {
     isLoading.value = true;
     try {
       matchingOrgs.value = await search(query);
-    } catch (e) {
+    } catch {
       // no-op
     } finally {
       isLoading.value = false;

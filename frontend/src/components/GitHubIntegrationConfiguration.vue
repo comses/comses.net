@@ -208,7 +208,7 @@ const pollSubmitterStatusUntil = (
     try {
       await refreshInstallationStatus();
       if (successCondition(installationStatus.value)) return;
-    } catch (_) {
+    } catch {
       // ignore
     }
     if (Date.now() - startTime < timeoutMs) setTimeout(poll, intervalMs);

@@ -33,14 +33,13 @@ services:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
   vite:
-    build: frontend
+    build:
+      context: ./frontend
+      target: build
     image: comses/vite:${RELEASE_VERSION}
     command: ["npm", "run", "build"]
     environment:
       NODE_ENV: "production"
-    volumes:
-      - ./frontend/src:/code/src
-      - ./frontend/package-lock.json:/code/package-lock.json
   nginx:
     image: nginx:stable
     restart: always
