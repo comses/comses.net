@@ -443,10 +443,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.user.username
 
     @property
-    def discourse_username(self):
-        return sanitize_username(self.username, uid=self.short_uuid)
-
-    @property
     def is_active(self):
         return self.user.is_active
 

@@ -16,7 +16,7 @@ class SyncDiscourseUsersCommandTestCase(TestCase):
         stdout = StringIO()
 
         with patch(
-            "core.management.commands.sync_discourse_users.sync_discourse_sso_user"
+            "core.management.commands.sync_discourse_users.sync_discourse_user"
         ) as sync_user:
             call_command("sync_discourse_users", "--dry-run", stdout=stdout)
 
@@ -26,7 +26,7 @@ class SyncDiscourseUsersCommandTestCase(TestCase):
         self.assertNotIn(inactive_user.username, output)
         sync_user.assert_not_called()
 
-    @patch("core.management.commands.sync_discourse_users.sync_discourse_sso_user")
+    @patch("core.management.commands.sync_discourse_users.sync_discourse_user")
     def test_syncs_filtered_user(self, sync_user):
         target_user, _ = create_test_user(username="target-user")
         other_user, _ = create_test_user(username="other-user")

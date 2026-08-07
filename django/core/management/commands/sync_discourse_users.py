@@ -2,8 +2,8 @@ import time
 
 from django.core.management.base import BaseCommand
 
+from core.discourse import sync_discourse_user
 from core.models import MemberProfile
-from home.signals import sync_discourse_user
 
 
 class Command(BaseCommand):
