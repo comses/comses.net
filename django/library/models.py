@@ -5,6 +5,7 @@ import yaml
 import logging
 import os
 import pathlib
+import re
 from string import Template
 import uuid
 import semver
@@ -66,6 +67,8 @@ from .fs import (
 from .metadata import CodeMetaConverter, DataCiteConverter, CitationFileFormatConverter
 
 logger = logging.getLogger(__name__)
+
+DOI_SUFFIX_PATTERN = re.compile(r"[-._;()/:a-zA-Z0-9]+\Z")
 
 
 # Cherry picked from
@@ -1412,7 +1415,17 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     @staticmethod
     def format_doi_url(doi):
-        return f"https://doi.org/{doi}" if doi else ""
+        if not doi:
+            return ""
+        normalized_doi = doi.strip()
+        doi_prefix = f"{settings.DATACITE_PREFIX}/"
+        if not normalized_doi.startswith(doi_prefix):
+            logger.warning("invalid doi %s", normalized_doi)
+            return ""
+        suffix = normalized_doi[len(doi_prefix) :]
+        if not DOI_SUFFIX_PATTERN.fullmatch(suffix):
+            return ""
+        return f"https://doi.org/{normalized_doi}"
 
     @cached_property
     def permanent_url(self):

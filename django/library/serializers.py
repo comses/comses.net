@@ -471,6 +471,7 @@ class CodebaseSerializer(
 
     class Meta:
         model = Codebase
+        read_only_fields = ("doi",)
         fields = (
             "absolute_url",
             "all_contributors",
@@ -716,6 +717,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseRelease
+        read_only_fields = ("doi",)
         fields = (
             "absolute_url",
             "status",

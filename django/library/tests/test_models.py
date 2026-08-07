@@ -66,6 +66,26 @@ class CodebaseTest(BaseModelTestCase):
             self.assertIn(category, contents)
             self.assertTrue(contents[category])
 
+    def test_format_doi_url_rejects_malformed_doi(self):
+        invalid_dois = [
+            "javascript:alert(1)",
+            "https://evil.example/10.1234/test",
+            "10.1234/test?next=https://evil.example",
+            "10.1234/test#fragment",
+            "10.1234/test<script>",
+        ]
+
+        for doi in invalid_dois:
+            with self.subTest(doi=doi):
+                self.assertEqual(Codebase.format_doi_url(doi), "")
+
+    def test_format_doi_url_accepts_datacite_prefixed_doi(self):
+        doi = f"{settings.DATACITE_PREFIX}/abc.DEF-123"
+        self.assertEqual(
+            Codebase.format_doi_url(doi),
+            f"https://doi.org/{doi}",
+        )
+
     def test_create_review_draft_from_release(self):
         source_release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)
         source_release.refresh_from_db()
