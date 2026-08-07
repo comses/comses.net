@@ -367,6 +367,7 @@ interface Codebase {
   releases?: any[];
   replicationText?: string;
   repositoryUrl?: string;
+  videoSourceUrl?: string;
   submitter: RelatedUser;
   summarizedDescription: string;
   tags: Tag[];

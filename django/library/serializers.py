@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from urllib.parse import parse_qs, urlparse
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -49,6 +50,33 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
+YOUTUBE_VIDEO_ID_LENGTH = 11
+
+
+def is_valid_youtube_url(value):
+    parsed = urlparse(value)
+    hostname = parsed.hostname
+    video_id = None
+
+    if hostname not in YOUTUBE_HOSTS:
+        return False
+
+    if hostname == "youtu.be":
+        video_id = parsed.path.lstrip("/").split("/", 1)[0]
+    elif parsed.path == "/watch":
+        video_id = parse_qs(parsed.query).get("v", [None])[0]
+    elif parsed.path.startswith(("/embed/", "/v/", "/shorts/")):
+        path_parts = parsed.path.strip("/").split("/")
+        if len(path_parts) >= 2:
+            video_id = path_parts[1]
+
+    return bool(
+        video_id
+        and len(video_id) == YOUTUBE_VIDEO_ID_LENGTH
+        and all(c.isalnum() or c in "_-" for c in video_id)
+    )
 
 
 class LicenseSerializer(serializers.ModelSerializer):
@@ -411,6 +439,11 @@ class CodebaseSerializer(
 
     description = MarkdownField()
 
+    def validate_video_source_url(self, value):
+        if value and not is_valid_youtube_url(value):
+            raise ValidationError("Must be a valid YouTube URL")
+        return value
+
     def get_releases(self, obj):
         request = self.context.get("request")
         user = request.user if request else User.get_anonymous()
@@ -438,6 +471,7 @@ class CodebaseSerializer(
 
     class Meta:
         model = Codebase
+        read_only_fields = ("doi",)
         fields = (
             "absolute_url",
             "all_contributors",
@@ -445,6 +479,7 @@ class CodebaseSerializer(
             "download_count",
             "featured_image",
             "repository_url",
+            "video_source_url",
             "first_published_at",
             "last_published_on",
             "latest_version_number",
@@ -519,6 +554,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
             "live",
             "peer_reviewed",
             "repository_url",
+            "video_source_url",
         )
 
 
@@ -681,6 +717,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseRelease
+        read_only_fields = ("doi",)
         fields = (
             "absolute_url",
             "status",

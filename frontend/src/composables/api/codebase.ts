@@ -21,7 +21,7 @@ export function useCodebaseAPI() {
    */
 
   const baseUrl = "/codebases/";
-  const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
+  const { state, get, post, put, patch, del, detailUrl, searchUrl } = useAxios(baseUrl);
 
   function url(paths: string[] = []) {
     return joinPaths([baseUrl, ...paths]);
@@ -37,6 +37,10 @@ export function useCodebaseAPI() {
 
   async function update(identifier: string | number, data: any, options?: RequestOptions) {
     return put(detailUrl(identifier), data, options);
+  }
+
+  async function partialUpdate(identifier: string | number, data: any, options?: RequestOptions) {
+    return patch(detailUrl(identifier), data, options);
   }
 
   function mediaListUrl(identifier: string) {
@@ -72,6 +76,7 @@ export function useCodebaseAPI() {
     create,
     retrieve,
     update,
+    partialUpdate,
     mediaList,
     mediaDelete,
     mediaClear,

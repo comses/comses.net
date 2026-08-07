@@ -15,6 +15,6 @@ jobs:
       DEPLOY_ENVIRONMENT: test
       DOCKER_BUILD_FLAGS: --quiet
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: build containers and run Django tests
         run: make test

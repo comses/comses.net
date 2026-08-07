@@ -68,8 +68,9 @@ def create(model_cls, validated_data, context):
 
 
 def update(serializer_update, instance, validated_data):
-    tags = TagSerializer(many=True, data=validated_data.pop("tags"))
-    set_tags(instance, tags)
+    if "tags" in validated_data:
+        tags = TagSerializer(many=True, data=validated_data.pop("tags"))
+        set_tags(instance, tags)
     return serializer_update(instance, validated_data)
 
 

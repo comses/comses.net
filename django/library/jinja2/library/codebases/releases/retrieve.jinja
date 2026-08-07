@@ -134,9 +134,19 @@
                 {{ codebase.description|safe }}
             </div>
             {% with featured_image=codebase.get_featured_image() %}
-                {% if featured_image is not none %}
-                <div id="image-gallery" class="my-4" data-title="{{ codebase.title }}" data-images="{{ codebase.get_image_urls()|tojson|forceescape }}">
-                    {{ image(featured_image, "max-900x600", class="img-fluid") }}
+                {% if featured_image is not none or codebase.video_source_url %}
+                <div
+                    id="image-gallery"
+                    class="my-4"
+                    data-title="{{ codebase.title }}"
+                    data-images="{{ codebase.get_image_urls()|tojson|forceescape }}"
+                    {% if codebase.video_source_url %}
+                    data-video-url="{{ codebase.video_source_url }}"
+                    {% endif %}
+                >
+                    {% if featured_image is not none %}
+                        {{ image(featured_image, "max-900x600", class="img-fluid") }}
+                    {% endif %}
                     {{ vite_asset("apps/image_gallery.ts") }}
                 </div>
                 {% endif %}
