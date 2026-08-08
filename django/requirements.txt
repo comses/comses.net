@@ -50,6 +50,7 @@ semver==3.0.4
 sentry-cli==3.6.0
 sentry-sdk==2.63.0
 shortuuid==1.0.13
+sqids==0.5.2
 tzdata==2026.2
 uwsgi==2.0.31
 uwsgitop==0.12

@@ -12,6 +12,7 @@ from django.urls import reverse
 from core.models import ComsesGroups
 
 from .base import create_test_user
+from core.discourse import get_sanitized_username
 
 logger = logging.getLogger(__name__)
 
@@ -256,6 +257,7 @@ class LibrarianSsoTestCase(SsoHandshakeAssertions, TestCase):
         response = self.client.get(self.url, build_request())
         params, _ = self.assert_valid_response(response)
         self.assertEqual(params["nonce"], [TEST_NONCE])
+        # FIXME: librarian SSO uses PK as external id, address for consistency later
         self.assertEqual(params["external_id"], [str(self.user.pk)])
         self.assertEqual(params["email"], [self.user.email])
         self.assertEqual(params["username"], [self.user.username])
@@ -394,10 +396,12 @@ class DiscourseSsoTestCase(SsoHandshakeAssertions, TestCase):
             self.client.get(self.url, build_request())
         )
         self.assertEqual(params["nonce"], [TEST_NONCE])
-        self.assertEqual(params["external_id"], [str(self.user.pk)])
+        self.assertEqual(
+            params["external_id"], [str(self.user.member_profile.short_uuid)]
+        )
         self.assertEqual(params["email"], [self.user.email])
         self.assertEqual(
-            params["username"], [self.user.member_profile.discourse_username]
+            params["username"], [get_sanitized_username(self.user.member_profile)]
         )
         self.assertEqual(params["require_activation"], ["false"])
         self.assertEqual(params["name"], [self.user.get_full_name()])

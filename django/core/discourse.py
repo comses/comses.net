@@ -2,23 +2,42 @@ import logging
 import re
 import requests
 import shortuuid
+import unicodedata
+from typing import Optional
 
 from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.conf import settings
 
+from sqids import Sqids
+
+from core.sso import is_sso_secret_configured, sign_sso_payload
+
 logger = logging.getLogger(__name__)
 
 
-INVALID_CHARACTERS_PATTERN = re.compile(r"[^\w._-]")
-INVALID_LEADING_CHAR_PATTERN = re.compile(r"^[^\w_]+")
-INVALID_TRAILING_CHAR_PATTERN = re.compile(r"(_|[^\w])+$")
+# Discourse: ASCII_INVALID_CHAR_PATTERN = /[^\w.-]/
+# Ruby's \w in a non-Unicode-mode pattern is ASCII-only: [a-zA-Z0-9_]
+INVALID_CHARACTERS_PATTERN = re.compile(r"[^\w._-]", re.ASCII)
+
+# Discourse: INVALID_LEADING_CHAR_PATTERN = /\A[^\p{Alnum}\p{M}_]+/
+# \p{M} (combining marks) never survives ASCII-folding, so it drops out here
+INVALID_LEADING_CHAR_PATTERN = re.compile(r"\A[^a-zA-Z0-9_]+")
+
+# Discourse: INVALID_TRAILING_CHAR_PATTERN = /[^\p{Alnum}\p{M}]+\z/
+INVALID_TRAILING_CHAR_PATTERN = re.compile(r"[^a-zA-Z0-9]+\Z")
+
+# Discourse: REPEATED_SPECIAL_CHAR_PATTERN = /[-_.]{2,}/
 REPEATED_SPECIAL_CHAR_PATTERN = re.compile(r"[-_.]{2,}")
+
+# Discourse: CONFUSING_EXTENSIONS = /\.(js|json|css|htm|html|xml|jpg|jpeg|png|gif|bmp|ico|tif|tiff|woff)\z/i
 INVALID_SUFFIXES_PATTERN = re.compile(
-    r"\.(com|net|org|xyz|js|json|css|htm|html|xml|jpg|jpeg|png|gif|bmp|ico|tif|tiff|woff)$"
+    r"\.(com|net|org|xyz|js|json|css|htm|html|xml|jpg|jpeg|png|gif|bmp|ico|tif|tiff|woff)\Z",
+    re.IGNORECASE,
 )
 
 
+DEFAULT_USERNAME_MIN_LENGTH = 3
 DEFAULT_USERNAME_MAX_LENGTH = 60
 
 
@@ -41,7 +60,7 @@ def get_mock_forum_posts(user=None, number_of_posts=5):
             "topic_title": f"Generated Test Forum Post {i}",
             "excerpt": f"Summary of generated test forum post {i}",
             "post_url": f"https://staging-discourse.comses.net/t/topic/{i}",
-            "username": member_profile.discourse_username,
+            "username": get_sanitized_username(member_profile),
             "created_at": datetime.now(),
         }
         for i in range(number_of_posts)
@@ -117,46 +136,110 @@ def get_categories(number_of_categories=5, mock=False):
     return sorted_categories[:number_of_categories]
 
 
-def create_discourse_user(user):
-    response = requests.post(
-        build_discourse_url("users"),
-        data=dict(
-            name=user.get_full_name(),
-            username=user.member_profile.discourse_username,
-            email=user.email,
-            password=shortuuid.uuid(),
-            active=True,
-        ),
+def get_discourse_sso_user_params(user, avatar_url=None):
+    mp = user.member_profile
+    params = {
+        "external_id": mp.short_uuid,
+        "email": user.email,
+        "username": get_sanitized_username(mp),
+        "require_activation": "false",
+        "name": user.get_full_name(),
+    }
+    if avatar_url:
+        params.update(avatar_url=avatar_url)
+    return params
+
+
+def post_discourse_sso_sync(user):
+    avatar_url = user.member_profile.avatar_url
+    if avatar_url:
+        avatar_url = f"{settings.BASE_URL}{avatar_url}"
+    payload, signature = sign_sso_payload(
+        get_discourse_sso_user_params(user, avatar_url=avatar_url),
+        settings.DISCOURSE_SSO_SECRET,
+    )
+    return requests.post(
+        build_discourse_url("admin/users/sync_sso"),
+        data={"sso": payload, "sig": signature},
         headers={
-            "Content-Type": "multipart/form-data;",
             "Api-Key": settings.DISCOURSE_API_KEY,
             "Api-Username": settings.DISCOURSE_API_USERNAME,
         },
     )
-    return response
 
 
-def sanitize_username(username, uid=None):
-    # defaults: 3 <= username length <= 150
-    if uid is None:
-        uid = shortuuid.uuid()
-    unique_id = uid[:6]
-    sanitized_username = INVALID_CHARACTERS_PATTERN.sub(lambda x: "_", username)
-    logger.debug("no invalid characters username: %s", sanitized_username)
-    sanitized_username = REPEATED_SPECIAL_CHAR_PATTERN.sub(
-        lambda x: "_", sanitized_username
+def should_sync_discourse_user(user):
+    return (
+        settings.DEPLOY_ENVIRONMENT.is_staging_or_production
+        and is_sso_secret_configured(settings.DISCOURSE_SSO_SECRET)
+        and bool(user.email)
     )
-    logger.debug("repeated special chars replaced: %s", sanitized_username)
-    sanitized_username = INVALID_LEADING_CHAR_PATTERN.sub(
-        lambda x: f"_{unique_id}_", sanitized_username
+
+
+def sync_discourse_user(user):
+    if not should_sync_discourse_user(user):
+        return False
+
+    member_profile = user.member_profile
+    if not member_profile.short_uuid:
+        member_profile.short_uuid = shortuuid.uuid()
+        member_profile.save(update_fields=["short_uuid"])
+
+    try:
+        response = post_discourse_sso_sync(user)
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError):
+        logger.exception("failed to sync user %s with discourse", user)
+        return False
+
+    if data.get("success"):
+        logger.debug("synced user %s with discourse: %s", user, data)
+        return True
+
+    logger.error("failed to sync user %s with discourse: %s", user, data)
+    return False
+
+
+def get_sanitized_username(member_profile):
+    return sanitize_username(username=member_profile.username, seed=member_profile.pk)
+
+
+def discourse_username_suffix(seed: int, min_length=DEFAULT_USERNAME_MIN_LENGTH) -> str:
+    return Sqids(min_length=min_length).encode([seed]).casefold()
+
+
+def sanitize_username(
+    username: str,
+    min_length: int = DEFAULT_USERNAME_MIN_LENGTH,
+    max_length: int = DEFAULT_USERNAME_MAX_LENGTH,
+    seed: int = 0,
+) -> str:
+    """
+    Best-effort Discourse username normalizer.
+
+    Handles character-class cleanup, collapsing separators, edge trimming,
+    and confusing extensions. Does not guarantee uniqueness or minimum length.
+    """
+    s = (
+        unicodedata.normalize("NFKD", username)
+        .encode("ascii", "ignore")
+        .decode("ascii")
     )
-    logger.debug("invalid leading chars replaced: %s", sanitized_username)
-    sanitized_username = INVALID_TRAILING_CHAR_PATTERN.sub(
-        lambda x: f"_{unique_id}", sanitized_username
-    )
-    logger.debug("invalid trailing chars replaced: %s", sanitized_username)
-    sanitized_username = INVALID_SUFFIXES_PATTERN.sub(
-        lambda x: f"_{unique_id}", sanitized_username
-    )
-    logger.debug("invalid suffixes replaced: %s", sanitized_username)
-    return sanitized_username[:DEFAULT_USERNAME_MAX_LENGTH]
+    s = s.casefold()
+    s = INVALID_CHARACTERS_PATTERN.sub("-", s)
+    s = REPEATED_SPECIAL_CHAR_PATTERN.sub("-", s)
+    s = INVALID_LEADING_CHAR_PATTERN.sub("", s)
+    s = INVALID_TRAILING_CHAR_PATTERN.sub("", s)
+    s = s[:max_length].rstrip("._-")
+
+    while INVALID_SUFFIXES_PATTERN.search(s):
+        s = INVALID_SUFFIXES_PATTERN.sub("", s).rstrip("._-")
+
+    if len(s) < min_length:
+        base = s[: max_length - 9].rstrip("._-")
+        suffix = discourse_username_suffix(seed, min_length=min_length)
+        base = s[: max_length - len(suffix) - 1].rstrip("._-")
+        s = f"{base}-{suffix}" if base else suffix
+
+    return s or "user"
