@@ -11,6 +11,8 @@
 
 {% block meta_description -%}
   <meta name="description" content="{{codebase.description.raw|truncate(150)}}">
+  <meta name="author" content="{{get_discourse_username(codebase.submitter)}}">
+  <meta name="discourse-username" content="{{get_discourse_username(codebase.submitter)}}">
 {% endblock %}
 
 {%- block head -%}

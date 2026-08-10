@@ -20,6 +20,11 @@
     {{ render_ogp_tags(request, title=title, description=summary) }}
 {% endblock ogp_tags %}
 
+{% block meta_description -%}
+  <meta name="author" content="{{get_discourse_username(submitter)}}">
+  <meta name="discourse-username" content="{{get_discourse_username(submitter)}}">
+{% endblock %}
+
 {% block content %}
     {{ alert_if_spam(is_marked_spam) }}
     {{ alert_if_deleted(is_deleted, "job") }}

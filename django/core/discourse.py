@@ -188,16 +188,27 @@ def sync_discourse_user(user):
     try:
         response = post_discourse_sso_sync(user)
         response.raise_for_status()
-        data = response.json()
+        _response_data = response.json()
+        sso_record = _response_data.get("single_sign_on_record")
+        sync_successful = bool(
+            _response_data.get("id")
+            and sso_record
+            and sso_record.get("user_id") == _response_data.get("id")
+            and sso_record.get("external_id") == member_profile.short_uuid
+        )
+        if sync_successful:
+            logger.debug(
+                "Successfully synced user %s with discourse: %s", user, sso_record
+            )
+            return True
+        else:
+            logger.error(
+                "Unsuccessful sync for user %s with discourse: %s", user, _response_data
+            )
+
     except (requests.RequestException, ValueError):
-        logger.exception("failed to sync user %s with discourse", user)
-        return False
+        logger.exception("Failed sync request for user %s", user)
 
-    if data.get("success"):
-        logger.debug("synced user %s with discourse: %s", user, data)
-        return True
-
-    logger.error("failed to sync user %s with discourse: %s", user, data)
     return False
 
 
