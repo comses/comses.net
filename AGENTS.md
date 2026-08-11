@@ -92,6 +92,18 @@ This platform manages scientific software artifacts and publication metadata. Th
 - If `make test` fails in WSL with Docker daemon or credential-helper errors, prompt the user to start Docker Desktop for Windows and confirm before retrying
 - Do not change existing behavior without updating or adding tests
 
+## Commit conventions
+
+Use Conventional Commits: `type(scope): description`.
+
+- Choose `type` by the change's primary intent, not the files modified.
+- Prefer the most specific type; use `chore` only when none applies. `style` means formatting-only, not UI/CSS changes.
+- Use a scope only when an established repository area clearly applies; do not invent one.
+- Use an imperative, lowercase description with no trailing period, keeping the subject ≤72 characters.
+- For non-trivial commits, explain what changed and why in the body.
+- Reference issues or PRs in the body or footer when relevant
+
+
 ## Environment and Commands
 
 - Use Docker Compose workflow for local development

@@ -21,8 +21,8 @@
 {% endblock ogp_tags %}
 
 {% block meta_description -%}
-  <meta name="author" content="{{get_discourse_username(submitter)}}">
-  <meta name="discourse-username" content="{{get_discourse_username(submitter)}}">
+  <meta name="author" content="{{get_discourse_username(submitter.member_profile)}}">
+  <meta name="discourse-username" content="{{get_discourse_username(submitter.member_profile)}}">
 {% endblock %}
 
 {% block content %}

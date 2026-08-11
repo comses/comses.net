@@ -22,7 +22,7 @@ import logging
 from datetime import datetime
 from urllib.parse import parse_qsl
 
-from core.discourse import get_sanitized_username
+from core.discourse import get_sanitized_username, sanitize_username
 from core.fields import render_sanitized_markdown
 from core.models import ComsesGroups
 from core.serializers import FULL_DATE_FORMAT, FULL_DATETIME_FORMAT
@@ -154,8 +154,14 @@ def should_enable_discourse(is_public: bool):
     return is_public and not settings.DEPLOY_ENVIRONMENT.is_development
 
 
-def get_discourse_username(user) -> str:
-    return get_sanitized_username(user.member_profile)
+def get_discourse_username(member_profile) -> str:
+    # member_profile may be a MemberProfile model instance or a serialized dict
+    # from RelatedMemberProfileSerializer (which includes "username" and "id").
+    if isinstance(member_profile, dict):
+        return sanitize_username(
+            username=member_profile["username"], seed=member_profile["id"]
+        )
+    return get_sanitized_username(member_profile)
 
 
 def librarian_url(user):
