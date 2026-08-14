@@ -747,6 +747,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
             "codebase",
             "review_status",
             "output_data_url",
+            "input_data_url",
             "version_number",
             "id",
             "imported_release_sync_state",

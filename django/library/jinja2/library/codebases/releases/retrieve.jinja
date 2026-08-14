@@ -371,6 +371,16 @@
                     </a>
                 </div>
             {% endif %}
+            {% if release.input_data_url %}
+                <b class='card-title'>Input Data</b>
+                <div class="card-text mb-3">
+                    <a href="{{ release.input_data_url }}" class="d-block" title="{{ strip_url_scheme(release.input_data_url) }}">
+                        <span class='badge bg-info metadata-link-badge'>
+                        {{ strip_url_scheme(release.input_data_url) }}
+                        </span>
+                    </a>
+                </div>
+            {% endif %}
             {% if release.output_data_url %}
                 <b class='card-title'>Output Data</b>
                 <div class="card-text mb-3">

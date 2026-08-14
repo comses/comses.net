@@ -1875,6 +1875,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     output_data_url = models.URLField(
         blank=True, help_text=_("Permanent URL to output data from this model.")
     )
+    input_data_url = models.URLField(
+        blank=True, help_text=_("Permanent URL to input data for this model.")
+    )
     version_number = models.CharField(
         max_length=32, help_text=_("semver string, e.g., 1.0.5, see semver.org")
     )
