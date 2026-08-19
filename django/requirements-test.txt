@@ -6,3 +6,4 @@ coveralls
 hypothesis[django]
 sphinx
 sphinx_rtd_theme
+myst-parser

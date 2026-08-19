@@ -1546,9 +1546,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         else:
             draft_release = self.create_release()
         # reset fields that should not be copied over to a new draft
+        # NOTE: input_data_url and output_data_url intentionally carry forward
+        # (see docs/source/metadata_schema.md, "Draft inheritance")
         draft_release.doi = None
         draft_release.release_notes = ""
-        draft_release.output_data_url = ""
         draft_release.save()
         return draft_release
 

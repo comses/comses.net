@@ -66,6 +66,18 @@ class CodebaseTest(BaseModelTestCase):
             self.assertIn(category, contents)
             self.assertTrue(contents[category])
 
+    def test_new_draft_carries_forward_data_urls(self):
+        source_release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)
+        source_release.input_data_url = "https://example.com/input-data"
+        source_release.output_data_url = "https://example.com/output-data"
+        source_release.save()
+        source_release.publish()
+
+        draft_release = self.c1.get_or_create_draft()
+
+        self.assertEqual(draft_release.input_data_url, source_release.input_data_url)
+        self.assertEqual(draft_release.output_data_url, source_release.output_data_url)
+
     def test_format_doi_url_rejects_malformed_doi(self):
         invalid_dois = [
             "javascript:alert(1)",

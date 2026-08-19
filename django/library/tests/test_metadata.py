@@ -7,12 +7,14 @@ from .base import (
     CodebaseFactory,
     ReleaseSetup,
 )
-from library.metadata import CodeMeta, ReleaseMetadataConverter
+from library.metadata import CodeMeta, CodeMetaConverter, ReleaseMetadataConverter
 
 logger = logging.getLogger(__name__)
 
 
 class CodebaseMetadataTestCase(BaseModelTestCase):
+    INPUT_DATA_URL = "https://doi.org/xyzzy.your-input-data"
+    OUTPUT_DATA_URL = "https://doi.org/xyzzy.your-output-data"
 
     def setUp(self):
         self.user_factory = UserFactory()
@@ -22,6 +24,9 @@ class CodebaseMetadataTestCase(BaseModelTestCase):
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.release1 = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        self.release1.input_data_url = self.INPUT_DATA_URL
+        self.release1.output_data_url = self.OUTPUT_DATA_URL
+        self.release1.save()
         self.release1.publish()
 
     def test_codebase_codemeta_updates_on_save(self):
@@ -66,6 +71,23 @@ class CodebaseMetadataTestCase(BaseModelTestCase):
         self.assertIn("@id", snapshot)
         self.assertIn("author", snapshot)
         self.assertIn("description", snapshot)
+
+    def test_release_codemeta_identifies_input_and_output_data(self):
+        self.assertEqual(
+            self.release1.codemeta_snapshot["supportingData"],
+            [
+                {
+                    "@type": "DataFeed",
+                    "url": self.INPUT_DATA_URL,
+                    "name": CodeMetaConverter.INPUT_DATA_URL_NAME,
+                },
+                {
+                    "@type": "DataFeed",
+                    "url": self.OUTPUT_DATA_URL,
+                    "name": CodeMetaConverter.OUTPUT_DATA_URL_NAME,
+                },
+            ],
+        )
 
     def test_release_datacite_generation(self):
         old_datacite_metadata = self.release1.datacite_temp.dict(serialize=True)
