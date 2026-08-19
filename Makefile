@@ -176,4 +176,4 @@ e2e-deps: e2e-deps-update-lock
 
 .PHONY: gen-secret
 gen-secret:
-	docker compose run --rm server python -c "import secrets; print(secrets.token_hex(32))"
+	@python3 -c 'import secrets; print(secrets.token_urlsafe(32))'

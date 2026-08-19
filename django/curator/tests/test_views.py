@@ -1,3 +1,5 @@
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.urls import reverse
 
@@ -103,3 +105,64 @@ class SpamAdminViewTestCase(TestCase):
         self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.SPAM)
         self.assertTrue(self.event.is_marked_spam)
         self.assertFalse(self.event.submitter.is_active)
+
+
+class MarkUserAsSpamTestCase(TestCase):
+    def setUp(self):
+        self.user_factory = UserFactory()
+        self.superuser = self.user_factory.create(username="admin", is_superuser=True)
+        self.target_user = self.user_factory.create(username="spammer")
+        self.client.login(
+            username=self.superuser.username, password=self.user_factory.password
+        )
+
+    def tearDown(self):
+        self.client.logout()
+
+    def test_mark_user_as_spam_deactivates_and_creates_record(self):
+        url = reverse("curator:mark_user_spam", args=[self.target_user.id])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.target_user.refresh_from_db()
+        self.assertFalse(self.target_user.is_active)
+        content_type = ContentType.objects.get_for_model(get_user_model())
+        spam_moderation = SpamModeration.objects.get(
+            content_type=content_type, object_id=self.target_user.id
+        )
+        self.assertEqual(spam_moderation.status, SpamModeration.Status.SPAM)
+        self.assertEqual(spam_moderation.reviewer, self.superuser)
+        self.assertEqual(spam_moderation.detection_method, "manual")
+
+    def test_mark_user_as_spam_requires_permission(self):
+        self.client.logout()
+        non_admin = self.user_factory.create(username="nonadmin")
+        self.client.login(
+            username=non_admin.username, password=self.user_factory.password
+        )
+        url = reverse("curator:mark_user_spam", args=[self.target_user.id])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 403)
+        self.target_user.refresh_from_db()
+        self.assertTrue(self.target_user.is_active)
+
+    def test_mark_user_as_spam_rejects_get(self):
+        url = reverse("curator:mark_user_spam", args=[self.target_user.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 405)
+
+    def test_mark_user_as_spam_refuses_superuser(self):
+        url = reverse("curator:mark_user_spam", args=[self.superuser.id])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 400)
+        self.superuser.refresh_from_db()
+        self.assertTrue(self.superuser.is_active)
+
+    def test_mark_user_as_spam_idempotent(self):
+        url = reverse("curator:mark_user_spam", args=[self.target_user.id])
+        self.client.post(url)
+        self.client.post(url)
+        content_type = ContentType.objects.get_for_model(get_user_model())
+        count = SpamModeration.objects.filter(
+            content_type=content_type, object_id=self.target_user.id
+        ).count()
+        self.assertEqual(count, 1)

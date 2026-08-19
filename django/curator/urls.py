@@ -20,4 +20,9 @@ urlpatterns = [
         views.reject_spam_view,
         name="reject_spam",
     ),
+    path(
+        "admin/mark-user-spam/<int:user_id>/",
+        views.mark_user_as_spam,
+        name="mark_user_spam",
+    ),
 ]
