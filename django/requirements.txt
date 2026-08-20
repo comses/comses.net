@@ -54,7 +54,7 @@ sqids==0.5.2
 tzdata==2026.2
 uwsgi==2.0.31
 uwsgitop==0.12
-wagtail==7.4.2
+wagtail==7.4.3
 wagtail-modeladmin==2.2.0
 invoke<3.0,>=2.0
 ipython
