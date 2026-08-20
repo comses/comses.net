@@ -309,6 +309,7 @@ export interface CodebaseRelease {
   live: boolean;
   os: string;
   osDisplay: string;
+  inputDataUrl: string;
   outputDataUrl: string;
   peerReviewed: boolean;
   platforms: Tag[];
@@ -376,7 +377,15 @@ interface Codebase {
 
 export type CodebaseReleaseMetadata = Pick<
   CodebaseRelease,
-  "releaseNotes" | "embargoEndDate" | "os" | "platforms" | "releaseLanguages" | "live" | "license"
+  | "releaseNotes"
+  | "embargoEndDate"
+  | "os"
+  | "platforms"
+  | "releaseLanguages"
+  | "live"
+  | "license"
+  | "inputDataUrl"
+  | "outputDataUrl"
 >;
 
 export interface UploadSuccess {

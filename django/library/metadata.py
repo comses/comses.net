@@ -35,6 +35,9 @@ class CodeMetaConverter:
         "url": "https://www.comses.net/codebases",
     }
 
+    INPUT_DATA_URL_NAME = "Input data url"
+    OUTPUT_DATA_URL_NAME = "Output data url"
+
     @classmethod
     def convert_affiliation(cls, affiliation: dict) -> Organization:
         return Organization(
@@ -129,9 +132,10 @@ class CodeMetaConverter:
         return creative_work_license
 
     @classmethod
-    def url_to_datafeed(cls, url: str) -> dict:
+    def url_to_datafeed(cls, url: str, name: str) -> dict:
         return {
             "@type": "DataFeed",
+            "name": name,
             "url": url,
         }
 
@@ -219,9 +223,15 @@ class CodeMetaConverter:
             operatingSystem=release.os,
             releaseNotes=release.release_notes.raw,
             supportingData=(
-                cls.url_to_datafeed(release.output_data_url)
-                if release.output_data_url
-                else None
+                [
+                    cls.url_to_datafeed(url, name)
+                    for name, url in [
+                        (cls.INPUT_DATA_URL_NAME, release.input_data_url),
+                        (cls.OUTPUT_DATA_URL_NAME, release.output_data_url),
+                    ]
+                    if url
+                ]
+                or None
             ),
             # FIXME: need better guidance on author vs contributor fields in CodeMeta
             author=cls.convert_contributors(

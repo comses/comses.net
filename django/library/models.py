@@ -1546,9 +1546,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         else:
             draft_release = self.create_release()
         # reset fields that should not be copied over to a new draft
+        # NOTE: input_data_url and output_data_url intentionally carry forward
+        # (see docs/source/metadata_schema.md, "Draft inheritance")
         draft_release.doi = None
         draft_release.release_notes = ""
-        draft_release.output_data_url = ""
         draft_release.save()
         return draft_release
 
@@ -1874,6 +1875,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     embargo_end_date = models.DateTimeField(null=True, blank=True)
     output_data_url = models.URLField(
         blank=True, help_text=_("Permanent URL to output data from this model.")
+    )
+    input_data_url = models.URLField(
+        blank=True, help_text=_("Permanent URL to input data for this model.")
     )
     version_number = models.CharField(
         max_length=32, help_text=_("semver string, e.g., 1.0.5, see semver.org")

@@ -8,7 +8,7 @@ This page is a minimal index of commonly used operational commands.
 - Compose environment is selected via config.mk DEPLOY_ENVIRONMENT (dev, staging, test, prod)
 - Runtime config is in .env and secrets are in build/secrets
 - Shared volume docker/shared/:/shared stores model files, media, backups, and bundles
-- Canonical deployment procedures: docs/source/deployment.rst
+- Canonical deployment procedures: docs/source/deployment.md
 
 Guidelines:
 
