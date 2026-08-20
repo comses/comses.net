@@ -34,7 +34,9 @@ EDUCATION_PAGE_TITLE = "Educational Resources"
 EDUCATION_PAGE_HEADING = "Training Modules"
 EDUCATION_PAGE_DESCRIPTION = """CoMSES Net training modules provide guidance on good practices for computational modeling and sharing your work with [FAIR principles for research software (FAIR4RS)](https://doi.org/10.15497/RDA00068) and [FORCE11 Software Citation Principles](https://doi.org/10.7717/peerj-cs.86) in mind.
 
-Our [education forum](https://forum.comses.net/c/education) also hosts a [community curated list of additional educational resources](https://forum.comses.net/t/educational-resources/9159/2) and can be freely used to discuss, collaborate, and share additional educational resources."""
+Our [education forum](https://forum.comses.net/c/education) also hosts a [community curated list of additional educational resources](https://forum.comses.net/t/educational-resources/9159/2) and can be freely used to discuss, collaborate, and share additional educational resources.
+
+Learn more about the broader [Making Models FAIR](https://tobefair.org) initiative to help make computational models findable, accessible, interoperable, and reusable."""
 
 RESOURCES_PAGE_NAVIGATION_LINKS = (
     ("Resources", "/resources/"),

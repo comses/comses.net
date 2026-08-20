@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
+from django.middleware.csrf import get_token
 from django.urls import reverse
 from django.utils.html import format_html
 from enum import Enum
@@ -216,7 +217,7 @@ class SpamContentAdmin(ModelAdmin):
 
 @hooks.register("construct_homepage_panels")
 def add_recent_activity_panel(request, panels):
-    panels.append(RecentActivityPanel())
+    panels.append(RecentActivityPanel(request=request))
 
 
 class RecentActivityPanel(Component):
@@ -224,8 +225,13 @@ class RecentActivityPanel(Component):
     name = "site_recent_activity"
     order = 100
 
+    def __init__(self, request=None):
+        self.request = request
+
     def get_context_data(self, parent_context):
         context = super().get_context_data(parent_context)
+        if self.request is not None:
+            context["csrf_token"] = get_token(self.request)
         max_items = settings.ADMIN_DASHBOARD_MAX_ITEMS
         start_date = datetime.now(timezone.utc) - timedelta(
             days=settings.ADMIN_DASHBOARD_DAYS

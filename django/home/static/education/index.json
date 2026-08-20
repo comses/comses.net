@@ -8,6 +8,15 @@
     "tags": ["FAIR4RS"]
   },
   {
+    "external": true,
+    "link": "https://tobefair.org",
+    "category": "in-house",
+    "slug": "making-models-fair",
+    "title": "Making Models FAIR",
+    "description": "A CoMSES Net initiative to help researchers make computational models findable, accessible, interoperable, and reusable through community-driven collaboration, tutorials, and best-practice protocols.",
+    "tags": ["FAIR4RS"]
+  },
+  {
     "external": false,
     "slug": "intro-to-git-github",
     "category": "in-house",

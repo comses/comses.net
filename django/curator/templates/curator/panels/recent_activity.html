@@ -5,8 +5,14 @@
         <ul class="actions">
             {% for new_account in new_accounts %}
                 <li>
-                    <a class="button button-secondary button-small" href="{% url 'wagtailusers_users:edit' new_account.id %}">edit in wagtail</a>
-                    <a class="button button-secondary button-small" href="{% url 'admin:auth_user_change' new_account.id %}">edit in django admin</a>
+                    <div class="button-group" style="display:inline-flex; gap:0.5rem; align-items:center;">
+                        <a class="button button-secondary button-small" href="{% url 'wagtailusers_users:edit' new_account.id %}">edit in wagtail</a>
+                        <a class="button button-secondary button-small" href="{% url 'admin:auth_user_change' new_account.id %}">edit in django admin</a>
+                    <form class="d-inline" method="post" action="{% url 'curator:mark_user_spam' user_id=new_account.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="button button-small no" onclick="return confirm('Mark user {{ new_account.username }} as spam and deactivate their account?');">mark as spam</button>
+                    </form>
+                    </div>
                     <a href="{% url 'core:profile-detail' new_account.id %}">{{ new_account.username }}</a>
                     - joined 
                         <em>{{ new_account.date_joined }}</em></a>
