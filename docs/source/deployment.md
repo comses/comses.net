@@ -129,7 +129,7 @@ docker compose exec server inv borg.init borg.backup-all
 ```
 
 This creates/updates `/shared/backups/repo` in the container. On deployed hosts
-that is `/srv/apps/comses/docker/shared/backups/repo`; in development it remains
+that is bind-mounted from `/srv/backups/comses/repo`; in development it remains
 `docker/shared/backups/repo`.
 
 `borg.backup-all` holds a non-blocking lock across the complete operation. It
@@ -143,6 +143,38 @@ only then rotates live filesystem content.
 
 Monthly pruning uses the same operation lock and proceeds only when the last
 verified local backup is no more than 48 hours old.
+
+### Staging off-host replica interface
+
+The fixed `/code/deploy/comses-borg-replicate` command is available in the
+`server` image for infrastructure-managed staging replication. It reads the
+existing `/shared/backups/repo`, waits for the same
+`/shared/backups/.backup.lock` used by backup and prune, then holds Borg's
+repository lock for the entire rsync transfer. It does not schedule runs,
+create Cinder snapshots, or write a success marker; infrastructure owns those
+steps. This is staging-only and is not a production backup workflow.
+
+The host service must pass these variables with `docker compose exec -T -e`:
+`COMSES_BORG_REPLICATION_DESTINATION=borg-replica@backup-01.staging.internal:/`,
+`COMSES_BORG_REPLICATION_LOCK_WAIT_SECONDS` (1–3600), and
+`COMSES_BORG_EXPECTED_VERSION` (the exact installed Borg version).
+`COMSES_BORG_REPOSITORY` may be omitted; if supplied, it must be
+`/shared/backups/repo`. `COMSES_BORG_REPLICATION_DELETE` defaults to
+`false`; enabling it requires a separately reviewed destination policy and
+snapshot rollback test.
+
+Compose mounts `borg_replication_ssh_key` and
+`borg_replication_known_hosts` only in `server`, under `/run/secrets/`.
+The backing files live in the ignored `docker/secrets/` directory (or the
+configured `COMSES_SECRETS_ROOT`). Empty local placeholders are allowed for
+Compose rendering, but the wrapper rejects empty or writable files before
+network access. Before a staging run, verify that the container has Borg,
+rsync, and OpenSSH, the mounted files are nonempty, and the Borg version
+matches the supplied value. A nonzero exit means no transfer success should
+be recorded; inspect the host service journal and preserve the pre-sync
+snapshot. A copied Borg lock may need manual recovery, but run
+`borg break-lock` on a replica only after independently confirming no
+process is using it.
 
 To package the Borg repository for `make restore`:
 
