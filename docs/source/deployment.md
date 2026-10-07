@@ -7,6 +7,11 @@ This project is deployed and run using a multi-container Docker Compose workflow
 - `make deploy` is the default deployment entrypoint.
 - `config.mk` controls the active environment via `DEPLOY_ENVIRONMENT`.
 - `docker-compose.yml` is generated from `base.yml` plus environment overlays.
+- Makefile Compose commands use the physical checkout path (`pwd -P`) as their
+  explicit project directory, including rendering, build, and service commands.
+  Existing Compose project-name selection is preserved. Staging and production
+  still require the canonical checkout and storage checks; this does not permit
+  symlinked deployment storage.
 
 ## Environment selection
 
