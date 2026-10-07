@@ -28,6 +28,11 @@ REPO_BACKUPS_PATH=${DOCKER_SHARED_DIR}/backups
 # DEPLOY_ENVIRONMENT must be set in config.mk
 include config.mk
 include .env
+
+# Resolve the physical checkout once for every Compose invocation, including
+# rendering and recursive builds. Leave Compose project-name selection intact.
+COMPOSE_ROOT := $(shell pwd -P)
+COMPOSE := docker compose --project-directory "$(COMPOSE_ROOT)"
 ifneq ($(filter staging prod,$(DEPLOY_ENVIRONMENT)),)
 COMSES_APP_ROOT ?= /srv/apps/comses
 COMSES_SHARED_ROOT ?= /srv/apps/comses/docker/shared
@@ -58,7 +63,7 @@ PATH := $(HOME)/.local/bin:$(PATH)
 
 .PHONY: build
 build: docker-compose.yml secrets $(COMPOSE_STORAGE_PREREQUISITES)
-	@docker compose build --pull --parallel $(DOCKER_BUILD_FLAGS)
+	@$(COMPOSE) build --pull --parallel $(DOCKER_BUILD_FLAGS)
 
 $(BORG_REPO_PATH):
 	@mkdir -p $(@D)
@@ -133,14 +138,14 @@ release-version: .env
 docker-compose.yml: base.yml dev.yml staging.yml test.yml prod.yml config.mk \
 	$(PGPASS_PATH) $(DOWNLOAD_ANALYTICS_HMAC_KEY_PATH) release-version .env $(COMPOSE_STORAGE_PREREQUISITES)
 	@case "$(DEPLOY_ENVIRONMENT)" in \
-	  dev|staging|test) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
-	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
+	  dev|staging|test) $(COMPOSE) -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
+	  prod) $(COMPOSE) -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  *) echo "invalid environment. must be either dev, staging or prod" 1>&2; exit 1;; \
 	esac
 
 .PHONY: set-db-password
 set-db-password: $(DB_PASSWORD_PATH) .env
-	docker compose exec db psql comsesnet comsesnet -c "ALTER USER ${DB_USER} with password '$(shell cat ${DB_PASSWORD_PATH})';"
+	$(COMPOSE) exec db psql comsesnet comsesnet -c "ALTER USER ${DB_USER} with password '$(shell cat ${DB_PASSWORD_PATH})';"
 
 .PHONY: secrets
 secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
@@ -153,13 +158,13 @@ secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
 deploy:
 	@deploy/scripts/storage-preflight
 	+@$(MAKE) build
-	docker compose pull -q db redis elasticsearch
+	$(COMPOSE) pull -q db redis elasticsearch
 ifneq ($(DEPLOY_ENVIRONMENT),dev)
-	docker compose pull -q nginx
+	$(COMPOSE) pull -q nginx
 endif
-	docker compose up -d --quiet-pull
+	$(COMPOSE) up -d --quiet-pull
 	sleep 42
-	docker compose exec server inv prepare
+	$(COMPOSE) exec server inv prepare
 
 .PHONY: prepare-host-storage
 prepare-host-storage:
@@ -179,10 +184,10 @@ verify-compose-storage: docker-compose.yml
 
 .PHONY: verify-container-storage
 verify-container-storage: verify-compose-storage
-	docker compose run --rm --no-deps --entrypoint sh server -c 'grep -F " /shared " /proc/mounts && grep -F " /shared/logs " /proc/mounts && test -d /shared/backups && test ! -e /shared/postgres'
-	docker compose run --rm --no-deps --entrypoint sh db -c 'grep -F " /var/lib/postgresql/data " /proc/mounts'
+	$(COMPOSE) run --rm --no-deps --entrypoint sh server -c 'grep -F " /shared " /proc/mounts && grep -F " /shared/logs " /proc/mounts && test -d /shared/backups && test ! -e /shared/postgres'
+	$(COMPOSE) run --rm --no-deps --entrypoint sh db -c 'grep -F " /var/lib/postgresql/data " /proc/mounts'
 ifneq ($(filter staging prod,$(DEPLOY_ENVIRONMENT)),)
-	docker compose run --rm --no-deps --entrypoint sh nginx -c 'grep -F " /var/log/nginx " /proc/mounts && grep -F " /srv/media " /proc/mounts'
+	$(COMPOSE) run --rm --no-deps --entrypoint sh nginx -c 'grep -F " /var/log/nginx " /proc/mounts && grep -F " /srv/media " /proc/mounts'
 endif
 
 $(REPO_BACKUPS_PATH):
@@ -198,8 +203,8 @@ restore: build $(BORG_REPO_PATH) | $(REPO_BACKUPS_PATH)
 		sudo mv $(REPO_BACKUPS_PATH)/repo $$preserved; \
 	fi
 	sudo tar -Jxf $(BORG_REPO_PATH) -C $(REPO_BACKUPS_PATH)
-	docker compose up -d --quiet-pull
-	docker compose exec server inv borg.restore
+	$(COMPOSE) up -d --quiet-pull
+	$(COMPOSE) exec server inv borg.restore
 
 .PHONY: clean
 clean:
@@ -215,7 +220,7 @@ clean_deploy: clean
 
 .PHONY: test
 test: build
-	docker compose run --quiet-pull --rm server /code/deploy/test.sh $(TEST_ARGS)
+	$(COMPOSE) run --quiet-pull --rm server /code/deploy/test.sh $(TEST_ARGS)
 
 # e2e testing setup
 
@@ -230,14 +235,14 @@ $(E2E_REPO_PATH):
 
 .PHONY: e2e
 e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
-	docker compose -f docker-compose.yml -f e2e.yml build -q
-	docker compose -f docker-compose.yml -f e2e.yml up -d --quiet-pull
+	$(COMPOSE) -f docker-compose.yml -f e2e.yml build -q
+	$(COMPOSE) -f docker-compose.yml -f e2e.yml up -d --quiet-pull
 	sleep 42
-	docker compose -f docker-compose.yml -f e2e.yml exec server bash -c "\
+	$(COMPOSE) -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \
 		inv prepare"
 
-E2E_NPM_COMPOSE_RUN = docker compose -f docker-compose.yml -f e2e.yml run --rm --no-deps -v "$(CURDIR)/e2e:/e2e" -w /e2e vite
+E2E_NPM_COMPOSE_RUN = $(COMPOSE) -f docker-compose.yml -f e2e.yml run --rm --no-deps -v "$(CURDIR)/e2e:/e2e" -w /e2e vite
 
 .PHONY: e2e-deps-install-lock
 e2e-deps-install-lock: docker-compose.yml
