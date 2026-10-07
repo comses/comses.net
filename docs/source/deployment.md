@@ -36,6 +36,15 @@ Supported values:
   rollback, and mount verification procedure is in
   `docs/agents/storage-layout.md`.
 
+## Request metadata logging
+
+Before deploying request-ID instrumentation, follow
+`docs/agents/request-metadata-logging.md` for staging rollout, rollback and the
+four-layer HEAD probe. Infrastructure must install the companion file rotation
+policy and hourly schedule, and writer identities/permissions and reopen behavior
+must be verified before enabling the new metadata files. Application deployment
+does not install retention rules.
+
 ## Standard deployment workflow
 
 From repository root:
