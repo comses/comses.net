@@ -66,6 +66,43 @@ What `make deploy` does:
 4.  Starts services with Docker Compose.
 5.  Runs container preparation via `docker compose exec server inv prepare`.
 
+## Redis socket readiness and recovery
+
+Redis listens on `/data/redis.sock`, backed by `docker/shared/redis`; Django
+and Huey connect to the same socket as `/shared/redis/redis.sock`. Compose gates
+server startup on a Redis socket PING health check. Container state `running`
+alone does not establish socket availability. Health checks report failure;
+they do not automatically restart a running unhealthy container.
+
+If Django reports `No such file or directory`, compare Redis `/data` and
+server `/shared/redis` mount sources and directory inodes before changing paths.
+A running Redis process can retain its Unix listener after the socket pathname
+is unlinked, while new clients can no longer connect. Do not create a socket
+with `touch`, delete Redis persistence files, or switch clients to TCP.
+
+After confirming matching mounts and the configured socket path, an authorized
+operator can recover the **existing staging Redis container** from the canonical
+checkout without pulling an image or recreating storage:
+
+```sh
+cd /srv/apps/comses
+docker compose restart --timeout 120 redis
+docker compose exec -T redis redis-cli -e -s /data/redis.sock ping
+docker compose exec -T server python - <<'PY'
+import redis
+connection = redis.Redis(unix_socket_path='/shared/redis/redis.sock', socket_connect_timeout=5, socket_timeout=5)
+assert connection.ping() is True
+print('server_redis_ping=ok')
+PY
+```
+
+The shutdown timeout allows Redis to flush persistence before Docker forcibly
+terminates it. Require both PINGs, then check that Huey reconnects; a Redis
+restart causes a brief dependency interruption. If shutdown or persistence
+fails, inspect Redis diagnostics and available disk space before proceeding.
+Investigate what unlinked the socket rather than treating a restart as proof
+that the underlying cause is fixed. Production requires separate authorization.
+
 ## Common operational commands
 
 ```bash
