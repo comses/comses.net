@@ -1,6 +1,7 @@
 import io
 import pathlib
 import shutil
+from unittest.mock import patch
 
 from django.conf import settings
 from django.test import TestCase, RequestFactory
@@ -25,6 +26,7 @@ from library.models import (
     CodebaseRelease,
     License,
     PeerReview,
+    PeerReviewEvent,
 )
 from library.fs import FileCategories
 from library.tests.base import ReviewSetup
@@ -327,8 +329,141 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             HTTP_ACCEPT="application/json",
         )
 
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(
             PeerReview.objects.filter(codebase_release=second_release).exists()
+        )
+
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_request_peer_review_again_after_closing_same_release_review(self, notify):
+        self.login(self.submitter, self.user_factory.password)
+        source_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        request_url = source_release.get_request_peer_review_url()
+        response = self.client.post(request_url, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200)
+        closed_review = PeerReview.objects.get(codebase_release=source_release)
+        release_count = self.codebase.releases.count()
+        version_number = source_release.version_number
+
+        response = self.client.post(
+            closed_review.get_change_closed_url(),
+            {"action": "close"},
+            HTTP_REFERER=source_release.get_absolute_url(),
+        )
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.post(request_url, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200)
+        reopened_review = PeerReview.get_codebase_latest_active_review(self.codebase)
+        self.assertEqual(reopened_review.pk, closed_review.pk)
+        self.assertEqual(reopened_review.codebase_release_id, source_release.pk)
+        self.assertEqual(
+            reopened_review.codebase_release.status, CodebaseRelease.Status.UNDER_REVIEW
+        )
+        self.assertEqual(reopened_review.status, closed_review.status)
+        self.assertTrue(reopened_review.codebase_release.validate_metadata())
+        self.assertTrue(reopened_review.codebase_release.validate_uploaded_files())
+        self.assertEqual(
+            response.json()["reviewReleaseUrl"],
+            source_release.get_absolute_url(),
+        )
+        closed_review.refresh_from_db()
+        source_release.refresh_from_db()
+        self.assertFalse(closed_review.closed)
+        self.assertEqual(closed_review.codebase_release_id, source_release.pk)
+        self.assertEqual(source_release.status, CodebaseRelease.Status.UNDER_REVIEW)
+        self.assertEqual(source_release.version_number, version_number)
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        self.assertEqual(
+            closed_review.event_set.filter(
+                action=PeerReviewEvent.REVIEW_CLOSED.name
+            ).count(),
+            1,
+        )
+
+        # Retrying must not create another release, reopen event, or notification.
+        response = self.client.post(request_url, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["reviewReleaseUrl"],
+            source_release.get_absolute_url(),
+        )
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release__codebase=self.codebase).count(),
+            1,
+        )
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        self.assertEqual(
+            closed_review.event_set.filter(
+                action=PeerReviewEvent.REVIEW_REOPENED.name
+            ).count(),
+            1,
+        )
+        self.assertEqual(notify.call_count, 2)
+
+    def test_request_peer_review_same_draft_with_closed_review(self):
+        self.login(self.submitter, self.user_factory.password)
+        source_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        closed_review = PeerReview.objects.create(
+            codebase_release=source_release, submitter=self.submitter.member_profile
+        )
+        closed_review.close(self.submitter.member_profile)
+
+        response = self.client.post(
+            source_release.get_request_peer_review_url(), HTTP_ACCEPT="text/html"
+        )
+        reopened_review = PeerReview.get_codebase_latest_active_review(self.codebase)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, source_release.get_absolute_url())
+        self.assertEqual(reopened_review.codebase_release_id, source_release.pk)
+        self.assertEqual(reopened_review.pk, closed_review.pk)
+        closed_review.refresh_from_db()
+        self.assertFalse(closed_review.closed)
+        source_release.refresh_from_db()
+        self.assertEqual(source_release.status, CodebaseRelease.Status.UNDER_REVIEW)
+
+    def test_request_peer_review_published_release_with_closed_review(self):
+        self.login(self.submitter, self.user_factory.password)
+        source_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        source_release.publish()
+        closed_review = PeerReview.objects.create(
+            codebase_release=source_release, submitter=self.submitter.member_profile
+        )
+        closed_review.close(self.submitter.member_profile)
+        source_id = source_release.pk
+        version_number = source_release.version_number
+
+        response = self.client.post(
+            source_release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        new_review = PeerReview.get_codebase_latest_active_review(self.codebase)
+        self.assertNotEqual(new_review.codebase_release_id, source_id)
+        self.assertNotEqual(new_review.pk, closed_review.pk)
+        closed_review.refresh_from_db()
+        source_release.refresh_from_db()
+        self.assertTrue(closed_review.closed)
+        self.assertTrue(source_release.is_published)
+        self.assertEqual(source_release.version_number, version_number)
+
+    def test_request_peer_review_rejects_completed_release_with_closed_review(self):
+        self.login(self.submitter, self.user_factory.password)
+        release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        release.status = CodebaseRelease.Status.UNDER_REVIEW
+        release.save(update_fields=["status"])
+        review = PeerReview.objects.create(
+            codebase_release=release, submitter=self.submitter.member_profile
+        )
+        review.set_complete_status(self.submitter.member_profile)
+        review.close(self.submitter.member_profile)
+
+        response = self.client.post(
+            release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release__codebase=self.codebase).count(),
+            1,
         )
 
 

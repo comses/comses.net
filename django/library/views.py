@@ -1316,10 +1316,10 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @transaction.atomic
     def request_peer_review(self, request, identifier, version_number):
         """
-        If a peer review is requestable (publishable, not reviewed, no related review exists, and not imported+published):
-        - Create a new "under review" draft release if the release from which the request was made is published
-        - Otherwise, update the existing draft release to be "under review"
-        - Create a new peer review object and send an email to the author
+        Return an active review, reopen a closed review, or create a new one.
+
+        Published releases are copied to a review draft; unpublished releases are
+        reused. Notify the review editor when creating or reopening a review.
         """
         codebase_release = get_object_or_404(
             CodebaseRelease,
@@ -1330,50 +1330,48 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             raise ValidationError(
                 "Cannot request a peer review for an imported release that has already been published. As a workaround, you can make another release on GitHub and request a peer review for that."
             )
-        codebase_release.validate_publishable()
         existing_review = PeerReview.get_codebase_latest_active_review(
             codebase_release.codebase
         )
-        # if there is an existing active review, simply redirect to that release
         if existing_review:
-            review = existing_review
-            review_release = existing_review.codebase_release
-            created = False
-        # if not create a new review
-        else:
-            # first, check if this release status is already under or completed review
-            # if so, something went wrong so we'll
-            if codebase_release.is_under_review or codebase_release.is_review_complete:
-                raise ValidationError(
-                    "Cannot re-request a review on a release that has already completed or is undergoing review."
-                )
-            # if the release is published, make a new draft copy
-            elif codebase_release.is_published:
-                review_release = (
-                    codebase_release.codebase.create_review_draft_from_release(
-                        codebase_release
-                    )
-                )
-            # if the release is a draft/unpublished, change the status
-            else:
-                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
-                codebase_release.save(update_fields=["status"])
-                review_release = codebase_release
-
-            review = PeerReview.objects.create(
-                codebase_release=review_release,
-                submitter=request.user.member_profile,
-            )
-            review.send_author_requested_peer_review_email()
-            created = True
-
-        if created:
-            messages.success(request, "Peer review request submitted.")
-        else:
             messages.info(
                 request,
                 "An active peer review already exists for this codebase. Close it below if you wish to open a new one",
             )
+            return self.build_review_request_response(
+                request, existing_review.codebase_release, existing_review
+            )
+
+        codebase_release.validate_publishable()
+        previous_review = getattr(codebase_release, "review", None)
+        has_closed_review = previous_review is not None and previous_review.closed
+        if codebase_release.is_review_complete or (
+            codebase_release.is_under_review and not has_closed_review
+        ):
+            raise ValidationError(
+                "Cannot re-request a review on a release that has already completed or is undergoing review."
+            )
+
+        if codebase_release.is_published:
+            review_release = codebase_release.codebase.create_review_draft_from_release(
+                codebase_release
+            )
+            review = None
+        else:
+            codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
+            codebase_release.save(update_fields=["status"])
+            review_release = codebase_release
+            review = previous_review if has_closed_review else None
+
+        if review is None:
+            review = PeerReview.objects.create(
+                codebase_release=review_release,
+                submitter=request.user.member_profile,
+            )
+        else:
+            review.reopen(request.user.member_profile)
+        review.send_author_requested_peer_review_email()
+        messages.success(request, "Peer review request submitted.")
         return self.build_review_request_response(request, review_release, review)
 
     def build_review_request_response(self, request, codebase_release, review):
