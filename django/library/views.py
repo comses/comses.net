@@ -1321,9 +1321,14 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         Published releases are copied to a review draft; unpublished releases are
         reused. Notify the review editor when creating or reopening a review.
         """
+        # Serialize requests across all releases, including when no review exists.
+        # Read the release and review state only after acquiring the codebase lock.
+        codebase = get_object_or_404(
+            Codebase.objects.select_for_update(), identifier=identifier
+        )
         codebase_release = get_object_or_404(
             CodebaseRelease,
-            codebase__identifier=identifier,
+            codebase=codebase,
             version_number=version_number,
         )
         if codebase_release.is_imported and codebase_release.is_published:

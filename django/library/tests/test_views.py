@@ -1,10 +1,14 @@
 import io
 import pathlib
 import shutil
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+from time import monotonic, sleep
 from unittest.mock import patch
 
 from django.conf import settings
-from django.test import TestCase, RequestFactory
+from django.db import connection, connections
+from django.test import TestCase, TransactionTestCase, RequestFactory
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from rest_framework import status
@@ -465,6 +469,130 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             PeerReview.objects.filter(codebase_release__codebase=self.codebase).count(),
             1,
         )
+
+
+class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
+    def setUp(self):
+        self.submitter = UserFactory().create(username="submitter")
+        self.codebase = CodebaseFactory(submitter=self.submitter).create()
+        self.release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+
+    def request_reviews_concurrently(self, first_release, second_release):
+        if connection.vendor != "postgresql":
+            self.skipTest("Requires PostgreSQL row locks and lock diagnostics")
+
+        first_checked_review = Event()
+        allow_first_request = Event()
+        second_connected = Event()
+        backend_pids = {}
+        get_active_review = PeerReview.get_codebase_latest_active_review
+
+        def hold_first_request(codebase):
+            active_review = get_active_review(codebase)
+            if not first_checked_review.is_set():
+                first_checked_review.set()
+                if not allow_first_request.wait(timeout=30):
+                    raise TimeoutError("First review request was not released")
+            return active_review
+
+        def request_review(name, release):
+            try:
+                # PostgreSQL diagnostics let the test prove the second request is
+                # blocked by the first, rather than relying on thread timing.
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '10s'")
+                    cursor.execute("SELECT pg_backend_pid()")
+                    backend_pids[name] = cursor.fetchone()[0]
+                if name == "second":
+                    second_connected.set()
+                client = APIClient()
+                client.force_authenticate(self.submitter)
+                return client.post(
+                    release.get_request_peer_review_url(),
+                    HTTP_ACCEPT="application/json",
+                )
+            finally:
+                connections.close_all()
+
+        with patch.object(
+            PeerReview,
+            "get_codebase_latest_active_review",
+            side_effect=hold_first_request,
+        ), ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(request_review, "first", first_release)
+            try:
+                self.assertTrue(first_checked_review.wait(timeout=10))
+                second = executor.submit(request_review, "second", second_release)
+                self.assertTrue(second_connected.wait(timeout=10))
+                deadline = monotonic() + 5
+                blocked = False
+                while monotonic() < deadline:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "SELECT pg_blocking_pids(%s)", [backend_pids["second"]]
+                        )
+                        blocked = backend_pids["first"] in cursor.fetchone()[0]
+                    if blocked or second.done():
+                        break
+                    sleep(0.01)
+                self.assertTrue(blocked, "Second request did not wait for the lock")
+            finally:
+                allow_first_request.set()
+            return [first.result(timeout=10), second.result(timeout=10)]
+
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_concurrent_requests_reopen_review_once(self, notify):
+        self.release.status = CodebaseRelease.Status.UNDER_REVIEW
+        self.release.save(update_fields=["status"])
+        review = PeerReview.objects.create(
+            codebase_release=self.release, submitter=self.submitter.member_profile
+        )
+        review.close(self.submitter.member_profile)
+        release_count = self.codebase.releases.count()
+        responses = self.request_reviews_concurrently(self.release, self.release)
+
+        for response in responses:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.json()["reviewReleaseUrl"], self.release.get_absolute_url()
+            )
+        review.refresh_from_db()
+        self.release.refresh_from_db()
+        self.assertFalse(review.closed)
+        self.assertEqual(self.release.status, CodebaseRelease.Status.UNDER_REVIEW)
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release__codebase=self.codebase).count(),
+            1,
+        )
+        self.assertEqual(
+            review.event_set.filter(
+                action=PeerReviewEvent.REVIEW_REOPENED.name
+            ).count(),
+            1,
+        )
+        notify.assert_called_once()
+
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_concurrent_requests_from_different_releases_create_one_review(
+        self, notify
+    ):
+        second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        release_count = self.codebase.releases.count()
+        responses = self.request_reviews_concurrently(self.release, second_release)
+
+        for response in responses:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.json()["reviewReleaseUrl"], self.release.get_absolute_url()
+            )
+        review = PeerReview.objects.get(codebase_release__codebase=self.codebase)
+        self.assertEqual(review.codebase_release_id, self.release.pk)
+        self.assertFalse(review.closed)
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        second_release.refresh_from_db()
+        self.assertEqual(second_release.status, CodebaseRelease.Status.DRAFT)
+        notify.assert_called_once()
 
 
 class CodebaseReleaseUnpublishedFilesTestCase(
