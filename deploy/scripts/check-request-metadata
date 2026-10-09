@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Read only allowlisted fields for a canonical UUIDv4 (run on app host)."""
+
+import json
+import re
+import sys
+
+if len(sys.argv) != 2 or not re.fullmatch(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+    sys.argv[1],
+):
+    sys.exit("Expected one canonical UUIDv4")
+fields = (
+    "layer",
+    "request_id",
+    "request_id_source",
+    "event",
+    "status",
+    "duration_ms",
+    "request_time",
+    "upstream_response_time",
+    "upstream_status",
+    "request_length",
+)
+missing = []
+for layer, path in (
+    ("nginx", "/srv/logs/comses/nginx/request-metadata.jsonl"),
+    ("django", "/srv/logs/comses/request-metadata.jsonl"),
+):
+    found = False
+    try:
+        with open(path) as stream:
+            for line in stream:
+                try:
+                    record = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(record, dict):
+                    continue
+                if (
+                    record.get("layer") != layer
+                    or record.get("request_id") != sys.argv[1]
+                ):
+                    continue
+                if layer == "django" and (
+                    record.get("event") != "request_finished"
+                    or record.get("request_id_source") != "incoming"
+                ):
+                    continue
+                print(json.dumps({key: record[key] for key in fields if key in record}))
+                found = True
+    except FileNotFoundError:
+        pass
+    if not found:
+        missing.append(layer)
+if missing:
+    sys.exit("Correlation not verified; missing metadata for: " + ", ".join(missing))

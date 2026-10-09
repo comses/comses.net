@@ -1,4 +1,5 @@
 from .defaults import *
+from core.request_logging import configure_request_logging
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -190,3 +191,6 @@ LOGGING = {
         },
     },
 }
+
+# A dedicated, non-propagating stream; production inherits staging.
+configure_request_logging(LOGGING, Path(LOG_DIRECTORY))

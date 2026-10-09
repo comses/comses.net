@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""Replicate the staging Borg repository while holding both backup locks."""
+
+import fcntl
+import os
+import shutil
+import stat
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+REPOSITORY = Path("/shared/backups/repo")
+BACKUP_LOCK = Path("/shared/backups/.backup.lock")
+IDENTITY = Path("/run/secrets/borg_replication_ssh_key")
+KNOWN_HOSTS = Path("/run/secrets/borg_replication_known_hosts")
+DESTINATION = "borg-replica@backup-01.staging.internal:/"
+MAX_LOCK_WAIT_SECONDS = 3600
+
+
+def require_secret(path: Path) -> None:
+    details = path.lstat()
+    if not stat.S_ISREG(details.st_mode) or details.st_size == 0:
+        raise ValueError(f"{path} must be a nonempty regular file")
+    if details.st_mode & 0o022:
+        raise ValueError(f"{path} must not be group- or world-writable")
+
+
+def configuration(environment: dict[str, str]) -> tuple[int, bool]:
+    repository = environment.get("COMSES_BORG_REPOSITORY", str(REPOSITORY))
+    if repository != str(REPOSITORY) or REPOSITORY.resolve(strict=True) != REPOSITORY:
+        raise ValueError("repository must resolve to /shared/backups/repo")
+    if not REPOSITORY.is_dir():
+        raise ValueError("Borg repository is not a directory")
+    if environment.get("COMSES_BORG_REPLICATION_DESTINATION") != DESTINATION:
+        raise ValueError("destination must be the fixed staging replica endpoint")
+    raw_wait = environment.get("COMSES_BORG_REPLICATION_LOCK_WAIT_SECONDS", "")
+    if not raw_wait.isascii() or not raw_wait.isdecimal():
+        raise ValueError("lock wait must be a positive integer")
+    lock_wait = int(raw_wait)
+    if not 0 < lock_wait <= MAX_LOCK_WAIT_SECONDS:
+        raise ValueError("lock wait must be between 1 and 3600 seconds")
+    delete = environment.get("COMSES_BORG_REPLICATION_DELETE", "false")
+    if delete not in ("false", "true"):
+        raise ValueError("delete must be true or false")
+    for path in (IDENTITY, KNOWN_HOSTS):
+        require_secret(path)
+    expected_version = environment.get("COMSES_BORG_EXPECTED_VERSION", "")
+    if not expected_version or any(
+        char not in "0123456789." for char in expected_version
+    ):
+        raise ValueError("expected Borg version must be an exact numeric version")
+    return lock_wait, delete == "true"
+
+
+def wait_for_backup_lock(lockfile, seconds: int) -> None:
+    deadline = time.monotonic() + seconds
+    while True:
+        try:
+            fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("primary backup lock wait expired")
+            time.sleep(min(1, max(0, deadline - time.monotonic())))
+
+
+def replicate(environment: dict[str, str] | None = None) -> int:
+    environment = dict(os.environ if environment is None else environment)
+    os.umask(0o077)
+    lock_wait, delete = configuration(environment)
+    for program in ("borg", "rsync", "ssh"):
+        if shutil.which(program, path=environment.get("PATH")) is None:
+            raise RuntimeError(f"{program} is unavailable")
+    version = subprocess.check_output(
+        ["borg", "--version"], text=True, env=environment
+    ).strip()
+    if version != f"borg {environment['COMSES_BORG_EXPECTED_VERSION']}":
+        raise RuntimeError(f"unexpected Borg version: {version}")
+
+    ssh = (
+        "ssh -F /dev/null -o BatchMode=yes -o IdentitiesOnly=yes "
+        "-o StrictHostKeyChecking=yes -o ForwardAgent=no "
+        f"-o UserKnownHostsFile={KNOWN_HOSTS} -i {IDENTITY}"
+    )
+    rsync = [
+        "rsync",
+        "-aH",
+        "--no-owner",
+        "--no-group",
+        "--partial",
+        "--itemize-changes",
+        "--stats",
+        "-e",
+        ssh,
+    ]
+    if delete:
+        rsync.append("--delete-delay")
+    rsync.extend(["--", f"{REPOSITORY}/", DESTINATION])
+    borg_environment = environment | {
+        "BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK": "yes"
+    }
+    with BACKUP_LOCK.open("a+") as lockfile:
+        wait_for_backup_lock(lockfile, lock_wait)
+        return subprocess.run(
+            [
+                "borg",
+                "--lock-wait",
+                str(lock_wait),
+                "with-lock",
+                str(REPOSITORY),
+                *rsync,
+            ],
+            env=borg_environment,
+            check=False,
+        ).returncode
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(replicate())
+    except (OSError, RuntimeError, TimeoutError, ValueError) as error:
+        print(f"borg replication: {error}", file=sys.stderr)
+        sys.exit(1)

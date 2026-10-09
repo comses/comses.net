@@ -7,6 +7,11 @@ This project is deployed and run using a multi-container Docker Compose workflow
 - `make deploy` is the default deployment entrypoint.
 - `config.mk` controls the active environment via `DEPLOY_ENVIRONMENT`.
 - `docker-compose.yml` is generated from `base.yml` plus environment overlays.
+- Makefile Compose commands use the physical checkout path (`pwd -P`) as their
+  explicit project directory, including rendering, build, and service commands.
+  Existing Compose project-name selection is preserved. Staging and production
+  still require the canonical checkout and storage checks; this does not permit
+  symlinked deployment storage.
 
 ## Environment selection
 
@@ -36,6 +41,15 @@ Supported values:
   rollback, and mount verification procedure is in
   `docs/agents/storage-layout.md`.
 
+## Request metadata logging
+
+Before deploying request-ID instrumentation, follow
+`docs/agents/request-metadata-logging.md` for staging rollout, rollback and the
+four-layer HEAD probe. Infrastructure must install the companion file rotation
+policy and hourly schedule, and writer identities/permissions and reopen behavior
+must be verified before enabling the new metadata files. Application deployment
+does not install retention rules.
+
 ## Standard deployment workflow
 
 From repository root:
@@ -51,6 +65,43 @@ What `make deploy` does:
 3.  Pulls base services (and nginx for non-dev environments).
 4.  Starts services with Docker Compose.
 5.  Runs container preparation via `docker compose exec server inv prepare`.
+
+## Redis socket readiness and recovery
+
+Redis listens on `/data/redis.sock`, backed by `docker/shared/redis`; Django
+and Huey connect to the same socket as `/shared/redis/redis.sock`. Compose gates
+server startup on a Redis socket PING health check. Container state `running`
+alone does not establish socket availability. Health checks report failure;
+they do not automatically restart a running unhealthy container.
+
+If Django reports `No such file or directory`, compare Redis `/data` and
+server `/shared/redis` mount sources and directory inodes before changing paths.
+A running Redis process can retain its Unix listener after the socket pathname
+is unlinked, while new clients can no longer connect. Do not create a socket
+with `touch`, delete Redis persistence files, or switch clients to TCP.
+
+After confirming matching mounts and the configured socket path, an authorized
+operator can recover the **existing staging Redis container** from the canonical
+checkout without pulling an image or recreating storage:
+
+```sh
+cd /srv/apps/comses
+docker compose restart --timeout 120 redis
+docker compose exec -T redis redis-cli -e -s /data/redis.sock ping
+docker compose exec -T server python - <<'PY'
+import redis
+connection = redis.Redis(unix_socket_path='/shared/redis/redis.sock', socket_connect_timeout=5, socket_timeout=5)
+assert connection.ping() is True
+print('server_redis_ping=ok')
+PY
+```
+
+The shutdown timeout allows Redis to flush persistence before Docker forcibly
+terminates it. Require both PINGs, then check that Huey reconnects; a Redis
+restart causes a brief dependency interruption. If shutdown or persistence
+fails, inspect Redis diagnostics and available disk space before proceeding.
+Investigate what unlinked the socket rather than treating a restart as proof
+that the underlying cause is fixed. Production requires separate authorization.
 
 ## Common operational commands
 
@@ -104,7 +155,7 @@ docker compose exec server inv borg.init borg.backup-all
 ```
 
 This creates/updates `/shared/backups/repo` in the container. On deployed hosts
-that is `/srv/apps/comses/docker/shared/backups/repo`; in development it remains
+that is bind-mounted from `/srv/backups/comses/repo`; in development it remains
 `docker/shared/backups/repo`.
 
 `borg.backup-all` holds a non-blocking lock across the complete operation. It
@@ -118,6 +169,38 @@ only then rotates live filesystem content.
 
 Monthly pruning uses the same operation lock and proceeds only when the last
 verified local backup is no more than 48 hours old.
+
+### Staging off-host replica interface
+
+The fixed `/code/deploy/comses-borg-replicate` command is available in the
+`server` image for infrastructure-managed staging replication. It reads the
+existing `/shared/backups/repo`, waits for the same
+`/shared/backups/.backup.lock` used by backup and prune, then holds Borg's
+repository lock for the entire rsync transfer. It does not schedule runs,
+create Cinder snapshots, or write a success marker; infrastructure owns those
+steps. This is staging-only and is not a production backup workflow.
+
+The host service must pass these variables with `docker compose exec -T -e`:
+`COMSES_BORG_REPLICATION_DESTINATION=borg-replica@backup-01.staging.internal:/`,
+`COMSES_BORG_REPLICATION_LOCK_WAIT_SECONDS` (1–3600), and
+`COMSES_BORG_EXPECTED_VERSION` (the exact installed Borg version).
+`COMSES_BORG_REPOSITORY` may be omitted; if supplied, it must be
+`/shared/backups/repo`. `COMSES_BORG_REPLICATION_DELETE` defaults to
+`false`; enabling it requires a separately reviewed destination policy and
+snapshot rollback test.
+
+Compose mounts `borg_replication_ssh_key` and
+`borg_replication_known_hosts` only in `server`, under `/run/secrets/`.
+The backing files live in the ignored `docker/secrets/` directory (or the
+configured `COMSES_SECRETS_ROOT`). Empty local placeholders are allowed for
+Compose rendering, but the wrapper rejects empty or writable files before
+network access. Before a staging run, verify that the container has Borg,
+rsync, and OpenSSH, the mounted files are nonempty, and the Borg version
+matches the supplied value. A nonzero exit means no transfer success should
+be recorded; inspect the host service journal and preserve the pre-sync
+snapshot. A copied Borg lock may need manual recovery, but run
+`borg break-lock` on a replica only after independently confirming no
+process is using it.
 
 To package the Borg repository for `make restore`:
 

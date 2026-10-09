@@ -42,6 +42,12 @@ docker compose exec server inv borg.restore --archive="<archive>" # destructive 
 make restore # destructive local restore from packaged/downloaded Borg repository
 ```
 
+Staging off-host replication uses `/code/deploy/comses-borg-replicate` in the
+`server` container. Infrastructure runs it only after a destination-volume
+snapshot is available; see `docs/source/deployment.md#staging-off-host-replica-interface`
+for the fixed environment interface and preflight checks. Do not invoke the
+wrapper directly as a substitute for the host service.
+
 ## Django Test Commands
 
 ```bash

@@ -2,6 +2,12 @@ services:
   redis:
     image: redis:7-alpine
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-e", "-s", "/data/redis.sock", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     volumes:
       - type: bind
         source: ${COMSES_APP_ROOT:-.}/deploy/conf/redis.conf
@@ -108,6 +114,8 @@ services:
       - librarian_sso_secret
       - mail_api_key
       - youtube_api_key
+      - borg_replication_ssh_key
+      - borg_replication_known_hosts
     volumes:
       - type: bind
         source: ${COMSES_APP_ROOT:-.}/deploy/elasticsearch.conf.d
@@ -137,13 +145,17 @@ services:
       elasticsearch:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       vite:
         condition: service_started
     env_file:
       - ./.env
 
 secrets:
+  borg_replication_ssh_key:
+    file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/borg_replication_ssh_key
+  borg_replication_known_hosts:
+    file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/borg_replication_known_hosts
   datacite_api_password:
     file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/datacite_api_password
   db_password:

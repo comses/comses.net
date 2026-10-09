@@ -19,6 +19,8 @@ from pathlib import Path
 
 from django.contrib.messages import constants as messages
 
+from core.request_logging import configure_request_logging
+
 
 from pathlib import Path
 
@@ -158,6 +160,7 @@ COMSES_APPS = [
 INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + COMSES_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
+    "core.request_logging.RequestMetadataMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -671,3 +674,6 @@ MESSAGE_TAGS = {
 }
 
 ACCEPTED_IMAGE_TYPES = ["gif", "jpeg", "png"]
+
+# A dedicated, non-propagating stream; production inherits staging.
+configure_request_logging(LOGGING, Path(LOG_DIRECTORY))

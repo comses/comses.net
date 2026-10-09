@@ -61,6 +61,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         git \
         libgeoip1 \
         libpython3.12t64 \
+        openssh-client \
         postgresql-client-16 \
         python3 \
         rsync \
