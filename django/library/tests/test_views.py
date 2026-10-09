@@ -1,9 +1,14 @@
 import io
 import pathlib
 import shutil
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+from time import monotonic, sleep
+from unittest.mock import patch
 
 from django.conf import settings
-from django.test import TestCase, RequestFactory
+from django.db import connection, connections
+from django.test import TestCase, TransactionTestCase, RequestFactory
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from rest_framework import status
@@ -25,6 +30,7 @@ from library.models import (
     CodebaseRelease,
     License,
     PeerReview,
+    PeerReviewEvent,
 )
 from library.fs import FileCategories
 from library.tests.base import ReviewSetup
@@ -327,9 +333,266 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             HTTP_ACCEPT="application/json",
         )
 
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(
             PeerReview.objects.filter(codebase_release=second_release).exists()
         )
+
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_request_peer_review_again_after_closing_same_release_review(self, notify):
+        self.login(self.submitter, self.user_factory.password)
+        source_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        request_url = source_release.get_request_peer_review_url()
+        response = self.client.post(request_url, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200)
+        closed_review = PeerReview.objects.get(codebase_release=source_release)
+        release_count = self.codebase.releases.count()
+        version_number = source_release.version_number
+
+        response = self.client.post(
+            closed_review.get_change_closed_url(),
+            {"action": "close"},
+            HTTP_REFERER=source_release.get_absolute_url(),
+        )
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.post(request_url, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200)
+        reopened_review = PeerReview.get_codebase_latest_active_review(self.codebase)
+        self.assertEqual(reopened_review.pk, closed_review.pk)
+        self.assertEqual(reopened_review.codebase_release_id, source_release.pk)
+        self.assertEqual(
+            reopened_review.codebase_release.status, CodebaseRelease.Status.UNDER_REVIEW
+        )
+        self.assertEqual(reopened_review.status, closed_review.status)
+        self.assertTrue(reopened_review.codebase_release.validate_metadata())
+        self.assertTrue(reopened_review.codebase_release.validate_uploaded_files())
+        self.assertEqual(
+            response.json()["reviewReleaseUrl"],
+            source_release.get_absolute_url(),
+        )
+        closed_review.refresh_from_db()
+        source_release.refresh_from_db()
+        self.assertFalse(closed_review.closed)
+        self.assertEqual(closed_review.codebase_release_id, source_release.pk)
+        self.assertEqual(source_release.status, CodebaseRelease.Status.UNDER_REVIEW)
+        self.assertEqual(source_release.version_number, version_number)
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        self.assertEqual(
+            closed_review.event_set.filter(
+                action=PeerReviewEvent.REVIEW_CLOSED.name
+            ).count(),
+            1,
+        )
+
+        # Retrying must not create another release, reopen event, or notification.
+        response = self.client.post(request_url, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["reviewReleaseUrl"],
+            source_release.get_absolute_url(),
+        )
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release__codebase=self.codebase).count(),
+            1,
+        )
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        self.assertEqual(
+            closed_review.event_set.filter(
+                action=PeerReviewEvent.REVIEW_REOPENED.name
+            ).count(),
+            1,
+        )
+        self.assertEqual(notify.call_count, 2)
+
+    def test_request_peer_review_same_draft_with_closed_review(self):
+        self.login(self.submitter, self.user_factory.password)
+        source_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        closed_review = PeerReview.objects.create(
+            codebase_release=source_release, submitter=self.submitter.member_profile
+        )
+        closed_review.close(self.submitter.member_profile)
+
+        response = self.client.post(
+            source_release.get_request_peer_review_url(), HTTP_ACCEPT="text/html"
+        )
+        reopened_review = PeerReview.get_codebase_latest_active_review(self.codebase)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, source_release.get_absolute_url())
+        self.assertEqual(reopened_review.codebase_release_id, source_release.pk)
+        self.assertEqual(reopened_review.pk, closed_review.pk)
+        closed_review.refresh_from_db()
+        self.assertFalse(closed_review.closed)
+        source_release.refresh_from_db()
+        self.assertEqual(source_release.status, CodebaseRelease.Status.UNDER_REVIEW)
+
+    def test_request_peer_review_published_release_with_closed_review(self):
+        self.login(self.submitter, self.user_factory.password)
+        source_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        source_release.publish()
+        closed_review = PeerReview.objects.create(
+            codebase_release=source_release, submitter=self.submitter.member_profile
+        )
+        closed_review.close(self.submitter.member_profile)
+        source_id = source_release.pk
+        version_number = source_release.version_number
+
+        response = self.client.post(
+            source_release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        new_review = PeerReview.get_codebase_latest_active_review(self.codebase)
+        self.assertNotEqual(new_review.codebase_release_id, source_id)
+        self.assertNotEqual(new_review.pk, closed_review.pk)
+        closed_review.refresh_from_db()
+        source_release.refresh_from_db()
+        self.assertTrue(closed_review.closed)
+        self.assertTrue(source_release.is_published)
+        self.assertEqual(source_release.version_number, version_number)
+
+    def test_request_peer_review_rejects_completed_release_with_closed_review(self):
+        self.login(self.submitter, self.user_factory.password)
+        release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        release.status = CodebaseRelease.Status.UNDER_REVIEW
+        release.save(update_fields=["status"])
+        review = PeerReview.objects.create(
+            codebase_release=release, submitter=self.submitter.member_profile
+        )
+        review.set_complete_status(self.submitter.member_profile)
+        review.close(self.submitter.member_profile)
+
+        response = self.client.post(
+            release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release__codebase=self.codebase).count(),
+            1,
+        )
+
+
+class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
+    def setUp(self):
+        self.submitter = UserFactory().create(username="submitter")
+        self.codebase = CodebaseFactory(submitter=self.submitter).create()
+        self.release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+
+    def request_reviews_concurrently(self, first_release, second_release):
+        if connection.vendor != "postgresql":
+            self.skipTest("Requires PostgreSQL row locks and lock diagnostics")
+
+        first_checked_review = Event()
+        allow_first_request = Event()
+        second_connected = Event()
+        backend_pids = {}
+        get_active_review = PeerReview.get_codebase_latest_active_review
+
+        def hold_first_request(codebase):
+            active_review = get_active_review(codebase)
+            if not first_checked_review.is_set():
+                first_checked_review.set()
+                if not allow_first_request.wait(timeout=30):
+                    raise TimeoutError("First review request was not released")
+            return active_review
+
+        def request_review(name, release):
+            try:
+                # PostgreSQL diagnostics let the test prove the second request is
+                # blocked by the first, rather than relying on thread timing.
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '10s'")
+                    cursor.execute("SELECT pg_backend_pid()")
+                    backend_pids[name] = cursor.fetchone()[0]
+                if name == "second":
+                    second_connected.set()
+                client = APIClient()
+                client.force_authenticate(self.submitter)
+                return client.post(
+                    release.get_request_peer_review_url(),
+                    HTTP_ACCEPT="application/json",
+                )
+            finally:
+                connections.close_all()
+
+        with patch.object(
+            PeerReview,
+            "get_codebase_latest_active_review",
+            side_effect=hold_first_request,
+        ), ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(request_review, "first", first_release)
+            try:
+                self.assertTrue(first_checked_review.wait(timeout=10))
+                second = executor.submit(request_review, "second", second_release)
+                self.assertTrue(second_connected.wait(timeout=10))
+                deadline = monotonic() + 5
+                blocked = False
+                while monotonic() < deadline:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "SELECT pg_blocking_pids(%s)", [backend_pids["second"]]
+                        )
+                        blocked = backend_pids["first"] in cursor.fetchone()[0]
+                    if blocked or second.done():
+                        break
+                    sleep(0.01)
+                self.assertTrue(blocked, "Second request did not wait for the lock")
+            finally:
+                allow_first_request.set()
+            return [first.result(timeout=10), second.result(timeout=10)]
+
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_concurrent_requests_reopen_review_once(self, notify):
+        self.release.status = CodebaseRelease.Status.UNDER_REVIEW
+        self.release.save(update_fields=["status"])
+        review = PeerReview.objects.create(
+            codebase_release=self.release, submitter=self.submitter.member_profile
+        )
+        review.close(self.submitter.member_profile)
+        release_count = self.codebase.releases.count()
+        responses = self.request_reviews_concurrently(self.release, self.release)
+
+        for response in responses:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.json()["reviewReleaseUrl"], self.release.get_absolute_url()
+            )
+        review.refresh_from_db()
+        self.release.refresh_from_db()
+        self.assertFalse(review.closed)
+        self.assertEqual(self.release.status, CodebaseRelease.Status.UNDER_REVIEW)
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release__codebase=self.codebase).count(),
+            1,
+        )
+        self.assertEqual(
+            review.event_set.filter(
+                action=PeerReviewEvent.REVIEW_REOPENED.name
+            ).count(),
+            1,
+        )
+        notify.assert_called_once()
+
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_concurrent_requests_from_different_releases_create_one_review(
+        self, notify
+    ):
+        second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        release_count = self.codebase.releases.count()
+        responses = self.request_reviews_concurrently(self.release, second_release)
+
+        for response in responses:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.json()["reviewReleaseUrl"], self.release.get_absolute_url()
+            )
+        review = PeerReview.objects.get(codebase_release__codebase=self.codebase)
+        self.assertEqual(review.codebase_release_id, self.release.pk)
+        self.assertFalse(review.closed)
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        second_release.refresh_from_db()
+        self.assertEqual(second_release.status, CodebaseRelease.Status.DRAFT)
+        notify.assert_called_once()
 
 
 class CodebaseReleaseUnpublishedFilesTestCase(
