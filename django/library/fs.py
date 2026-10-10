@@ -834,8 +834,10 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
                     zipfile.BadZipFile,
                     tarfile.TarError,
                 ) as error:
+                    logger.warning("Cannot unpack archive %s", name, exc_info=True)
                     raise ValidationError(
-                        f"Cannot unpack this archive: {error}"
+                        "Cannot unpack this archive. Check that it is a valid ZIP "
+                        "or tar file with no duplicate paths."
                     ) from error
             else:
                 destination = incoming / name
