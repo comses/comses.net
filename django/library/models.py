@@ -31,7 +31,11 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
-from modelcluster.models import ClusterableModel
+from modelcluster.models import (
+    ClusterableModel,
+    get_all_child_m2m_relations,
+    get_all_child_relations,
+)
 from rest_framework.exceptions import ValidationError, UnsupportedMediaType
 from taggit.models import TaggedItemBase
 from wagtail.admin.panels import FieldPanel, InlinePanel, HelpPanel
@@ -954,6 +958,9 @@ class ImportedReleaseSyncState(BaseReleaseSyncState):
         related_name="imported_sync_states",
         help_text=_("Remote from which this release was imported"),
     )
+    # deprecated / superseded by CodebaseRelease.category_manifest.
+    # kept as a source for migration, this should be dropped once stable, along with
+    # removing from the backfill + making the new manifest default=dict, null=False
     category_manifest = models.JSONField(
         default=dict,
         help_text="Maps file paths to categories (code, docs, data, results)",
@@ -1580,6 +1587,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         source_release.id = None
         source_release.imported_release_sync_state = None
         source_release.git_ref_sync_state = None
+        source_release.category_manifest = None
         source_release._state.adding = True
         # use setattr (not __dict__.update) so FK fields like submitter go through
         # their descriptor and actually update the underlying _id column on save
@@ -1845,6 +1853,16 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         default=Status.DRAFT,
         help_text=_("The current status of this codebase release."),
         max_length=32,
+    )
+
+    category_manifest = models.JSONField(
+        null=True,
+        default=None,
+        blank=True,
+        help_text=(
+            "Maps package-relative file paths to categories; "
+            "null means not yet migrated."
+        ),
     )
 
     imported_release_sync_state = models.OneToOneField(
@@ -2454,6 +2472,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def publish(self):
+        # Serialize publication with package edits and category changes.
+        current = type(self).objects.select_for_update().get(pk=self.pk)
+        self.status = current.status
+        self.category_manifest = current.category_manifest
         self.validate_publishable()
         self._publish()
         from .tasks import sync_release_submitter_to_discourse
@@ -2554,6 +2576,27 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """save the release and optionally rebuild metadata by updating codemeta_snapshot
         and rebuilding the filesystem metadata. If defer_fs is True (default), the filesystem rebuild
         will be deferred to an async task"""
+        if not self._state.adding and kwargs.get("update_fields") is None:
+            # Package operations manage the manifest independently. A stale metadata
+            # instance shouldnt overwrite a newer upload or category edit.
+            deferred = self.get_deferred_fields()
+            kwargs["update_fields"] = {
+                field.name
+                for field in self._meta.concrete_fields
+                if not field.primary_key
+                and field.name != "category_manifest"
+                and field.attname not in deferred
+            }
+            if rebuild_metadata:
+                kwargs["update_fields"].add("codemeta_snapshot")
+            # Preserve ClusterableModel's normal child-relation commits (e.g. release_languages)
+            kwargs["update_fields"].update(
+                relation.get_accessor_name()
+                for relation in get_all_child_relations(self)
+            )
+            kwargs["update_fields"].update(
+                field.name for field in get_all_child_m2m_relations(self)
+            )
         if not rebuild_metadata:
             super().save(**kwargs)
         else:

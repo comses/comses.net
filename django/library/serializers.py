@@ -79,6 +79,22 @@ def is_valid_youtube_url(value):
     )
 
 
+class PackageUploadSerializer(serializers.Serializer):
+    file = serializers.FileField(allow_empty_file=True)
+
+
+class FileCategorySerializer(serializers.Serializer):
+    path = serializers.CharField()
+    category = serializers.ChoiceField(
+        choices=["code", "docs", "data", "results", "metadata"]
+    )
+
+    def validate_path(self, value):
+        from .fs import validate_package_path
+
+        return validate_package_path(value)
+
+
 class LicenseSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         if not License.objects.filter(name=value).exists():

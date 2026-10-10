@@ -2,6 +2,7 @@ from pathlib import Path
 from git import Repo
 from django.test import TestCase
 from django.conf import settings
+from rest_framework.exceptions import ValidationError
 
 from core.tests.base import (
     UserFactory,
@@ -31,7 +32,7 @@ def setUpModule():
     initialize_test_shared_folders()
 
 
-class ArchiveExtractorTestCase(TestCase):
+class ManualArchiveTestCase(TestCase):
     nested_code_folder = TEST_SAMPLES_DIR / "archives" / "nestedcode"
 
     def setUp(self):
@@ -49,11 +50,11 @@ class ArchiveExtractorTestCase(TestCase):
             fs_api=fs_api,
         )
         logs, level = msgs.serialize()
-        self.assertEqual(level, MessageLevels.warning)
-        self.assertEqual(len(logs), 2)
+        self.assertEqual(level, MessageLevels.debug)
+        self.assertEqual(logs, [])
         self.assertEqual(
             set(fs_api.list(StagingDirectories.originals, FileCategories.code)),
-            {"nestedcode.zip"},
+            {"src/ex.py", "README.md"},
         )
         # Notice that .DS_Store and .svn folder file are eliminated
         self.assertEqual(
@@ -74,11 +75,8 @@ class ArchiveExtractorTestCase(TestCase):
     def test_invalid_zipfile_saving(self):
         archive_name = str(TEST_SAMPLES_DIR / "archives" / "invalid.zip")
         fs_api = self.codebase_release.get_fs_api()
-        with open(archive_name, "rb") as f:
-            msgs = fs_api.add(FileCategories.code, content=f, name="invalid.zip")
-        logs, level = msgs.serialize()
-        self.assertEqual(level, MessageLevels.error)
-        self.assertEqual(len(logs), 1)
+        with open(archive_name, "rb") as f, self.assertRaises(ValidationError):
+            fs_api.add(FileCategories.code, content=f, name="invalid.zip")
 
     def tearDown(self):
         clear_test_shared_folder(settings.REPOSITORY_ROOT)
@@ -132,13 +130,7 @@ class GitRepoApiTestCase(TestCase):
         self.assertTrue(api.repo_dir.exists())
         self._verify_git_repo_status(api, public_release_count)
         fs_api = self.release_1.get_fs_api()
-        for category in CODEBASE_CONTENT_CATEGORIES:
-            self.assertTrue(
-                api.dirs_equal(
-                    fs_api.sip_contents_dir / category,
-                    api.repo_dir / category,
-                )
-            )
+        self.assertTrue(api.dirs_equal(fs_api.sip_contents_dir, api.repo_dir))
 
     def test_repo_append_releases(self):
         update_release_from_sample(
@@ -161,13 +153,7 @@ class GitRepoApiTestCase(TestCase):
         public_release_count = self.codebase.releases.public().count()
         self._verify_git_repo_status(api, public_release_count)
         fs_api = self.release_2.get_fs_api()
-        for category in CODEBASE_CONTENT_CATEGORIES:
-            self.assertTrue(
-                api.dirs_equal(
-                    fs_api.sip_contents_dir / category,
-                    api.repo_dir / category,
-                )
-            )
+        self.assertTrue(api.dirs_equal(fs_api.sip_contents_dir, api.repo_dir))
 
     def test_will_not_append_lower_version(self):
         # publish 2.0.0 first and build
@@ -206,13 +192,7 @@ class GitRepoApiTestCase(TestCase):
         public_release_count = self.codebase.releases.public().count()
         self._verify_git_repo_status(api, public_release_count)
         fs_api = self.release_2.get_fs_api()
-        for category in CODEBASE_CONTENT_CATEGORIES:
-            self.assertTrue(
-                api.dirs_equal(
-                    fs_api.sip_contents_dir / category,
-                    api.repo_dir / category,
-                )
-            )
+        self.assertTrue(api.dirs_equal(fs_api.sip_contents_dir, api.repo_dir))
 
 
 def tearDownModule():
