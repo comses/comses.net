@@ -1,45 +1,78 @@
 <template>
   <div>
-    <h3 class="mt-4">{{ title }}</h3>
+    <h3 :class="category === 'package' ? 'mt-0' : 'mt-4'">{{ title }}</h3>
     <slot name="label"></slot>
     <div class="text-muted mb-1" v-if="instructions">{{ instructions }}</div>
-    <div class="d-flex justify-content-between mb-2">
-      <div>
-        <label :for="uploadId"><div class="btn btn-primary">Upload a file</div></label>
-        <input
-          class="invisible"
-          :data-cy="`upload-${category}`"
-          :id="uploadId"
-          type="file"
-          @change="handleFiles($event)"
-          :accept="acceptedFileTypes"
-          multiple
-        />
+    <div
+      class="mb-3"
+      @dragenter.prevent="dragDepth++"
+      @dragover.prevent
+      @dragleave.prevent="dragDepth = Math.max(0, dragDepth - 1)"
+      @drop.prevent="handleDrop"
+    >
+      <button
+        type="button"
+        class="upload-dropzone w-100 rounded p-4 my-2 text-center"
+        :class="{ 'is-dragging': dragDepth > 0 && !uploading }"
+        :data-cy="`dropzone-${category}`"
+        :disabled="uploading"
+        @click="fileInput?.click()"
+      >
+        <span class="fas fa-cloud-upload-alt d-block fs-3 mb-2" aria-hidden="true"></span>
+        <span class="fw-semibold">{{ uploading ? "Uploading files…" : "Drop files here" }}</span>
+        <span class="d-block small mt-1">{{
+          uploading ? "You can add more when this upload finishes" : "or click to browse"
+        }}</span>
+      </button>
+      <input
+        ref="fileInput"
+        class="d-none"
+        :data-cy="`upload-${category}`"
+        type="file"
+        @change="handleFiles"
+        :accept="acceptedFileTypes"
+        :disabled="uploading"
+        multiple
+      />
+    </div>
+    <div v-if="totalFiles" class="alert alert-secondary" :data-cy="`upload-status-${category}`">
+      <div role="status" aria-live="polite" class="text-break" :class="{ 'mb-2': uploading }">
+        <template v-if="uploading">
+          {{ completedFiles + 1 }} of {{ totalFiles }} —
+          {{ fileProgress === 100 ? "Processing" : "Uploading" }} {{ currentFile }}
+        </template>
+        <template v-else>
+          {{ successfulFiles }} of {{ totalFiles }}
+          {{ totalFiles === 1 ? "file" : "files" }} uploaded<span v-if="uploadErrors.length"
+            >; see errors below</span
+          >.
+        </template>
       </div>
-      <div>
-        <button v-if="originals.length" class="btn btn-danger" @click="emit('clear')">
-          Remove all files
-        </button>
+      <div v-if="uploading" class="progress" style="height: 6px">
+        <div
+          class="progress-bar"
+          role="progressbar"
+          aria-label="Upload progress"
+          :aria-valuenow="progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :style="{ width: `${progress}%` }"
+        ></div>
       </div>
     </div>
-    <div>
-      <div class="alert alert-secondary" v-for="(info, name) in fileUploadProgress" :key="name">
-        File upload {{ name }} is <b>{{ info.percentCompleted }}%</b> complete
-      </div>
-      <div class="alert alert-danger alert-dismissable" v-if="hasErrors">
-        <button class="btn-close" aria-label="Close" @click="clearUploadErrors"></button>
-        <div v-if="fileUploadErrors.detail">
-          {{ fileUploadErrors.detail }}
-        </div>
-        <div v-else v-for="(error, name) in fileUploadErrors" :key="name">
-          <div v-for="msg in error.msgs" :key="msg.msg.detail">
-            <b>{{ displayStage(msg.msg.stage) }}</b
-            >: {{ msg.msg.detail }}
-          </div>
-        </div>
-      </div>
+    <div class="alert alert-danger text-break" v-if="uploadErrors.length" role="alert">
+      <div v-for="(error, index) in uploadErrors" :key="index">{{ error }}</div>
     </div>
-    <div class="list-group" v-if="originals.length > 0">
+    <button
+      v-if="originals.length"
+      type="button"
+      class="btn btn-sm btn-danger mb-2"
+      :disabled="uploading"
+      @click="emit('clear')"
+    >
+      Remove all files
+    </button>
+    <div class="list-group" v-if="!hideFileList && originals.length > 0">
       <div
         class="list-group-item d-flex justify-content-between align-items-center"
         v-for="file in originals"
@@ -54,15 +87,13 @@
         </button>
       </div>
     </div>
-    <div class="alert alert-info" v-else>No files uploaded</div>
+    <div class="alert alert-info" v-else-if="!hideFileList">No files uploaded</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { delay, isEmpty, uniqueId } from "lodash-es";
 import { useReleaseEditorAPI } from "@/composables/api";
-import type { UploadFailure, UploadProgress } from "@/types";
 
 export interface FileUploadProps {
   title: string;
@@ -70,6 +101,7 @@ export interface FileUploadProps {
   uploadUrl: string;
   acceptedFileTypes: string;
   category: string;
+  hideFileList?: boolean;
   originals: { name: string; identifier: string }[];
 }
 
@@ -84,57 +116,94 @@ const emit = defineEmits<{
   (e: "uploadDone"): void;
 }>();
 
-const { uploadFile } = useReleaseEditorAPI();
+const { uploadFile, serverErrors } = useReleaseEditorAPI();
+const uploadErrors = ref<string[]>([]);
+const fileInput = ref<HTMLInputElement | null>(null);
+const dragDepth = ref(0);
+const uploading = ref(false);
+const totalFiles = ref(0);
+const completedFiles = ref(0);
+const successfulFiles = ref(0);
+const currentFile = ref("");
+const fileProgress = ref(0);
+const progress = computed(() =>
+  totalFiles.value
+    ? Math.round(((completedFiles.value + fileProgress.value / 100) / totalFiles.value) * 100)
+    : 0
+);
 
-const fileUploadErrors = ref<{ [name: string]: UploadFailure }>({});
-const fileUploadProgress = ref<{ [name: string]: UploadProgress }>({});
-
-const uploadId = computed(() => `upload_${uniqueId()}`);
-const hasErrors = computed(() => !isEmpty(fileUploadErrors.value));
-
-function displayStage(stage: string) {
-  return stage === "sip" ? "During archive unpack" : "During upload";
+function handleFiles(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  input.value = "";
+  uploadFiles(files);
 }
 
-function clearUploadErrors() {
-  fileUploadErrors.value = {};
-}
-
-async function handleFiles(event: Event) {
-  const inputEl = event.target as HTMLInputElement;
-  if (!inputEl.files) return;
-
-  for (const file of inputEl.files) {
-    delay(() => delete fileUploadProgress.value[file.name], 6000);
-    await uploadFile(
-      props.uploadUrl,
-      file,
-      progressEvent => {
-        const percentCompleted = Math.round(
-          (progressEvent.loaded * 100) / (progressEvent.total || 1)
-        );
-        fileUploadProgress.value[file.name] = {
-          kind: "progress",
-          percentCompleted,
-          size: file.size,
-        };
-      },
-      error => {
-        if (error.response) {
-          const data = error.response.data as any;
-          if (data.detail) {
-            fileUploadErrors.value = data;
-          } else {
-            fileUploadErrors.value[file.name] = {
-              kind: "failure",
-              msgs: data,
-            };
-          }
-        }
-      }
-    );
-    inputEl.value = "";
-    emit("uploadDone");
+function handleDrop(event: DragEvent) {
+  dragDepth.value = 0;
+  if (uploading.value || !event.dataTransfer) return;
+  const items = Array.from(event.dataTransfer.items);
+  if (items.some(item => item.webkitGetAsEntry?.()?.isDirectory)) {
+    uploadErrors.value = ["Please upload folders as a ZIP or tar archive."];
+    return;
   }
+  uploadFiles(Array.from(event.dataTransfer.files));
+}
+
+async function uploadFiles(files: File[]) {
+  if (uploading.value || !files.length) return;
+  uploading.value = true;
+  uploadErrors.value = [];
+  totalFiles.value = files.length;
+  completedFiles.value = 0;
+  successfulFiles.value = 0;
+  for (const file of files) {
+    currentFile.value = file.name;
+    fileProgress.value = 0;
+    try {
+      await uploadFile(
+        props.uploadUrl,
+        file,
+        event => {
+          fileProgress.value = event.total
+            ? Math.min(100, Math.round((event.loaded * 100) / event.total))
+            : 0;
+        },
+        () => {}
+      );
+      if (!serverErrors.value.length) {
+        successfulFiles.value++;
+        emit("uploadDone");
+      }
+    } catch {
+      // The API composable supplies the error message, including network failures.
+    } finally {
+      uploadErrors.value.push(...serverErrors.value.map(message => `${file.name}: ${message}`));
+      completedFiles.value++;
+    }
+  }
+  uploading.value = false;
 }
 </script>
+
+<style scoped>
+.upload-dropzone {
+  border: 2px dashed var(--bs-secondary);
+  background: var(--bs-light);
+  color: var(--bs-body-color);
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.upload-dropzone:not(:disabled):hover,
+.upload-dropzone:focus-visible,
+.upload-dropzone.is-dragging {
+  border-color: var(--bs-primary);
+  background: var(--bs-primary-bg-subtle, #edf4fa);
+}
+
+.upload-dropzone:disabled {
+  opacity: 0.65;
+}
+</style>

@@ -26,7 +26,7 @@
         {{ serverErrors.join(", ") }}
       </div>
       <div v-if="folderContents">
-        <FileTree :categorizable="!store.release.live" :directory="folderContents" />
+        <FileTree :categorizable="store.release.canEditOriginals" :directory="folderContents" />
       </div>
     </div>
   </div>

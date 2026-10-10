@@ -105,6 +105,8 @@ from .permissions import (
 )
 from .serializers import (
     CodebaseGitRemoteSerializer,
+    PackageUploadSerializer,
+    FileCategorySerializer,
     CodebaseSerializer,
     CodebaseReleaseSerializer,
     CodebaseReleaseWithGitRefSyncStateSerializer,
@@ -1475,26 +1477,12 @@ class CodebaseReleaseFilesSipViewSet(BaseCodebaseReleaseFilesViewSet):
 
     @action(detail=False, methods=["post"])
     def update_category(self, request, **kwargs):
-        """update a file's category, currently only for imported releases
-
-        Note: the category given in the request data is the new category for the file
-        and the category in the URL is the current category of the file (or anything,
-        it is ignored here)
-        """
         codebase_release = self.get_object()
-        if not codebase_release.is_imported:
-            raise ValidationError("Cannot update file category on non-imported release")
+        serializer = FileCategorySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         fs_api = codebase_release.get_fs_api()
-        file_path = request.data.get("path")
-        new_category_str = request.data.get("category")
-        if not file_path or not new_category_str:
-            raise ValidationError("Both a file 'path' and 'category' are required")
-        try:
-            new_category = FileCategories[new_category_str]
-        except KeyError:
-            raise ValidationError(
-                f"Target category name {new_category_str} invalid. Must be one of {[c.name for c in FileCategories]}"
-            )
+        file_path = serializer.validated_data["path"]
+        new_category = FileCategories[serializer.validated_data["category"]]
         try:
             fs_api.manifest.update_file_category(file_path, new_category)
         except ValueError as e:
@@ -1513,10 +1501,11 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()
         category = self.get_category()
-        fileobj = request.FILES.get("file")
-        if fileobj is None:
-            raise ValidationError({"file": ["This field is required"]})
-        msgs = fs_api.add(content=fileobj, category=category)
+        if codebase_release.is_imported:
+            raise ValidationError("Update files through the source GitHub release.")
+        serializer = PackageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        msgs = fs_api.add(content=serializer.validated_data["file"], category=category)
         logs, level = msgs.serialize()
         status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
         return Response(status=status_code, data=logs)
@@ -1526,6 +1515,8 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()
         category = self.get_category()
+        if codebase_release.is_imported:
+            raise ValidationError("Update files through the source GitHub release.")
         msgs = fs_api.delete(category=category, relpath=pathlib.Path(relpath))
         logs, level = msgs.serialize()
         status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
@@ -1536,8 +1527,27 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()
         category = self.get_category()
+        if codebase_release.is_imported:
+            raise ValidationError("Update files through the source GitHub release.")
         fs_api.clear_category(category)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CodebaseReleasePackageFilesViewSet(CodebaseReleaseFilesOriginalsViewSet):
+    """Category-independent manual uploads and package file removal."""
+
+    @classmethod
+    def get_url_matcher(cls):
+        return (
+            r"codebases/(?P<identifier>[\w\-.]+)/releases/"
+            r"(?P<version_number>\d+\.\d+\.\d+)/files/package"
+        )
+
+    def get_category(self):
+        return None
+
+    # Clearing categories belongs to the legacy category-specific endpoint.
+    clear_category = None
 
 
 class CodebaseReleaseFormCreateView(FormCreateView):
