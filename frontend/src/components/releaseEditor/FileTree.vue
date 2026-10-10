@@ -1,5 +1,6 @@
 <template>
   <div>
+    <div v-if="serverErrors.length" class="alert alert-danger">{{ serverErrors.join(", ") }}</div>
     <div class="d-flex align-items-center pt-1">
       <i class="fas fa-folder-open me-2"></i>
       <span>{{ directory.label }}</span>
@@ -14,6 +15,8 @@
             <select
               v-if="categorizable"
               :value="content.pendingCategory || content.category"
+              :aria-label="`Category for ${content.path}`"
+              :data-file-path="content.path"
               @change="
                 handleUpdateFileCategory(content, ($event.target as HTMLSelectElement).value)
               "
@@ -25,10 +28,25 @@
                 {{ cat }}
               </option>
             </select>
+            <button
+              v-if="removable"
+              type="button"
+              class="btn btn-sm btn-link text-danger ms-2"
+              :aria-label="`Remove ${content.path}`"
+              :disabled="isLoading"
+              @click="removeFile(content)"
+            >
+              <i class="fas fa-trash-alt"></i>
+            </button>
           </div>
         </template>
         <template v-else>
-          <FileTree :directory="content" :categorizable="categorizable" />
+          <FileTree
+            :directory="content"
+            :categorizable="categorizable"
+            :removable="removable"
+            @files-changed="emit('filesChanged')"
+          />
         </template>
       </div>
     </div>
@@ -44,13 +62,22 @@ import { useReleaseEditorStore } from "@/stores/releaseEditor";
 export interface FileTreeProps {
   directory: Folder;
   categorizable?: boolean;
+  removable?: boolean;
 }
 
 const props = withDefaults(defineProps<FileTreeProps>(), {
   categorizable: false,
 });
 
-const { updateFileCategory } = useReleaseEditorAPI();
+const emit = defineEmits<{ (event: "filesChanged"): void }>();
+const { updateFileCategory, deleteFile, packageFileUrl, serverErrors, isLoading } =
+  useReleaseEditorAPI();
+
+async function removeFile(file: File) {
+  if (!window.confirm(`Remove ${file.path}?`)) return;
+  await deleteFile(packageFileUrl(store.identifier, store.versionNumber, file.path));
+  if (!serverErrors.value.length) emit("filesChanged");
+}
 
 const store = useReleaseEditorStore();
 
@@ -61,25 +88,23 @@ function isFile(item: File | Folder): item is File {
 }
 
 async function handleUpdateFileCategory(file: File, newCategory: string) {
+  if (!props.categorizable) return;
   file.pendingCategory = newCategory as FileCategory;
-  if (props.categorizable) {
-    const response = await updateFileCategory(
+  try {
+    await updateFileCategory(
       store.identifier,
       store.versionNumber,
-      file.category, // old category
+      file.category,
       file.path,
       newCategory
     );
-    if (response.status === 200) {
-      // refresh the original files list (determines the green check/red x in sidebar)
-      for (const cat of [file.pendingCategory, file.category]) {
-        await store.fetchOriginalFiles(cat);
-      }
+    if (!serverErrors.value.length) {
+      const previous = file.category;
       file.category = newCategory as FileCategory;
-    } else {
-      console.error("Failed to update file category", response);
+      await Promise.all([previous, file.category].map(store.fetchOriginalFiles));
     }
-    file.pendingCategory = undefined; // reset pending state
+  } finally {
+    file.pendingCategory = undefined;
   }
 }
 

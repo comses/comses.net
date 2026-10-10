@@ -40,7 +40,7 @@
             :identifier="identifier"
           />
           <CommonMediaModal
-            button-class="btn btn-primary me-2"
+            button-class="btn btn-sm btn-primary me-2"
             :identifier="identifier"
             :files="store.files.media"
             :show="showUploadImageModal"
@@ -66,7 +66,7 @@
           v-else
           show-files
           files-route="/upload"
-          :files-title="store.release.canEditOriginals ? 'Upload files' : 'Preview archive'"
+          :files-title="store.release.canEditOriginals ? 'Model files' : 'Preview archive'"
           :metadata-title="store.release.canEditOriginals ? 'Add metadata' : 'Edit metadata'"
           :contributors-title="
             store.release.canEditOriginals ? 'Add contributors' : 'Edit contributors'

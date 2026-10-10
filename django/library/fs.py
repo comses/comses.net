@@ -1,7 +1,5 @@
-from abc import ABC, abstractmethod
+import filecmp
 import json
-import requests
-import yaml
 import logging
 import mimetypes
 import os
@@ -9,24 +7,24 @@ import re
 import shutil
 import tarfile
 import zipfile
-import filecmp
-from packaging.version import Version
 from enum import Enum
 from functools import total_ordering
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable, Optional
-from git import Actor, GitCommandError, InvalidGitRepositoryError, Repo
+from typing import Optional
 
 import bagit
+import requests
+import yaml
+from core import fs
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.core.files.uploadedfile import File
+from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
+from git import Actor, InvalidGitRepositoryError, Repo
+from packaging.version import Version
 from rest_framework.exceptions import ValidationError
-
-from core import fs
 
 logger = logging.getLogger(__name__)
 
@@ -352,7 +350,7 @@ class CodebaseReleaseAipStorage(CodebaseReleaseStorage):
         shutil.copytree(sip_storage.location, self.location)
 
 
-class BaseCodebaseReleaseFsApi(ABC):
+class BaseCodebaseReleaseFsApi:
     """
     Base interface to maintain files associated with a codebase release
     """
@@ -368,6 +366,7 @@ class BaseCodebaseReleaseFsApi(ABC):
         self.identifier = codebase_release.codebase.identifier
         self.version_number = codebase_release.version_number
         self.release_id = codebase_release.id
+        self.manifest = CategoryManifestManager(codebase_release)
         self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
@@ -484,11 +483,10 @@ class BaseCodebaseReleaseFsApi(ABC):
 
     def get_absolute_url(self, category: FileCategories, relpath: Path):
         return reverse(
-            "library:codebaserelease-original-files-detail",
+            "library:codebaserelease-package-files-detail",
             kwargs={
                 "identifier": str(self.identifier),
                 "version_number": self.version_number,
-                "category": category.name,
                 "relpath": str(relpath),
             },
         )
@@ -536,6 +534,10 @@ class BaseCodebaseReleaseFsApi(ABC):
         if force or not path.exists():
             with path.open(mode="w", encoding="utf-8") as codemeta_out:
                 codemeta_out.write(self.codemeta_contents)
+            self.manifest.add_file(
+                path.relative_to(self.sip_contents_dir).as_posix(),
+                FileCategories.metadata,
+            )
             return True
         return False
 
@@ -556,6 +558,10 @@ class BaseCodebaseReleaseFsApi(ABC):
             return False
         with path.open(mode="w", encoding="utf-8") as cff_out:
             cff_out.write(cff_contents)
+        self.manifest.add_file(
+            path.relative_to(self.sip_contents_dir).as_posix(),
+            FileCategories.metadata,
+        )
         return True
 
     def create_or_update_license(self, force=False):
@@ -566,6 +572,10 @@ class BaseCodebaseReleaseFsApi(ABC):
         if self.release.license and (force or not path.exists()):
             with path.open(mode="w", encoding="utf-8") as license_out:
                 license_out.write(self.release.license_text)
+            self.manifest.add_file(
+                path.relative_to(self.sip_contents_dir).as_posix(),
+                FileCategories.metadata,
+            )
             return True
         return False
 
@@ -610,20 +620,50 @@ class BaseCodebaseReleaseFsApi(ABC):
     def review_archive_size(self):
         return self.review_archivepath.stat().st_size
 
-    @abstractmethod
-    def list(self, stage: StagingDirectories, category: Optional[FileCategories]):
-        pass
+    def list(self, stage=StagingDirectories.sip, category=None):
+        return [
+            path
+            for path, value in self.manifest.data.items()
+            if category is None or value == category.name
+        ]
 
-    @abstractmethod
-    def list_sip_contents(self, path=None) -> dict:
-        pass
+    def list_sip_contents(self, path=None):
+        root = self.sip_contents_dir
+        manifest = self.manifest.data
 
-    @abstractmethod
-    def check_category_file_exists(self, category: FileCategories) -> bool:
-        """returns True if at least one file with the given category exists
-        in the sip storage, False otherwise
-        """
-        pass
+        def directory_tree(directory):
+            contents = []
+            for child in sorted(directory.iterdir()):
+                if child.is_dir():
+                    contents.append(directory_tree(child))
+                elif child.is_file():
+                    relative = child.relative_to(root).as_posix()
+                    contents.append(
+                        {
+                            "label": child.name,
+                            "path": relative,
+                            "category": manifest.get(
+                                relative, FileCategories.metadata.name
+                            ),
+                        }
+                    )
+            return {
+                "label": "archive-project-root"
+                if directory == root
+                else directory.name,
+                "contents": contents,
+            }
+
+        return directory_tree(path or root)
+
+    def check_category_file_exists(self, category):
+        return any(
+            (self.sip_contents_dir / path).is_file()
+            for path in self.list(category=category)
+        )
+
+    def retrieve(self, stage, category, relpath):
+        return self.get_sip_storage().open(str(relpath))
 
     def get_or_create_sip_bag(self, bagit_info=None):
         sip_dir = str(self.sip_dir)
@@ -666,186 +706,278 @@ class BaseCodebaseReleaseFsApi(ABC):
         self.create_or_update_citation_cff(force=force)
         self.create_or_update_license(force=force)
 
+    @transaction.atomic
     def rebuild_metadata(self):
+        # Metadata jobs and uploads must not write the package concurrently.
+        self.release = (
+            type(self.release).objects.select_for_update().get(pk=self.release_id)
+        )
+        self.manifest = CategoryManifestManager(self.release)
         self.create_or_update_metadata_files(force=True)
         # only rebuild the archive package if it already exists
         if self.aip_dir.exists():
             self.build_archive(force=True)
+
+
+def validate_package_path(name):
+    path = Path(name)
+    if (
+        not name
+        or "\\" in name
+        or path.is_absolute()
+        or re.match(r"^[A-Za-z]:", name)
+        or ".." in path.parts
+        or path == Path(".")
+    ):
+        raise ValidationError("File paths must be relative and cannot contain '..'.")
+    return name
+
+
+def extract_manual_archive(archive, destination):
+    """Preserve package paths while enforcing the shared archive safety limits."""
+    if zipfile.is_zipfile(archive):
+        fs.extract_zip(archive, destination)
+    elif tarfile.is_tarfile(archive):
+        budget = fs.ArchiveBudget()
+        budget.check_input(archive)
+        with tarfile.open(archive, "r:*") as bundle:
+            members = []
+            for member in bundle:
+                budget.add_member(member.name, member.size)
+                if not (member.isfile() or member.isdir()):
+                    raise tarfile.FilterError("Archive members must be regular files or directories")
+                path = Path(member.name)
+                if path.is_absolute() or ".." in path.parts:
+                    raise tarfile.FilterError("Archive member paths must stay within the extraction directory")
+                member = tarfile.data_filter(member, destination)
+                target = fs.archive_member_path(member.name, destination)
+                members.append((member, target))
+            for member, target in members:
+                budget.check_time()
+                if member.isdir():
+                    target.mkdir(parents=True, exist_ok=True)
+                else:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    with bundle.extractfile(member) as source, target.open("xb") as output:
+                        budget.copy(source, output)
+                    if member.mode is not None:
+                        target.chmod(member.mode)
+            budget.check_time()
+    else:
+        raise ValidationError("Upload a ZIP or tar archive, or individual files.")
 
 
 class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
-    """
-    File system API for managing a non-imported (regular, directly uploaded) codebase release.
+    """Manual packages keep their supplied paths. The SIP is the editable package.
 
-    NOTE: This is not currently protected against concurrent file access but only the submitter can edit files
-    associated with a codebase release at the moment. Will need to implement file locks if/when this assumption fails to
-    hold
+    Legacy originals remain untouched for provenance; edits and review copies use
+    the extracted package, so removing a file cannot resurrect it from an archive.
     """
 
-    def __init__(
-        self,
-        codebase_release,
-        system_file_presence_message_level=MessageLevels.error,
-        mimetype_mismatch_message_level=MessageLevels.error,
-    ):
-        if codebase_release.is_imported:
-            raise ValueError("CodebaseRelease must be a non-imported release")
-        super().__init__(
-            codebase_release,
-            system_file_presence_message_level,
-            mimetype_mismatch_message_level,
-        )
+    def _edit_package(self, edit):
+        if not self.release.can_edit_originals or self.release.is_imported:
+            raise ValidationError("Files cannot be edited for this release.")
+        with TemporaryDirectory(dir=self.rootdir) as temporary:
+            work = Path(temporary) / "data"
+            backup = Path(temporary) / "previous"
+            swapped = False
+            try:
+                with transaction.atomic():
+                    release = (
+                        type(self.release)
+                        .objects.select_for_update()
+                        .get(pk=self.release_id)
+                    )
+                    if not release.can_edit_originals or release.is_imported:
+                        raise ValidationError(
+                            "Files cannot be edited for this release."
+                        )
+                    manifest = CategoryManifestManager(release)
+                    categories = dict(manifest.data)
+                    shutil.copytree(self.sip_contents_dir, work)
+                    edit(work, categories)
+                    for directory in sorted(work.rglob("*"), reverse=True):
+                        if directory.is_dir() and not any(directory.iterdir()):
+                            directory.rmdir()
+                    self.sip_contents_dir.rename(backup)
+                    try:
+                        work.rename(self.sip_contents_dir)
+                    except Exception:
+                        backup.rename(self.sip_contents_dir)
+                        raise
+                    swapped = True
+                    manifest.update(categories)
+                self.release.category_manifest = categories
+            except Exception:
+                if swapped:
+                    shutil.rmtree(self.sip_contents_dir)
+                    backup.rename(self.sip_contents_dir)
+                raise
 
-    def list(self, stage, category):
-        stage_storage = self.get_stage_storage(stage)
-        return [str(p) for p in stage_storage.list(category)]
-
-    def list_sip_contents(self, path=None):
-        """recursively build a tree representing the SIP contents.
-        Each node includes a label (file name), path (relative to sip contents), and category
-        """
-        if path is None:
-            path = self.sip_contents_dir
-            name = "archive-project-root"
-        else:
-            name = path.name
-        contents = {"label": name, "contents": []}
-        for p in path.iterdir():
-            if p.is_dir():
-                contents["contents"].append(self.list_sip_contents(p))
-            else:
+    def add(self, category=None, content=None, name=None):
+        name = name or Path(content.name).name
+        validate_package_path(name)
+        msgs = MessageGroup()
+        with TemporaryDirectory(dir=self.rootdir) as temporary:
+            incoming = Path(temporary) / "incoming"
+            incoming.mkdir()
+            if fs.is_archive(name):
+                archive = Path(temporary) / Path(name).name
+                with archive.open("wb") as destination:
+                    shutil.copyfileobj(content, destination)
                 try:
-                    rel_parent = p.parent.relative_to(self.sip_contents_dir)
-                    category_str = str(rel_parent) if rel_parent != Path(".") else FileCategories.metadata.name
-                except ValueError:
-                    # parent is not a subdirectory of sip_contents_dir
-                    category_str = FileCategories.metadata.name
-                contents["contents"].append(
-                    {
-                        "label": p.name,
-                        "path": str(p.relative_to(self.sip_contents_dir)),
-                        "category": category_str,
+                    extract_manual_archive(archive, incoming)
+                except (
+                    OSError,
+                    ValueError,
+                    zipfile.BadZipFile,
+                    tarfile.TarError,
+                ) as error:
+                    raise ValidationError(
+                        f"Cannot unpack this archive: {error}"
+                    ) from error
+            else:
+                destination = incoming / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                with destination.open("wb") as target:
+                    shutil.copyfileobj(content, target)
+            paths = [path for path in incoming.rglob("*") if path.is_file()]
+            paths = [
+                path
+                for path in paths
+                if not fs.has_system_files(str(path.relative_to(incoming)))
+            ]
+            if not paths:
+                raise ValidationError("The upload contains no usable files.")
+
+            def add_files(work, categories):
+                for source in paths:
+                    relative = source.relative_to(incoming).as_posix()
+                    target = work / relative
+                    metadata_names = {
+                        "CITATION.cff",
+                        "codemeta.json",
+                        "LICENSE",
                     }
-                )
-        return contents
+                    if (
+                        source.relative_to(incoming).parts[0] in metadata_names
+                        and "/" in relative
+                    ):
+                        raise ValidationError(
+                            "Root metadata paths must be files, not directories."
+                        )
+                    generated_metadata = relative in metadata_names
+                    if target.exists() and not (
+                        generated_metadata and target.is_file()
+                    ):
+                        raise ValidationError(
+                            f"A file already exists at '{relative}'. "
+                            "Remove it before uploading a replacement."
+                        )
+                    if any(parent.is_file() for parent in target.parents):
+                        raise ValidationError(
+                            f"A file blocks the directory for '{relative}'."
+                        )
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(source, target)
+                    categories[relative] = (
+                        FileCategories.metadata.name
+                        if generated_metadata
+                        else category.name
+                        if category
+                        else self.manifest.guess_file_category(Path(relative))
+                    )
 
-    def check_category_file_exists(self, category):
-        sip_storage = self.get_sip_storage()
-        category_dir_exists = sip_storage.exists(category.name)
-        category_dir_list = list(sip_storage.list(category))
-        return category_dir_exists and bool(category_dir_list)
-
-    def retrieve(
-        self,
-        stage: StagingDirectories,
-        category: FileCategories,
-        relpath: Path,
-    ):
-        stage_storage = self.get_stage_storage(stage)
-        relpath = Path(category.name, relpath)
-        return stage_storage.open(str(relpath))
-
-    def _add_to_sip(self, name, content, category: FileCategories):
-        sip_storage = self.get_sip_storage()
-        filename = self.originals_dir.joinpath(name)
-        if fs.is_archive(name):
-            archive_extractor = ArchiveExtractor(sip_storage)
-            return archive_extractor.process(category=category, filename=str(filename))
-        else:
-            return sip_storage.log_save(name=name, content=content)
-
-    def build_sip(self) -> MessageGroup:
-        logger.info("building sip")
-        originals_storage = self.get_originals_storage(self.originals_dir)
-        sip_storage = self.get_sip_storage()
-        sip_storage.clear()
-
-        msgs = self._create_msg_group()
-        for name in originals_storage.list():
-            path = self.originals_dir.joinpath(name)
-            logger.debug("adding file: %s", path.relative_to(self.originals_dir))
-            category = get_category(Path(name).parts[0])
-            with File(path.open("rb")) as f:
-                msgs.append(self._add_to_sip(name=str(name), content=f, category=category))
-
+            self._edit_package(add_files)
         return msgs
 
-    def rebuild(self) -> MessageGroup:
-        """rebuild the submission package and archive if it already exists"""
-        msgs = self.build_sip()
-        self.create_or_update_metadata_files(force=True)
-        # only rebuild the archive package if it already exists
-        if self.aip_dir.exists():
-            self.build_archive(force=True)
-        return msgs
+    def delete(self, category, relpath):
+        name = str(relpath)
+        validate_package_path(name)
 
-    def clear_category(self, category: FileCategories):
-        originals_storage = self.get_originals_storage()
-        originals_storage.clear_category(category)
-        sip_storage = self.get_sip_storage()
-        sip_storage.clear_category(category)
+        def remove_file(work, categories):
+            if name not in categories or not (work / name).is_file():
+                raise ValidationError("File not found in this package.")
+            (work / name).unlink()
+            del categories[name]
 
-    def add(self, category: FileCategories, content, name=None):
-        if name is None:
-            name = os.path.join(category.name, content.name)
-        else:
-            name = os.path.join(category.name, name)
+        self._edit_package(remove_file)
+        return MessageGroup()
 
-        originals_storage = self.get_originals_storage()
+    def clear_category(self, category):
+        def remove_files(work, categories):
+            for name, value in list(categories.items()):
+                if value == category.name:
+                    (work / name).unlink(missing_ok=True)
+                    del categories[name]
 
-        msgs = originals_storage.log_save(name, content)
-        if msgs.has_errors:
-            return msgs
-        msgs.append(self._add_to_sip(name=name, content=content, category=category))
-        if msgs.has_errors:
-            self.delete(category, Path(content.name))
-
-        return msgs
+        self._edit_package(remove_files)
 
     def copy_originals(self, source_release):
-        """copy all original files from a source CodebaseRelease to the calling release"""
-        logger.info(
-            "copying files from source version %s to version %s for codebase %s",
-            source_release.version_number,
-            self.version_number,
-            self.identifier,
-        )
-        source_fs_api = source_release.get_fs_api()
-        for category in FileCategories:
-            source_files = source_fs_api.list(StagingDirectories.originals, category)
-            for relpath in source_files:
-                with source_fs_api.retrieve(StagingDirectories.originals, category, Path(relpath)) as file_content:
-                    self.add(category, file_content, name=relpath)
+        source = source_release.get_fs_api()
 
-    def delete(self, category: FileCategories, relpath: Path):
-        originals_storage = self.get_originals_storage()
-        sip_storage = self.get_sip_storage()
-        relpath = Path(category.name, relpath)
-        logs = MessageGroup()
-        if originals_storage.is_archive_directory(category):
-            self.clear_category(category)
-        else:
-            if not originals_storage.exists(str(relpath)):
-                logs.append(
-                    create_fs_message(
-                        f"No file at path {relpath} to delete",
-                        StagingDirectories.originals,
-                        MessageLevels.error,
-                    )
-                )
-                return logs
-            logs.append(sip_storage.log_delete(str(relpath)))
-            logs.append(originals_storage.log_delete(str(relpath)))
-        return logs
+        def copy_files(work, categories):
+            shutil.copytree(source.sip_contents_dir, work, dirs_exist_ok=True)
+            categories.update(source.manifest.data)
+
+        self._edit_package(copy_files)
 
 
 class CategoryManifestManager:
-    def __init__(self, imported_release_sync_state):
-        self.imported_release_sync_state = imported_release_sync_state
+    def __init__(self, release):
+        self.release = release
 
     @property
     def data(self) -> dict:
-        return self.imported_release_sync_state.category_manifest
+        if self.release.category_manifest is None:
+            self.backfill()
+        return self.release.category_manifest
+
+    def backfill(self):
+        """Populate only missing manifests, without saving or rebuilding the release."""
+        with transaction.atomic():
+            release = (
+                type(self.release).objects.select_for_update().get(pk=self.release.pk)
+            )
+            if release.category_manifest is None:
+                if release.is_imported:
+                    categories = dict(
+                        release.imported_release_sync_state.category_manifest
+                    )
+                else:
+                    root = Path(
+                        settings.LIBRARY_ROOT,
+                        str(release.codebase.uuid),
+                        "releases",
+                        str(release.pk),
+                        "sip",
+                        "data",
+                    )
+                    if not root.is_dir() and not release.can_edit_originals:
+                        raise FileNotFoundError(
+                            f"Release {release.pk} has no extracted package at {root}. "
+                            "Check the library storage mount before backfilling."
+                        )
+                    categories = {}
+                    for path in root.rglob("*"):
+                        if path.is_file():
+                            relative = path.relative_to(root)
+                            category = (
+                                relative.parts[0]
+                                if len(relative.parts) > 1
+                                else "metadata"
+                            )
+                            categories[relative.as_posix()] = (
+                                category
+                                if category
+                                in {"code", "docs", "data", "results", "metadata"}
+                                else "code"
+                            )
+                type(release).objects.filter(pk=release.pk).update(
+                    category_manifest=categories
+                )
+                release.category_manifest = categories
+            self.release.category_manifest = release.category_manifest
 
     def build(self, file_list: list[Path]):
         """generate a manifest from scratch from a list of files (normally sip.list()).
@@ -853,28 +985,42 @@ class CategoryManifestManager:
         """
         manifest = {}
         for name in file_list:
-            manifest[str(name)] = self._guess_file_category(name)
+            manifest[str(name)] = self.guess_file_category(name)
         self.update(manifest)
 
-    def _guess_file_category(self, name: Path) -> str:
-        """return an appropriate category name for a file based on its extension.
-        currently defaults to code for all files except pdfs, which can be reasonably assumed to be docs
-        """
-        if name.suffix == ".pdf" or name.suffix == ".docx" or name.suffix == ".doc" or name.suffix == ".md":
+    @staticmethod
+    def guess_file_category(name: Path) -> str:
+        """Suggest documentation for known document extensions; otherwise code."""
+        if (
+            name.suffix == ".pdf"
+            or name.suffix == ".docx"
+            or name.suffix == ".doc"
+            or name.suffix == ".md"
+        ):
             return FileCategories.docs.name
         return FileCategories.code.name
 
     def update(self, manifest):
-        """save the manifest to the imported release package"""
-        self.imported_release_sync_state.category_manifest = manifest
-        self.imported_release_sync_state.save()
+        # Skip save hooks: category edits must not rebuild metadata or archives.
+        type(self.release).objects.filter(pk=self.release.pk).update(
+            category_manifest=manifest
+        )
+        self.release.category_manifest = manifest
 
     def update_file_category(self, name, category: FileCategories):
-        manifest = self.data
-        if name not in manifest:
-            raise ValueError(f"file {name} not in manifest")
-        manifest[name] = category.name
-        self.update(manifest)
+        with transaction.atomic():
+            release = (
+                type(self.release).objects.select_for_update().get(pk=self.release.pk)
+            )
+            if not release.can_edit_originals:
+                raise ValidationError("This release's files are locked.")
+            manager = CategoryManifestManager(release)
+            manifest = dict(manager.data)
+            if name not in manifest:
+                raise ValueError(f"file {name} not in manifest")
+            manifest[name] = category.name
+            manager.update(manifest)
+            self.release.category_manifest = manifest
 
     def remove_file(self, name):
         manifest = self.data
@@ -882,9 +1028,15 @@ class CategoryManifestManager:
         self.update(manifest)
 
     def add_file(self, name, category: FileCategories = FileCategories.code):
-        manifest = self.data
-        manifest[name] = category.name
-        self.update(manifest)
+        with transaction.atomic():
+            release = (
+                type(self.release).objects.select_for_update().get(pk=self.release.pk)
+            )
+            manager = CategoryManifestManager(release)
+            manifest = dict(manager.data)
+            manifest[name] = category.name
+            manager.update(manifest)
+            self.release.category_manifest = manifest
 
     def fix_from_list(self, file_list: list[Path]):
         """update the manifest to match the file list. This will add any files in the file list that are not in the
@@ -896,7 +1048,7 @@ class CategoryManifestManager:
             key = str(name)
             file_list_keys.add(key)
             if key not in manifest:
-                manifest[key] = self._guess_file_category(name)
+                manifest[key] = self.guess_file_category(name)
         for key in list(manifest.keys()):
             if key not in file_list_keys:
                 del manifest[key]
@@ -927,62 +1079,6 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
             mimetype_mismatch_message_level,
         )
         self.imported_release_sync_state = codebase_release.imported_release_sync_state
-        self.manifest = CategoryManifestManager(self.imported_release_sync_state)
-
-    def list(self, stage=StagingDirectories.sip, category=None):
-        if category is not None:
-            return [str(relpath) for relpath, cat in self.manifest.data.items() if cat == category.name]
-        else:
-            return list(self.manifest.data.keys())
-
-    def list_sip_contents(self, path=None):
-        """recursively build a tree representing the SIP contents.
-        Each node includes a label (file name), path (relative to sip contents), and category
-        """
-        if path is None:
-            path = self.sip_contents_dir
-            name = "archive-project-root"
-        else:
-            name = path.name
-        contents = {"label": name, "contents": []}
-        for p in path.iterdir():
-            if p.is_dir():
-                contents["contents"].append(self.list_sip_contents(p))
-            else:
-                relpath = p.relative_to(self.sip_contents_dir)
-                category_str = self.manifest.data.get(str(relpath), FileCategories.metadata.name)
-                contents["contents"].append(
-                    {
-                        "label": p.name,
-                        "path": str(p.relative_to(self.sip_contents_dir)),
-                        "category": category_str,
-                    }
-                )
-        return contents
-
-    def check_category_file_exists(self, category):
-        return category.name in set(self.manifest.data.values())
-
-    def create_or_update_codemeta(self, force=False):
-        created = super().create_or_update_codemeta(force=force)
-        if created:
-            name = str(self.codemeta_path.relative_to(self.sip_contents_dir))
-            self.manifest.add_file(name, FileCategories.metadata)
-        return created
-
-    def create_or_update_citation_cff(self, force=False):
-        created = super().create_or_update_citation_cff(force)
-        if created:
-            name = str(self.cff_path.relative_to(self.sip_contents_dir))
-            self.manifest.add_file(name, FileCategories.metadata)
-        return created
-
-    def create_or_update_license(self, force=False):
-        created = super().create_or_update_license(force)
-        if created:
-            name = str(self.license_path.relative_to(self.sip_contents_dir))
-            self.manifest.add_file(name, FileCategories.metadata)
-        return created
 
     def download_archive(self, download_url: str, installation_token: str) -> Path:
         """Stage a bounded ZIP download, then atomically replace the local archive."""
@@ -1404,89 +1500,6 @@ class CodebaseGitRepositoryApi:
                 if not self.dirs_equal(dir1 / subdir, dir2 / subdir):
                     return False
             return True
-
-
-class ArchiveExtractor:
-    def __init__(self, sip_storage: CodebaseReleaseSipStorage):
-        self.sip_storage = sip_storage
-
-    @staticmethod
-    def _tar_filter(member, destination):
-        # Submissions contain files and directories, never links or devices.
-        # Reject links before extraction: the SIP copy step follows file links.
-        if not (member.isfile() or member.isdir()):
-            raise tarfile.FilterError("Archive members must be regular files or directories")
-        path = Path(member.name)
-        if path.is_absolute() or ".." in path.parts:
-            raise tarfile.FilterError("Archive member paths must stay within the extraction directory")
-        return tarfile.data_filter(member, destination)
-
-    def extractall(self, unpack_destination, filename):
-        mimetype = mimetypes.guess_type(filename)[0]
-        if mimetype == "application/zip":
-            fs.extract_zip(filename, unpack_destination)
-
-        elif mimetype == "application/x-tar":
-            budget = fs.ArchiveBudget()
-            budget.check_input(filename)
-            with tarfile.TarFile(filename, "r") as t:
-                members = []
-                for member in t:
-                    budget.add_member(member.name, member.size)
-                    member = self._tar_filter(member, unpack_destination)
-                    target = fs.archive_member_path(member.name, unpack_destination)
-                    members.append((member, target))
-                for member, target in members:
-                    budget.check_time()
-                    if member.isdir():
-                        target.mkdir(parents=True, exist_ok=True)
-                    else:
-                        target.parent.mkdir(parents=True, exist_ok=True)
-                        with t.extractfile(member) as source, target.open("wb") as destination:
-                            budget.copy(source, destination)
-                        if member.mode is not None:
-                            target.chmod(member.mode)
-                budget.check_time()
-
-        elif mimetype == "application/rar":
-            if hasattr(filename, "name"):
-                raise TypeError("RAR archives cannot be extracted from file objects. Requires string filename")
-
-            fs.unrar(filename, unpack_destination)
-
-        else:
-            return Message(f"Archive {filename} is unsupported")
-
-    def find_root_directory(self, basedir):
-        for dirpath, dirnames, filenames in os.walk(basedir):
-            if len(dirnames) != 1 or len(filenames) != 0:
-                return dirpath
-
-    def process(self, category: FileCategories, filename: str):
-        msgs = MessageGroup()
-        try:
-            with TemporaryDirectory() as d:
-                try:
-                    msg = self.extractall(unpack_destination=d, filename=filename)
-                except (zipfile.BadZipFile, tarfile.TarError, fs.ArchiveLimitError) as e:
-                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
-                except Exception as e:
-                    logger.exception("Error unpacking archive")
-                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
-
-                if msg is not None:
-                    return msg
-
-                rootdir = self.find_root_directory(d)
-                for unpacked_file in Path(rootdir).rglob("*"):
-                    if unpacked_file.is_file():
-                        with File(unpacked_file.open("rb")) as unpacked_fileobj:
-                            relpath = Path(category.name, unpacked_file.relative_to(rootdir))
-                            msgs.append(self.sip_storage.log_save(name=str(relpath), content=unpacked_fileobj))
-                msgs.downgrade()
-        except Exception as e:
-            msgs.append(create_fs_message(str(e), StagingDirectories.sip, MessageLevels.error))
-        return msgs
 
 
 def import_archive(codebase_release, nested_code_folder_name, fs_api=None):
