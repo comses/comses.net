@@ -14,7 +14,8 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 88
+# Shared by make format and the VS Code workspace settings.
+line-length = 120
 target-version = "py312"
 extend-exclude = ["**/migrations/**", "**/fixtures/**"]
 
