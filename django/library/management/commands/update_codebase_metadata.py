@@ -39,9 +39,7 @@ class Command(BaseCommand):
         if errors:
             for obj, e in errors:
                 logger.error(f"Error updating codemeta for {obj}: {e}")
-            self.stdout.write(
-                f"Updated codemeta for {total - len(errors)}/{total} {model.__name__} objects"
-            )
+            self.stdout.write(f"Updated codemeta for {total - len(errors)}/{total} {model.__name__} objects")
             self.stdout.write(f"with {len(errors)} errors")
         else:
             self.stdout.write(f"Updated codemeta for {total} {model.__name__} objects")
@@ -59,9 +57,7 @@ class Command(BaseCommand):
         if errors:
             for release, e in errors:
                 logger.error(f"Error updating metadata for {release}: {e}")
-            self.stdout.write(
-                f"Updated metadata for {total - len(errors)}/{total} release packages"
-            )
+            self.stdout.write(f"Updated metadata for {total - len(errors)}/{total} release packages")
             self.stdout.write(f"with {len(errors)} errors")
         else:
             self.stdout.write(f"Updated metadata for {total} release packages")

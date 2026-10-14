@@ -36,9 +36,7 @@ def sign(payload: bytes, secret=TEST_SECRET):
 
 def build_request(nonce=TEST_NONCE, return_to="/", secret=TEST_SECRET):
     """build the ?sso=&sig= pair a provider sends to an sso endpoint"""
-    payload = base64.encodebytes(
-        parse.urlencode({"nonce": nonce, "return_to": return_to}).encode("utf-8")
-    )
+    payload = base64.encodebytes(parse.urlencode({"nonce": nonce, "return_to": return_to}).encode("utf-8"))
     return {"sso": payload.decode("utf-8"), "sig": sign(payload, secret)}
 
 
@@ -72,11 +70,7 @@ class SsoHandshakeAssertions:
 
     def login(self, user=None):
         user = self.user if user is None else user
-        self.assertTrue(
-            self.client.login(
-                username=user.username, password=self.user_factory.password
-            )
-        )
+        self.assertTrue(self.client.login(username=user.username, password=self.user_factory.password))
 
     def assert_valid_response(self, response, secret=TEST_SECRET):
         """verify the signature on a callback redirect and return (params, signature)"""
@@ -102,9 +96,7 @@ class SsoHandshakeAssertions:
     def test_tampered_signature(self):
         self.login()
         request = build_request()
-        request["sig"] = request["sig"][:-1] + (
-            "0" if request["sig"][-1] != "0" else "1"
-        )
+        request["sig"] = request["sig"][:-1] + ("0" if request["sig"][-1] != "0" else "1")
         self.assertEqual(self.client.get(self.url, request).status_code, 400)
 
     def test_payload_signed_with_the_wrong_secret(self):
@@ -203,9 +195,7 @@ class SsoHandshakeAssertions:
         self.login()
         # Sign a payload that tries to redirect to an external site
         payload_data = {"nonce": TEST_NONCE, "return_to": "https://evil.com"}
-        payload = base64.encodebytes(
-            parse.urlencode(payload_data).encode("utf-8")
-        ).decode("utf-8")
+        payload = base64.encodebytes(parse.urlencode(payload_data).encode("utf-8")).decode("utf-8")
         sig = sign(payload.encode("utf-8"))
 
         response = self.client.get(self.url, {"sso": payload, "sig": sig})
@@ -248,9 +238,7 @@ class LibrarianSsoTestCase(SsoHandshakeAssertions, TestCase):
         return params, signature
 
     def test_librarian_group_created_by_migration(self):
-        self.assertTrue(
-            Group.objects.filter(name=ComsesGroups.LIBRARIAN.value).exists()
-        )
+        self.assertTrue(Group.objects.filter(name=ComsesGroups.LIBRARIAN.value).exists())
 
     def test_valid_handshake(self):
         self.login()
@@ -271,9 +259,7 @@ class LibrarianSsoTestCase(SsoHandshakeAssertions, TestCase):
         ComsesGroups.FULL_MEMBER.add(self.user)
         self.user.groups.add(Group.objects.create(name="Some Other Group"))
         self.login()
-        params, _ = self.assert_valid_response(
-            self.client.get(self.url, build_request())
-        )
+        params, _ = self.assert_valid_response(self.client.get(self.url, build_request()))
         self.assertEqual(params["groups"], ["Full Members,Librarian Users"])
 
     def test_matches_worked_example_signature(self):
@@ -294,9 +280,7 @@ class LibrarianSsoTestCase(SsoHandshakeAssertions, TestCase):
         ComsesGroups.FULL_MEMBER.add(user)
         ComsesGroups.LIBRARIAN.add(user)
         self.login(user)
-        _, signature = self.assert_valid_response(
-            self.client.get(self.url, build_request())
-        )
+        _, signature = self.assert_valid_response(self.client.get(self.url, build_request()))
         self.assertEqual(
             signature,
             "ad7e81e8535e5896dbe4677dfdf668248f02bec2b3b19e9db6540bf993f1475a",
@@ -306,9 +290,7 @@ class LibrarianSsoTestCase(SsoHandshakeAssertions, TestCase):
         non_member = self.user_factory.create(username="not_a_librarian")
         self.login(non_member)
         response = self.client.get(self.url, build_request())
-        self.assertContains(
-            response, "CoMSES Librarian access required", status_code=403
-        )
+        self.assertContains(response, "CoMSES Librarian access required", status_code=403)
 
     def test_membership_is_reevaluated_on_every_handshake(self):
         """
@@ -340,17 +322,13 @@ class LibrarianSsoNotConfiguredTestCase(TestCase):
     def setUp(self):
         cache.clear()
         self.addCleanup(cache.clear)
-        self.user, self.user_factory = create_test_user(
-            username="librarian_unconfigured"
-        )
+        self.user, self.user_factory = create_test_user(username="librarian_unconfigured")
         ComsesGroups.LIBRARIAN.add(self.user)
         self.client.force_login(self.user)
 
     def test_view_is_absent_when_the_secret_is_missing(self):
         """read_secret returns "" for a missing file; signing with an empty key is refused"""
-        with self.settings(
-            LIBRARIAN_SSO_SECRET="", LIBRARIAN_BASE_URL=TEST_LIBRARIAN_BASE_URL
-        ):
+        with self.settings(LIBRARIAN_SSO_SECRET="", LIBRARIAN_BASE_URL=TEST_LIBRARIAN_BASE_URL):
             response = self.client.get(reverse("core:librarian-sso"), build_request())
             self.assertEqual(response.status_code, 404)
 
@@ -374,9 +352,7 @@ class DiscourseSsoTestCase(SsoHandshakeAssertions, TestCase):
     url_name = "core:discourse-sso"
 
     def create_user(self):
-        return create_test_user(
-            username="discourse_user", first_name="Discourse", last_name="User"
-        )
+        return create_test_user(username="discourse_user", first_name="Discourse", last_name="User")
 
     def assert_valid_response(self, response, secret=TEST_SECRET):
         self.assertEqual(response.status_code, 302)
@@ -392,17 +368,11 @@ class DiscourseSsoTestCase(SsoHandshakeAssertions, TestCase):
 
     def test_valid_handshake(self):
         self.login()
-        params, _ = self.assert_valid_response(
-            self.client.get(self.url, build_request())
-        )
+        params, _ = self.assert_valid_response(self.client.get(self.url, build_request()))
         self.assertEqual(params["nonce"], [TEST_NONCE])
-        self.assertEqual(
-            params["external_id"], [str(self.user.member_profile.short_uuid)]
-        )
+        self.assertEqual(params["external_id"], [str(self.user.member_profile.short_uuid)])
         self.assertEqual(params["email"], [self.user.email])
-        self.assertEqual(
-            params["username"], [get_sanitized_username(self.user.member_profile)]
-        )
+        self.assertEqual(params["username"], [get_sanitized_username(self.user.member_profile)])
         self.assertEqual(params["require_activation"], ["false"])
         self.assertEqual(params["name"], [self.user.get_full_name()])
 

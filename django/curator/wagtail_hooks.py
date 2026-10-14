@@ -69,9 +69,7 @@ class TagCleanupButtonHelper(ButtonHelper):
             classnames_exclude=classnames_exclude,
         )
 
-    def find_groups_by_porter_stemmer_button(
-        self, classnames_add=None, classnames_exclude=None
-    ):
+    def find_groups_by_porter_stemmer_button(self, classnames_add=None, classnames_exclude=None):
         return self._action_button(
             action=TagCleanupAction.find_by_porter_stemmer.name,
             label=TagCleanupAction.find_by_porter_stemmer.value,
@@ -80,9 +78,7 @@ class TagCleanupButtonHelper(ButtonHelper):
             classnames_exclude=classnames_exclude,
         )
 
-    def find_groups_by_platform_and_language_button(
-        self, classnames_add=None, classnames_exclude=None
-    ):
+    def find_groups_by_platform_and_language_button(self, classnames_add=None, classnames_exclude=None):
         return self._action_button(
             action=TagCleanupAction.find_by_platform_and_language.name,
             label=TagCleanupAction.find_by_platform_and_language.value,
@@ -115,7 +111,6 @@ class TagCleanupAdmin(ModelAdmin):
 
 
 class SpamContentButtonHelper(ButtonHelper):
-
     def reject_button(self, pk):
         return {
             "url": reverse("curator:reject_spam", args=[pk]),
@@ -140,9 +135,7 @@ class SpamContentButtonHelper(ButtonHelper):
             "title": "Confirm Spam",
         }
 
-    def get_buttons_for_obj(
-        self, obj, exclude=None, classnames_add=None, classnames_exclude=None
-    ):
+    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
         buttons = []
         buttons.append(self.reject_button(obj.id))
         buttons.append(self.confirm_button(obj.id))
@@ -160,12 +153,8 @@ class ContentTypeFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         # get the list of content types for which there are spam content entries
-        content_types = SpamModeration.objects.values_list(
-            "content_type", flat=True
-        ).distinct()
-        return [
-            (ct.id, ct.model) for ct in ContentType.objects.filter(id__in=content_types)
-        ]
+        content_types = SpamModeration.objects.values_list("content_type", flat=True).distinct()
+        return [(ct.id, ct.model) for ct in ContentType.objects.filter(id__in=content_types)]
 
     def queryset(self, request, queryset):
         if self.value():
@@ -233,9 +222,7 @@ class RecentActivityPanel(Component):
         if self.request is not None:
             context["csrf_token"] = get_token(self.request)
         max_items = settings.ADMIN_DASHBOARD_MAX_ITEMS
-        start_date = datetime.now(timezone.utc) - timedelta(
-            days=settings.ADMIN_DASHBOARD_DAYS
-        )
+        start_date = datetime.now(timezone.utc) - timedelta(days=settings.ADMIN_DASHBOARD_DAYS)
         new_accounts = (
             get_user_model()
             .objects.exclude(username="AnonymousUser")
@@ -248,14 +235,10 @@ class RecentActivityPanel(Component):
             .order_by("-last_modified")
         )
         modified_events = (
-            Event.objects.filter(last_modified__gt=start_date)
-            .select_related("submitter")
-            .order_by("-last_modified")
+            Event.objects.filter(last_modified__gt=start_date).select_related("submitter").order_by("-last_modified")
         )
         modified_jobs = (
-            Job.objects.filter(last_modified__gt=start_date)
-            .select_related("submitter")
-            .order_by("-last_modified")
+            Job.objects.filter(last_modified__gt=start_date).select_related("submitter").order_by("-last_modified")
         )
         modified_peer_reviews = (
             PeerReview.objects.filter(last_modified__gt=start_date)

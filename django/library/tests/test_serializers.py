@@ -60,9 +60,7 @@ class SerializerTestCase(BaseModelTestCase):
     ):
         if user is None:
             user = self.user
-        codebase = Codebase.objects.create(
-            title=title, description=description, identifier=identifier, submitter=user
-        )
+        codebase = Codebase.objects.create(title=title, description=description, identifier=identifier, submitter=user)
         codebase.create_release(submitter=user)
         return codebase
 
@@ -101,20 +99,14 @@ class SerializerTestCase(BaseModelTestCase):
             identifier="1",
             submitter=self.user,
         )
-        codebase_release = codebase.create_release(
-            initialize=False, submitter=self.user
-        )
+        codebase_release = codebase.create_release(initialize=False, submitter=self.user)
 
         raw_contributor1 = self.create_raw_contributor(self.create_raw_user("foo"))
         raw_contributor2 = self.create_raw_contributor(self.create_raw_user("bar"))
 
         raw_release_contributors = [
-            self.create_raw_release_contributor(
-                raw_contributor=raw_contributor1, index=1
-            ),
-            self.create_raw_release_contributor(
-                raw_contributor=raw_contributor2, index=None
-            ),
+            self.create_raw_release_contributor(raw_contributor=raw_contributor1, index=1),
+            self.create_raw_release_contributor(raw_contributor=raw_contributor2, index=None),
         ]
 
         release_contributors_serializer = ReleaseContributorSerializer(
@@ -243,22 +235,14 @@ class SerializerTestCase(BaseModelTestCase):
             identifier="1",
             submitter=self.user,
         )
-        codebase_release = codebase.create_release(
-            initialize=False, submitter=self.user
-        )
+        codebase_release = codebase.create_release(initialize=False, submitter=self.user)
 
-        raw_contributor = self.create_raw_contributor(
-            raw_user=self.create_raw_user("foo")
-        )
+        raw_contributor = self.create_raw_contributor(raw_user=self.create_raw_user("foo"))
         raw_contributor2 = raw_contributor.copy()
         raw_contributor2["family_name"] = "Zar"
         raw_release_contributors = [
-            self.create_raw_release_contributor(
-                index=1, raw_contributor=raw_contributor
-            ),
-            self.create_raw_release_contributor(
-                index=None, raw_contributor=raw_contributor2
-            ),
+            self.create_raw_release_contributor(index=1, raw_contributor=raw_contributor),
+            self.create_raw_release_contributor(index=None, raw_contributor=raw_contributor2),
         ]
 
         release_contributors_serializer = ReleaseContributorSerializer(
@@ -276,20 +260,14 @@ class SerializerTestCase(BaseModelTestCase):
         contributor_serializer = ContributorSerializer(data=raw_contributor)
         contributor_serializer.is_valid()
         contributor_serializer.save()
-        _, existing_contributor = contributor_serializer.get_existing_contributor(
-            raw_contributor
-        )
+        _, existing_contributor = contributor_serializer.get_existing_contributor(raw_contributor)
         self.assertEqual(existing_contributor.user.id, raw_user["id"])
 
         # contributor is none (needs to be created) when user is given but no matching contributor
         raw_user = self.create_raw_user(username="contrib456")
-        raw_contributor = self.create_raw_contributor(
-            raw_user, email="contrib456@hotmail.com"
-        )
+        raw_contributor = self.create_raw_contributor(raw_user, email="contrib456@hotmail.com")
         contributor_serializer = ContributorSerializer(data=raw_contributor)
-        _, existing_contributor = contributor_serializer.get_existing_contributor(
-            raw_contributor
-        )
+        _, existing_contributor = contributor_serializer.get_existing_contributor(raw_contributor)
         self.assertIsNone(existing_contributor)
 
     def test_get_existing_contributor_given_email(self):
@@ -301,9 +279,7 @@ class SerializerTestCase(BaseModelTestCase):
         contributor_serializer = ContributorSerializer(data=raw_contributor)
         contributor_serializer.is_valid()
         contributor = contributor_serializer.save()
-        _, found_contributor = contributor_serializer.get_existing_contributor(
-            {"email": email}
-        )
+        _, found_contributor = contributor_serializer.get_existing_contributor({"email": email})
         self.assertEqual(contributor.id, found_contributor.id)
 
         # contributor is none (needs to be created) when email match is not found
@@ -313,9 +289,7 @@ class SerializerTestCase(BaseModelTestCase):
             raw_user=None, email=email, family_name="Prine", given_name="John"
         )
         contributor_serializer = ContributorSerializer(data=raw_contributor)
-        _, found_contributor = contributor_serializer.get_existing_contributor(
-            raw_contributor
-        )
+        _, found_contributor = contributor_serializer.get_existing_contributor(raw_contributor)
         self.assertIsNone(found_contributor)
 
     def test_get_existing_contributor_given_name(self):
@@ -334,13 +308,9 @@ class SerializerTestCase(BaseModelTestCase):
         self.assertEqual(contributor.id, found_contributor.id)
 
         # contributor is none (needs to be created) when name match is not found
-        raw_contributor = self.create_raw_contributor(
-            raw_user=None, email="", family_name="Thom", given_name="Yorke"
-        )
+        raw_contributor = self.create_raw_contributor(raw_user=None, email="", family_name="Thom", given_name="Yorke")
         contributor_serializer = ContributorSerializer(data=raw_contributor)
-        _, found_contributor = contributor_serializer.get_existing_contributor(
-            raw_contributor
-        )
+        _, found_contributor = contributor_serializer.get_existing_contributor(raw_contributor)
         self.assertIsNone(found_contributor)
 
         # check that we only match contributors that do not have an email in this case
@@ -351,7 +321,5 @@ class SerializerTestCase(BaseModelTestCase):
             given_name=given_name,
         )
         contributor_serializer = ContributorSerializer(data=raw_contributor)
-        _, found_contributor = contributor_serializer.get_existing_contributor(
-            raw_contributor
-        )
+        _, found_contributor = contributor_serializer.get_existing_contributor(raw_contributor)
         self.assertIsNone(found_contributor)

@@ -40,9 +40,7 @@ class PeerReviewTransitionTest(BaseModelTestCase):
         self.release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
         self.release.status = CodebaseRelease.Status.UNDER_REVIEW
         self.release.save(update_fields=["status"])
-        self.review = PeerReview.objects.create(
-            codebase_release=self.release, submitter=self.user.member_profile
-        )
+        self.review = PeerReview.objects.create(codebase_release=self.release, submitter=self.user.member_profile)
 
     def create_invitation(self, accepted=True):
         reviewer = PeerReviewer.objects.create(member_profile=self.user.member_profile)
@@ -56,15 +54,11 @@ class PeerReviewTransitionTest(BaseModelTestCase):
     @patch("library.models.PeerReview.send_author_requested_peer_review_email")
     def test_cancel_discards_only_drafts_and_reuses_invitation_links(self, notify):
         invitation = self.create_invitation()
-        old_feedback = invitation.feedback_set.create(
-            runnable_comments="Unsubmitted work"
-        )
+        old_feedback = invitation.feedback_set.create(runnable_comments="Unsubmitted work")
         invitation_url = invitation.get_absolute_url()
         sent_at = invitation.date_sent
         self.review.close(self.user.member_profile)
-        self.assertFalse(
-            PeerReviewerFeedback.objects.filter(pk=old_feedback.pk).exists()
-        )
+        self.assertFalse(PeerReviewerFeedback.objects.filter(pk=old_feedback.pk).exists())
         with self.assertRaises(ValidationError):
             old_feedback.validate_editable()
         with self.assertRaises(ValidationError):
@@ -110,11 +104,7 @@ class PeerReviewTransitionTest(BaseModelTestCase):
                 self.review.refresh_from_db()
                 self.assertFalse(self.review.closed)
                 feedback.refresh_from_db()
-                self.assertTrue(
-                    type(feedback)
-                    .objects.filter(pk=feedback.pk, **{field: value})
-                    .exists()
-                )
+                self.assertTrue(type(feedback).objects.filter(pk=feedback.pk, **{field: value}).exists())
                 self.assertEqual(self.review.event_set.count(), 0)
                 feedback.delete()
 
@@ -125,9 +115,7 @@ class PeerReviewTransitionTest(BaseModelTestCase):
             PeerReviewEvent.RELEASE_CERTIFIED,
         ):
             with self.subTest(action=action):
-                event = self.review.log(
-                    "Prior review work", action, self.user.member_profile
-                )
+                event = self.review.log("Prior review work", action, self.user.member_profile)
                 with self.assertRaises(ValidationError):
                     self.review.close(self.user.member_profile)
                 self.review.refresh_from_db()
@@ -147,9 +135,7 @@ class PeerReviewTransitionTest(BaseModelTestCase):
         self.assertTrue(feedback.reviewer_submitted)
 
     def test_author_changes_status_requires_curatorial_cancellation(self):
-        self.review.editor_change_review_status(
-            self.user.member_profile, ReviewStatus.AWAITING_AUTHOR_CHANGES
-        )
+        self.review.editor_change_review_status(self.user.member_profile, ReviewStatus.AWAITING_AUTHOR_CHANGES)
         with self.assertRaises(ValidationError):
             self.review.close(self.user.member_profile)
         self.review.refresh_from_db()
@@ -157,9 +143,7 @@ class PeerReviewTransitionTest(BaseModelTestCase):
 
     def test_expired_invitations_require_resending_after_reopen(self):
         invitation = self.create_invitation()
-        sent_at = timezone.now() - timedelta(
-            days=settings.PEER_REVIEW_INVITATION_EXPIRATION + 1
-        )
+        sent_at = timezone.now() - timedelta(days=settings.PEER_REVIEW_INVITATION_EXPIRATION + 1)
         type(invitation).objects.filter(pk=invitation.pk).update(date_sent=sent_at)
         self.review.close(self.user.member_profile)
         self.review.reopen(self.user.member_profile)
@@ -177,9 +161,7 @@ class PeerReviewTransitionTest(BaseModelTestCase):
         self.assertEqual(invitation.accept().pk, feedback.pk)
         self.assertEqual(invitation.feedback_set.count(), 1)
         self.assertEqual(
-            self.review.event_set.filter(
-                action=PeerReviewEvent.INVITATION_ACCEPTED.name
-            ).count(),
+            self.review.event_set.filter(action=PeerReviewEvent.INVITATION_ACCEPTED.name).count(),
             1,
         )
 
@@ -196,9 +178,7 @@ class PeerReviewTransitionTest(BaseModelTestCase):
     def test_reopen_rejects_another_active_review(self):
         self.review.close(self.user.member_profile)
         other_release = self.codebase.create_release(initialize=False)
-        PeerReview.objects.create(
-            codebase_release=other_release, submitter=self.user.member_profile
-        )
+        PeerReview.objects.create(codebase_release=other_release, submitter=self.user.member_profile)
         with self.assertRaises(ValidationError):
             self.review.reopen(self.user.member_profile)
         self.review.refresh_from_db()
@@ -215,15 +195,11 @@ class PeerReviewTransitionTest(BaseModelTestCase):
 
     def test_status_selector_cannot_certify_or_demote_completed_reviews(self):
         with self.assertRaises(ValidationError):
-            self.review.editor_change_review_status(
-                self.user.member_profile, ReviewStatus.COMPLETE
-            )
+            self.review.editor_change_review_status(self.user.member_profile, ReviewStatus.COMPLETE)
         self.review.status = ReviewStatus.COMPLETE
         self.review.save()
         with self.assertRaises(ValidationError):
-            self.review.editor_change_review_status(
-                self.user.member_profile, ReviewStatus.AWAITING_REVIEWER_FEEDBACK
-            )
+            self.review.editor_change_review_status(self.user.member_profile, ReviewStatus.AWAITING_REVIEWER_FEEDBACK)
 
     @patch("library.models.PeerReview.send_model_certified_email")
     def test_certification_is_idempotent(self, notify):
@@ -233,9 +209,7 @@ class PeerReviewTransitionTest(BaseModelTestCase):
         self.assertEqual(self.release.status, CodebaseRelease.Status.REVIEW_COMPLETE)
         self.assertTrue(self.release.peer_reviewed)
         self.assertEqual(
-            self.review.event_set.filter(
-                action=PeerReviewEvent.RELEASE_CERTIFIED.name
-            ).count(),
+            self.review.event_set.filter(action=PeerReviewEvent.RELEASE_CERTIFIED.name).count(),
             1,
         )
         notify.assert_called_once()
@@ -245,16 +219,10 @@ class PeerReviewTransitionTest(BaseModelTestCase):
         with self.assertRaises(ValidationError):
             self.review.set_complete_status(self.user.member_profile)
         with self.assertRaises(ValidationError):
-            self.review.editor_change_review_status(
-                self.user.member_profile, ReviewStatus.AWAITING_EDITOR_FEEDBACK
-            )
+            self.review.editor_change_review_status(self.user.member_profile, ReviewStatus.AWAITING_EDITOR_FEEDBACK)
 
     def test_repeated_close_and_status_change_do_not_duplicate_events(self):
-        self.assertFalse(
-            self.review.editor_change_review_status(
-                self.user.member_profile, self.review.status
-            )
-        )
+        self.assertFalse(self.review.editor_change_review_status(self.user.member_profile, self.review.status))
         self.assertTrue(self.review.close(self.user.member_profile))
         self.assertFalse(self.review.close(self.user.member_profile))
         self.assertEqual(self.review.event_set.count(), 1)
@@ -286,17 +254,13 @@ class CodebaseTest(BaseModelTestCase):
         release.publish()
         self.assertEqual(self.c1.latest_version, release)
         self.assertEqual(
-            CodebaseRelease.objects.get(
-                codebase=self.c1, version_number=release.version_number
-            ),
+            CodebaseRelease.objects.get(codebase=self.c1, version_number=release.version_number),
             release,
         )
         fs_api = release.get_fs_api()
         # check that at least something exists for code/docs
         sip_contents = fs_api.list_sip_contents()
-        contents = {
-            item["label"]: item.get("contents", []) for item in sip_contents["contents"]
-        }
+        contents = {item["label"]: item.get("contents", []) for item in sip_contents["contents"]}
         for category in ["code", "docs"]:
             self.assertIn(category, contents)
             self.assertTrue(contents[category])
@@ -327,9 +291,7 @@ class CodebaseTest(BaseModelTestCase):
 
     def test_publish_syncs_release_submitter_to_discourse(self):
         release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)
-        with patch(
-            "library.tasks.sync_release_submitter_to_discourse"
-        ) as mock_sync_task:
+        with patch("library.tasks.sync_release_submitter_to_discourse") as mock_sync_task:
             release.publish()
         mock_sync_task.assert_called_once_with(release.id)
 
@@ -360,15 +322,11 @@ class CodebaseTest(BaseModelTestCase):
         source_sip_contents = source_release.get_fs_api().list_sip_contents()
         review_draft = self.c1.create_review_draft_from_release(source_release)
         # check metadata
-        self.assertEqual(
-            review_draft.release_notes.rendered, source_release.release_notes.rendered
-        )
+        self.assertEqual(review_draft.release_notes.rendered, source_release.release_notes.rendered)
         self.assertEqual(review_draft.os, source_release.os)
         self.assertEqual(review_draft.output_data_url, source_release.output_data_url)
         self.assertEqual(review_draft.license, source_release.license)
-        self.assertEqual(
-            set(review_draft.contributors.all()), set(source_release.contributors.all())
-        )
+        self.assertEqual(set(review_draft.contributors.all()), set(source_release.contributors.all()))
         self.assertEqual(
             set(review_draft.platform_tags.all()),
             set(source_release.platform_tags.all()),
@@ -416,75 +374,35 @@ class CodebaseReleaseTest(BaseModelTestCase):
     def test_anonymous_user_perms(self):
         anonymous_user = AnonymousUser()
         self.assertFalse(anonymous_user.has_perm(self.get_perm_str("add")))
-        self.assertFalse(
-            anonymous_user.has_perm(
-                self.get_perm_str("change"), obj=self.codebase_release
-            )
-        )
-        self.assertFalse(
-            anonymous_user.has_perm(
-                self.get_perm_str("delete"), obj=self.codebase_release
-            )
-        )
-        self.assertFalse(
-            anonymous_user.has_perm(
-                self.get_perm_str("view"), obj=self.codebase_release
-            )
-        )
+        self.assertFalse(anonymous_user.has_perm(self.get_perm_str("change"), obj=self.codebase_release))
+        self.assertFalse(anonymous_user.has_perm(self.get_perm_str("delete"), obj=self.codebase_release))
+        self.assertFalse(anonymous_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release))
         self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
-        self.assertTrue(
-            anonymous_user.has_perm(
-                self.get_perm_str("view"), obj=self.codebase_release
-            )
-        )
+        self.assertTrue(anonymous_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release))
 
     def test_submitter_perms(self):
         submitter = self.submitter
-        self.assertTrue(
-            submitter.has_perm(self.get_perm_str("change"), obj=self.codebase_release)
-        )
-        self.assertTrue(
-            submitter.has_perm(self.get_perm_str("delete"), obj=self.codebase_release)
-        )
-        self.assertTrue(
-            submitter.has_perm(self.get_perm_str("view"), obj=self.codebase_release)
-        )
+        self.assertTrue(submitter.has_perm(self.get_perm_str("change"), obj=self.codebase_release))
+        self.assertTrue(submitter.has_perm(self.get_perm_str("delete"), obj=self.codebase_release))
+        self.assertTrue(submitter.has_perm(self.get_perm_str("view"), obj=self.codebase_release))
 
     def test_superuser_perms(self):
         superuser = self.user_factory.create(is_superuser=True)
         self.assertTrue(superuser.has_perm(self.get_perm_str("add")))
-        self.assertTrue(
-            superuser.has_perm(self.get_perm_str("change"), obj=self.codebase_release)
-        )
-        self.assertTrue(
-            superuser.has_perm(self.get_perm_str("delete"), obj=self.codebase_release)
-        )
-        self.assertTrue(
-            superuser.has_perm(self.get_perm_str("view"), obj=self.codebase_release)
-        )
+        self.assertTrue(superuser.has_perm(self.get_perm_str("change"), obj=self.codebase_release))
+        self.assertTrue(superuser.has_perm(self.get_perm_str("delete"), obj=self.codebase_release))
+        self.assertTrue(superuser.has_perm(self.get_perm_str("view"), obj=self.codebase_release))
 
     def test_regular_user_perms(self):
         regular_user = self.user_factory.create()
         self.assertTrue(regular_user.has_perm(self.get_perm_str("add")))
-        self.assertFalse(
-            regular_user.has_perm(
-                self.get_perm_str("change"), obj=self.codebase_release
-            )
-        )
-        self.assertFalse(
-            regular_user.has_perm(
-                self.get_perm_str("delete"), obj=self.codebase_release
-            )
-        )
-        self.assertFalse(
-            regular_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release)
-        )
+        self.assertFalse(regular_user.has_perm(self.get_perm_str("change"), obj=self.codebase_release))
+        self.assertFalse(regular_user.has_perm(self.get_perm_str("delete"), obj=self.codebase_release))
+        self.assertFalse(regular_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release))
         self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
-        self.assertTrue(
-            regular_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release)
-        )
+        self.assertTrue(regular_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release))
 
     def test_version_number_mutation(self):
         other_codebase_release = self.codebase.create_release(initialize=False)
@@ -520,18 +438,14 @@ class CodebaseReleaseTest(BaseModelTestCase):
         for contributor in contributor_factory.create_unique_contributors(10):
             # create a release contributor with the same index as the contributor
             # to ensure that the ordering is correct
-            release_contributors.append(
-                release_contributor_factory.create(contributor, randomize_role=True)
-            )
+            release_contributors.append(release_contributor_factory.create(contributor, randomize_role=True))
             logger.debug(
                 "XXX: created release contributor [%s] with roles: %s",
                 release_contributors[-1].contributor,
                 release_contributors[-1].roles,
             )
         # check that ordering is correct
-        for crc, rc in zip(
-            self.codebase_release.citable_release_contributors, release_contributors
-        ):
+        for crc, rc in zip(self.codebase_release.citable_release_contributors, release_contributors):
             self.assertEqual(crc.contributor, rc.contributor)
             self.assertEqual(crc.index, rc.index)
             self.assertEqual(crc.roles, rc.roles)
@@ -541,21 +455,13 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.codebase_release.contributors.all().delete()
         self.assertFalse(self.codebase_release.contributors.exists())
 
-        self.assertRaises(
-            ValidationError, lambda: self.codebase_release.validate_publishable()
-        )
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
         self.codebase_release.os = "Windows"
-        self.assertRaises(
-            ValidationError, lambda: self.codebase_release.validate_publishable()
-        )
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
 
-        license = License.objects.create(
-            name="0BSD", url="https://spdx.org/licenses/0BSD.html"
-        )
+        license = License.objects.create(name="0BSD", url="https://spdx.org/licenses/0BSD.html")
         self.codebase_release.license = license
-        self.assertRaises(
-            ValidationError, lambda: self.codebase_release.validate_publishable()
-        )
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
 
         java, _created = ProgrammingLanguage.objects.get_or_create(name="Java")
         ReleaseLanguage.objects.create(
@@ -563,16 +469,12 @@ class CodebaseReleaseTest(BaseModelTestCase):
             release=self.codebase_release,
             version="8",
         )
-        self.assertRaises(
-            ValidationError, lambda: self.codebase_release.validate_publishable()
-        )
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
 
         release_contributor_factory = ReleaseContributorFactory(self.codebase_release)
         contributor_factory = ContributorFactory(user=self.submitter)
         contributor = contributor_factory.create()
         release_contributor_factory.create(contributor)
 
-        self.assertRaises(
-            ValidationError, lambda: self.codebase_release.validate_publishable()
-        )
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
         self.assertTrue(self.codebase_release.validate_metadata())

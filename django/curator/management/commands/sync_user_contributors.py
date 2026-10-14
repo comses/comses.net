@@ -31,9 +31,7 @@ class Command(BaseCommand):
         # https://docs.djangoproject.com/en/dev/topics/db/queries/#updating-multiple-objects-at-once
         # for more details
         force = options["force"]
-        for contributor in Contributor.objects.select_related("user").filter(
-            user__isnull=False
-        ):
+        for contributor in Contributor.objects.select_related("user").filter(user__isnull=False):
             user = contributor.user
             if force or self.should_update(contributor.given_name, user.first_name):
                 contributor.given_name = user.first_name
@@ -42,8 +40,6 @@ class Command(BaseCommand):
             if force or self.should_update(contributor.email, user.email):
                 contributor.email = user.email
             member_profile_affiliations = user.member_profile.affiliations
-            if force or self.should_update(
-                contributor.json_affiliations, member_profile_affiliations
-            ):
+            if force or self.should_update(contributor.json_affiliations, member_profile_affiliations):
                 contributor.json_affiliations = member_profile_affiliations
             contributor.save()

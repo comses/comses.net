@@ -58,13 +58,9 @@ class MemberProfileSerializerTestCase(TestCase):
         other_email = other_user.email
 
         member_profile = self.user.member_profile
-        member_profile.affiliations = [
-            {"name": "Foo Institute", "url": "http://foo.org"}
-        ]
+        member_profile.affiliations = [{"name": "Foo Institute", "url": "http://foo.org"}]
         member_profile.save()
-        email_address = EmailAddress.objects.create(
-            user=self.user, email=self.user.email
-        )
+        email_address = EmailAddress.objects.create(user=self.user, email=self.user.email)
         email_address.set_as_primary()
 
         # create a mock request for allauth email verification
@@ -83,27 +79,21 @@ class MemberProfileSerializerTestCase(TestCase):
         data = MemberProfileSerializer(member_profile).data
 
         # no change to email address
-        serializer = MemberProfileSerializer(
-            instance=member_profile, data=data, context=context
-        )
+        serializer = MemberProfileSerializer(instance=member_profile, data=data, context=context)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         self.assertEqual(EmailAddress.objects.count(), 1)
 
         # acceptable address
         data["email"] = "foo2@email.com"
-        serializer = MemberProfileSerializer(
-            instance=member_profile, data=data, context=context
-        )
+        serializer = MemberProfileSerializer(instance=member_profile, data=data, context=context)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         self.assertTrue(EmailAddress.objects.filter(email=data["email"]).exists())
 
         # conflicting address
         data["email"] = other_email
-        serializer = MemberProfileSerializer(
-            instance=member_profile, data=data, context=context
-        )
+        serializer = MemberProfileSerializer(instance=member_profile, data=data, context=context)
         serializer.is_valid(raise_exception=True)
         with self.assertRaises(ValidationError):
             serializer.save()
@@ -126,19 +116,13 @@ class MemberProfileSerializerTestCase(TestCase):
                 "ror_id": "https://ror.org/foobar1",
             },
         ]
-        serializer = MemberProfileSerializer(
-            instance=member_profile, data=member_profile_data
-        )
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
         # disallowed affiliations
-        member_profile_data["affiliations"] = [
-            {"name": "Foo College", "url": "www.foo.edu", "ror_id": "foo8j8sd"}
-        ]
-        serializer = MemberProfileSerializer(
-            instance=member_profile, data=member_profile_data
-        )
+        member_profile_data["affiliations"] = [{"name": "Foo College", "url": "www.foo.edu", "ror_id": "foo8j8sd"}]
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -153,9 +137,7 @@ class MemberProfileSerializerTestCase(TestCase):
                 "ror_id": "https://ror.org/foobar1",
             },
         ]
-        serializer = MemberProfileSerializer(
-            instance=member_profile, data=member_profile_data
-        )
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -164,17 +146,13 @@ class MemberProfileSerializerTestCase(TestCase):
         membership_profile = self.user.member_profile
         self.assertFalse(membership_profile.full_member)
 
-        membership_profile.affiliations = [
-            {"name": "Foo Institute", "url": "http://foo.org"}
-        ]
+        membership_profile.affiliations = [{"name": "Foo Institute", "url": "http://foo.org"}]
         membership_profile.save()
         membership_profile_data = MemberProfileSerializer(membership_profile).data
 
         # Make user a full down member
         membership_profile_data["full_member"] = True
-        serializer = MemberProfileSerializer(
-            instance=membership_profile, data=membership_profile_data
-        )
+        serializer = MemberProfileSerializer(instance=membership_profile, data=membership_profile_data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         membership_profile = MemberProfile.objects.get(id=membership_profile.id)
@@ -182,9 +160,7 @@ class MemberProfileSerializerTestCase(TestCase):
 
         # Unsuccessfully attempt to downgrade membership status
         membership_profile_data["full_member"] = False
-        serializer = MemberProfileSerializer(
-            instance=membership_profile, data=membership_profile_data
-        )
+        serializer = MemberProfileSerializer(instance=membership_profile, data=membership_profile_data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         membership_profile = MemberProfile.objects.get(id=membership_profile.id)

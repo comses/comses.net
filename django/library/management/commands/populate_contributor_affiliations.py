@@ -41,9 +41,7 @@ class Command(BaseCommand):
         session.mount("http://", adapter)
         session.mount("https://", adapter)
 
-        ordered_contributor_affiliations = (
-            ContributorAffiliation.objects.all().order_by("content_object_id")
-        )
+        ordered_contributor_affiliations = ContributorAffiliation.objects.all().order_by("content_object_id")
 
         logger.info("Looking up affiliations against ROR API")
 
@@ -73,9 +71,7 @@ class Command(BaseCommand):
                 contributor_id,
                 affiliations,
             )
-            Contributor.objects.filter(pk=contributor_id).update(
-                json_affiliations=affiliations
-            )
+            Contributor.objects.filter(pk=contributor_id).update(json_affiliations=affiliations)
 
     def lookup(self, session, name):
         ror_api_url = f"https://api.ror.org/organizations?affiliation={name}"
@@ -88,9 +84,7 @@ class Command(BaseCommand):
             logger.warning(e)
         return None
 
-    def to_affiliation(
-        self, name, best_match, match_threshold=85, ror_score_threshold=1.0
-    ):
+    def to_affiliation(self, name, best_match, match_threshold=85, ror_score_threshold=1.0):
         """
         Returns a new affiliation dictionary with ROR data if a good match
         or a dict of the original data { "name": name } otherwise
@@ -98,10 +92,7 @@ class Command(BaseCommand):
         if best_match:
             score = best_match["score"]
             ror_name = best_match["organization"]["name"]
-            if (
-                score >= ror_score_threshold
-                or fuzz.partial_ratio(ror_name, name) >= match_threshold
-            ):
+            if score >= ror_score_threshold or fuzz.partial_ratio(ror_name, name) >= match_threshold:
                 new_affiliation = {
                     "name": ror_name,
                     # ror id is guaranteed if lookup was successful
@@ -109,9 +100,7 @@ class Command(BaseCommand):
                 }
                 # acronyms and links are not guaranteed to exist
                 if best_match["organization"]["acronyms"]:
-                    new_affiliation["acronym"] = best_match["organization"]["acronyms"][
-                        0
-                    ]
+                    new_affiliation["acronym"] = best_match["organization"]["acronyms"][0]
                 if best_match["organization"]["links"]:
                     new_affiliation["url"] = best_match["organization"]["links"][0]
                 # FIXME: additional geodata to include from the returned ROR API data?

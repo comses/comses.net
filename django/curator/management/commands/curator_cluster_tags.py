@@ -56,9 +56,7 @@ class Command(BaseCommand):
             tag_clusterer.save_to_training_file()
 
         if not tag_clusterer.training_file_exists():
-            logging.warn(
-                "Your model does not have any labelled data. Run this command with --label and try again."
-            )
+            logging.warn("Your model does not have any labelled data. Run this command with --label and try again.")
 
         clusters = tag_clusterer.cluster_tags()
         tag_clusterer.save_clusters(clusters)

@@ -56,9 +56,7 @@ class CodebaseFactory(ContentModelFactory):
 
     def create_published_release(self, codebase=None, **kwargs):
         if codebase is None:
-            codebase, created = self.get_or_create(
-                **kwargs, defaults=self.get_default_data()
-            )
+            codebase, created = self.get_or_create(**kwargs, defaults=self.get_default_data())
         release = ReleaseSetup.setUpPublishableDraftRelease(codebase)
         release.publish()
         return release
@@ -84,19 +82,14 @@ class ContributorFactory:
         default_data = self.get_default_data(overrides.get("user"))
         default_data.update(overrides)
         user = default_data.pop("user")
-        contributor, created = Contributor.objects.get_or_create(
-            user=user, defaults=default_data
-        )
+        contributor, created = Contributor.objects.get_or_create(user=user, defaults=default_data)
         return contributor
 
     def create_unique_contributors(
         self,
         number_of_contributors=5,
     ) -> list[Contributor]:
-        return [
-            self.create(user=self.user_factory.create())
-            for _ in range(number_of_contributors)
-        ]
+        return [self.create(user=self.user_factory.create()) for _ in range(number_of_contributors)]
 
 
 class ReleaseContributorFactory:

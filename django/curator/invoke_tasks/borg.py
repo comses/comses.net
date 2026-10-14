@@ -107,9 +107,7 @@ def backup_all(ctx):
         archive = backup(ctx)
         timestamp = datetime.now(timezone.utc).isoformat()
         temporary_success_path = success_path.with_suffix(".tmp")
-        temporary_success_path.write_text(
-            f"timestamp={timestamp}\narchive={archive}\n", encoding="ascii"
-        )
+        temporary_success_path.write_text(f"timestamp={timestamp}\narchive={archive}\n", encoding="ascii")
         temporary_success_path.replace(success_path)
 
 
@@ -122,9 +120,7 @@ def exclusive_backup_operation(operation):
         try:
             fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
-            raise RuntimeError(
-                f"another backup operation is running; cannot start {operation}"
-            ) from exc
+            raise RuntimeError(f"another backup operation is running; cannot start {operation}") from exc
         yield
 
 
@@ -156,9 +152,7 @@ def rotate_library_and_media_files(
     Files in .latest can be deleted if the restore was successful
     """
     print("rotating library, media, and repository files")
-    delete_latest_uncompressed_backup(
-        src_library=src_library, src_media=src_media, src_repository=src_repository
-    )
+    delete_latest_uncompressed_backup(src_library=src_library, src_media=src_media, src_repository=src_repository)
 
     previous = Path(settings.PREVIOUS_SHARE_ROOT)
     share_root = Path(settings.SHARE_DIR)
@@ -218,9 +212,7 @@ def _restore_database(ctx, working_directory, target_database):
 def _extract(ctx, repo, archive, paths=None):
     extract_cmd = 'borg extract {repo}::"{archive}"'.format(repo=repo, archive=archive)
     if paths:
-        extract_cmd = "{} {}".format(
-            extract_cmd, " ".join('"{}"'.format(p) for p in paths)
-        )
+        extract_cmd = "{} {}".format(extract_cmd, " ".join('"{}"'.format(p) for p in paths))
     print(extract_cmd)
     ctx.run(extract_cmd, env=environment(), echo=True)
 
@@ -249,7 +241,9 @@ def _restore(ctx, repo, archive, working_directory, target_database):
         with ctx.cd(working_directory):
             _extract(ctx, repo=repo, archive=archive)
             _restore_database(
-                ctx, working_directory=working_directory, target_database=target_database
+                ctx,
+                working_directory=working_directory,
+                target_database=target_database,
             )
             ctx.run("/code/manage.py migrate")
             _restore_files(working_directory)
@@ -270,9 +264,7 @@ def restore_files(ctx, repo=settings.BORG_ROOT, archive=None):
 
 
 @task(aliases=["rdb"])
-def restore_database(
-    ctx, repo=settings.BORG_ROOT, archive=None, target_database=db._DEFAULT_DATABASE
-):
+def restore_database(ctx, repo=settings.BORG_ROOT, archive=None, target_database=db._DEFAULT_DATABASE):
     confirm("Are you sure you want to restore the database (y/n)? ")
     with exclusive_backup_operation("restore"):
         if archive is None:
@@ -302,9 +294,7 @@ def restore(
     using archive ARCHIVE. The target_database argument is for testing so a different database can be used to
     make sure the database is getting restored properly"""
     if not force:
-        confirm(
-            "Are you sure you want to restore the database and all file content (y/n)? "
-        )
+        confirm("Are you sure you want to restore the database and all file content (y/n)? ")
     with tempfile.TemporaryDirectory(dir=settings.SHARE_DIR) as working_directory:
         _restore(
             ctx,

@@ -75,9 +75,7 @@ def update(serializer_update, instance, validated_data):
 
 
 class EditableSerializerMixin(serializers.Serializer):
-    editable = serializers.SerializerMethodField(
-        help_text=_("Whether or not entity is editable by the current user")
-    )
+    editable = serializers.SerializerMethodField(help_text=_("Whether or not entity is editable by the current user"))
 
     def get_editable(self, obj):
         # logger.debug(self.context)
@@ -119,9 +117,7 @@ class MarkdownField(serializers.CharField):
 
 class MemberProfileSerializer(serializers.ModelSerializer):
     # User fields
-    date_joined = serializers.DateTimeField(
-        source="user.date_joined", read_only=True, format="%B %d %Y"
-    )
+    date_joined = serializers.DateTimeField(source="user.date_joined", read_only=True, format="%B %d %Y")
     family_name = serializers.CharField(source="user.last_name")
     given_name = serializers.CharField(source="user.first_name")
     username = serializers.CharField(source="user.username", read_only=True)
@@ -134,9 +130,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     # MemberProfile
     affiliations = serializers.JSONField()
-    avatar = (
-        serializers.SerializerMethodField()
-    )  # needed to materialize the FK relationship for wagtailimages
+    avatar = serializers.SerializerMethodField()  # needed to materialize the FK relationship for wagtailimages
     orcid_url = serializers.ReadOnlyField()
     github_url = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
@@ -160,11 +154,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     def get_avatar(self, instance):
         request = self.context.get("request")
         if request and request.accepted_media_type != "text/html":
-            return (
-                instance.picture.get_rendition("fill-150x150").url
-                if instance.picture
-                else None
-            )
+            return instance.picture.get_rendition("fill-150x150").url if instance.picture else None
         return instance.picture
 
     def save_email(self, user, new_email):
@@ -173,18 +163,14 @@ class MemberProfileSerializer(serializers.ModelSerializer):
                 validate_email(new_email)
                 # Check if any user other the user currently being edited has an email account with the same address as the
                 # new email
-                users_with_email = MemberProfile.objects.find_users_with_email(
-                    new_email, exclude_user=user
-                )
+                users_with_email = MemberProfile.objects.find_users_with_email(new_email, exclude_user=user)
                 if users_with_email.exists():
                     logger.warning(
                         "Unable to register email %s, already owned by [%s]",
                         user.email,
                         users_with_email,
                     )
-                    raise DrfValidationError(
-                        {"email": ["This email address is already taken."]}
-                    )
+                    raise DrfValidationError({"email": ["This email address is already taken."]})
             except ValidationError as e:
                 raise DrfValidationError({"email": e.messages})
 
@@ -193,9 +179,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             if EmailAddress.objects.filter(primary=True, user=user).exists():
                 EmailAddress.objects.add_new_email(request, user, new_email)
             else:
-                email_address = EmailAddress.objects.create(
-                    primary=True, user=user, email=new_email
-                )
+                email_address = EmailAddress.objects.create(primary=True, user=user, email=new_email)
                 email_address.send_confirmation(request)
 
             logger.warning(
@@ -316,17 +300,13 @@ class IsoDateField(serializers.DateField):
 
 
 class EventSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
-    submitter = RelatedUserSerializer(
-        read_only=True, help_text=_("User that created the event"), label="Submitter"
-    )
+    submitter = RelatedUserSerializer(read_only=True, help_text=_("User that created the event"), label="Submitter")
     absolute_url = serializers.URLField(
         source="get_absolute_url",
         read_only=True,
         help_text=_("URL to the detail page of the event"),
     )
-    date_created = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
+    date_created = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
     start_date = IsoDateField()
     end_date = IsoDateField(allow_null=True, required=False)
     early_registration_deadline = IsoDateField(allow_null=True, required=False)
@@ -369,9 +349,7 @@ class EventSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
         msgs = []
 
         if end_date and start_date >= end_date:
-            msgs.append(
-                "The event start date should be earlier than the event end date."
-            )
+            msgs.append("The event start date should be earlier than the event end date.")
 
         if not end_date:
             end_date = start_date
@@ -381,14 +359,10 @@ class EventSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
             and registration_deadline
             and registration_deadline < early_registration_deadline
         ):
-            msgs.append(
-                "Early registration deadlines should be earlier than the regular registration deadline."
-            )
+            msgs.append("Early registration deadlines should be earlier than the regular registration deadline.")
 
         if early_registration_deadline and early_registration_deadline > start_date:
-            msgs.append(
-                "Early registration deadlines should be earlier than the event start date."
-            )
+            msgs.append("Early registration deadlines should be earlier than the event start date.")
 
         if registration_deadline and registration_deadline > end_date:
             msgs.append(
@@ -435,9 +409,7 @@ class JobSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
         help_text=_("URL to the detail page of the job"),
     )
 
-    date_created = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
+    date_created = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
     description = MarkdownField()
     is_expired = serializers.BooleanField(read_only=True)
     is_marked_spam = serializers.BooleanField(read_only=True)

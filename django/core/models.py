@@ -106,21 +106,15 @@ def get_sentinel_user():
 @register_setting
 class SiteSettings(BaseSiteSetting):
     maintenance_mode = models.BooleanField(default=False)
-    banner_message_title = models.CharField(
-        max_length=64, blank=True, default="CoMSES Net Notice"
-    )
+    banner_message_title = models.CharField(max_length=64, blank=True, default="CoMSES Net Notice")
     banner_message = MarkdownField(
         help_text=_("Markdown-enabled banner notification displayed on the front page"),
         blank=True,
     )
-    banner_destination_url = models.URLField(
-        help_text=_("URL to redirect to when this banner is clicked"), blank=True
-    )
+    banner_destination_url = models.URLField(help_text=_("URL to redirect to when this banner is clicked"), blank=True)
     # expired_event_days_threshold = models.PositiveIntegerField(default=3, help_text=_("Number of days after an event's start date for which an event will be considered expired.")
     last_modified = models.DateTimeField(auto_now=True)
-    mailchimp_digest_archive_url = models.URLField(
-        help_text=_("Mailchimp Digest Campaign Archive URL"), blank=True
-    )
+    mailchimp_digest_archive_url = models.URLField(help_text=_("Mailchimp Digest Campaign Archive URL"), blank=True)
 
     @property
     def has_banner(self):
@@ -149,16 +143,12 @@ class SpamModeration(models.Model):
     content_object = GenericForeignKey("content_type", "object_id")
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    notes = models.TextField(
-        blank=True, null=True, help_text=_("Additional notes left by the reviewer")
-    )
+    notes = models.TextField(blank=True, null=True, help_text=_("Additional notes left by the reviewer"))
     # FIXME: should we start an enum / choices for this?
     detection_method = models.CharField(max_length=255, blank=True, null=True)
     detection_details = models.JSONField(
         default=dict,
-        help_text=_(
-            "Extra context from the detection method, e.g. NLP results, elapsed time"
-        ),
+        help_text=_("Extra context from the detection method, e.g. NLP results, elapsed time"),
     )
     reviewer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -187,22 +177,16 @@ class SpamModeration(models.Model):
             related_object.save()
 
     def __str__(self):
-        return (
-            f"SpamModeration: {self.status} - {self.reviewer} - {self.content_object}"
-        )
+        return f"SpamModeration: {self.status} - {self.reviewer} - {self.content_object}"
 
 
 class ModeratedContent(models.Model):
-    spam_moderation = models.ForeignKey(
-        SpamModeration, null=True, blank=True, on_delete=models.SET_NULL
-    )
+    spam_moderation = models.ForeignKey(SpamModeration, null=True, blank=True, on_delete=models.SET_NULL)
     # need to have this denormalized field to allow for filtering out spam content
     # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
     is_marked_spam = models.BooleanField(
         default=False,
-        help_text=_(
-            "cached boolean representation of spam_moderation for search indexing"
-        ),
+        help_text=_("cached boolean representation of spam_moderation for search indexing"),
     )
 
     def mark_not_spam(self, user: User):
@@ -232,9 +216,7 @@ class SocialMediaSettings(BaseSiteSetting):
     social_account = models.CharField(
         max_length=128,
         default="comses",
-        help_text=_(
-            "CoMSES Net official socials account username (assumed focus on a single platform)"
-        ),
+        help_text=_("CoMSES Net official socials account username (assumed focus on a single platform)"),
         blank=True,
     )
     github_account = models.CharField(
@@ -243,9 +225,7 @@ class SocialMediaSettings(BaseSiteSetting):
         help_text=_("CoMSES Net official GitHub account"),
         blank=True,
     )
-    mailing_list_url = models.URLField(
-        help_text=_("Mailing List Signup URL, i.e., MailChimp signup form"), blank=True
-    )
+    mailing_list_url = models.URLField(help_text=_("Mailing List Signup URL, i.e., MailChimp signup form"), blank=True)
     contact_form_recipients = ArrayField(
         models.EmailField(),
         help_text=_(
@@ -280,12 +260,8 @@ class MemberProfileTag(TaggedItemBase):
 
 
 class FollowUser(models.Model):
-    target = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name="followers", on_delete=models.CASCADE
-    )
-    source = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name="following", on_delete=models.CASCADE
-    )
+    target = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="followers", on_delete=models.CASCADE)
+    source = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="following", on_delete=models.CASCADE)
 
     def __str__(self):
         return "{0} following {1}".format(self.source, self.target)
@@ -319,9 +295,7 @@ class MemberProfileQuerySet(models.QuerySet):
         return ComsesGroups.EDITOR.member_profiles(**kwargs)
 
     def public(self, **kwargs):
-        return self.filter(user__is_active=True, **kwargs).exclude(
-            user__username__in=EXCLUDED_USERNAMES
-        )
+        return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=EXCLUDED_USERNAMES)
 
     def with_affiliations(self, **kwargs):
         return self.exclude(affiliations=[]).filter(**kwargs)
@@ -336,11 +310,7 @@ class MemberProfileQuerySet(models.QuerySet):
             EmailAddress.objects.filter(email=candidate_email)
             .exclude(user=exclude_user)
             .values_list("user")
-            .union(
-                User.objects.filter(email=candidate_email)
-                .exclude(id=exclude_user.id)
-                .values_list("id")
-            )
+            .union(User.objects.filter(email=candidate_email).exclude(id=exclude_user.id).values_list("id"))
         )
 
 
@@ -360,9 +330,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         STUDENT = "student", _("Student")
         OTHER = "other", _("Other")
 
-    user = models.OneToOneField(
-        User, null=True, on_delete=models.CASCADE, related_name="member_profile"
-    )
+    user = models.OneToOneField(User, null=True, on_delete=models.CASCADE, related_name="member_profile")
 
     # FIXME: add location field eventually, with postgis
     # location = LocationField(based_fields=['city'], zoom=7)
@@ -374,15 +342,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
     # FIXME: institution deprecated in favor of affiliations, consider removal
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
     # user's institutional affiliations
-    affiliations = models.JSONField(
-        default=list, help_text=_("JSON-LD list of affiliated institutions")
-    )
+    affiliations = models.JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     tags = ClusterTaggableManager(through=MemberProfileTag, blank=True)
 
     personal_url = models.URLField(blank=True)
-    picture = models.ForeignKey(
-        Image, null=True, help_text=_("Profile picture"), on_delete=models.SET_NULL
-    )
+    picture = models.ForeignKey(Image, null=True, help_text=_("Profile picture"), on_delete=models.SET_NULL)
     professional_url = models.URLField(blank=True)
     research_interests = MarkdownField(max_length=2048)
     short_uuid = models.CharField(max_length=32, unique=True, null=True)
@@ -490,12 +454,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @cached_property
     def affiliations_string(self):
-        return ", ".join(
-            [
-                self.to_affiliation_string(affiliation)
-                for affiliation in self.affiliations
-            ]
-        )
+        return ", ".join([self.to_affiliation_string(affiliation) for affiliation in self.affiliations])
 
     @property
     def profile_url(self):
@@ -686,12 +645,8 @@ class EventQuerySet(models.QuerySet):
         started less than 2 days ago
         """
         now = timezone.now().date()
-        start_date_threshold = now - timedelta(
-            days=settings.EXPIRED_EVENT_DAYS_THRESHOLD
-        )
-        return models.Q(start_date__lt=start_date_threshold) | models.Q(
-            end_date__lt=now, end_date__isnull=False
-        )
+        start_date_threshold = now - timedelta(days=settings.EXPIRED_EVENT_DAYS_THRESHOLD)
+        return models.Q(start_date__lt=start_date_threshold) | models.Q(end_date__lt=now, end_date__isnull=False)
 
     def live(self, **kwargs):
         return self.filter(is_deleted=False, **kwargs)
@@ -701,11 +656,7 @@ class EventQuerySet(models.QuerySet):
         return self.exclude(is_marked_spam=True)
 
     def latest_for_feed(self, number=10):
-        return (
-            self.public()
-            .select_related("submitter__member_profile")
-            .order_by("-date_created")[:number]
-        )
+        return self.public().select_related("submitter__member_profile").order_by("-date_created")[:number]
 
     def public(self):
         return self.filter(is_deleted=False).exclude_spam()
@@ -729,9 +680,7 @@ class Event(index.Indexed, ModeratedContent, ClusterableModel):
     is_deleted = models.BooleanField(default=False)
     objects = EventQuerySet.as_manager()
 
-    submitter = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user), blank=True
-    )
+    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user), blank=True)
 
     search_fields = [
         index.SearchField("title"),
@@ -778,9 +727,7 @@ class Event(index.Indexed, ModeratedContent, ClusterableModel):
         return cls.objects.public()
 
     def __str__(self):
-        return "{0} posted by {1} on {2}".format(
-            self.title, self.submitter.username, self.date_created.strftime("%c")
-        )
+        return "{0} posted by {1} on {2}".format(self.title, self.submitter.username, self.date_created.strftime("%c"))
 
 
 class JobTag(TaggedItemBase):
@@ -821,9 +768,7 @@ class JobQuerySet(models.QuerySet):
         today = timezone.now()
         threshold = settings.EXPIRED_JOB_DAYS_THRESHOLD
         post_date_threshold = today - timedelta(days=threshold)
-        return models.Q(
-            application_deadline__isnull=False, application_deadline__lt=today
-        ) | models.Q(
+        return models.Q(application_deadline__isnull=False, application_deadline__lt=today) | models.Q(
             application_deadline__isnull=True,
             date_created__lt=post_date_threshold,
             last_modified__lt=post_date_threshold,
@@ -837,24 +782,16 @@ class JobQuerySet(models.QuerySet):
         return self.exclude(is_marked_spam=True)
 
     def latest_for_feed(self, number=10):
-        return (
-            self.public()
-            .select_related("submitter__member_profile")
-            .order_by("-date_created")[:number]
-        )
+        return self.public().select_related("submitter__member_profile").order_by("-date_created")[:number]
 
 
 @add_to_comses_permission_whitelist
 class Job(index.Indexed, ModeratedContent, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_("Job posting title"))
     date_created = models.DateTimeField(default=timezone.now)
-    application_deadline = models.DateField(
-        blank=True, null=True, help_text=_("Optional deadline for applications")
-    )
+    application_deadline = models.DateField(blank=True, null=True, help_text=_("Optional deadline for applications"))
     last_modified = models.DateTimeField(auto_now=True)
-    summary = models.CharField(
-        max_length=500, blank=True, help_text=_("Brief summary of job posting.")
-    )
+    summary = models.CharField(max_length=500, blank=True, help_text=_("Brief summary of job posting."))
     description = MarkdownField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
@@ -908,9 +845,7 @@ class Job(index.Indexed, ModeratedContent, ClusterableModel):
         return cls.objects.public()
 
     def __str__(self):
-        return "{0} posted by {1} on {2}".format(
-            self.title, self.submitter.username, self.date_created.strftime("%c")
-        )
+        return "{0} posted by {1} on {2}".format(self.title, self.submitter.username, self.date_created.strftime("%c"))
 
     @property
     def owner(self):

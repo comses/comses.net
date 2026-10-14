@@ -52,9 +52,7 @@ class ContactForm(forms.Form):
         data = self.cleaned_data["email"]
         for spam_domain in self.SPAM_EMAIL_DOMAINS:
             if spam_domain in data:
-                raise ValidationError(
-                    "Please try sending email from a supported email provider"
-                )
+                raise ValidationError("Please try sending email from a supported email provider")
         return data
 
     def clean_body(self):
@@ -65,18 +63,14 @@ class ContactForm(forms.Form):
 
     @property
     def recipient_list(self):
-        recipients = SocialMediaSettings.for_request(
-            self.request
-        ).contact_form_recipients
+        recipients = SocialMediaSettings.for_request(self.request).contact_form_recipients
         if not recipients:
             recipients = [settings.EDITOR_EMAIL]
         return recipients
 
     @property
     def subject(self):
-        subject = loader.render_to_string(
-            self.subject_template_name, self.get_context(), request=self.request
-        )
+        subject = loader.render_to_string(self.subject_template_name, self.get_context(), request=self.request)
         return "".join(subject.splitlines())
 
     @property
@@ -85,9 +79,7 @@ class ContactForm(forms.Form):
         Returns the template rendered message body as a string.
         :return:
         """
-        return loader.render_to_string(
-            self.template_name, self.get_context(), request=self.request
-        )
+        return loader.render_to_string(self.template_name, self.get_context(), request=self.request)
 
     def save(self, fail_silently=False):
         if not self.is_valid():

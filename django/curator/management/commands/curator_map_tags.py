@@ -35,9 +35,7 @@ class Command(BaseCommand):
         From a canonical list, the canonical tag that most closely matches is selected.
         """
         if not CanonicalTag.objects.exists():
-            logger.warn(
-                "Canonical list is empty, populating canonical list using the curator_cluster_tags command"
-            )
+            logger.warn("Canonical list is empty, populating canonical list using the curator_cluster_tags command")
             return
 
         tag_gazetteer = TagGazetteer(float(options["threshold"]))
@@ -47,9 +45,7 @@ class Command(BaseCommand):
             tag_gazetteer.save_to_training_file()
 
         if not tag_gazetteer.training_file_exists():
-            logging.warn(
-                "Your model does not have any labelled data. Run this command with --label and try again."
-            )
+            logging.warn("Your model does not have any labelled data. Run this command with --label and try again.")
 
         tags = Tag.objects.filter(canonicaltagmapping=None)
         is_unmatched = False
@@ -57,9 +53,7 @@ class Command(BaseCommand):
             matches = tag_gazetteer.text_search(tag.name)
             if matches:
                 match = matches[0]
-                canonical_tag_mapping = CanonicalTagMapping(
-                    tag=tag, canonical_tag=match[0], confidence_score=match[1]
-                )
+                canonical_tag_mapping = CanonicalTagMapping(tag=tag, canonical_tag=match[0], confidence_score=match[1])
 
                 is_correct = input(
                     f"Does the following mapping make sense?:\n{str(canonical_tag_mapping)}\n(y)es/(n)o\n"

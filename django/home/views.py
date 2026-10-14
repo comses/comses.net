@@ -68,30 +68,23 @@ class SearchView(TemplateView):
         page = self.request.GET.get("page", 1)
 
         if query is not None:
-
             # set max limit based on elastic settings
-            _, limited_page_number_ceiling = SmallResultSetPagination.limit_page_range(
-                page=page
-            )
+            _, limited_page_number_ceiling = SmallResultSetPagination.limit_page_range(page=page)
 
             page = limited_page_number_ceiling
 
-            results, total = search.search(
-                query, start=(limited_page_number_ceiling - 1) * 10
-            )
+            results, total = search.search(query, start=(limited_page_number_ceiling - 1) * 10)
 
             if total != 0:
-                limited_count, limited_page_number_floor = (
-                    SmallResultSetPagination.limit_page_range(page=page, count=total)
+                limited_count, limited_page_number_floor = SmallResultSetPagination.limit_page_range(
+                    page=page, count=total
                 )
 
                 # if there are less pages in the result,
                 # perform the search again to get the actual last page results
 
                 if limited_page_number_ceiling > limited_page_number_floor:
-                    results, total = search.search(
-                        query, start=(limited_page_number_floor - 1) * 10
-                    )
+                    results, total = search.search(query, start=(limited_page_number_floor - 1) * 10)
                     page = limited_page_number_floor
 
                 total = min(total, limited_count)
@@ -156,9 +149,7 @@ class ConferenceSubmissionView(LoginRequiredMixin, CreateView):
         form.instance.submitter = self.submitter
         form.instance.conference = self.conference
         # send an email to editors
-        self._send_email(
-            form, submitter=form.instance.submitter, conference=form.instance.conference
-        )
+        self._send_email(form, submitter=form.instance.submitter, conference=form.instance.conference)
         return super().form_valid(form)
 
     def _send_email(self, form, submitter=None, conference=None):

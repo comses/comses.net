@@ -53,9 +53,7 @@ def get_core_urls():
             views.EventMarkDeletedView.as_view(),
             name="event-delete",
         ),
-        path(
-            "events/<int:pk>/edit/", views.EventUpdateView.as_view(), name="event-edit"
-        ),
+        path("events/<int:pk>/edit/", views.EventUpdateView.as_view(), name="event-edit"),
         path("events/add/", views.EventCreateView.as_view(), name="event-add"),
         path(
             "jobs/<int:pk>/delete/",

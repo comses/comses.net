@@ -66,9 +66,7 @@ class TagClusterManager:
                 if not tag_cluster.add_tag_by_name(tag_name):
                     print("The tag does not exist in Tags")
             elif action == "r":
-                tag_index = input(
-                    "Input the number of the tag you would like to remove.\n"
-                )
+                tag_index = input("Input the number of the tag you would like to remove.\n")
 
                 tags = list(tag_cluster.tags.all())
                 if not tag_index.isnumeric() or int(tag_index) >= len(tags):
@@ -81,9 +79,7 @@ class TagClusterManager:
                 print("Published mapping")
                 canonical_tag, tag_mappings = tag_cluster.save_mapping()
 
-                print(
-                    f"The following was saved to the database: \n<CanonicalTag {canonical_tag}>\n{tag_mappings}"
-                )
+                print(f"The following was saved to the database: \n<CanonicalTag {canonical_tag}>\n{tag_mappings}")
 
             elif action == "f":
                 tag_cluster.delete()
@@ -146,9 +142,7 @@ class TagClusterManager:
 
         if canonical_tag.exists():
             try:
-                cluster = TagCluster(
-                    canonical_tag_name=canonical_tag[0].name, confidence_score=1
-                )
+                cluster = TagCluster(canonical_tag_name=canonical_tag[0].name, confidence_score=1)
                 canonical_tag[0].delete()
 
                 cluster.save()
@@ -190,9 +184,7 @@ class TagClusterer(AbstractTagDeduper):
     # The model is trained and then the data is clustered
     def cluster_tags(self):
         self.deduper.train()
-        return self.deduper.partition(
-            self.prepare_training_data(), self.clustering_threshold
-        )
+        return self.deduper.partition(self.prepare_training_data(), self.clustering_threshold)
 
     # Saves the clusters to the database
     def save_clusters(self, clusters):
@@ -200,9 +192,7 @@ class TagClusterer(AbstractTagDeduper):
             tags = Tag.objects.filter(id__in=id_list)
             confidence_score = confidence_list[0]
 
-            tag_cluster = TagCluster(
-                canonical_tag_name=tags[0].name, confidence_score=confidence_score
-            )
+            tag_cluster = TagCluster(canonical_tag_name=tags[0].name, confidence_score=confidence_score)
             tag_cluster.save()
 
             tag_cluster.tags.set(tags)
@@ -253,8 +243,6 @@ class TagGazetteer(AbstractTagDeduper):
         results = self.search({1: {"id": 1, "name": name}})
         matches = results[0][1]
 
-        matches = [
-            (CanonicalTag.objects.filter(pk=match[0])[0], match[1]) for match in matches
-        ]
+        matches = [(CanonicalTag.objects.filter(pk=match[0])[0], match[1]) for match in matches]
 
         return matches

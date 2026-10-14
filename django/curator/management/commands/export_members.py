@@ -16,9 +16,7 @@ class Command(BaseCommand):
     help = "Dump active member profiles with optional date_joined filter --after=yyyy-mm-dd"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--full-member-only", "-u", action="store_true", dest="full_member_only"
-        )
+        parser.add_argument("--full-member-only", "-u", action="store_true", dest="full_member_only")
         parser.add_argument(
             "--after",
             "-a",

@@ -116,9 +116,7 @@ class GitRepoApiTestCase(TestCase):
         self.assertTrue((api.repo_dir / "LICENSE").exists())
 
     def test_repo_build(self):
-        update_release_from_sample(
-            self.release_1, self.release_1_dir, version_number="1.0.0"
-        )
+        update_release_from_sample(self.release_1, self.release_1_dir, version_number="1.0.0")
         self.release_1.publish()
         public_release_count = self.codebase.releases.public().count()
         self.assertEqual(public_release_count, 1)
@@ -141,16 +139,12 @@ class GitRepoApiTestCase(TestCase):
             )
 
     def test_repo_append_releases(self):
-        update_release_from_sample(
-            self.release_1, self.release_1_dir, version_number="1.0.0"
-        )
+        update_release_from_sample(self.release_1, self.release_1_dir, version_number="1.0.0")
         self.release_1.publish()
         api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
         self.release_2 = self.codebase.create_release()
-        update_release_from_sample(
-            self.release_2, self.release_2_dir, version_number="2.0.0"
-        )
+        update_release_from_sample(self.release_2, self.release_2_dir, version_number="2.0.0")
         self.release_2.publish()
         api.append_releases()
 
@@ -171,13 +165,9 @@ class GitRepoApiTestCase(TestCase):
 
     def test_will_not_append_lower_version(self):
         # publish 2.0.0 first and build
-        update_release_from_sample(
-            self.release_1, self.release_1_dir, version_number="1.0.0"
-        )
+        update_release_from_sample(self.release_1, self.release_1_dir, version_number="1.0.0")
         self.release_2 = self.codebase.create_release()
-        update_release_from_sample(
-            self.release_2, self.release_2_dir, version_number="2.0.0"
-        )
+        update_release_from_sample(self.release_2, self.release_2_dir, version_number="2.0.0")
         self.release_2.publish()
         api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
@@ -186,16 +176,12 @@ class GitRepoApiTestCase(TestCase):
         self.assertRaises(ValueError, api.append_releases)
 
     def test_repo_rebuild(self):
-        update_release_from_sample(
-            self.release_1, self.release_1_dir, version_number="1.0.0"
-        )
+        update_release_from_sample(self.release_1, self.release_1_dir, version_number="1.0.0")
         self.release_1.publish()
         api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
         self.release_2 = self.codebase.create_release()
-        update_release_from_sample(
-            self.release_2, self.release_2_dir, version_number="2.0.0"
-        )
+        update_release_from_sample(self.release_2, self.release_2_dir, version_number="2.0.0")
         self.release_2.publish()
         api.build()
 

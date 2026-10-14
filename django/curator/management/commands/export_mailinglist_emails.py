@@ -17,9 +17,7 @@ class Command(BaseCommand):
               and optional date_joined --after=yyyy-mm-dd"""
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--full-member-only", "-u", action="store_true", dest="full_member_only"
-        )
+        parser.add_argument("--full-member-only", "-u", action="store_true", dest="full_member_only")
         parser.add_argument(
             "--after",
             "-a",
@@ -45,9 +43,7 @@ class Command(BaseCommand):
             else User.objects.filter(**criteria).exclude(id=anonymous_user.id)
         )
         csv_writer = csv.writer(sys.stdout)
-        csv_writer.writerow(
-            ["First name", "Last name", "Affiliation", "Affil URL", "Email"]
-        )
+        csv_writer.writerow(["First name", "Last name", "Affiliation", "Affil URL", "Email"])
         for user in qs:
             csv_writer.writerow(
                 [

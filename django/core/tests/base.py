@@ -43,9 +43,7 @@ class ContentModelFactory(ABC):
     def get_default_data(self) -> dict:
         pass
 
-    def get_request_data(
-        self, with_tags=True, honeypot_value=None, elapsed_time=999, **kwargs
-    ):
+    def get_request_data(self, with_tags=True, honeypot_value=None, elapsed_time=999, **kwargs):
         data = self.get_default_data()
         data.pop("submitter")
         if with_tags:
@@ -105,9 +103,7 @@ class EventFactory(ContentModelFactory):
         }
 
 
-def create_test_user(
-    username="test_user", email="comses.test@mailinator.com", **kwargs
-):
+def create_test_user(username="test_user", email="comses.test@mailinator.com", **kwargs):
     factory = UserFactory(username=username, email=email, **kwargs)
     return factory.create(), factory
 
@@ -127,9 +123,7 @@ class UserFactory:
     def get_default_data(self, **kwargs):
         defaults = self.defaults.copy()
         # always generate a unique username for the next user
-        username = defaults["username"] = defaults.get(
-            "username", f"submitter{self.next_user_id}"
-        )
+        username = defaults["username"] = defaults.get("username", f"submitter{self.next_user_id}")
         defaults.setdefault("email", f"{username}@example.com")
         defaults.setdefault("username", username)
         self.next_user_id += 1

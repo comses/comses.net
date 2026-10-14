@@ -26,17 +26,11 @@ class SignupForm(forms.Form):
 
     username = forms.CharField(max_length=200, strip=True, required=True)
     email = forms.EmailField(max_length=200, required=True)
-    first_name = forms.CharField(
-        max_length=200, strip=True, required=False, label="Given name"
-    )
-    last_name = forms.CharField(
-        max_length=200, strip=True, required=False, label="Family name"
-    )
+    first_name = forms.CharField(max_length=200, strip=True, required=False, label="Given name")
+    last_name = forms.CharField(max_length=200, strip=True, required=False, label="Family name")
     full_member = forms.BooleanField(
         required=False,
-        help_text=_(
-            "By checking this box, I agree to the rights and responsibilities of CoMSES Net full membership"
-        ),
+        help_text=_("By checking this box, I agree to the rights and responsibilities of CoMSES Net full membership"),
     )
     captcha = hCaptchaField()
 

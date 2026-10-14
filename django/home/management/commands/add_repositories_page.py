@@ -56,7 +56,5 @@ class Command(BaseCommand):
                 ("Trusted Repositories", "/resources/trusted-digital-repositories/"),
             )
         )
-        revision = repositories_page.save_revision(
-            user=User.objects.get(pk=3), submitted_for_moderation=False
-        )
+        revision = repositories_page.save_revision(user=User.objects.get(pk=3), submitted_for_moderation=False)
         revision.publish()

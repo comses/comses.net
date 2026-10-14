@@ -22,28 +22,18 @@ class ProcessTagCleanupsTestCase(TestCase):
         )
 
     def test_process_tagcleanups_permission(self):
-        self.client.login(
-            username=self.user.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.user.username, password=self.user_factory.password)
 
         # Users without process_tagcleanup permission should not be able to use the route
         response = self.client.post(TagCleanup.process_url())
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            TagCleanup.objects.filter(transaction_id__isnull=True).count(), 2
-        )
+        self.assertEqual(TagCleanup.objects.filter(transaction_id__isnull=True).count(), 2)
 
         # Superusers can call the process route to process tag cleanups
-        self.client.login(
-            username=self.superuser.username, password=self.user_factory.password
-        )
-        response = self.client.post(
-            TagCleanup.process_url(), data={"action": "process"}
-        )
+        self.client.login(username=self.superuser.username, password=self.user_factory.password)
+        response = self.client.post(TagCleanup.process_url(), data={"action": "process"})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(
-            TagCleanup.objects.filter(transaction_id__isnull=True).count(), 0
-        )
+        self.assertEqual(TagCleanup.objects.filter(transaction_id__isnull=True).count(), 0)
 
     def test_no_delete_permission_on_inactive_tagcleanups(self):
         tag_cleanup = TagCleanup.objects.get(new_name="bar")
@@ -57,19 +47,14 @@ class ProcessTagCleanupsTestCase(TestCase):
 
 
 class SpamAdminViewTestCase(TestCase):
-
     def setUp(self):
         self.user_factory = UserFactory()
         self.superuser = self.user_factory.create(username="admin", is_superuser=True)
         self.submitter = self.user_factory.create(username="submitter")
-        self.client.login(
-            username=self.superuser.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.superuser.username, password=self.user_factory.password)
         self.event_factory = EventFactory(submitter=self.submitter)
         self.job_factory = JobFactory(submitter=self.submitter)
-        self.event = self.event_factory.create(
-            title="pool cleaning in Salzburg", submitter=self.submitter
-        )
+        self.event = self.event_factory.create(title="pool cleaning in Salzburg", submitter=self.submitter)
         SpamModeration.objects.create(
             content_object=self.event,
             object_id=self.event.id,
@@ -93,9 +78,7 @@ class SpamAdminViewTestCase(TestCase):
         url = reverse("curator:reject_spam", args=[self.event.spam_moderation.id])
         response = self.client.get(url)
         self.event.refresh_from_db()
-        self.assertEqual(
-            self.event.spam_moderation.status, SpamModeration.Status.NOT_SPAM
-        )
+        self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.NOT_SPAM)
         self.assertFalse(self.event.is_marked_spam)
 
     def test_admin_confirm_spam_deactivate_user(self):
@@ -112,9 +95,7 @@ class MarkUserAsSpamTestCase(TestCase):
         self.user_factory = UserFactory()
         self.superuser = self.user_factory.create(username="admin", is_superuser=True)
         self.target_user = self.user_factory.create(username="spammer")
-        self.client.login(
-            username=self.superuser.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.superuser.username, password=self.user_factory.password)
 
     def tearDown(self):
         self.client.logout()
@@ -126,9 +107,7 @@ class MarkUserAsSpamTestCase(TestCase):
         self.target_user.refresh_from_db()
         self.assertFalse(self.target_user.is_active)
         content_type = ContentType.objects.get_for_model(get_user_model())
-        spam_moderation = SpamModeration.objects.get(
-            content_type=content_type, object_id=self.target_user.id
-        )
+        spam_moderation = SpamModeration.objects.get(content_type=content_type, object_id=self.target_user.id)
         self.assertEqual(spam_moderation.status, SpamModeration.Status.SPAM)
         self.assertEqual(spam_moderation.reviewer, self.superuser)
         self.assertEqual(spam_moderation.detection_method, "manual")
@@ -136,9 +115,7 @@ class MarkUserAsSpamTestCase(TestCase):
     def test_mark_user_as_spam_requires_permission(self):
         self.client.logout()
         non_admin = self.user_factory.create(username="nonadmin")
-        self.client.login(
-            username=non_admin.username, password=self.user_factory.password
-        )
+        self.client.login(username=non_admin.username, password=self.user_factory.password)
         url = reverse("curator:mark_user_spam", args=[self.target_user.id])
         response = self.client.post(url)
         self.assertEqual(response.status_code, 403)
@@ -162,7 +139,5 @@ class MarkUserAsSpamTestCase(TestCase):
         self.client.post(url)
         self.client.post(url)
         content_type = ContentType.objects.get_for_model(get_user_model())
-        count = SpamModeration.objects.filter(
-            content_type=content_type, object_id=self.target_user.id
-        ).count()
+        count = SpamModeration.objects.filter(content_type=content_type, object_id=self.target_user.id).count()
         self.assertEqual(count, 1)

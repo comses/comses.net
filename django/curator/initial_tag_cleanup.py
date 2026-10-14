@@ -23,9 +23,7 @@ def load_initial_data():
         ("from", "other"),
     ]
     for bad_translation in bad_translations:
-        TagCleanup.objects.get(
-            new_name=bad_translation[0], old_name=bad_translation[1]
-        ).delete()
+        TagCleanup.objects.get(new_name=bad_translation[0], old_name=bad_translation[1]).delete()
     TagCleanup.objects.process()
 
     TagCleanup.objects.bulk_create(TagCleanup.find_groups_by_platform_and_language())
@@ -49,9 +47,7 @@ def load_initial_data():
         "^ubuntu",
     ]
     for regex in regexes:
-        TagCleanup.objects.bulk_create(
-            TagCuratorProxy.objects.filter(name__iregex=regex).to_tag_cleanups()
-        )
+        TagCleanup.objects.bulk_create(TagCuratorProxy.objects.filter(name__iregex=regex).to_tag_cleanups())
 
     # Couldn't figure out what this abm platform is
     TagCleanup.objects.create(new_name="LPL", old_name="LPL 5.55")

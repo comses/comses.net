@@ -3,9 +3,7 @@ from .defaults import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(
-    Environment.DEVELOPMENT
-)
+DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(Environment.DEVELOPMENT)
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 

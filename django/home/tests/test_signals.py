@@ -12,9 +12,7 @@ from core.tests.base import create_test_user
 )
 class DiscourseSignalTestCase(TestCase):
     @patch("home.signals.sync_discourse_user")
-    def test_member_profile_save_without_update_fields_syncs_discourse_user(
-        self, sync_user
-    ):
+    def test_member_profile_save_without_update_fields_syncs_discourse_user(self, sync_user):
         sync_user.return_value = Mock(
             json=Mock(return_value={"success": True}),
             raise_for_status=Mock(),
@@ -94,9 +92,7 @@ class DiscourseSignalTestCase(TestCase):
         sync_user.assert_called_once_with(user)
 
     @patch("home.signals.sync_discourse_user")
-    def test_user_non_payload_field_change_does_not_sync_discourse_user(
-        self, sync_user
-    ):
+    def test_user_non_payload_field_change_does_not_sync_discourse_user(self, sync_user):
         user, _ = create_test_user(username="non payload user field")
         sync_user.reset_mock()
 

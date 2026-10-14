@@ -65,9 +65,7 @@ class LinkFields(models.Model):
     """
 
     link_external = models.URLField("External link", blank=True)
-    link_page = models.ForeignKey(
-        Page, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
-    )
+    link_page = models.ForeignKey(Page, null=True, blank=True, related_name="+", on_delete=models.SET_NULL)
     link_codebase = models.ForeignKey(
         "library.Codebase",
         null=True,
@@ -146,9 +144,7 @@ class LandingPage(Page):
     mission_statement = models.CharField(max_length=512)
     library_title = models.CharField(max_length=255, default="The CoMSES Model Library")
     library_blurb = MarkdownField(max_length=1024, blank=True)
-    community_title = models.CharField(
-        max_length=255, default="A community of researchers"
-    )
+    community_title = models.CharField(max_length=255, default="A community of researchers")
     community_blurb = MarkdownField(max_length=1024, blank=True)
     resources_title = models.CharField(max_length=255, default="Resources for modeling")
     resources_blurb = MarkdownField(max_length=1024, blank=True)
@@ -216,9 +212,7 @@ class CategoryIndexItem(Orderable, models.Model):
         on_delete=models.SET_NULL,
         related_name="+",
     )
-    url = models.CharField(
-        "Relative path, absolute path, or URL", max_length=200, blank=True
-    )
+    url = models.CharField("Relative path, absolute path, or URL", max_length=200, blank=True)
     title = models.CharField(max_length=255)
     caption = models.CharField(max_length=600)
 
@@ -241,9 +235,7 @@ class SubNavigationLink(Orderable, models.Model):
 
 class Breadcrumb(Orderable, models.Model):
     page = ParentalKey(Page, related_name="breadcrumbs")
-    url = models.CharField(
-        "Relative / absolute path or full URL", max_length=255, blank=True
-    )
+    url = models.CharField("Relative / absolute path or full URL", max_length=255, blank=True)
     title = models.CharField(max_length=255)
 
     def __str__(self):
@@ -255,9 +247,7 @@ class NavigationMixin(object):
         self._add_tuples(breadcrumb_tuples, Breadcrumb)
 
     def get_breadcrumbs(self):
-        return [
-            {"url": item.url, "text": item.title} for item in self.breadcrumbs.all()
-        ]
+        return [{"url": item.url, "text": item.title} for item in self.breadcrumbs.all()]
 
     def _add_tuples(self, tuples, cls):
         related_name = cls._meta.get_field("page").related_query_name()
@@ -294,16 +284,10 @@ class NavigationMixin(object):
 
 class CategoryIndexPage(NavigationMixin, Page):
     template = models.CharField(max_length=256, default="home/category_index.jinja")
-    heading = models.CharField(
-        max_length=256, help_text=_("Short name to be placed in introduction header.")
-    )
-    summary = models.CharField(
-        max_length=5000, help_text=_("Summary blurb for this category index page.")
-    )
+    heading = models.CharField(max_length=256, help_text=_("Short name to be placed in introduction header."))
+    summary = models.CharField(max_length=5000, help_text=_("Summary blurb for this category index page."))
 
-    def add_callout(
-        self, image_path, title, caption, sort_order=None, user=None, url=""
-    ):
+    def add_callout(self, image_path, title, caption, sort_order=None, user=None, url=""):
         if user is None:
             user = User.get_anonymous()
         _image = get_canonical_image(title=title, path=image_path, user=user)
@@ -333,12 +317,8 @@ class EducationPage(NavigationMixin, Page):
     """Education page that indexes external or internal links to tutorial pages"""
 
     template = models.CharField(max_length=256, default="home/education.jinja")
-    heading = models.CharField(
-        max_length=256, help_text=_("Short name to be placed in introduction header.")
-    )
-    summary = models.CharField(
-        max_length=5000, help_text=_("Markdown-enabled summary blurb for this page.")
-    )
+    heading = models.CharField(max_length=256, help_text=_("Short name to be placed in introduction header."))
+    summary = models.CharField(max_length=5000, help_text=_("Markdown-enabled summary blurb for this page."))
 
     def add_card(
         self,
@@ -355,11 +335,7 @@ class EducationPage(NavigationMixin, Page):
             return
         if user is None:
             user = User.get_anonymous()
-        _image = (
-            get_canonical_image(title=title, path=image_path, user=user)
-            if image_path
-            else None
-        )
+        _image = get_canonical_image(title=title, path=image_path, user=user) if image_path else None
         card = TutorialCard(
             title=title,
             sort_order=sort_order,
@@ -417,9 +393,7 @@ class TutorialCard(Orderable, ClusterableModel):
                 cls.PARTNER: _(
                     """Educational resources produced by our partners and collaborators, [Community Surface Dynamics Modeling System (CSDMS)](https://csdms.colorado.edu/wiki/Main_Page) and [CUAHSI](https://www.cuahsi.org/)."""
                 ),
-                cls.COMMUNITY: _(
-                    """Educational content from the broader open science community."""
-                ),
+                cls.COMMUNITY: _("""Educational content from the broader open science community."""),
             }
 
     category = models.CharField(
@@ -462,27 +436,19 @@ class TutorialDetailPage(NavigationMixin, Page):
     heading = models.CharField(
         max_length=128,
         blank=True,
-        help_text=_(
-            "Large heading text placed on the blue background introduction header"
-        ),
+        help_text=_("Large heading text placed on the blue background introduction header"),
     )
     template = models.CharField(max_length=128, default="home/tutorial.jinja")
     post_date = models.DateField("Post date", default=timezone.now)
     description = MarkdownField(
         max_length=1024,
         blank=True,
-        help_text=_(
-            "Markdown-enabled summary text placed below the heading and title."
-        ),
+        help_text=_("Markdown-enabled summary text placed below the heading and title."),
     )
-    body = TutorialMarkdownField(
-        blank=True, help_text=_("Markdown-enabled main content pane for this page.")
-    )
+    body = TutorialMarkdownField(blank=True, help_text=_("Markdown-enabled main content pane for this page."))
     jumbotron = models.BooleanField(
         default=True,
-        help_text=_(
-            "Mark as true if this page should display its title and description in a jumbotron"
-        ),
+        help_text=_("Mark as true if this page should display its title and description in a jumbotron"),
     )
 
     content_panels = Page.content_panels + [
@@ -530,9 +496,7 @@ class MarkdownPage(NavigationMixin, Page):
     heading = models.CharField(
         max_length=128,
         blank=True,
-        help_text=_(
-            "Large heading text placed on the blue background introduction header"
-        ),
+        help_text=_("Large heading text placed on the blue background introduction header"),
     )
     template = models.CharField(
         max_length=128,
@@ -547,18 +511,12 @@ class MarkdownPage(NavigationMixin, Page):
     description = MarkdownField(
         max_length=1024,
         blank=True,
-        help_text=_(
-            "Markdown-enabled summary text placed below the heading and title."
-        ),
+        help_text=_("Markdown-enabled summary text placed below the heading and title."),
     )
-    body = MarkdownField(
-        blank=True, help_text=_("Markdown-enabled main content pane for this page.")
-    )
+    body = MarkdownField(blank=True, help_text=_("Markdown-enabled main content pane for this page."))
     jumbotron = models.BooleanField(
         default=True,
-        help_text=_(
-            "Mark as true if this page should display its title and description in a jumbotron"
-        ),
+        help_text=_("Mark as true if this page should display its title and description in a jumbotron"),
     )
 
     content_panels = Page.content_panels + [
@@ -652,9 +610,7 @@ class JournalTag(TaggedItemBase):
 class Journal(index.Indexed, ClusterableModel):
     name = models.CharField(max_length=255)
     url = models.URLField()
-    issn = models.CharField(
-        max_length=16, blank=True, help_text=_("Linking ISSN-L for this Journal")
-    )
+    issn = models.CharField(max_length=16, blank=True, help_text=_("Linking ISSN-L for this Journal"))
     description = MarkdownField()
     tags = TaggableManager(through=JournalTag, blank=True)
 
@@ -719,13 +675,9 @@ class ConferenceTheme(models.Model):
         SESSION = "Session", _("Session")
 
     title = models.CharField(max_length=512)
-    category = models.CharField(
-        choices=Categories.choices, default=Categories.PANEL, max_length=16
-    )
+    category = models.CharField(choices=Categories.choices, default=Categories.PANEL, max_length=16)
     description = MarkdownField()
-    external_url = models.URLField(
-        help_text=_("URL to this conference theme's (panel / session) Discourse topic")
-    )
+    external_url = models.URLField(help_text=_("URL to this conference theme's (panel / session) Discourse topic"))
     page = ParentalKey("home.ConferencePage", related_name="themes")
 
     def add_presentations(self, presentations):
@@ -743,13 +695,9 @@ class ConferenceTheme(models.Model):
             )
             contributors = presentation.get("contributors")
             if contributors:
-                conference_presentation.contributors.set(
-                    Contributor.objects.filter(user__pk__in=contributors)
-                )
+                conference_presentation.contributors.set(Contributor.objects.filter(user__pk__in=contributors))
             else:
-                conference_presentation.contributors.add(
-                    Contributor.objects.get(user__pk=user_id)
-                )
+                conference_presentation.contributors.add(Contributor.objects.get(user__pk=user_id))
             conference_presentation.save()
 
     def __str__(self):
@@ -765,17 +713,11 @@ class ConferenceTheme(models.Model):
 
 
 class ConferencePresentation(models.Model):
-    theme = models.ForeignKey(
-        ConferenceTheme, related_name="presentations", on_delete=models.CASCADE
-    )
+    theme = models.ForeignKey(ConferenceTheme, related_name="presentations", on_delete=models.CASCADE)
     title = models.CharField(max_length=512, help_text=_("Title of this presentation"))
-    external_url = models.URLField(
-        help_text=_("URL to this presentation's Discourse topic")
-    )
+    external_url = models.URLField(help_text=_("URL to this presentation's Discourse topic"))
     submitter = models.ForeignKey(MemberProfile, on_delete=models.PROTECT)
-    contributors = models.ManyToManyField(
-        Contributor, related_name="conference_presentation_contributors"
-    )
+    contributors = models.ManyToManyField(Contributor, related_name="conference_presentation_contributors")
 
     def markdown_contributors(self):
         """returns markdown formatted authors"""
@@ -792,16 +734,10 @@ class ConferencePage(Page):
     content = MarkdownField(help_text=_("Conference main body content markdown text"))
     start_date = models.DateField()
     end_date = models.DateField()
-    external_url = models.URLField(
-        help_text=_(
-            "URL to the top-level Discourse category topic for this conference."
-        )
-    )
+    external_url = models.URLField(help_text=_("URL to the top-level Discourse category topic for this conference."))
     submission_deadline = models.DateField(null=True, blank=True)
     submission_information = MarkdownField(
-        help_text=_(
-            "Markdown formatted info on how to submit a presentation to the conference"
-        )
+        help_text=_("Markdown formatted info on how to submit a presentation to the conference")
     )
 
     @property
@@ -847,21 +783,15 @@ class ConferenceIndexPage(Page, NavigationMixin):
 class ConferenceSubmission(models.Model):
     submitter = models.ForeignKey(MemberProfile, on_delete=models.DO_NOTHING)
     presenters = models.ManyToManyField(Contributor)
-    conference = models.ForeignKey(
-        ConferencePage, related_name="submissions", on_delete=models.PROTECT
-    )
+    conference = models.ForeignKey(ConferencePage, related_name="submissions", on_delete=models.PROTECT)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
 
     title = models.CharField(max_length=150, help_text=_("Presentation title"))
-    abstract = MarkdownField(
-        max_length=3000, help_text=_("Presentation abstract"), blank=False
-    )
+    abstract = MarkdownField(max_length=3000, help_text=_("Presentation abstract"), blank=False)
     video_url = models.URLField(help_text=_("URL to your video presentation"))
     model_url = models.URLField(
-        help_text=_(
-            "Persistent URL to a model associated with your presentation (if applicable)"
-        ),
+        help_text=_("Persistent URL to a model associated with your presentation (if applicable)"),
         blank=True,
     )
 
@@ -906,16 +836,12 @@ class FaqEntry(index.Indexed, models.Model):
         GENERAL = "general", _("General CoMSES Net Questions")
         MODEL_LIBRARY = "model-library", _("Computational Model Library Questions")
 
-    category = models.CharField(
-        max_length=32, choices=Categories.choices, default=Categories.GENERAL
-    )
+    category = models.CharField(max_length=32, choices=Categories.choices, default=Categories.GENERAL)
     question = models.CharField(max_length=128, help_text=_("Short question"))
     answer = models.TextField(help_text=_("Markdown formatted answer"))
     date_created = models.DateTimeField(auto_now=True)
     last_modified = models.DateTimeField(auto_now_add=True)
-    submitter = models.ForeignKey(
-        User, blank=True, null=True, on_delete=models.SET_NULL
-    )
+    submitter = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
 
     search_fields = [
         index.SearchField("category"),
@@ -972,17 +898,13 @@ class FaqPage(Page, NavigationMixin):
 
 class PeopleEntryPlacementQuerySet(models.QuerySet):
     def board(self, **kwargs):
-        return self.filter(
-            category=PeopleEntryPlacement.Categories.EXECUTIVE_BOARD, **kwargs
-        )
+        return self.filter(category=PeopleEntryPlacement.Categories.EXECUTIVE_BOARD, **kwargs)
 
     def digest(self, **kwargs):
         return self.filter(category=PeopleEntryPlacement.Categories.DIGEST, **kwargs)
 
     def digest_member_profiles(self, **kwargs):
-        return MemberProfile.objects.filter(
-            pk__in=self.digest(**kwargs).values_list("member_profile", flat=True)
-        )
+        return MemberProfile.objects.filter(pk__in=self.digest(**kwargs).values_list("member_profile", flat=True))
 
     def update_sort_order_alpha(self):
         for idx, pep in enumerate(self.order_by("member_profile__user__last_name")):
@@ -1000,18 +922,12 @@ class PeopleEntryPlacement(Orderable, models.Model):
         EXECUTIVE_BOARD_ALUMNI = 5
 
     page = ParentalKey("home.PeoplePage", related_name="people_entry_placements")
-    member_profile = models.ForeignKey(
-        "core.MemberProfile", related_name="+", on_delete=models.CASCADE
-    )
-    category = models.PositiveIntegerField(
-        choices=Categories.choices, default=Categories.EXECUTIVE_BOARD
-    )
+    member_profile = models.ForeignKey("core.MemberProfile", related_name="+", on_delete=models.CASCADE)
+    category = models.PositiveIntegerField(choices=Categories.choices, default=Categories.EXECUTIVE_BOARD)
     term = models.CharField(
         blank=True,
         max_length=64,
-        help_text=_(
-            "The term for a given board member (e.g., 2016-2018 or 2008-2010, 2014-2016)"
-        ),
+        help_text=_("The term for a given board member (e.g., 2016-2018 or 2008-2010, 2014-2016)"),
     )
 
     objects = PeopleEntryPlacementQuerySet.as_manager()
@@ -1039,9 +955,7 @@ class PeopleEntryPlacement(Orderable, models.Model):
 class PeoplePage(Page, NavigationMixin):
     template = "home/about/people.jinja"
     heading = models.CharField(max_length=64)
-    description = MarkdownField(
-        help_text=_("Text blurb on the people leading comses.net")
-    )
+    description = MarkdownField(help_text=_("Text blurb on the people leading comses.net"))
 
     def sort_board(self):
         PeopleEntryPlacement.objects.board().update_sort_order_alpha()
@@ -1051,9 +965,7 @@ class PeoplePage(Page, NavigationMixin):
             # manually iterate and get MemberProfile to enforce original ordering
             profile = MemberProfile.objects.get(user__username=username)
             self.people_entry_placements.add(
-                PeopleEntryPlacement(
-                    sort_order=offset + idx, member_profile=profile, category=category
-                )
+                PeopleEntryPlacement(sort_order=offset + idx, member_profile=profile, category=category)
             )
 
     def get_context(self, request, *args, **kwargs):

@@ -82,9 +82,7 @@ def is_valid_youtube_url(value):
             video_id = path_parts[1]
 
     return bool(
-        video_id
-        and len(video_id) == YOUTUBE_VIDEO_ID_LENGTH
-        and all(c.isalnum() or c in "_-" for c in video_id)
+        video_id and len(video_id) == YOUTUBE_VIDEO_ID_LENGTH and all(c.isalnum() or c in "_-" for c in video_id)
     )
 
 
@@ -133,9 +131,7 @@ class ContributorSerializer(serializers.ModelSerializer):
     # Need an ID for Vue-Multiselect
     id = serializers.IntegerField(read_only=True)
     user = RelatedUserSerializer(required=False, allow_null=True)
-    json_affiliations = models.JSONField(
-        default=list, help_text=_("JSON-LD list of affiliated institutions")
-    )
+    json_affiliations = models.JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
 
     profile_url = serializers.SerializerMethodField()
 
@@ -153,10 +149,7 @@ class ContributorSerializer(serializers.ModelSerializer):
                 "type",
                 "json_affiliations",
             ]:
-                if (
-                    key in validated_data
-                    and getattr(instance, key) != validated_data[key]
-                ):
+                if key in validated_data and getattr(instance, key) != validated_data[key]:
                     logger.debug(
                         "[key %s] has different incoming value %s != %s - Contributors can only be updated when exclusive to one codebase",
                         key,
@@ -186,10 +179,7 @@ class ContributorSerializer(serializers.ModelSerializer):
             if not user:
                 user = contributor.user if contributor else None
         else:
-            contrib_filter = {
-                k: validated_data.get(k, "")
-                for k in ["given_name", "family_name", "email"]
-            }
+            contrib_filter = {k: validated_data.get(k, "") for k in ["given_name", "family_name", "email"]}
             contributor = Contributor.objects.filter(**contrib_filter).first()
             user = None
 
@@ -197,9 +187,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
     def save(self, **kwargs):
         if self.instance is None:
-            validated_data = dict(
-                list(self.validated_data.items()) + list(kwargs.items())
-            )
+            validated_data = dict(list(self.validated_data.items()) + list(kwargs.items()))
             user, self.instance = self.get_existing_contributor(validated_data)
             if user:
                 kwargs["user_id"] = user.id
@@ -212,9 +200,7 @@ class ContributorSerializer(serializers.ModelSerializer):
         if user:
             return user.member_profile.get_absolute_url()
         else:
-            return "{0}?{1}".format(
-                reverse("core:profile-list"), urlencode({"query": instance.name})
-            )
+            return "{0}?{1}".format(reverse("core:profile-list"), urlencode({"query": instance.name}))
 
     def update(self, instance, validated_data):
         if self._trying_to_modify_attributes(instance, validated_data):
@@ -304,15 +290,11 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
             raise ValidationError({"non_field_errors": error_messages})
 
     def create(self, validated_data):
-        ReleaseContributor.objects.filter(
-            release_id=self.context["release_id"]
-        ).delete()
+        ReleaseContributor.objects.filter(release_id=self.context["release_id"]).delete()
         release_contributors = []
         for i, attr in enumerate(validated_data):
             attr["index"] = i
-            release_contributors.append(
-                ReleaseContributorSerializer.create_unsaved(self.context, attr)
-            )
+            release_contributors.append(ReleaseContributorSerializer.create_unsaved(self.context, attr))
 
         ReleaseContributor.objects.bulk_create(release_contributors)
         return release_contributors
@@ -355,9 +337,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
     @staticmethod
     def create_unsaved(context, validated_data):
         raw_contributor = validated_data.pop("contributor")
-        contributor_serializer = ContributorSerializer(
-            data=raw_contributor, context=context
-        )
+        contributor_serializer = ContributorSerializer(data=raw_contributor, context=context)
         contributor_serializer.is_valid(raise_exception=True)
         contributor = contributor_serializer.save()
 
@@ -399,12 +379,8 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
         source="index_ordered_release_contributors",
     )
     submitter = RelatedUserSerializer(read_only=True, label="Submitter")
-    first_published_at = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
-    last_published_on = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
+    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
 
     class Meta:
         model = CodebaseRelease
@@ -420,28 +396,16 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
         )
 
 
-class CodebaseSerializer(
-    serializers.ModelSerializer, SpamCatcherSerializerMixin, FeaturedImageMixin
-):
+class CodebaseSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin, FeaturedImageMixin):
     absolute_url = serializers.URLField(source="get_absolute_url", read_only=True)
     all_contributors = ContributorSerializer(many=True, read_only=True)
-    date_created = serializers.DateTimeField(
-        read_only=True, default=serializers.CreateOnlyDefault(timezone.now)
-    )
+    date_created = serializers.DateTimeField(read_only=True, default=serializers.CreateOnlyDefault(timezone.now))
     download_count = serializers.IntegerField(read_only=True)
-    first_published_at = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
-    last_published_on = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
-    latest_version_number = serializers.ReadOnlyField(
-        source="latest_version.version_number"
-    )
+    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    latest_version_number = serializers.ReadOnlyField(source="latest_version.version_number")
     releases = serializers.SerializerMethodField()
-    submitter = RelatedUserSerializer(
-        read_only=True, default=serializers.CurrentUserDefault()
-    )
+    submitter = RelatedUserSerializer(read_only=True, default=serializers.CurrentUserDefault())
     summarized_description = serializers.CharField(read_only=True)
     identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
@@ -456,15 +420,9 @@ class CodebaseSerializer(
     def get_releases(self, obj):
         request = self.context.get("request")
         user = request.user if request else User.get_anonymous()
-        queryset = (
-            CodebaseRelease.objects.filter(codebase_id=obj.id)
-            .accessible(user)
-            .order_by("-version_number")
-        )
+        queryset = CodebaseRelease.objects.filter(codebase_id=obj.id).accessible(user).order_by("-version_number")
         # queryset = obj.releases.order_by('-version_number')
-        return RelatedCodebaseReleaseSerializer(
-            queryset, read_only=True, many=True, context=self.context
-        ).data
+        return RelatedCodebaseReleaseSerializer(queryset, read_only=True, many=True, context=self.context).data
 
     def create(self, validated_data):
         serialized_tags = TagSerializer(many=True, data=validated_data.pop("tags"))
@@ -519,12 +477,8 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     all_contributors = ContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
     version_number = serializers.ReadOnlyField(source="latest_version.version_number")
-    first_published_at = serializers.DateTimeField(
-        read_only=True, format=DATE_PUBLISHED_FORMAT
-    )
-    last_published_on = serializers.DateTimeField(
-        read_only=True, format=DATE_PUBLISHED_FORMAT
-    )
+    first_published_at = serializers.DateTimeField(read_only=True, format=DATE_PUBLISHED_FORMAT)
+    last_published_on = serializers.DateTimeField(read_only=True, format=DATE_PUBLISHED_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
     live = serializers.ReadOnlyField()
     description = MarkdownField()
@@ -649,10 +603,7 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
         member_profile.industry = industry
         if affiliation:
             # check if affiliation with this name already exists in member_profile
-            if not any(
-                mem_aff["name"] == affiliation["name"]
-                for mem_aff in member_profile.affiliations
-            ):
+            if not any(mem_aff["name"] == affiliation["name"] for mem_aff in member_profile.affiliations):
                 member_profile.affiliations.append(affiliation)
         # run validation on updated member_profile
         try:
@@ -688,12 +639,8 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         read_only=True, source="index_ordered_release_contributors", many=True
     )
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
-    first_published_at = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
-    last_published_on = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
+    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
     can_edit_originals = serializers.ReadOnlyField()
@@ -712,9 +659,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         request_peer_review_url = instance.get_request_peer_review_url()
         review = instance.get_review()
         review_url = review.get_absolute_url() if review else None
-        notify_reviewers_of_changes_url = (
-            instance.get_notify_reviewers_of_changes_url() if review else None
-        )
+        notify_reviewers_of_changes_url = instance.get_notify_reviewers_of_changes_url() if review else None
         return {
             "request_peer_review": request_peer_review_url,
             "review": review_url,
@@ -787,9 +732,7 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         return serialized.data
 
     def update(self, instance, validated_data):
-        platform_tags = TagSerializer(
-            many=True, data=validated_data.pop("platform_tags")
-        )
+        platform_tags = TagSerializer(many=True, data=validated_data.pop("platform_tags"))
 
         set_tags(instance, platform_tags, "platform_tags")
 
@@ -804,10 +747,8 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
                 language_data = release_language_data.get("programming_language")
                 if not language_data or "name" not in language_data:
                     raise ValidationError("Malformed programming language data")
-                programming_language, _created = (
-                    ProgrammingLanguage.objects.get_or_create_by_name(
-                        language_data["name"]
-                    )
+                programming_language, _created = ProgrammingLanguage.objects.get_or_create_by_name(
+                    language_data["name"]
                 )
                 ReleaseLanguage.objects.create(
                     programming_language=programming_language,
@@ -877,15 +818,11 @@ class PeerReviewerSerializer(serializers.ModelSerializer):
         source="member_profile",
     )
     member_profile = RelatedMemberProfileSerializer(read_only=True)
-    date_created = serializers.DateTimeField(
-        format=DATE_PUBLISHED_FORMAT, read_only=True
-    )
+    date_created = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
 
     def create(self, validated_data):
         member_profile = validated_data.pop("member_profile")
-        instance, created = PeerReviewer.objects.get_or_create(
-            member_profile=member_profile
-        )
+        instance, created = PeerReviewer.objects.get_or_create(member_profile=member_profile)
         # assuming we want to override the existing instance with the new data
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

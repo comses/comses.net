@@ -26,9 +26,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         ArchivedQueryHits.archive_from_daily_hits()
 
-        logger.info(
-            "Purging query daily hits older than %d days", options["expiry_days"]
-        )
+        logger.info("Purging query daily hits older than %d days", options["expiry_days"])
         QueryDailyHits.garbage_collect(days=options["expiry_days"])
 
         if options["purge_queries"]:

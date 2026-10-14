@@ -100,9 +100,7 @@ class CodebaseTag(TaggedItemBase):
 
 
 class ProgrammingLanguageTag(TaggedItemBase):
-    content_object = ParentalKey(
-        "library.CodebaseRelease", related_name="tagged_release_languages"
-    )
+    content_object = ParentalKey("library.CodebaseRelease", related_name="tagged_release_languages")
 
 
 class ProgrammingLanguageQuerySet(models.QuerySet):
@@ -181,9 +179,7 @@ class ReleaseLanguage(models.Model):
 
 
 class CodebaseReleasePlatformTag(TaggedItemBase):
-    content_object = ParentalKey(
-        "library.CodebaseRelease", related_name="tagged_release_platforms"
-    )
+    content_object = ParentalKey("library.CodebaseRelease", related_name="tagged_release_platforms")
 
 
 class LicenseQuerySet(models.QuerySet):
@@ -191,11 +187,7 @@ class LicenseQuerySet(models.QuerySet):
         return self.no_cc(**kwargs)
 
     def no_cc(self, **kwargs):
-        return (
-            self.exclude(name="None")
-            .exclude(name__istartswith="CC", **kwargs)
-            .order_by("name")
-        )
+        return self.exclude(name="None").exclude(name__istartswith="CC", **kwargs).order_by("name")
 
     def creative_commons(self, **kwargs):
         return self.filter(name__istartswith="CC", **kwargs)
@@ -205,9 +197,7 @@ class LicenseQuerySet(models.QuerySet):
 class License(models.Model):
     objects = LicenseQuerySet.as_manager()
 
-    name = models.CharField(
-        max_length=200, help_text=_("SPDX license code from https://spdx.org/licenses/")
-    )
+    name = models.CharField(max_length=200, help_text=_("SPDX license code from https://spdx.org/licenses/"))
     url = models.URLField(blank=True)
     text = models.TextField(blank=True, help_text=_("Full license text"))
 
@@ -225,15 +215,11 @@ class License(models.Model):
 
 
 class Contributor(index.Indexed, ClusterableModel):
-    given_name = models.CharField(
-        max_length=100, blank=True, help_text=_("Also doubles as organizational name")
-    )
+    given_name = models.CharField(max_length=100, blank=True, help_text=_("Also doubles as organizational name"))
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
 
-    json_affiliations = models.JSONField(
-        default=list, help_text=_("JSON-LD list of affiliated institutions")
-    )
+    json_affiliations = models.JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
 
     type = models.CharField(
         max_length=16,
@@ -242,9 +228,7 @@ class Contributor(index.Indexed, ClusterableModel):
         help_text=_("organizations only use given_name"),
     )
     email = models.EmailField(blank=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
 
     search_fields = [
         index.SearchField("given_name"),
@@ -273,18 +257,12 @@ class Contributor(index.Indexed, ClusterableModel):
     @property
     def affiliation_ror_ids(self):
         return [
-            {"name": affiliation.get("name"), "ror_id": affiliation.get("ror_id")}
-            for affiliation in self.affiliations
+            {"name": affiliation.get("name"), "ror_id": affiliation.get("ror_id")} for affiliation in self.affiliations
         ]
 
     @cached_property
     def json_affiliations_string(self):
-        return ", ".join(
-            [
-                self.to_affiliation_string(affiliation)
-                for affiliation in self.json_affiliations
-            ]
-        )
+        return ", ".join([self.to_affiliation_string(affiliation) for affiliation in self.json_affiliations])
 
     @classmethod
     def to_affiliation_string(cls, afl):
@@ -349,26 +327,20 @@ class Contributor(index.Indexed, ClusterableModel):
     def member_profile_url(self, include_base_url=False):
         if self.user:
             profile_url = self.user.member_profile.get_absolute_url()
-            return (
-                f"{settings.BASE_URL}{profile_url}" if include_base_url else profile_url
-            )
+            return f"{settings.BASE_URL}{profile_url}" if include_base_url else profile_url
         return None
 
     def get_profile_url(self):
         profile_url = self.member_profile_url()
         if not profile_url:
-            return "{0}?{1}".format(
-                reverse("core:profile-list"), urlencode({"query": self.name})
-            )
+            return "{0}?{1}".format(reverse("core:profile-list"), urlencode({"query": self.name}))
         return profile_url
 
     def get_markdown_link(self):
         return f"[{self.get_full_name()}]({self.member_profile_url()})"
 
     def get_aggregated_search_fields(self):
-        return " ".join(
-            {self.given_name, self.family_name, self.email} | self._get_user_fields()
-        )
+        return " ".join({self.given_name, self.family_name, self.email} | self._get_user_fields())
 
     def _get_user_fields(self):
         if self.user:
@@ -405,10 +377,7 @@ class Contributor(index.Indexed, ClusterableModel):
         if family_name_first:
             return f"{self.family_name}, {self.given_name} {self.middle_name}".strip()
         else:
-            return (
-                f"{self.given_name} {self.middle_name}".strip()
-                + f" {self.family_name}".rstrip()
-            )
+            return f"{self.given_name} {self.middle_name}".strip() + f" {self.family_name}".rstrip()
 
     def __str__(self):
         if self.email:
@@ -447,16 +416,10 @@ class CodebaseReleaseDownload(models.Model):
         OTHER = "other", _("Other")
 
     date_created = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
-    referrer = models.URLField(
-        max_length=500, blank=True, help_text=_("captures the HTTP_REFERER if set")
-    )
-    release = models.ForeignKey(
-        "library.CodebaseRelease", related_name="downloads", on_delete=models.CASCADE
-    )
+    referrer = models.URLField(max_length=500, blank=True, help_text=_("captures the HTTP_REFERER if set"))
+    release = models.ForeignKey("library.CodebaseRelease", related_name="downloads", on_delete=models.CASCADE)
     reason = models.CharField(max_length=500, choices=Reason.choices)
     affiliation = models.JSONField(default=None, null=True)
     industry = models.CharField(max_length=255, choices=MemberProfile.Industry.choices)
@@ -480,15 +443,11 @@ class CodebaseQuerySet(models.QuerySet):
 
     def update_liveness(self):
         for codebase in self.all():
-            codebase.live = codebase.releases.filter(
-                status=CodebaseRelease.Status.PUBLISHED
-            ).exists()
+            codebase.live = codebase.releases.filter(status=CodebaseRelease.Status.PUBLISHED).exists()
             codebase.save()
 
     def with_viewable_releases(self, user):
-        queryset = get_viewable_objects_for_user(
-            user=user, queryset=CodebaseRelease.objects.all()
-        )
+        queryset = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
         return self.prefetch_related(Prefetch("releases", queryset=queryset))
 
     def with_tags(self):
@@ -505,9 +464,7 @@ class CodebaseQuerySet(models.QuerySet):
         return self.exclude(is_marked_spam=True)
 
     def accessible(self, user):
-        return get_viewable_objects_for_user(
-            user=user, queryset=self.with_viewable_releases(user=user)
-        )
+        return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
 
     def get_contributor_q(self, user):
         if Contributor.objects.filter(user=user).count() > 1:
@@ -522,19 +479,13 @@ class CodebaseQuerySet(models.QuerySet):
 
     def with_contributors(self, release_contributor_qs=None, user=None, **kwargs):
         if user is not None:
-            release_qs = get_viewable_objects_for_user(
-                user=user, queryset=CodebaseRelease.objects.all()
-            )
-            codebase_qs = get_viewable_objects_for_user(
-                user=user, queryset=self.filter(**kwargs)
-            )
+            release_qs = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
+            codebase_qs = get_viewable_objects_for_user(user=user, queryset=self.filter(**kwargs))
         else:
             release_qs = CodebaseRelease.objects.public().only("id", "codebase_id")
             codebase_qs = self.filter(live=True, **kwargs)
         return codebase_qs.prefetch_related(
-            Prefetch(
-                "releases", release_qs.with_release_contributors(release_contributor_qs)
-            )
+            Prefetch("releases", release_qs.with_release_contributors(release_contributor_qs))
         )
 
     def with_reviews(self, reviews):
@@ -573,11 +524,7 @@ class CodebaseQuerySet(models.QuerySet):
         return self.public().filter(peer_reviewed=True)
 
     def latest_for_feed(self, number=10, include_all=False):
-        qs = (
-            self.public()
-            .select_related("submitter__member_profile")
-            .order_by("-date_created")
-        )
+        qs = self.public().select_related("submitter__member_profile").order_by("-date_created")
         if include_all:
             return qs
         return qs[:number]
@@ -610,9 +557,7 @@ class CodebaseQuerySet(models.QuerySet):
             end_date = timezone.now().date()
         else:
             # otherwise, apply the filter based on the desired end date over the new and updated codebases
-            new_codebases = new_codebases.filter(
-                Q(date_created__lte=end_date) & Q(first_published_at__lte=end_date)
-            )
+            new_codebases = new_codebases.filter(Q(date_created__lte=end_date) & Q(first_published_at__lte=end_date))
             updated_codebases = updated_codebases.filter(last_modified__lte=end_date)
         # remove the new codebases from the updated codebases
         updated_codebases = updated_codebases.difference(new_codebases)
@@ -647,9 +592,7 @@ class GithubIntegrationAppInstallation(models.Model):
 class CodebaseGitRemote(models.Model):
     """Represents a remote repository associated with a `Codebase` that can be pushed to or imported from"""
 
-    is_user_repo = models.BooleanField(
-        default=False, help_text="Whether this is a user-owned remote"
-    )
+    is_user_repo = models.BooleanField(default=False, help_text="Whether this is a user-owned remote")
     is_preexisting = models.BooleanField(
         default=False,
         help_text="Whether this remote was pre-existing or based on a codebase git mirror",
@@ -701,9 +644,7 @@ class BaseReleaseSyncState(models.Model):
 
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.PENDING
-    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     last_log = models.TextField(blank=True)
     full_log = models.JSONField(default=list)
     error_message = models.TextField(blank=True)
@@ -800,9 +741,7 @@ class GitRefSyncState(BaseReleaseSyncState):
 
     @classmethod
     def releases_without_git_ref_sync_state(cls, codebase):
-        built_ids = cls.objects.filter(release__codebase=codebase).values_list(
-            "release__id", flat=True
-        )
+        built_ids = cls.objects.filter(release__codebase=codebase).values_list("release__id", flat=True)
         return codebase.releases.internal().public().exclude(id__in=built_ids)
 
     @classmethod
@@ -844,9 +783,7 @@ class GitRefSyncState(BaseReleaseSyncState):
         main_state = getattr(codebase, "main_git_ref_sync_state", None)
         if main_state and main_state.remote:
             return main_state.remote
-        release_state = cls.objects.filter(
-            release__codebase=codebase, remote__isnull=False
-        ).first()
+        release_state = cls.objects.filter(release__codebase=codebase, remote__isnull=False).first()
         if release_state:
             return release_state.remote
         return None
@@ -1039,9 +976,7 @@ class ImportedReleaseSyncState(BaseReleaseSyncState):
         """
         if self.status not in [self.Status.SUCCESS, self.Status.ERROR]:
             return False
-        release = CodebaseRelease.objects.filter(
-            imported_release_sync_state=self
-        ).first()
+        release = CodebaseRelease.objects.filter(imported_release_sync_state=self).first()
         if not release:
             return True
         return not release.live
@@ -1088,15 +1023,11 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     repository_url = models.URLField(
         blank=True,
-        help_text=_(
-            "URL to code repository, e.g., https://github.com/comses/wolf-sheep"
-        ),
+        help_text=_("URL to code repository, e.g., https://github.com/comses/wolf-sheep"),
     )
     video_source_url = models.URLField(
         blank=True,
-        help_text=_(
-            "Optional video URL showcasing this codebase (currently supports YouTube)."
-        ),
+        help_text=_("Optional video URL showcasing this codebase (currently supports YouTube)."),
     )
     replication_text = models.TextField(
         blank=True,
@@ -1111,9 +1042,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     )
     associated_publication_text = models.TextField(
         blank=True,
-        help_text=_(
-            "DOI, Permanent URL, or citation to a publication associated with this codebase."
-        ),
+        help_text=_("DOI, Permanent URL, or citation to a publication associated with this codebase."),
     )
     tags = ClusterTaggableManager(through=CodebaseTag)
     # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
@@ -1126,15 +1055,11 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         help_text=_("JSON metadata dict of media associated with this Codebase"),
     )
 
-    submitter = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name="codebases", on_delete=models.PROTECT
-    )
+    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="codebases", on_delete=models.PROTECT)
 
     codemeta_snapshot = models.JSONField(
         default=dict,
-        help_text=_(
-            "JSON metadata conforming to the codemeta schema. Cached as of the last update"
-        ),
+        help_text=_("JSON metadata conforming to the codemeta schema. Cached as of the last update"),
     )
     main_git_ref_sync_state = models.OneToOneField(
         "library.GitRefSyncState",
@@ -1187,9 +1112,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     # FIXME: this is currently unused, should replace the above datacite property
     @property
     def datacite_temp(self):
-        return DataCiteConverter.convert_codebase(
-            self, codemeta=self.codemeta_snapshot or None
-        )
+        return DataCiteConverter.convert_codebase(self, codemeta=self.codemeta_snapshot or None)
 
     @property
     def code_repository(self):
@@ -1245,9 +1168,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
                 return featured_image.get_rendition("max-900x600").url
             return None
         except Exception as e:
-            logger.error(
-                f"Failed to get featured image for codebase {self.pk}. Error{e}"
-            )
+            logger.error(f"Failed to get featured image for codebase {self.pk}. Error{e}")
             return None
 
     def subpath(self, *args):
@@ -1322,9 +1243,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     @property
     def publication_year(self):
-        return (
-            self.last_published_on.year if self.last_published_on else date.today().year
-        )
+        return self.last_published_on.year if self.last_published_on else date.today().year
 
     @property
     def all_contributors(self):
@@ -1367,34 +1286,20 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         )
 
     def get_all_contributors_search_fields(self):
-        return " ".join(
-            [c.get_aggregated_search_fields() for c in self.all_contributors]
-        )
+        return " ".join([c.get_aggregated_search_fields() for c in self.all_contributors])
 
     @property
     def all_release_frameworks(self):
-        return list(
-            self.releases.exclude(platform_tags__isnull=True).values_list(
-                "platform_tags__name", flat=True
-            )
-        )
+        return list(self.releases.exclude(platform_tags__isnull=True).values_list("platform_tags__name", flat=True))
 
     @property
     def all_release_programming_languages(self):
-        return list(
-            self.releases.values_list(
-                "programming_languages__name", flat=True
-            ).distinct()
-        )
+        return list(self.releases.values_list("programming_languages__name", flat=True).distinct())
 
     def download_count(self):
-        return CodebaseReleaseDownload.objects.filter(
-            release__codebase__id=self.id
-        ).count()
+        return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.id).count()
 
-    def ordered_releases_list(
-        self, has_change_perm=False, asc=True, internal_only=False, **kwargs
-    ):
+    def ordered_releases_list(self, has_change_perm=False, asc=True, internal_only=False, **kwargs):
         """
         list public releases (or all release if has_change_perm is True) in ascending (default) or descending order.
         If internal_only is True, only return internal (directly uploaded) releases
@@ -1439,34 +1344,23 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return f"{settings.BASE_URL}{self.get_absolute_url()}"
 
     def get_absolute_url(self):
-        return reverse(
-            "library:codebase-detail", kwargs={"identifier": self.identifier}
-        )
+        return reverse("library:codebase-detail", kwargs={"identifier": self.identifier})
 
     def get_draft_url(self):
-        return reverse(
-            "library:codebaserelease-draft", kwargs={"identifier": self.identifier}
-        )
+        return reverse("library:codebaserelease-draft", kwargs={"identifier": self.identifier})
 
     def media_url(self, name):
         return f"{self.get_absolute_url()}/media/{name}"
 
     def latest_accessible_release(self, user):
-        return (
-            CodebaseRelease.objects.accessible(user)
-            .filter(codebase=self)
-            .order_by("-last_modified")
-            .first()
-        )
+        return CodebaseRelease.objects.accessible(user).filter(codebase=self).order_by("-last_modified").first()
 
     def get_all_next_possible_version_numbers(self, minor_only=False):
         if self.releases.exists():
             possible_version_numbers = set()
             all_releases = self.releases.all()
             for release in all_releases:
-                possible_version_numbers.update(
-                    release.possible_next_versions(minor_only)
-                )
+                possible_version_numbers.update(release.possible_next_versions(minor_only))
             for release in all_releases:
                 possible_version_numbers.discard(release.version_info)
             return possible_version_numbers
@@ -1476,9 +1370,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             }
 
     def next_version_number(self, minor_only=True):
-        possible_version_numbers = self.get_all_next_possible_version_numbers(
-            minor_only=minor_only
-        )
+        possible_version_numbers = self.get_all_next_possible_version_numbers(minor_only=minor_only)
         next_version_number = max(possible_version_numbers)
         return str(next_version_number)
 
@@ -1532,9 +1424,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     @transaction.atomic
     def get_or_create_draft(self, initial_version: str | None = None, submitter=None):
-        existing_draft = self.releases.filter(
-            status=CodebaseRelease.Status.DRAFT
-        ).first()
+        existing_draft = self.releases.filter(status=CodebaseRelease.Status.DRAFT).first()
         if existing_draft:
             return existing_draft
 
@@ -1563,9 +1453,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         """
 
         source_id = source_release.id
-        review_draft = self.create_release(
-            status=CodebaseRelease.Status.UNDER_REVIEW, source_release=source_release
-        )
+        review_draft = self.create_release(status=CodebaseRelease.Status.UNDER_REVIEW, source_release=source_release)
         fs_api = review_draft.get_fs_api()
         fs_api.copy_originals(CodebaseRelease.objects.get(id=source_id))
         return review_draft
@@ -1593,9 +1481,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return source_release
 
     @transaction.atomic
-    def create_release(
-        self, initialize=True, status=None, source_release=None, **overrides
-    ):
+    def create_release(self, initialize=True, status=None, source_release=None, **overrides):
         if status is None:
             status = CodebaseRelease.Status.DRAFT
         if source_release is None:
@@ -1668,9 +1554,7 @@ class CodebaseImageQuerySet(ImageQuerySet):
 
 
 class CodebaseImage(AbstractImage):
-    codebase = models.ForeignKey(
-        Codebase, related_name="featured_images", on_delete=models.CASCADE
-    )
+    codebase = models.ForeignKey(Codebase, related_name="featured_images", on_delete=models.CASCADE)
     file = models.ImageField(
         verbose_name=_("file"),
         upload_to=get_upload_to,
@@ -1687,9 +1571,7 @@ class CodebaseImage(AbstractImage):
         # adapted from wagtailimages/models
         folder_name = str(self.codebase.relative_media_path())
         # use string_to_ascii on filename to sidestep issues with filesystem encoding
-        ascii_filename = string_to_ascii(
-            self.file.field.storage.get_valid_name(filename)
-        )
+        ascii_filename = string_to_ascii(self.file.field.storage.get_valid_name(filename))
         # Truncate filename so it fits in the 100 character limit
         # https://code.djangoproject.com/ticket/9893
         full_path = os.path.join(folder_name, ascii_filename)
@@ -1704,9 +1586,7 @@ class CodebaseImage(AbstractImage):
 
 
 class CodebaseRendition(AbstractRendition):
-    image = models.ForeignKey(
-        CodebaseImage, related_name="renditions", on_delete=models.CASCADE
-    )
+    image = models.ForeignKey(CodebaseImage, related_name="renditions", on_delete=models.CASCADE)
 
     class Meta:
         unique_together = (("image", "filter_spec", "focal_point_key"),)
@@ -1724,15 +1604,11 @@ class CodebasePublication(models.Model):
 class CodebaseReleaseQuerySet(models.QuerySet):
     def with_release_contributors(self, release_contributor_qs=None, user=None):
         if release_contributor_qs is None:
-            release_contributor_qs = ReleaseContributor.objects.only(
-                "id", "contributor_id", "release_id"
-            )
+            release_contributor_qs = ReleaseContributor.objects.only("id", "contributor_id", "release_id")
         release_contributor_qs = release_contributor_qs.prefetch_related(
             Prefetch("contributor", Contributor.objects.prefetch_related("user"))
         )
-        return self.prefetch_related(
-            Prefetch("codebase_contributors", release_contributor_qs)
-        )
+        return self.prefetch_related(Prefetch("codebase_contributors", release_contributor_qs))
 
     def with_platforms(self):
         return self.prefetch_related("tagged_release_platforms__tag")
@@ -1741,11 +1617,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return self.prefetch_related("programming_languages")
 
     def with_codebase(self):
-        return self.prefetch_related(
-            models.Prefetch(
-                "codebase", Codebase.objects.with_tags().with_featured_images()
-            )
-        )
+        return self.prefetch_related(models.Prefetch("codebase", Codebase.objects.with_tags().with_featured_images()))
 
     def with_submitter(self):
         return self.prefetch_related("submitter")
@@ -1875,26 +1747,16 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         help_text=_("Markdown formattable text, e.g., run conditions"),
     )
     summary = models.CharField(max_length=1000, blank=True)
-    documentation = models.FileField(
-        null=True, help_text=_("Fulltext documentation file (PDF/PDFA)")
-    )
+    documentation = models.FileField(null=True, help_text=_("Fulltext documentation file (PDF/PDFA)"))
     embargo_end_date = models.DateTimeField(null=True, blank=True)
-    output_data_url = models.URLField(
-        blank=True, help_text=_("Permanent URL to output data from this model.")
-    )
-    input_data_url = models.URLField(
-        blank=True, help_text=_("Permanent URL to input data for this model.")
-    )
-    version_number = models.CharField(
-        max_length=32, help_text=_("semver string, e.g., 1.0.5, see semver.org")
-    )
+    output_data_url = models.URLField(blank=True, help_text=_("Permanent URL to output data from this model."))
+    input_data_url = models.URLField(blank=True, help_text=_("Permanent URL to input data for this model."))
+    version_number = models.CharField(max_length=32, help_text=_("semver string, e.g., 1.0.5, see semver.org"))
 
     os = models.CharField(max_length=32, choices=OS.choices, blank=True)
     dependencies = models.JSONField(
         default=list,
-        help_text=_(
-            "JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)"
-        ),
+        help_text=_("JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)"),
     )
     """
     platform and programming language tags are also dependencies that can reference additional metadata in the
@@ -1907,16 +1769,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     programming_language_tags = ClusterTaggableManager(
         through=ProgrammingLanguageTag, related_name="pl_codebase_releases"
     )
-    codebase = models.ForeignKey(
-        Codebase, related_name="releases", on_delete=models.PROTECT
-    )
-    submitter = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name="releases", on_delete=models.PROTECT
-    )
+    codebase = models.ForeignKey(Codebase, related_name="releases", on_delete=models.PROTECT)
+    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="releases", on_delete=models.PROTECT)
     contributors = models.ManyToManyField(Contributor, through="ReleaseContributor")
-    programming_languages = models.ManyToManyField(
-        ProgrammingLanguage, through="ReleaseLanguage"
-    )
+    programming_languages = models.ManyToManyField(ProgrammingLanguage, through="ReleaseLanguage")
     submitted_package = models.FileField(
         upload_to=Codebase._release_upload_path,
         max_length=1000,
@@ -1925,9 +1781,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     )
     codemeta_snapshot = models.JSONField(
         default=dict,
-        help_text=_(
-            "JSON metadata conforming to the codemeta schema. Cached as of the last update"
-        ),
+        help_text=_("JSON metadata conforming to the codemeta schema. Cached as of the last update"),
     )
     # M2M relationships for publications, disabled until citation migrates to django 2.0
     # https://github.com/comses/citation/issues/20
@@ -2068,11 +1922,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # if under review, raise validation error if review is not complete
             review = self.get_review()
             if review and not review.is_complete:
-                raise ValidationError(
-                    _(
-                        "Releases under review cannot be published until the review is complete."
-                    )
-                )
+                raise ValidationError(_("Releases under review cannot be published until the review is complete."))
 
     def validate_metadata(self):
         """
@@ -2091,18 +1941,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             errors.append(ValidationError(_("Please specify a software license.")))
         if not self.release_languages.exists():
             errors.append(
-                ValidationError(
-                    _(
-                        "Please list at least one programming language used to implement this model."
-                    )
-                )
+                ValidationError(_("Please list at least one programming language used to implement this model."))
             )
         if not self.os:
-            errors.append(
-                ValidationError(
-                    _("Please specify compatible operating systems for this model.")
-                )
-            )
+            errors.append(ValidationError(_("Please specify compatible operating systems for this model.")))
         if not self.contributors.exists():
             errors.append(ValidationError(_("Please add at least one contributor.")))
         if errors:
@@ -2212,9 +2054,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def coauthor_release_contributors(self):
-        return self.author_release_contributors.exclude(
-            contributor__user=self.submitter
-        )
+        return self.author_release_contributors.exclude(contributor__user=self.submitter)
 
     @property
     def nonauthor_release_contributors(self):
@@ -2229,9 +2069,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         authors = self.submitter.member_profile.name
         citable_contributors = self.citable_release_contributors
         if citable_contributors:
-            authors = ", ".join(
-                [rc.get_full_name() for rc in citable_contributors if rc.has_name]
-            )
+            authors = ", ".join([rc.get_full_name() for rc in citable_contributors if rc.has_name])
         else:
             logger.warning(
                 "No authors found for release when building citation text, using default submitter name: %s",
@@ -2257,18 +2095,14 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def get_previous_release(self):
         return (
-            CodebaseRelease.objects.filter(
-                codebase=self.codebase, version_number__lt=self.version_number
-            )
+            CodebaseRelease.objects.filter(codebase=self.codebase, version_number__lt=self.version_number)
             .order_by("-version_number")
             .first()
         )
 
     def get_next_release(self):
         return (
-            CodebaseRelease.objects.filter(
-                codebase=self.codebase, version_number__gt=self.version_number
-            )
+            CodebaseRelease.objects.filter(codebase=self.codebase, version_number__gt=self.version_number)
             .order_by("-version_number")
             .last()
         )
@@ -2284,17 +2118,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def contributor_names(self):
         """Returns the names for all contributors for just this CodebaseRelease"""
-        return [
-            rc.contributor.get_full_name()
-            for rc in self.release_contributors
-            if rc.contributor.has_name
-        ]
+        return [rc.contributor.get_full_name() for rc in self.release_contributors if rc.contributor.has_name]
 
     @property
     def index_ordered_release_contributors(self):
-        return self.codebase_contributors.select_related("contributor").order_by(
-            "index"
-        )
+        return self.codebase_contributors.select_related("contributor").order_by("index")
 
     @cached_property
     def bagit_info(self):
@@ -2318,21 +2146,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @cached_property
     def datacite(self):
         if not self.live:
-            logger.warning(
-                "Attempting to generate datacite for an unpublished release: %s", self
-            )
+            logger.warning("Attempting to generate datacite for an unpublished release: %s", self)
         return DataCiteSchema.from_release(self)
 
     # FIXME: this is currently unused, should replace the above datacite property
     @property
     def datacite_temp(self):
         if not self.live:
-            logger.warning(
-                "Attempting to generate datacite for an unpublished release: %s", self
-            )
-        return DataCiteConverter.convert_release(
-            self, codemeta=self.codemeta_snapshot or None
-        )
+            logger.warning("Attempting to generate datacite for an unpublished release: %s", self)
+        return DataCiteConverter.convert_release(self, codemeta=self.codemeta_snapshot or None)
 
     @property
     def codemeta(self):
@@ -2342,9 +2164,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def cff(self):
         """an object representing this release in the Citation File Format"""
-        return CitationFileFormatConverter.convert_release(
-            self, codemeta=self.codemeta_snapshot or None
-        )
+        return CitationFileFormatConverter.convert_release(self, codemeta=self.codemeta_snapshot or None)
 
     @property
     def codemeta_json_str(self):
@@ -2359,11 +2179,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @cached_property
     def license_text(self) -> str:
         """return the license text with the copyright notice filled in"""
-        return (
-            self.license.get_formatted_text(self.citation_authors)
-            if self.license
-            else ""
-        )
+        return self.license.get_formatted_text(self.citation_authors) if self.license else ""
 
     @property
     def is_draft(self):
@@ -2416,9 +2232,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """Factory method to return the appropriate filesystem API for this release."""
         if self.is_imported:
             return ImportedCodebaseReleaseFsApi.initialize(self)
-        return CodebaseReleaseFsApi.initialize(
-            self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
-        )
+        return CodebaseReleaseFsApi.initialize(self, mimetype_mismatch_message_level=mimetype_mismatch_message_level)
 
     def add_contributor(
         self,
@@ -2429,9 +2243,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     ):
         # Check if a ReleaseContributor with the same contributor already exists
         logger.debug("Adding contributor with role: %s, %s", contributor, role)
-        existing_release_contributor = self.codebase_contributors.filter(
-            contributor=contributor
-        ).first()
+        existing_release_contributor = self.codebase_contributors.filter(contributor=contributor).first()
 
         if existing_release_contributor is None:
             if index is None:
@@ -2463,16 +2275,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # if this release is peer reviewed schedule a DOI minting
             from .tasks import schedule_mint_public_doi
 
-            schedule_mint_public_doi(
-                self.id, dry_run=settings.DEPLOY_ENVIRONMENT.is_development
-            )
+            schedule_mint_public_doi(self.id, dry_run=settings.DEPLOY_ENVIRONMENT.is_development)
         if GitRefSyncState.objects.filter(release__codebase=self.codebase).exists():
             # if this codebase has a local git repo built by us, append the new release to it
             from .tasks import append_releases_to_local_git_repo
 
-            transaction.on_commit(
-                lambda: append_releases_to_local_git_repo(self.codebase.id)
-            )
+            transaction.on_commit(lambda: append_releases_to_local_git_repo(self.codebase.id))
 
     def _publish(self):
         if not self.live:
@@ -2518,23 +2326,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def set_version_number(self, version_number):
         if self.is_published:
-            raise ValidationError(
-                {
-                    "non_field_errors": [
-                        "You cannot set the version number on a published release."
-                    ]
-                }
-            )
+            raise ValidationError({"non_field_errors": ["You cannot set the version number on a published release."]})
         try:
             semver.parse(version_number)
         except ValueError:
-            raise ValidationError(
-                {
-                    "version_number": [
-                        f"{version_number} is not a valid semantic version string."
-                    ]
-                }
-            )
+            raise ValidationError({"version_number": [f"{version_number} is not a valid semantic version string."]})
         existing_version_numbers = (
             self.codebase.releases.exclude(id=self.id)
             .order_by("version_number")
@@ -2580,11 +2376,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                             self.codebase_id,
                             self.version_number,
                         )
-                        transaction.on_commit(
-                            lambda release_id=self.id: update_fs_release_metadata(
-                                release_id
-                            )
-                        )
+                        transaction.on_commit(lambda release_id=self.id: update_fs_release_metadata(release_id))
                     else:
                         self.get_fs_api().rebuild_metadata()
 
@@ -2638,12 +2430,8 @@ class ReleaseContributorQuerySet(models.QuerySet):
 
 
 class ReleaseContributor(models.Model):
-    release = models.ForeignKey(
-        CodebaseRelease, on_delete=models.CASCADE, related_name="codebase_contributors"
-    )
-    contributor = models.ForeignKey(
-        Contributor, on_delete=models.CASCADE, related_name="codebase_contributors"
-    )
+    release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE, related_name="codebase_contributors")
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name="codebase_contributors")
     include_in_citation = models.BooleanField(default=True)
     roles = ArrayField(
         models.CharField(
@@ -2656,9 +2444,7 @@ class ReleaseContributor(models.Model):
         ),
         default=list,
     )
-    index = models.PositiveSmallIntegerField(
-        help_text=_("Ordering field for codebase contributors")
-    )
+    index = models.PositiveSmallIntegerField(help_text=_("Ordering field for codebase contributors"))
 
     objects = ReleaseContributorQuerySet.as_manager()
 
@@ -2695,9 +2481,7 @@ class ReviewerRecommendation(models.TextChoices):
     )
     REVISE = (
         "revise",
-        _(
-            "This computational model must be revised to meet CoMSES Net peer review requirements."
-        ),
+        _("This computational model must be revised to meet CoMSES Net peer review requirements."),
     )
 
 
@@ -2767,9 +2551,7 @@ class PeerReviewEvent(models.TextChoices):
     )
     RELEASE_CERTIFIED = (
         "release_certified",
-        _(
-            "Editor has taken reviewer feedback into account and certified this release as peer reviewed"
-        ),
+        _("Editor has taken reviewer feedback into account and certified this release as peer reviewed"),
     )
     REVIEW_CLOSED = "review_closed", _("Peer review was closed")
     REVIEW_REOPENED = "review_reopened", _("Peer review was reopened")
@@ -2801,12 +2583,8 @@ class PeerReviewQuerySet(models.QuerySet):
 
     def requires_editor_input(self):
         return self.annotate(
-            n_accepted_invites=Count(
-                "invitation_set", filter=Q(invitation_set__accepted=True)
-            )
-        ).filter(
-            Q(n_accepted_invites=0) | Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK)
-        )
+            n_accepted_invites=Count("invitation_set", filter=Q(invitation_set__accepted=True))
+        ).filter(Q(n_accepted_invites=0) | Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK))
 
     def author_changes_requested(self):
         return self.filter(status=ReviewStatus.AWAITING_AUTHOR_CHANGES)
@@ -2830,9 +2608,7 @@ class PeerReviewQuerySet(models.QuerySet):
         return self.filter(status=ReviewStatus.COMPLETE, **kwargs)
 
     def completed_releases(self, **kwargs):
-        return CodebaseRelease.objects.filter(
-            id__in=self.completed(**kwargs).values("codebase_release")
-        )
+        return CodebaseRelease.objects.filter(id__in=self.completed(**kwargs).values("codebase_release"))
 
 
 @register_snippet
@@ -2846,12 +2622,8 @@ class PeerReview(models.Model):
         max_length=32,
     )
     closed = models.BooleanField(default=False)
-    codebase_release = models.OneToOneField(
-        CodebaseRelease, related_name="review", on_delete=models.PROTECT
-    )
-    submitter = models.ForeignKey(
-        MemberProfile, related_name="+", on_delete=models.PROTECT
-    )
+    codebase_release = models.OneToOneField(CodebaseRelease, related_name="review", on_delete=models.PROTECT)
+    submitter = models.ForeignKey(MemberProfile, related_name="+", on_delete=models.PROTECT)
     slug = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
 
     objects = PeerReviewQuerySet.as_manager()
@@ -2887,9 +2659,7 @@ class PeerReview(models.Model):
 
     def get_invite(self, member_profile):
         # return self.invitation_set.filter(candidate_reviewer=member_profile).first()
-        return self.invitation_set.filter(
-            reviewer__member_profile=member_profile
-        ).first()
+        return self.invitation_set.filter(reviewer__member_profile=member_profile).first()
 
     @transaction.atomic
     def get_absolute_url(self):
@@ -2970,9 +2740,7 @@ class PeerReview(models.Model):
         if not self.closed:
             return
         if self.get_codebase_latest_active_review(self.codebase_release.codebase):
-            raise ValidationError(
-                "Another active peer review already exists for this codebase."
-            )
+            raise ValidationError("Another active peer review already exists for this codebase.")
         self.codebase_release.validate_publishable()
 
     def validate_cancellable(self):
@@ -2985,9 +2753,7 @@ class PeerReview(models.Model):
             self.is_complete
             or self.is_awaiting_author_changes
             or self.codebase_release.is_review_complete
-            or PeerReviewerFeedback.objects.for_review(self)
-            .with_review_decisions()
-            .exists()
+            or PeerReviewerFeedback.objects.for_review(self).with_review_decisions().exists()
             or self.event_set.filter(action__in=protected_events).exists()
         ):
             raise ValidationError(
@@ -3002,9 +2768,7 @@ class PeerReview(models.Model):
             return False
 
         self.validate_cancellable()
-        deleted_count, _ = (
-            PeerReviewerFeedback.objects.for_review(self).drafts().delete()
-        )
+        deleted_count, _ = PeerReviewerFeedback.objects.for_review(self).drafts().delete()
         self.closed = True
         self.log(
             message=(
@@ -3025,9 +2789,7 @@ class PeerReview(models.Model):
             return False
 
         # Older close actions retained drafts; apply the same cancellation policy.
-        deleted_count, _ = (
-            PeerReviewerFeedback.objects.for_review(self).drafts().delete()
-        )
+        deleted_count, _ = PeerReviewerFeedback.objects.for_review(self).drafts().delete()
         if not self.codebase_release.is_published:
             self.codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
             self.codebase_release.save(update_fields=["status"])
@@ -3052,11 +2814,7 @@ class PeerReview(models.Model):
         self.validate_active()
         qs = self.invitation_set.filter(accepted=True)
         # if there are no currently accepted invitations, status should be set to awaiting editor feedback
-        self.status = (
-            ReviewStatus.AWAITING_REVIEWER_FEEDBACK
-            if qs.exists()
-            else ReviewStatus.AWAITING_EDITOR_FEEDBACK
-        )
+        self.status = ReviewStatus.AWAITING_REVIEWER_FEEDBACK if qs.exists() else ReviewStatus.AWAITING_EDITOR_FEEDBACK
         for invitation in qs:
             invitation.send_author_resubmitted_email()
         self.save()
@@ -3111,9 +2869,7 @@ class PeerReview(models.Model):
 @register_snippet
 class PeerReviewer(index.Indexed, models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
-    member_profile = models.OneToOneField(
-        MemberProfile, related_name="peer_reviewer", on_delete=models.CASCADE
-    )
+    member_profile = models.OneToOneField(MemberProfile, related_name="peer_reviewer", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     programming_languages = ArrayField(
         models.CharField(max_length=100),
@@ -3127,9 +2883,7 @@ class PeerReviewer(index.Indexed, models.Model):
         blank=True,
         help_text=_("Areas of expertise, e.g. social science, biology"),
     )
-    notes = models.TextField(
-        blank=True, help_text=_("Any additional notes about this reviewer")
-    )
+    notes = models.TextField(blank=True, help_text=_("Any additional notes about this reviewer"))
 
     search_fields = [
         index.FilterField("is_active"),
@@ -3165,9 +2919,7 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
 
     def with_reviewer_statistics(self):
         return self.prefetch_related(
-            models.Prefetch(
-                "candidate_reviewer", PeerReview.objects.find_candidate_reviewers()
-            )
+            models.Prefetch("candidate_reviewer", PeerReview.objects.find_candidate_reviewers())
         )
 
 
@@ -3175,23 +2927,15 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
 class PeerReviewInvitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_sent = models.DateTimeField(auto_now=True)
-    review = models.ForeignKey(
-        PeerReview, related_name="invitation_set", on_delete=models.CASCADE
-    )
-    editor = models.ForeignKey(
-        MemberProfile, related_name="+", on_delete=models.PROTECT
-    )
+    review = models.ForeignKey(PeerReview, related_name="invitation_set", on_delete=models.CASCADE)
+    editor = models.ForeignKey(MemberProfile, related_name="+", on_delete=models.PROTECT)
     candidate_reviewer = models.ForeignKey(
         MemberProfile,
         related_name="peer_review_invitation_set",
         on_delete=models.CASCADE,
     )
-    reviewer = models.ForeignKey(
-        PeerReviewer, related_name="invitation_set", on_delete=models.PROTECT, null=True
-    )
-    optional_message = MarkdownField(
-        help_text=_("Optional markdown text to be added to the email")
-    )
+    reviewer = models.ForeignKey(PeerReviewer, related_name="invitation_set", on_delete=models.PROTECT, null=True)
+    optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
     slug = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     accepted = models.BooleanField(
         null=True,
@@ -3218,9 +2962,7 @@ class PeerReviewInvitation(models.Model):
 
     @property
     def expiration_date(self):
-        return self.date_sent + timedelta(
-            days=settings.PEER_REVIEW_INVITATION_EXPIRATION
-        )
+        return self.date_sent + timedelta(days=settings.PEER_REVIEW_INVITATION_EXPIRATION)
 
     @property
     def is_expired(self):
@@ -3247,9 +2989,7 @@ class PeerReviewInvitation(models.Model):
         self.review._lock_for_transition()
         self.review.validate_active()
         if not self.accepted:
-            logger.error(
-                "Trying to send an author resubmitted notification to an unaccepted invitation - ignoring."
-            )
+            logger.error("Trying to send an author resubmitted notification to an unaccepted invitation - ignoring.")
             return
         send_markdown_email(
             subject=f"Peer review: updates to release {self.review.title}",
@@ -3277,11 +3017,7 @@ class PeerReviewInvitation(models.Model):
             cc=[settings.REVIEW_EDITOR_EMAIL],
         )
         self.review.log(
-            action=(
-                PeerReviewEvent.INVITATION_RESENT
-                if resend
-                else PeerReviewEvent.INVITATION_SENT
-            ),
+            action=(PeerReviewEvent.INVITATION_RESENT if resend else PeerReviewEvent.INVITATION_SENT),
             author=self.editor,
             message=f"{self.editor} sent an invitation to reviewer {self.reviewer.member_profile}",
         )
@@ -3337,9 +3073,7 @@ class PeerReviewInvitation(models.Model):
     def validate_response(self):
         self.review.validate_active()
         if self.is_expired and self.accepted is not True:
-            raise ValidationError(
-                "This invitation has expired. Ask the editor to resend it."
-            )
+            raise ValidationError("This invitation has expired. Ask the editor to resend it.")
 
     def get_absolute_url(self):
         return reverse("library:peer-review-invitation", kwargs=dict(slug=self.slug))
@@ -3357,36 +3091,22 @@ class PeerReviewerFeedbackQuerySet(models.QuerySet):
         return self.filter(reviewer_submitted=False)
 
     def with_review_decisions(self):
-        return self.filter(
-            Q(reviewer_submitted=True)
-            | ~Q(private_editor_notes="")
-            | ~Q(notes_to_author="")
-        )
+        return self.filter(Q(reviewer_submitted=True) | ~Q(private_editor_notes="") | ~Q(notes_to_author=""))
 
 
 @register_snippet
 class PeerReviewerFeedback(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    invitation = models.ForeignKey(
-        PeerReviewInvitation, related_name="feedback_set", on_delete=models.CASCADE
-    )
-    recommendation = models.CharField(
-        choices=ReviewerRecommendation.choices, max_length=16, blank=True
-    )
+    invitation = models.ForeignKey(PeerReviewInvitation, related_name="feedback_set", on_delete=models.CASCADE)
+    recommendation = models.CharField(choices=ReviewerRecommendation.choices, max_length=16, blank=True)
     private_reviewer_notes = MarkdownField(
-        help_text=_(
-            "Private reviewer notes to be sent to and viewed by the CoMSES review editors only."
-        ),
+        help_text=_("Private reviewer notes to be sent to and viewed by the CoMSES review editors only."),
         blank=True,
     )
-    private_editor_notes = MarkdownField(
-        help_text=_("Private editor notes regarding this peer review"), blank=True
-    )
+    private_editor_notes = MarkdownField(help_text=_("Private editor notes regarding this peer review"), blank=True)
     notes_to_author = MarkdownField(
-        help_text=_(
-            "Editor's notes to be sent to the model author, manually compiled from other reviewer comments."
-        ),
+        help_text=_("Editor's notes to be sent to the model author, manually compiled from other reviewer comments."),
         blank=True,
     )
     has_narrative_documentation = models.BooleanField(
@@ -3404,9 +3124,7 @@ class PeerReviewerFeedback(models.Model):
             "Is the code clean, well-written, and well-commented with consistent formatting? (A checked box indicates that the model code is clean)"
         ),
     )
-    clean_code_comments = models.TextField(
-        help_text=_("Reviewer comments on code cleanliness"), blank=True
-    )
+    clean_code_comments = models.TextField(help_text=_("Reviewer comments on code cleanliness"), blank=True)
     is_runnable = models.BooleanField(
         default=False,
         help_text=_(
@@ -3414,9 +3132,7 @@ class PeerReviewerFeedback(models.Model):
         ),
     )
     runnable_comments = models.TextField(
-        help_text=_(
-            "Reviewer comments on running the model with the provided instructions"
-        ),
+        help_text=_("Reviewer comments on running the model with the provided instructions"),
         blank=True,
     )
     reviewer_submitted = models.BooleanField(
@@ -3429,9 +3145,7 @@ class PeerReviewerFeedback(models.Model):
 
     def validate_editable(self):
         if not type(self).objects.filter(pk=self.pk).exists():
-            raise ValidationError(
-                "This feedback draft was discarded when the review was cancelled."
-            )
+            raise ValidationError("This feedback draft was discarded when the review was cancelled.")
         self.invitation.refresh_from_db()
         self.invitation.review.validate_active()
         if not self.invitation.accepted:
@@ -3503,9 +3217,7 @@ class PeerReviewerFeedback(models.Model):
         recipients = {review.submitter.email, review.codebase_release.submitter.email}
 
         if review.codebase_release.is_imported:
-            template_name = (
-                "library/review/email/model_revisions_requested_imported.jinja"
-            )
+            template_name = "library/review/email/model_revisions_requested_imported.jinja"
         else:
             template_name = "library/review/email/model_revisions_requested.jinja"
         send_markdown_email(
@@ -3575,9 +3287,7 @@ class CommonMetadata:
         else:
             # FIXME: default to today for unpublished releases
             # should not generate CodeMeta or DataCite for non-published releases but CodeMeta is generated even for unpublished
-            logger.warning(
-                "Generating CommonMetadata for an unpublished release: %s", release
-            )
+            logger.warning("Generating CommonMetadata for an unpublished release: %s", release)
             self.first_published = self.last_published = date.today()
         self.copyright_year = self.last_published.year
         if release.license:
@@ -3628,9 +3338,7 @@ class CommonMetadata:
 
     @cached_property
     def release_contributor_nonauthors(self):
-        return ReleaseContributor.objects.nonauthors().for_release(
-            self.codebase_release
-        )
+        return ReleaseContributor.objects.nonauthors().for_release(self.codebase_release)
 
     @cached_property
     def release_contributor_authors(self):
@@ -3638,7 +3346,6 @@ class CommonMetadata:
 
 
 class DataCiteSchema(ABC):
-
     SCHEMA_VERSION = "http://datacite.org/schema/kernel-4"
 
     COMSES_PUBLISHER = {
@@ -3661,9 +3368,7 @@ class DataCiteSchema(ABC):
 
     def __init__(self, metadata: dict):
         if not metadata:
-            raise ValueError(
-                "Initialize with a base dictionary with DataCite terms mapped to JSON-serializable values"
-            )
+            raise ValueError("Initialize with a base dictionary with DataCite terms mapped to JSON-serializable values")
         # always include default initial_data
         self.metadata = {**DataCiteSchema.INITIAL_DATA, **metadata}
 
@@ -3710,9 +3415,7 @@ class DataCiteSchema(ABC):
         # check for ROR affiliations or freetext: https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/#affiliation
         affiliations = contributor.affiliations
         if affiliations:
-            creator_affiliations = [
-                cls.convert_affiliation(a) for a in affiliations if a
-            ]
+            creator_affiliations = [cls.convert_affiliation(a) for a in affiliations if a]
             creator.update(affiliation=creator_affiliations)
         return creator
 
@@ -3815,7 +3518,6 @@ class DataCiteSchema(ABC):
 
 
 class ReleaseDataCiteSchema(DataCiteSchema):
-
     def __init__(self, release: CodebaseRelease):
         super().__init__(self.convert(release.common_metadata))
 
@@ -3833,9 +3535,7 @@ class ReleaseDataCiteSchema(DataCiteSchema):
         See https://codemeta.github.io/crosswalk/datacite/ for documentation on CodeMeta to DataCite crosswalk.
         """
         metadata = {
-            "creators": cls.to_citable_authors(
-                [rc.contributor for rc in common_metadata.release_contributor_authors]
-            ),
+            "creators": cls.to_citable_authors([rc.contributor for rc in common_metadata.release_contributor_authors]),
             "descriptions": common_metadata.descriptions,
             "publicationYear": str(cls.to_publication_year(common_metadata)),
             "titles": [{"title": common_metadata.name}],
@@ -3903,7 +3603,6 @@ class ReleaseDataCiteSchema(DataCiteSchema):
 
 
 class CodebaseDataCiteSchema(DataCiteSchema):
-
     def __init__(self, codebase: Codebase):
         super().__init__(self.convert(codebase))
 
@@ -3969,9 +3668,7 @@ class CodebaseDataCiteSchema(DataCiteSchema):
 @register_snippet
 class PeerReviewEventLog(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
-    review = models.ForeignKey(
-        PeerReview, related_name="event_set", on_delete=models.CASCADE
-    )
+    review = models.ForeignKey(PeerReview, related_name="event_set", on_delete=models.CASCADE)
     action = models.CharField(
         choices=PeerReviewEvent.choices,
         help_text=_("status action requested."),
@@ -3987,22 +3684,13 @@ class PeerReviewEventLog(models.Model):
 
 
 class DataCiteRegistrationLogQuerySet(models.QuerySet):
-
     def mock(self, codebase_or_release, **kwargs):
         """
         Returns a mock DataCiteRegistrationLog entry for testing
         """
         return DataCiteRegistrationLog(
-            codebase=(
-                codebase_or_release
-                if isinstance(codebase_or_release, Codebase)
-                else None
-            ),
-            release=(
-                codebase_or_release
-                if isinstance(codebase_or_release, CodebaseRelease)
-                else None
-            ),
+            codebase=(codebase_or_release if isinstance(codebase_or_release, Codebase) else None),
+            release=(codebase_or_release if isinstance(codebase_or_release, CodebaseRelease) else None),
             doi="10.1234/XYZZY.DRY.RUN",
             metadata_hash="dry-run-metadata-hash",
             http_status=200,
@@ -4049,9 +3737,7 @@ class DataCiteRegistrationLog(models.Model):
         on_delete=models.CASCADE,
         null=True,
     )
-    codebase = models.ForeignKey(
-        Codebase, related_name="datacite_logs", on_delete=models.CASCADE, null=True
-    )
+    codebase = models.ForeignKey(Codebase, related_name="datacite_logs", on_delete=models.CASCADE, null=True)
     action = models.CharField(max_length=50, choices=DataCiteAction.choices)
     timestamp = models.DateTimeField(auto_now_add=True)
     http_status = models.IntegerField(default=None, null=True)
@@ -4125,9 +3811,7 @@ class GitHubIntegrationNewRepoInfoItem(GitHubIntegrationInfoItemBase):
 
 
 class GitHubIntegrationTutorialVideoBase(index.Indexed, Orderable):
-    title = models.CharField(
-        blank=True, max_length=200, help_text=_("optional short title for the tutorial")
-    )
+    title = models.CharField(blank=True, max_length=200, help_text=_("optional short title for the tutorial"))
     youtube_id = models.CharField(
         max_length=32,
         help_text=_("YouTube video id (e.g., dQw4w9WgXcQ)"),
@@ -4174,17 +3858,13 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
     )
     is_enabled_globally = models.BooleanField(
         default=False,
-        help_text=_(
-            "Enable GitHub integration for all users. When enabled, approved_users whitelist is ignored"
-        ),
+        help_text=_("Enable GitHub integration for all users. When enabled, approved_users whitelist is ignored"),
     )
     approved_users = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         blank=True,
         related_name="github_integration_approved",
-        help_text=_(
-            "Whitelist of users who can access GitHub integration. Superusers/staff are implicitly included"
-        ),
+        help_text=_("Whitelist of users who can access GitHub integration. Superusers/staff are implicitly included"),
     )
 
     def can_use_github_integration(self, user):
@@ -4214,9 +3894,7 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
         org_name = settings.GITHUB_MODEL_LIBRARY_ORG_NAME
         warnings = []
         if not app_name:
-            warnings.append(
-                "GitHub app name is not configured. Set GITHUB_INTEGRATION_APP_NAME in the environment."
-            )
+            warnings.append("GitHub app name is not configured. Set GITHUB_INTEGRATION_APP_NAME in the environment.")
         if not org_name:
             warnings.append(
                 "GitHub organization name is not configured. Set GITHUB_MODEL_LIBRARY_ORG_NAME in the environment."
@@ -4245,9 +3923,7 @@ class GitHubIntegrationConfiguration(BaseSiteSetting, ClusterableModel):
         ),
         InlinePanel("faq_entries", label="FAQ Entries"),
         InlinePanel("existing_repo_info_items", label="Existing Repo Info Items"),
-        InlinePanel(
-            "existing_repo_tutorial_videos", label="Existing Repo Tutorial Videos"
-        ),
+        InlinePanel("existing_repo_tutorial_videos", label="Existing Repo Tutorial Videos"),
         InlinePanel("new_repo_info_items", label="New Repo Info Items"),
         InlinePanel("new_repo_tutorial_videos", label="New Repo Tutorial Videos"),
     ]

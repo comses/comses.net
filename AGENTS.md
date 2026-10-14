@@ -53,6 +53,7 @@ This platform manages scientific software artifacts and publication metadata. Th
       def pinned(self):
           return self.filter(is_pinned=True)
 
+
   class ProgrammingLanguage(models.Model):
       objects = ProgrammingLanguageQuerySet.as_manager()
   ```

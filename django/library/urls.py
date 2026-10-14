@@ -11,23 +11,19 @@ app_name = "library"
 router = SimpleRouter()
 router.register(r"codebases", views.CodebaseViewSet)
 router.register(r"codebases/(?P<identifier>[\w\-.]+)/media", views.CodebaseImageViewSet)
-router.register(
-    r"codebases/(?P<identifier>[\w\-.]+)/releases", views.CodebaseReleaseViewSet
-)
+router.register(r"codebases/(?P<identifier>[\w\-.]+)/releases", views.CodebaseReleaseViewSet)
 router.register(
     r"codebases/(?P<identifier>[\w\-.]+)/git/remotes",
     views.CodebaseGitRemoteViewSet,
     basename="codebase-git-remotes",
 )
-router.register(r"reviewers", views.PeerReviewerViewSet),
-router.register(r"programming-languages", views.ProgrammingLanguageViewSet),
+(router.register(r"reviewers", views.PeerReviewerViewSet),)
+(router.register(r"programming-languages", views.ProgrammingLanguageViewSet),)
 router.register(
     r"reviews/(?P<slug>[\da-f\-]+)/editor/invitations",
     views.PeerReviewInvitationViewSet,
 )
-router.register(
-    r"reviews/(?P<slug>[\da-f\-]+)/editor/feedback", views.PeerReviewFeedbackViewSet
-)
+router.register(r"reviews/(?P<slug>[\da-f\-]+)/editor/feedback", views.PeerReviewFeedbackViewSet)
 router.register(
     views.CodebaseReleaseFilesSipViewSet.get_url_matcher(),
     views.CodebaseReleaseFilesSipViewSet,

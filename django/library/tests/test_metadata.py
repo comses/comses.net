@@ -18,9 +18,7 @@ class CodebaseMetadataTestCase(BaseModelTestCase):
 
     def setUp(self):
         self.user_factory = UserFactory()
-        self.submitter = self.user_factory.create(
-            first_name="Rob", last_name="Submitter"
-        )
+        self.submitter = self.user_factory.create(first_name="Rob", last_name="Submitter")
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.release1 = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
@@ -121,7 +119,6 @@ class CodebaseMetadataTestCase(BaseModelTestCase):
 
 
 class ReleaseMetadataConverterTestCase(TestCase):
-
     def setUp(self):
         self.minimal_codemeta = {"name": "Test Code"}
         self.minimal_cff = {
@@ -132,9 +129,7 @@ class ReleaseMetadataConverterTestCase(TestCase):
         }
 
     def test_extract_license_from_github(self):
-        converter = ReleaseMetadataConverter(
-            github_repository={"license": {"spdx_id": "MIT"}}
-        )
+        converter = ReleaseMetadataConverter(github_repository={"license": {"spdx_id": "MIT"}})
         self.assertEqual(converter._extract_license_from_github(), "MIT")
 
     def test_extract_license_from_cff(self):
@@ -145,9 +140,7 @@ class ReleaseMetadataConverterTestCase(TestCase):
     def test_extract_release_notes_from_codemeta(self):
         codemeta = {**self.minimal_codemeta, "releaseNotes": "From CodeMeta"}
         converter = ReleaseMetadataConverter(codemeta=codemeta)
-        self.assertEqual(
-            converter._extract_release_notes_from_codemeta(), "From CodeMeta"
-        )
+        self.assertEqual(converter._extract_release_notes_from_codemeta(), "From CodeMeta")
 
     def test_extract_release_notes_from_github(self):
         converter = ReleaseMetadataConverter(github_release={"body": "From GitHub"})
@@ -167,9 +160,7 @@ class ReleaseMetadataConverterTestCase(TestCase):
         ]
         for os_value, expected in cases:
             with self.subTest(os_value=os_value):
-                converter = ReleaseMetadataConverter(
-                    codemeta={**self.minimal_codemeta, "operatingSystem": os_value}
-                )
+                converter = ReleaseMetadataConverter(codemeta={**self.minimal_codemeta, "operatingSystem": os_value})
                 self.assertEqual(converter._extract_os_from_codemeta(), expected)
 
     def test_extract_os_from_codemeta_structured_object(self):
@@ -197,9 +188,7 @@ class ReleaseMetadataConverterTestCase(TestCase):
             "programmingLanguage": ["Python", "R"],
         }
         converter = ReleaseMetadataConverter(codemeta=codemeta)
-        self.assertEqual(
-            converter._extract_programming_languages_from_codemeta(), ["Python", "R"]
-        )
+        self.assertEqual(converter._extract_programming_languages_from_codemeta(), ["Python", "R"])
 
     def test_extract_programming_languages_from_codemeta_edge_cases(self):
         codemeta = {
@@ -214,9 +203,7 @@ class ReleaseMetadataConverterTestCase(TestCase):
 
     def test_extract_programming_languages_from_github(self):
         converter = ReleaseMetadataConverter(github_repository={"language": "Java"})
-        self.assertEqual(
-            converter._extract_programming_languages_from_github(), ["Java"]
-        )
+        self.assertEqual(converter._extract_programming_languages_from_github(), ["Java"])
 
     def test_extract_platforms_from_codemeta(self):
         codemeta = {
@@ -224,9 +211,7 @@ class ReleaseMetadataConverterTestCase(TestCase):
             "runtimePlatform": ["Mesa", "NetLogo"],
         }
         converter = ReleaseMetadataConverter(codemeta=codemeta)
-        self.assertEqual(
-            converter._extract_platforms_from_codemeta(), ["Mesa", "NetLogo"]
-        )
+        self.assertEqual(converter._extract_platforms_from_codemeta(), ["Mesa", "NetLogo"])
 
     def test_extract_platforms_from_codemeta_edge_cases(self):
         codemeta = {
@@ -253,9 +238,7 @@ class ReleaseMetadataConverterTestCase(TestCase):
         )
         self.assertEqual(converter._extract_release_notes_from_codemeta(), "First note")
 
-        converter = ReleaseMetadataConverter(
-            codemeta={**self.minimal_codemeta, "releaseNotes": [{"text": "bad"}]}
-        )
+        converter = ReleaseMetadataConverter(codemeta={**self.minimal_codemeta, "releaseNotes": [{"text": "bad"}]})
         self.assertIsNone(converter._extract_release_notes_from_codemeta())
 
     def test_convert_priority(self):
@@ -278,9 +261,7 @@ class ReleaseMetadataConverterTestCase(TestCase):
         result = converter.convert()
         self.assertEqual(result["license_spdx_id"], "MIT")  # Github > CFF
         self.assertEqual(result["release_notes"], "From CodeMeta")  # CodeMeta > Github
-        self.assertEqual(
-            result["programming_languages"], ["Java"]
-        )  # Only pull languages from GitHub
+        self.assertEqual(result["programming_languages"], ["Java"])  # Only pull languages from GitHub
 
     def test_convert_fallback(self):
         """Test the convert() method's fallback logic."""

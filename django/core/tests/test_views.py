@@ -73,9 +73,7 @@ class JobPageRenderTestCase(TestCase):
         self.job = self.job_factory.create()
 
     def test_detail(self):
-        response = self.client.get(
-            reverse("core:job-detail", kwargs={"pk": self.job.id})
-        )
+        response = self.client.get(reverse("core:job-detail", kwargs={"pk": self.job.id}))
         self.assertEqual(response.status_code, 200)
 
     def test_list(self):
@@ -93,9 +91,7 @@ class EventPageRenderTestCase(TestCase):
         self.event = self.event_factory.create()
 
     def test_detail(self):
-        response = self.client.get(
-            reverse("core:event-detail", kwargs={"pk": self.event.id})
-        )
+        response = self.client.get(reverse("core:event-detail", kwargs={"pk": self.event.id}))
         self.assertEqual(response.status_code, 200)
 
     def test_list(self):
@@ -114,15 +110,11 @@ class ProfilePageRenderTestCase(TestCase):
     def setUp(self):
         self.submitter, self.user_factory = create_test_user()
         self.profile = self.submitter.member_profile
-        self.profile.personal_url = "https://geocities.com/{}".format(
-            self.submitter.username
-        )
+        self.profile.personal_url = "https://geocities.com/{}".format(self.submitter.username)
         self.profile.save()
 
     def test_detail(self):
-        response = self.client.get(
-            reverse("core:profile-detail", kwargs={"pk": self.submitter.id})
-        )
+        response = self.client.get(reverse("core:profile-detail", kwargs={"pk": self.submitter.id}))
         self.assertEqual(response.status_code, 200)
 
     def test_list(self):
@@ -132,15 +124,12 @@ class ProfilePageRenderTestCase(TestCase):
 
 
 class SpamDetectionTestCase(BaseViewSetTestCase):
-
     def setUp(self):
         self.submitter, self.user_factory = create_test_user(username="submitter")
         self.moderator = self.user_factory.create(username="moderator")
         ComsesGroups.MODERATOR.add(self.moderator)
         self.superuser = self.user_factory.create(username="admin", is_superuser=True)
-        self.client.login(
-            username=self.submitter.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
         self.event_factory = EventFactory(submitter=self.submitter)
         self.job_factory = JobFactory(submitter=self.submitter)
 
@@ -163,9 +152,7 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
 
     def test_job_creation_with_timer_spam(self):
         # FIXME: should incorporate how long a typical request takes to resolve
-        data = self.job_factory.get_request_data(
-            elapsed_time=settings.SPAM_LIKELY_SECONDS_THRESHOLD - 2
-        )
+        data = self.job_factory.get_request_data(elapsed_time=settings.SPAM_LIKELY_SECONDS_THRESHOLD - 2)
         response = self.client.post(
             reverse("core:job-list"),
             data,
@@ -201,9 +188,7 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertEqual(response.status_code, 403)
         self.assertFalse(event.is_marked_spam)
         # check moderator
-        self.client.login(
-            username=self.moderator.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.moderator.username, password=self.user_factory.password)
         self.assertTrue(ComsesGroups.is_moderator(self.moderator))
         response = self.client.post(
             reverse("core:event-mark-spam", kwargs={"pk": event.id}),
@@ -219,9 +204,7 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertFalse(event.is_marked_spam)
         self.assertIsNotNone(event.spam_moderation)
         # check superuser
-        self.client.login(
-            username=self.superuser.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.superuser.username, password=self.user_factory.password)
         response = self.client.post(
             reverse("core:event-mark-spam", kwargs={"pk": event.id}),
             data,

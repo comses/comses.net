@@ -66,9 +66,7 @@ def render_sanitized_markdown(md_text: str, extensions=None):
 
 
 def sanitize_html(html: str):
-    return bleach.clean(
-        bleach.linkify(html), tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES
-    )
+    return bleach.clean(bleach.linkify(html), tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
 
 
 class MarkdownField(MarkupField):

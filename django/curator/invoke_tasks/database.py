@@ -12,17 +12,13 @@ from invoke import task
 from .utils import dj
 
 _DEFAULT_DATABASE = "default"
-_CREATE_DATABASE_RE = re.compile(
-    r'^CREATE DATABASE (?:(?:"((?:[^"]|"")*)")|([^\s;]+))(?:\s|;)', re.MULTILINE
-)
+_CREATE_DATABASE_RE = re.compile(r'^CREATE DATABASE (?:(?:"((?:[^"]|"")*)")|([^\s;]+))(?:\s|;)', re.MULTILINE)
 
 logger = logging.getLogger(__name__)
 
 
 def _get_migration_timestamp():
-    return os.environ.get(
-        "DB_MIGRATION_TIMESTAMP", datetime.now().strftime("%Y%m%d_%H%M%S")
-    )
+    return os.environ.get("DB_MIGRATION_TIMESTAMP", datetime.now().strftime("%Y%m%d_%H%M%S"))
 
 
 def _get_migration_artifact_dir(timestamp=None):
@@ -55,9 +51,7 @@ def shell(ctx, db_key=_DEFAULT_DATABASE):
     """Open a pgcli shell to the database"""
     create_pgpass_file(ctx)
     ctx.run(
-        "pgcli -h {db_host} -d {db_name} -U {db_user}".format(
-            **get_database_settings(db_key)
-        ),
+        "pgcli -h {db_host} -d {db_name} -U {db_user}".format(**get_database_settings(db_key)),
         pty=True,
     )
 
@@ -76,9 +70,7 @@ def create_pgpass_file(ctx, db_key=_DEFAULT_DATABASE, force=False):
 @task(aliases=["b"])
 def backup(ctx, database=_DEFAULT_DATABASE):
     db_config = get_database_settings(database)
-    dumpfile = (
-        pathlib.Path(settings.BACKUP_ROOT) / "latest" / f"{db_config['db_name']}.dump"
-    )
+    dumpfile = pathlib.Path(settings.BACKUP_ROOT) / "latest" / f"{db_config['db_name']}.dump"
     _dump_database(ctx, database, dumpfile)
 
 
@@ -89,8 +81,7 @@ def _dump_database(ctx, database, dumpfile):
     temporary_dumpfile = dumpfile.with_suffix(f"{dumpfile.suffix}.tmp")
     dumpfile.parent.mkdir(parents=True, exist_ok=True)
     ctx.run(
-        "pg_dump --format=custom --file={temporary_dumpfile} "
-        "--host={db_host} --username={db_user} {db_name}".format(
+        "pg_dump --format=custom --file={temporary_dumpfile} --host={db_host} --username={db_user} {db_name}".format(
             temporary_dumpfile=temporary_dumpfile, **db_config
         ),
         echo=True,
@@ -149,8 +140,7 @@ def drop(ctx, database=_DEFAULT_DATABASE, create=False):
     db_config = get_database_settings(database)
     create_pgpass_file(ctx)
     set_connection_limit = (
-        'psql -h {db_host} -c "ALTER DATABASE {db_name} connection limit 1;" '
-        "-w {db_name} {db_user}"
+        'psql -h {db_host} -c "ALTER DATABASE {db_name} connection limit 1;" -w {db_name} {db_user}'
     ).format(**db_config)
     terminate_backend = (
         "psql -h {db_host} -c "
@@ -158,9 +148,7 @@ def drop(ctx, database=_DEFAULT_DATABASE, create=False):
         "FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname='{db_name}'\" "
         "-w {db_name} {db_user}"
     ).format(**db_config)
-    dropdb = "dropdb -w --if-exists -e {db_name} -U {db_user} -h {db_host}".format(
-        **db_config
-    )
+    dropdb = "dropdb -w --if-exists -e {db_name} -U {db_user} -h {db_host}".format(**db_config)
     check_if_database_exists = "psql template1 -tA -U {db_user} -h {db_host} -c \"select 1 from pg_database where datname='{db_name}'\"".format(
         **db_config
     )
@@ -192,21 +180,13 @@ def restore_from_dump(
             dumpfile_path = migration_dumpfile
             logger.debug("Using migration artifact dump %s", dumpfile_path)
         else:
-            current_dumpfile = (
-                pathlib.Path(settings.BACKUP_ROOT)
-                / "latest"
-                / f"{db_config['db_name']}.dump"
-            )
+            current_dumpfile = pathlib.Path(settings.BACKUP_ROOT) / "latest" / f"{db_config['db_name']}.dump"
             if current_dumpfile.is_file():
                 dumpfile_path = current_dumpfile
             else:
-                legacy_dumpfiles = sorted(
-                    current_dumpfile.parent.glob(f"{db_config['db_name']}*.sql*")
-                )
+                legacy_dumpfiles = sorted(current_dumpfile.parent.glob(f"{db_config['db_name']}*.sql*"))
                 if not legacy_dumpfiles:
-                    raise FileNotFoundError(
-                        f"No database dump found in {current_dumpfile.parent}"
-                    )
+                    raise FileNotFoundError(f"No database dump found in {current_dumpfile.parent}")
                 dumpfile_path = legacy_dumpfiles[-1]
             logger.debug("Using latest database dump %s", dumpfile_path)
     else:
@@ -217,32 +197,21 @@ def restore_from_dump(
 
     dumpfile = str(dumpfile_path)
     if not force:
-        confirm(
-            "This will destroy the database and reload it from {0}. Continue? (y/n) ".format(
-                dumpfile
-            )
-        )
+        confirm("This will destroy the database and reload it from {0}. Continue? (y/n) ".format(dumpfile))
     if dumpfile.endswith(".dump"):
         drop(ctx, database=target_database, create=True)
         ctx.run(
             "pg_restore --exit-on-error --no-owner --host={db_host} "
-            "--username={db_user} --dbname={db_name} {dumpfile}".format(
-                dumpfile=dumpfile, **db_config
-            ),
+            "--username={db_user} --dbname={db_name} {dumpfile}".format(dumpfile=dumpfile, **db_config),
             echo=True,
         )
     else:
         created_database = _database_created_by_plain_dump(dumpfile_path)
         if created_database is not None and created_database != db_config["db_name"]:
-            raise ValueError(
-                f"legacy dump creates database {created_database!r}, not target "
-                f"{db_config['db_name']!r}"
-            )
+            raise ValueError(f"legacy dump creates database {created_database!r}, not target {db_config['db_name']!r}")
         dump_creates_database = created_database is not None
         drop(ctx, database=target_database, create=not dump_creates_database)
-        restore_database = (
-            "template1" if dump_creates_database else db_config["db_name"]
-        )
+        restore_database = "template1" if dump_creates_database else db_config["db_name"]
         cat_cmd = "zcat" if dumpfile.endswith(".sql.gz") else "cat"
         ctx.run(
             "{cat_cmd} {dumpfile} | psql -w --set=ON_ERROR_STOP=1 -q "
@@ -257,7 +226,5 @@ def restore_from_dump(
         )
     if migrate:
         if clean_migration:
-            raise ValueError(
-                "clean_migration is no longer supported; migration files must be committed"
-            )
+            raise ValueError("clean_migration is no longer supported; migration files must be committed")
         run_migrations(ctx, initial=True)

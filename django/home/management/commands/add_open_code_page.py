@@ -54,7 +54,5 @@ class Command(BaseCommand):
                 ("Open Code Badge", f"/resources/{slug}"),
             )
         )
-        revision = open_code_page.save_revision(
-            user=User.objects.get(pk=3), submitted_for_moderation=False
-        )
+        revision = open_code_page.save_revision(user=User.objects.get(pk=3), submitted_for_moderation=False)
         revision.publish()

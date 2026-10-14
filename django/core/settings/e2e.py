@@ -1,9 +1,7 @@
 from .test import *
 
 DEBUG = True
-DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(
-    Environment.DEVELOPMENT
-)
+DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(Environment.DEVELOPMENT)
 TESTING = True
 
 DJANGO_VITE_DEV_MODE = False

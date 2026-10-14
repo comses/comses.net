@@ -64,9 +64,7 @@ if sys.maxunicode >= 0x10000:
             (0x10FFFE, 0x10FFFF),
         ]
     )
-invalid_character_ranges = [
-    rf"{chr(low)}-{chr(high)}" for (low, high) in invalid_unichrs
-]
+invalid_character_ranges = [rf"{chr(low)}-{chr(high)}" for (low, high) in invalid_unichrs]
 XML_INVALID_CHARACTER_REGEX = re.compile(f"[{''.join(invalid_character_ranges)}]")
 
 SINGLE_FEED_MAX_ITEMS = settings.DEFAULT_FEED_MAX_ITEMS
@@ -103,18 +101,14 @@ class ComsesFeed(Feed):
 class AllFeed(ComsesFeed):
     title = "All CoMSES jobs, events, and codebase releases"
     link = "https://www.comses.net"
-    description = (
-        "All jobs, events, and codebase releases for initial consumption by Discourse"
-    )
+    description = "All jobs, events, and codebase releases for initial consumption by Discourse"
     feed_url = "/feeds/all/"
 
     def items(self):
         releases = CodebaseRelease.objects.latest_for_feed(include_all=True)
         jobs = Job.objects.live()
         events = Event.objects.live()
-        return sorted(
-            chain(releases, jobs, events), key=attrgetter("date_created"), reverse=True
-        )
+        return sorted(chain(releases, jobs, events), key=attrgetter("date_created"), reverse=True)
 
     def item_author_name(self, item):
         return item.submitter.username
@@ -130,9 +124,7 @@ class RssSiteNewsFeed(ComsesFeed):
         releases = CodebaseRelease.objects.latest_for_feed()
         jobs = Job.objects.latest_for_feed()
         events = Event.objects.latest_for_feed()
-        return sorted(
-            chain(releases, jobs, events), key=attrgetter("date_created"), reverse=True
-        )
+        return sorted(chain(releases, jobs, events), key=attrgetter("date_created"), reverse=True)
 
 
 class AtomSiteNewsFeed(RssSiteNewsFeed):
@@ -238,11 +230,7 @@ class AbstractFeed(ABC):
 
     def get_feed_items(self):
         # check for cached data first (skip in dev mode)
-        source_feed_data = (
-            None
-            if (settings.DEBUG and not self.rate_limited)
-            else cache.get(self.cache_key)
-        )
+        source_feed_data = None if (settings.DEBUG and not self.rate_limited) else cache.get(self.cache_key)
         if not source_feed_data:
             source_feed_data = self._get_feed_source_data()
             if not source_feed_data:
@@ -257,14 +245,12 @@ class AbstractFeed(ABC):
 
 class ReviewedModelFeed(AbstractFeed):
     def _get_feed_source_data(self):
-        return CodebaseRelease.objects.most_recently_reviewed(
-            number=self.max_number_of_items, published_only=True
-        )
+        return CodebaseRelease.objects.most_recently_reviewed(number=self.max_number_of_items, published_only=True)
 
     def to_feed_item(self, release):
         short_author_string = release.citation_authors
         if short_author_string and "," in short_author_string:
-            short_author_string = f"{short_author_string.split(",")[0].strip()} et al."
+            short_author_string = f"{short_author_string.split(',')[0].strip()} et al."
 
         feed_item = FeedItem(
             title=release.title,
@@ -321,9 +307,7 @@ class ForumCategoryFeed(ForumFeed):
     cache_timeout = 60 * 60 * 24 * 30  # 30 days
 
     def _get_feed_source_data(self):
-        return get_categories(
-            number_of_categories=self.max_number_of_items, mock=self.mock
-        )
+        return get_categories(number_of_categories=self.max_number_of_items, mock=self.mock)
 
     def to_feed_item(self, category):
         return FeedItem(
@@ -383,7 +367,6 @@ class YouTubeFeed(AbstractFeed):
 
 
 class BaseFeedView(View):
-
     feed_class = None
 
     def get(self, request, *args, **kwargs):

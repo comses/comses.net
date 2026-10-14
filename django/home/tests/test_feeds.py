@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 @override_settings(DISCOURSE_BASE_URL="https://staging-discourse.comses.net")
 class LandingPageFeedsTestCase(BaseModelTestCase):
-
     def setUp(self):
         super().setUp()
         # create event and job objects for testing
@@ -82,9 +81,7 @@ class LandingPageFeedsTestCase(BaseModelTestCase):
         self._verify_feed_structure(ForumFeed(mock=True))
 
     def test_reviewed_model_feed(self):
-        self._verify_feed_structure(
-            ReviewedModelFeed(), CodebaseRelease.objects.reviewed().count()
-        )
+        self._verify_feed_structure(ReviewedModelFeed(), CodebaseRelease.objects.reviewed().count())
 
     def test_event_feed(self):
         self._verify_feed_structure(EventFeed(), Event.objects.count())

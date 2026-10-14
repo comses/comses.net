@@ -34,8 +34,7 @@ def get_through_tables():
     return [
         m.related_model
         for m in Tag._meta.related_objects
-        if isinstance(m, models.ManyToOneRel)
-        and has_parental_object_content_field(m.related_model)
+        if isinstance(m, models.ManyToOneRel) and has_parental_object_content_field(m.related_model)
     ]
 
 
@@ -44,14 +43,10 @@ class TagCuratorProxyQuerySet(models.QuerySet):
         return self.filter(name__icontains=",")
 
     def programming_language_tags(self):
-        return self.filter(
-            id__in=ProgrammingLanguageTag.objects.values_list("tag_id", flat=True)
-        )
+        return self.filter(id__in=ProgrammingLanguageTag.objects.values_list("tag_id", flat=True))
 
     def platforms(self):
-        return self.filter(
-            id__in=CodebaseReleasePlatformTag.objects.values_list("tag_id", flat=True)
-        )
+        return self.filter(id__in=CodebaseReleasePlatformTag.objects.values_list("tag_id", flat=True))
 
     def with_and(self):
         return self.filter(name__iregex=" +and +")
@@ -81,20 +76,14 @@ class TagCleanupQuerySet(models.QuerySet):
     def process(self):
         migrator = TagMigrator()
         tag_cleanups = self.filter(transaction_id__isnull=True)
-        tag_groupings = (
-            tag_cleanups.values("old_name")
-            .annotate(new_names=ArrayAgg("new_name"))
-            .order_by("old_name")
-        )
+        tag_groupings = tag_cleanups.values("old_name").annotate(new_names=ArrayAgg("new_name")).order_by("old_name")
         for tag_grouping in tag_groupings:
             logger.debug(
                 "tag cleanup: %s => %s",
                 tag_grouping["old_name"],
                 tag_grouping["new_names"],
             )
-            migrator.migrate(
-                old_name=tag_grouping["old_name"], new_names=tag_grouping["new_names"]
-            )
+            migrator.migrate(old_name=tag_grouping["old_name"], new_names=tag_grouping["new_names"])
         tct = TagCleanupTransaction.objects.create()
         tag_cleanups.update(transaction=tct)
 
@@ -163,9 +152,7 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher("VBA", pl_regex("vba")),
 ]
 
-VERSION_NUMBER_MATCHER = re.compile(
-    r"^(?:[\d.x_()\s>=<\\/^]|version|update|build|or|higher|beta|alpha|rc)+$"
-)
+VERSION_NUMBER_MATCHER = re.compile(r"^(?:[\d.x_()\s>=<\\/^]|version|update|build|or|higher|beta|alpha|rc)+$")
 
 
 class TagCleanupTransaction(models.Model):
@@ -178,9 +165,7 @@ class TagCleanupTransaction(models.Model):
 class TagCleanup(models.Model):
     new_name = models.CharField(max_length=300, blank=True)
     old_name = models.CharField(max_length=300)
-    transaction = models.ForeignKey(
-        TagCleanupTransaction, null=True, blank=True, on_delete=models.SET_NULL
-    )
+    transaction = models.ForeignKey(TagCleanupTransaction, null=True, blank=True, on_delete=models.SET_NULL)
 
     objects = TagCleanupQuerySet.as_manager()
 
@@ -193,11 +178,7 @@ class TagCleanup(models.Model):
         names = [
             (
                 tag,
-                frozenset(
-                    ps.stem(token)
-                    for token in word_tokenize(tag)
-                    if token not in stopwords.words("english")
-                ),
+                frozenset(ps.stem(token) for token in word_tokenize(tag) if token not in stopwords.words("english")),
             )
             for tag in Tag.objects.order_by("name").values_list("name", flat=True)
         ]
@@ -210,15 +191,11 @@ class TagCleanup(models.Model):
         for k, old_names in groups.items():
             if len(old_names) > 1:
                 min_name_len = min(len(name) for name in old_names)
-                smallest_names = sorted(
-                    name for name in old_names if len(name) == min_name_len
-                )
+                smallest_names = sorted(name for name in old_names if len(name) == min_name_len)
                 new_name = smallest_names[0]
                 old_names.remove(new_name)
                 for old_name in old_names:
-                    tag_cleanups.append(
-                        TagCleanup(new_name=new_name, old_name=old_name)
-                    )
+                    tag_cleanups.append(TagCleanup(new_name=new_name, old_name=old_name))
 
         return tag_cleanups
 
@@ -280,9 +257,7 @@ class TagMigrator:
 
     @staticmethod
     def copy_through_model_refs(model, new_tags, old_tag):
-        pks = list(
-            model.objects.filter(tag=old_tag).values_list("content_object", flat=True)
-        )
+        pks = list(model.objects.filter(tag=old_tag).values_list("content_object", flat=True))
         through_instances = []
         for pk in pks:
             for new_tag in new_tags:
@@ -315,13 +290,9 @@ class TagCluster(models.Model):
         return tag
 
     def save_mapping(self):
-        canonical_tag, _ = CanonicalTag.objects.get_or_create(
-            name=self.canonical_tag_name
-        )
+        canonical_tag, _ = CanonicalTag.objects.get_or_create(name=self.canonical_tag_name)
 
-        previous_tag_mappings = CanonicalTagMapping.objects.filter(
-            canonical_tag=canonical_tag
-        )
+        previous_tag_mappings = CanonicalTagMapping.objects.filter(canonical_tag=canonical_tag)
         previous_tag_mappings.delete()
 
         tag_mappings = [
@@ -350,9 +321,7 @@ class CanonicalTag(models.Model):
 
 class CanonicalTagMapping(models.Model):
     tag = models.OneToOneField(Tag, on_delete=models.deletion.CASCADE, primary_key=True)
-    canonical_tag = models.ForeignKey(
-        CanonicalTag, null=True, on_delete=models.SET_NULL
-    )
+    canonical_tag = models.ForeignKey(CanonicalTag, null=True, on_delete=models.SET_NULL)
     curator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     confidence_score = models.FloatField()
     date_created = models.DateTimeField(auto_now=True)

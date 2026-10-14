@@ -24,9 +24,7 @@ class JobTest(BaseModelTestCase):
             application_deadline=today + timedelta(days=30),
             title="Active Job",
         )
-        self.barely_active_job = self.job_factory.create(
-            application_deadline=today, title="Barely Active Job"
-        )
+        self.barely_active_job = self.job_factory.create(application_deadline=today, title="Barely Active Job")
         self.no_deadline_active_job = self.job_factory.create(
             application_deadline=None,
             date_created=today,
@@ -54,9 +52,7 @@ class JobTest(BaseModelTestCase):
             title="No Deadline Expired Job",
         )
         # manually override last_modified to be expired
-        Job.objects.filter(id=self.no_deadline_expired_job.id).update(
-            last_modified=expired_post_date
-        )
+        Job.objects.filter(id=self.no_deadline_expired_job.id).update(last_modified=expired_post_date)
         self.no_deadline_active_job.refresh_from_db()
         barely_expired_post_date = today - timedelta(days=self.threshold + 1)
         self.no_deadline_barely_expired_job = self.job_factory.create(
@@ -64,9 +60,7 @@ class JobTest(BaseModelTestCase):
             date_created=barely_expired_post_date,
             title="No Deadline Barely Expired Job",
         )
-        Job.objects.filter(id=self.no_deadline_barely_expired_job.id).update(
-            last_modified=barely_expired_post_date
-        )
+        Job.objects.filter(id=self.no_deadline_barely_expired_job.id).update(last_modified=barely_expired_post_date)
         self.no_deadline_barely_active_job.refresh_from_db()
 
     def test_with_expired(self):
@@ -133,12 +127,8 @@ class EventTest(BaseModelTestCase):
             title="Expired Event",
         )
         expired_days_threshold = settings.EXPIRED_EVENT_DAYS_THRESHOLD + 1
-        sample_expired_event_thresholds = set(
-            random.sample(range(expired_days_threshold, 365), 10)
-        )
-        sample_expired_event_thresholds.add(
-            expired_days_threshold
-        )  # always test the edge
+        sample_expired_event_thresholds = set(random.sample(range(expired_days_threshold, 365), 10))
+        sample_expired_event_thresholds.add(expired_days_threshold)  # always test the edge
         self.no_end_date_expired_events = [
             self.event_factory.create(
                 start_date=now - timedelta(days=threshold),

@@ -72,9 +72,7 @@ class DataCiteApiTest(BaseModelTestCase):
             "publicationYear": 2023,
             "creators": [{"name": "John Doe"}],
         }
-        self.assertTrue(
-            DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata)
-        )
+        self.assertTrue(DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata))
 
     def test_is_metadata_equivalent_different_title(self):
         comses_metadata = {
@@ -87,9 +85,7 @@ class DataCiteApiTest(BaseModelTestCase):
             "publicationYear": 2023,
             "creators": [{"name": "John Doe"}],
         }
-        self.assertFalse(
-            DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata)
-        )
+        self.assertFalse(DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata))
 
     def test_is_metadata_equivalent_missing_keys(self):
         comses_metadata = {
@@ -101,9 +97,7 @@ class DataCiteApiTest(BaseModelTestCase):
             "title": "Sample Title",
             "creators": [{"name": "John Doe"}],
         }
-        self.assertFalse(
-            DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata)
-        )
+        self.assertFalse(DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata))
 
     def test_is_same_metadata_empty_values(self):
         comses_metadata = {
@@ -116,9 +110,7 @@ class DataCiteApiTest(BaseModelTestCase):
             "publicationYear": 0,
             "creators": [{"name": "John Doe"}],
         }
-        self.assertTrue(
-            DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata)
-        )
+        self.assertTrue(DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata))
 
     def test_is_metadata_equivalent_nested_dict(self):
         sent_data = {
@@ -160,9 +152,7 @@ class DataCiteApiTest(BaseModelTestCase):
             "publicationYear": 2023,
             "creators": [{"name": "Jane Doe"}, {"name": "John Doe"}],
         }
-        self.assertTrue(
-            DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata)
-        )
+        self.assertTrue(DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata))
 
     def test_is_same_metadata_different_nested_list(self):
         comses_metadata = {
@@ -175,6 +165,4 @@ class DataCiteApiTest(BaseModelTestCase):
             "publicationYear": 2023,
             "creators": [{"name": "John Doe"}, {"name": "Jane Smith"}],
         }
-        self.assertFalse(
-            DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata)
-        )
+        self.assertFalse(DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata))

@@ -91,9 +91,7 @@ class GitHubReleaseImporterTests(TestCase):
         )
         self.payload = SAMPLE_PAYLOAD.copy()
         # create sync state from payload
-        self.sync_state = ImportedReleaseSyncState.for_github_release(
-            self.remote, self.payload["release"]
-        )
+        self.sync_state = ImportedReleaseSyncState.for_github_release(self.remote, self.payload["release"])
 
     def create_importer(self, github_release_id="12345"):
         return GitHubReleaseImporter(self.remote, github_release_id)
@@ -144,11 +142,7 @@ class GitHubReleaseImporterTests(TestCase):
 
         # check that it was successful and objects were created
         self.assertTrue(success)
-        self.assertTrue(
-            CodebaseRelease.objects.filter(
-                codebase=self.codebase, version_number="1.0.0"
-            ).exists()
-        )
+        self.assertTrue(CodebaseRelease.objects.filter(codebase=self.codebase, version_number="1.0.0").exists())
         release = CodebaseRelease.objects.get(version_number="1.0.0")
         self.assertEqual(release.imported_release_sync_state.github_release_id, "12345")
         self.assertEqual(release.submitter, self.codebase.submitter)
@@ -158,9 +152,7 @@ class GitHubReleaseImporterTests(TestCase):
     @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
     @patch("library.models.CodebaseRelease.get_fs_api")
     @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
-    def test_reimport_release(
-        self, mock_get_token, mock_get_fs_api, mock_get_repo, mock_get_release
-    ):
+    def test_reimport_release(self, mock_get_token, mock_get_fs_api, mock_get_repo, mock_get_release):
         # mock token and fs_api calls
         mock_get_token.return_value = "fake-token"
         mock_get_repo.return_value = {
@@ -186,9 +178,7 @@ class GitHubReleaseImporterTests(TestCase):
         reimport_payload = self.payload.copy()
         reimport_payload["action"] = "edited"
         reimport_payload["release"] = reimport_payload["release"].copy()
-        new_url = (
-            "https://api.github.com/repos/testuser/test-repo/zipball/v1.0.0-updated"
-        )
+        new_url = "https://api.github.com/repos/testuser/test-repo/zipball/v1.0.0-updated"
         reimport_payload["release"]["zipball_url"] = new_url
         # mock get_release_raw_for_remote to return the updated payload
         mock_get_release.return_value = reimport_payload["release"]
@@ -249,9 +239,7 @@ class GitHubReleaseImporterTests(TestCase):
     @patch("library.github_integration.GitHubApi.get_repo_raw_for_remote")
     @patch("library.models.CodebaseRelease.get_fs_api")
     @patch("library.github_integration.GitHubApi.get_user_installation_access_token")
-    def test_import_new_release_version_collision(
-        self, mock_get_token, mock_get_fs_api, mock_get_repo
-    ):
+    def test_import_new_release_version_collision(self, mock_get_token, mock_get_fs_api, mock_get_repo):
         # even with valid metadata/api mocks, import should fail when version already exists
         mock_get_token.return_value = "fake-token"
         mock_get_repo.return_value = {
@@ -271,9 +259,7 @@ class GitHubReleaseImporterTests(TestCase):
 
         self.assertFalse(success)
         self.assertEqual(
-            CodebaseRelease.objects.filter(
-                codebase=self.codebase, version_number="1.0.0"
-            ).count(),
+            CodebaseRelease.objects.filter(codebase=self.codebase, version_number="1.0.0").count(),
             1,
         )
         mock_fs_api.import_release_package.assert_not_called()
@@ -369,9 +355,7 @@ class GitHubIntegrationHelpersTests(TestCase):
         api._github_repo = MagicMock()
         local_repo = MagicMock()
 
-        api._github_repo.get_release.side_effect = UnknownObjectException(
-            404, {"message": "Not Found"}, None
-        )
+        api._github_repo.get_release.side_effect = UnknownObjectException(404, {"message": "Not Found"}, None)
         tag = MagicMock()
         tag.name = "v1.0.0"
         tag.commit.message = "Release notes"

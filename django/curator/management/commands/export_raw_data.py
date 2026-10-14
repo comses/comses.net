@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-
     help = """Export unaggregated raw data as CSV files for a given time period."""
     directory = "/shared/data"
 
@@ -49,9 +48,7 @@ class Command(BaseCommand):
         Export data from a table or a select statement to a CSV file
         """
         if not any([table_name, select_statement]):
-            raise ValueError(
-                "Must pass a valid table_name or select_statement parameter"
-            )
+            raise ValueError("Must pass a valid table_name or select_statement parameter")
         if select_statement is None:
             where_clause = ""
             if all([from_date, end_date]):
@@ -63,9 +60,7 @@ class Command(BaseCommand):
             """
         destination_path = Path(self.directory) / filename
         with connection.cursor() as cursor:
-            cursor.execute(
-                f"COPY ({select_statement}) TO '{destination_path}' WITH CSV HEADER"
-            )
+            cursor.execute(f"COPY ({select_statement}) TO '{destination_path}' WITH CSV HEADER")
 
     def export_codebases(self, **kwargs):
         self._export("codebases.csv", "library_codebase", **kwargs)

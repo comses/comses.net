@@ -64,9 +64,7 @@ class CodeMetaConverter:
             )
         elif contributor.is_person:
             affiliation = (
-                cls.convert_affiliation(contributor.primary_affiliation)
-                if contributor.primary_affiliation
-                else None
+                cls.convert_affiliation(contributor.primary_affiliation) if contributor.primary_affiliation else None
             )
             return Person(
                 id_=actor_id,
@@ -102,16 +100,12 @@ class CodeMetaConverter:
         codemeta_roles = []
         for index, contributor_or_rc in enumerate(contributors):
             contributor = (
-                contributor_or_rc.contributor
-                if hasattr(contributor_or_rc, "contributor")
-                else contributor_or_rc
+                contributor_or_rc.contributor if hasattr(contributor_or_rc, "contributor") else contributor_or_rc
             )
             actor = cls._convert_actor(contributor, actor_type, index)
             codemeta_actors.append(actor)
             if hasattr(contributor_or_rc, "roles"):
-                codemeta_roles.extend(
-                    cls._convert_roles(actor.id_, contributor_or_rc.roles)
-                )
+                codemeta_roles.extend(cls._convert_roles(actor.id_, contributor_or_rc.roles))
         return codemeta_actors + codemeta_roles
 
     @classmethod
@@ -167,23 +161,11 @@ class CodeMetaConverter:
         return CodeMeta(
             **cls._common_codebase_fields(codebase),
             id_=codebase.permanent_url,
-            identifier=(
-                [codebase.doi, codebase.permanent_url]
-                if codebase.doi
-                else codebase.permanent_url
-            ),
-            author=cls.convert_contributors(codebase.all_author_contributors, "author")
-            or None,
-            contributor=cls.convert_contributors(
-                codebase.all_nonauthor_contributors, "contributor"
-            )
-            or None,
+            identifier=([codebase.doi, codebase.permanent_url] if codebase.doi else codebase.permanent_url),
+            author=cls.convert_contributors(codebase.all_author_contributors, "author") or None,
+            contributor=cls.convert_contributors(codebase.all_nonauthor_contributors, "contributor") or None,
             dateCreated=codebase.date_created.date() if codebase.date_created else None,
-            datePublished=(
-                codebase.last_published_on.date()
-                if codebase.last_published_on
-                else None
-            ),
+            datePublished=(codebase.last_published_on.date() if codebase.last_published_on else None),
             url=codebase.permanent_url,
         )
 
@@ -203,19 +185,9 @@ class CodeMetaConverter:
         return CodeMeta(
             **cls._common_codebase_fields(codebase),
             id_=release.permanent_url,
-            identifier=(
-                [release.doi, release.permanent_url]
-                if release.doi
-                else release.permanent_url
-            ),
-            programmingLanguage=[
-                cls._convert_release_language(rl)
-                for rl in release.release_languages.all()
-            ],
-            runtimePlatform=[
-                tag.name for tag in release.platform_tags.all().order_by("name")
-            ]
-            or None,
+            identifier=([release.doi, release.permanent_url] if release.doi else release.permanent_url),
+            programmingLanguage=[cls._convert_release_language(rl) for rl in release.release_languages.all()],
+            runtimePlatform=[tag.name for tag in release.platform_tags.all().order_by("name")] or None,
             # FIXME: anything to use this for? it can be either the target os or target
             # framework (e.g. Mesa, NetLogo) but these are both already covered
             # targetProduct=release.os,
@@ -234,29 +206,13 @@ class CodeMetaConverter:
                 or None
             ),
             # FIXME: need better guidance on author vs contributor fields in CodeMeta
-            author=cls.convert_contributors(
-                release.author_release_contributors, "author"
-            )
-            or None,
-            contributor=cls.convert_contributors(
-                release.nonauthor_release_contributors, "contributor"
-            )
-            or None,
-            copyrightYear=(
-                release.last_published_on.year if release.last_published_on else None
-            ),
+            author=cls.convert_contributors(release.author_release_contributors, "author") or None,
+            contributor=cls.convert_contributors(release.nonauthor_release_contributors, "contributor") or None,
+            copyrightYear=(release.last_published_on.year if release.last_published_on else None),
             dateCreated=release.date_created.date() if release.date_created else None,
-            dateModified=(
-                release.last_modified.date() if release.last_modified else None
-            ),
-            datePublished=(
-                release.last_published_on.date() if release.last_published_on else None
-            ),
-            license=(
-                cls.license_to_creative_work(release.license)
-                if release.license
-                else None
-            ),
+            dateModified=(release.last_modified.date() if release.last_modified else None),
+            datePublished=(release.last_published_on.date() if release.last_published_on else None),
+            license=(cls.license_to_creative_work(release.license) if release.license else None),
             version=release.version_number,
             url=release.permanent_url,
             embargoEndDate=release.embargo_end_date,
@@ -279,9 +235,7 @@ class CodeMetaConverter:
         except Exception as e:
             # in case something goes horribly wrong, log the error and return a valid but
             # minimal codemeta object
-            logger.exception(
-                f"Error when generating codemeta for release {release}: {e}"
-            )
+            logger.exception(f"Error when generating codemeta for release {release}: {e}")
             return cls._convert_codebase_minimal(release.codebase)
 
     @classmethod
@@ -289,9 +243,7 @@ class CodeMetaConverter:
         try:
             return cls._convert_codebase(codebase)
         except Exception as e:
-            logger.exception(
-                f"Error when generating codemeta for codebase {codebase}: {e}"
-            )
+            logger.exception(f"Error when generating codemeta for codebase {codebase}: {e}")
             return cls._convert_codebase_minimal(codebase)
 
 
@@ -299,9 +251,7 @@ class CitationFileFormatConverter:
     """Create citation file format objects that represent the metadata for a codebase or release."""
 
     @classmethod
-    def convert_release(
-        cls, release, codemeta: CodeMeta | dict = None
-    ) -> CitationFileFormat:
+    def convert_release(cls, release, codemeta: CodeMeta | dict = None) -> CitationFileFormat:
         codemeta = coerce_codemeta(codemeta, release=release)
         return convert("codemeta", "cff", codemeta)
 
@@ -314,9 +264,7 @@ class DataCiteConverter:
         return ["text/plain"]
 
     @classmethod
-    def to_related_identifier(
-        cls, related_identifier: str, relation_type: str, related_identifier_type="DOI"
-    ):
+    def to_related_identifier(cls, related_identifier: str, relation_type: str, related_identifier_type="DOI"):
         return {
             "relatedIdentifier": related_identifier,
             "relatedIdentifierType": related_identifier_type,
@@ -327,22 +275,16 @@ class DataCiteConverter:
     def get_release_related_identifiers(cls, release):
         related_identifiers = []
         if release.codebase.doi:
-            related_identifiers.append(
-                cls.to_related_identifier(release.codebase.doi, "IsVersionOf")
-            )
+            related_identifiers.append(cls.to_related_identifier(release.codebase.doi, "IsVersionOf"))
         previous_release = release.get_previous_release()
         next_release = release.get_next_release()
         # set relationship to previous_release
         if previous_release and previous_release.doi:
-            related_identifiers.append(
-                cls.to_related_identifier(previous_release.doi, "IsNewVersionOf")
-            )
+            related_identifiers.append(cls.to_related_identifier(previous_release.doi, "IsNewVersionOf"))
 
         # set relationship to next_release
         if next_release and next_release.doi:
-            related_identifiers.append(
-                cls.to_related_identifier(next_release.doi, "IsPreviousVersionOf")
-            )
+            related_identifiers.append(cls.to_related_identifier(next_release.doi, "IsPreviousVersionOf"))
         return related_identifiers or None
 
     @classmethod
@@ -494,9 +436,7 @@ class ReleaseMetadataConverter:
         return ""
 
     def _extract_programming_languages_from_codemeta(self) -> list[str] | None:
-        codemeta_langs = self._ensure_list(
-            self._get_field(self.codemeta, "programmingLanguage")
-        )
+        codemeta_langs = self._ensure_list(self._get_field(self.codemeta, "programmingLanguage"))
         langs = []
         for codemeta_lang in codemeta_langs:
             if isinstance(codemeta_lang, str):
@@ -514,9 +454,7 @@ class ReleaseMetadataConverter:
         return None
 
     def _extract_platforms_from_codemeta(self) -> list[str] | None:
-        runtime_platforms = self._ensure_list(
-            self._get_field(self.codemeta, "runtimePlatform")
-        )
+        runtime_platforms = self._ensure_list(self._get_field(self.codemeta, "runtimePlatform"))
         platforms = []
         for runtime_platform in runtime_platforms:
             if isinstance(runtime_platform, str):
@@ -527,13 +465,8 @@ class ReleaseMetadataConverter:
         """return a dictionary with the metadata fields for a codebase release from
         given sources"""
         # set priority
-        license_spdx_id = (
-            self._extract_license_from_github() or self._extract_license_from_cff()
-        )
-        release_notes = (
-            self._extract_release_notes_from_codemeta()
-            or self._extract_release_notes_from_github()
-        )
+        license_spdx_id = self._extract_license_from_github() or self._extract_license_from_cff()
+        release_notes = self._extract_release_notes_from_codemeta() or self._extract_release_notes_from_github()
         programming_languages = self._extract_programming_languages_from_github()
 
         return {
@@ -545,9 +478,7 @@ class ReleaseMetadataConverter:
         }
 
 
-def coerce_codemeta(
-    codemeta: dict | CodeMeta | None, codebase=None, release=None
-) -> CodeMeta | None:
+def coerce_codemeta(codemeta: dict | CodeMeta | None, codebase=None, release=None) -> CodeMeta | None:
     """
     Ensure the returned value is a CodeMeta object or None.
     - if given a CodeMeta instance, return it
@@ -577,9 +508,7 @@ def coerce_codemeta(
     return None
 
 
-def coerce_cff(
-    cff: dict | CitationFileFormat | None, release=None
-) -> CitationFileFormat | None:
+def coerce_cff(cff: dict | CitationFileFormat | None, release=None) -> CitationFileFormat | None:
     """
     Ensure the returned value is a CitationFileFormat object or None.
     - if given a CitationFileFormat instance, return it

@@ -88,21 +88,15 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
             self.assertResponseNotFound(response)
 
     def check_retrieve_permissions(self, user, instance):
-        response = self.client.get(
-            instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json"
-        )
-        has_perm = user.has_perm(
-            create_perm_str(self.model_class(), "view"), obj=instance
-        )
+        response = self.client.get(instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json")
+        has_perm = user.has_perm(create_perm_str(self.model_class(), "view"), obj=instance)
         if has_perm:
             self.assertResponseOk(response)
         else:
             self.assertResponseNoPermission(instance, response)
 
     def check_destroy_method_not_allowed(self, user, instance):
-        response = self.client.delete(
-            instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json"
-        )
+        response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json")
         self.assertResponseMethodNotAllowed(response)
 
     def check_update_permissions(self, user, instance):
@@ -136,9 +130,7 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
                 user_or_group=user,
                 obj=other_codebase,
             )
-            self.with_logged_in(
-                user, other_codebase, self.check_destroy_method_not_allowed
-            )
+            self.with_logged_in(user, other_codebase, self.check_destroy_method_not_allowed)
 
         codebase = self.instance_factory.create()
         codebase.create_release(initialize=False)
@@ -210,27 +202,19 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         self.other_user = self.user_factory.create(username="other_user")
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release(
-            status=CodebaseRelease.Status.PUBLISHED, initialize=False
-        )
+        self.codebase_release = self.codebase.create_release(status=CodebaseRelease.Status.PUBLISHED, initialize=False)
         self.path = self.codebase_release.get_list_url()
 
     def test_release_creation_only_if_codebase_change_permission(self):
-        response = self.client.post(
-            path=self.path, format="json", HTTP_ACCEPT="application/json"
-        )
+        response = self.client.post(path=self.path, format="json", HTTP_ACCEPT="application/json")
         self.assertResponsePermissionDenied(response)
 
         self.login(self.other_user, self.user_factory.password)
-        response_other_user = self.client.post(
-            path=self.path, data=None, HTTP_ACCEPT="application/json", format="json"
-        )
+        response_other_user = self.client.post(path=self.path, data=None, HTTP_ACCEPT="application/json", format="json")
         self.assertResponsePermissionDenied(response_other_user)
 
         self.login(self.submitter, self.user_factory.password)
-        response_submitter = self.client.post(
-            path=self.path, HTTP_ACCEPT="application/json", format="json"
-        )
+        response_submitter = self.client.post(path=self.path, HTTP_ACCEPT="application/json", format="json")
         self.assertResponseCreated(response_submitter)
 
     def test_destroy_method_not_allowed(self):
@@ -239,22 +223,16 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         response = self.client.delete(path=path)
         self.assertResponsePermissionDenied(response)
 
-        self.client.login(
-            username=self.other_user.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.other_user.username, password=self.user_factory.password)
         response = self.client.delete(path=path, HTTP_ACCEPT="application/json")
         self.assertResponseMethodNotAllowed(response)
 
-        self.client.login(
-            username=self.submitter.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
         response = self.client.delete(path=path, HTTP_ACCEPT="application/json")
         self.assertResponseMethodNotAllowed(response)
 
     def test_request_peer_review_from_draft(self):
-        self.client.login(
-            username=self.submitter.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
         draft_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
         response = self.client.post(
             draft_release.get_request_peer_review_url(),
@@ -267,14 +245,10 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             CodebaseRelease.objects.get(id=draft_release.id).status,
             CodebaseRelease.Status.UNDER_REVIEW,
         )
-        self.assertTrue(
-            PeerReview.objects.filter(codebase_release=draft_release).exists()
-        )
+        self.assertTrue(PeerReview.objects.filter(codebase_release=draft_release).exists())
 
     def test_request_peer_review_from_published(self):
-        self.client.login(
-            username=self.submitter.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
         draft_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
         draft_release.publish()
 
@@ -283,27 +257,19 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             HTTP_ACCEPT="application/json",
         )
 
-        under_review_release = draft_release.codebase.latest_accessible_release(
-            self.submitter
-        )
+        under_review_release = draft_release.codebase.latest_accessible_release(self.submitter)
 
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(
             draft_release.id,
             under_review_release.id,
         )
-        self.assertTrue(
-            PeerReview.objects.filter(codebase_release=under_review_release).exists()
-        )
+        self.assertTrue(PeerReview.objects.filter(codebase_release=under_review_release).exists())
 
     def test_request_peer_review_existing_review(self):
-        self.client.login(
-            username=self.submitter.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
         first_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
-        PeerReview.objects.create(
-            codebase_release=first_release, submitter=self.submitter.member_profile
-        )
+        PeerReview.objects.create(codebase_release=first_release, submitter=self.submitter.member_profile)
         second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
 
         response = self.client.post(
@@ -312,21 +278,13 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         )
 
         # this returns a 200 success, might be better to 302 but that needs some refactoring
-        self.assertEqual(
-            PeerReview.objects.filter(codebase_release=first_release).count(), 1
-        )
-        self.assertEqual(
-            PeerReview.objects.filter(codebase_release=second_release).count(), 0
-        )
+        self.assertEqual(PeerReview.objects.filter(codebase_release=first_release).count(), 1)
+        self.assertEqual(PeerReview.objects.filter(codebase_release=second_release).count(), 0)
 
     def test_request_peer_review_existing_closed_review(self):
-        self.client.login(
-            username=self.submitter.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
         first_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
-        pr = PeerReview.objects.create(
-            codebase_release=first_release, submitter=self.submitter.member_profile
-        )
+        pr = PeerReview.objects.create(codebase_release=first_release, submitter=self.submitter.member_profile)
         pr.close(self.submitter.member_profile)
         second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
 
@@ -336,9 +294,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            PeerReview.objects.filter(codebase_release=second_release).exists()
-        )
+        self.assertTrue(PeerReview.objects.filter(codebase_release=second_release).exists())
 
     @patch("library.models.PeerReview.send_author_requested_peer_review_email")
     def test_request_peer_review_again_after_closing_same_release_review(self, notify):
@@ -363,9 +319,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         reopened_review = PeerReview.get_codebase_latest_active_review(self.codebase)
         self.assertEqual(reopened_review.pk, closed_review.pk)
         self.assertEqual(reopened_review.codebase_release_id, source_release.pk)
-        self.assertEqual(
-            reopened_review.codebase_release.status, CodebaseRelease.Status.UNDER_REVIEW
-        )
+        self.assertEqual(reopened_review.codebase_release.status, CodebaseRelease.Status.UNDER_REVIEW)
         self.assertEqual(reopened_review.status, closed_review.status)
         self.assertTrue(reopened_review.codebase_release.validate_metadata())
         self.assertTrue(reopened_review.codebase_release.validate_uploaded_files())
@@ -381,9 +335,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         self.assertEqual(source_release.version_number, version_number)
         self.assertEqual(self.codebase.releases.count(), release_count)
         self.assertEqual(
-            closed_review.event_set.filter(
-                action=PeerReviewEvent.REVIEW_CLOSED.name
-            ).count(),
+            closed_review.event_set.filter(action=PeerReviewEvent.REVIEW_CLOSED.name).count(),
             1,
         )
 
@@ -400,9 +352,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         )
         self.assertEqual(self.codebase.releases.count(), release_count)
         self.assertEqual(
-            closed_review.event_set.filter(
-                action=PeerReviewEvent.REVIEW_REOPENED.name
-            ).count(),
+            closed_review.event_set.filter(action=PeerReviewEvent.REVIEW_REOPENED.name).count(),
             1,
         )
         self.assertEqual(notify.call_count, 2)
@@ -415,9 +365,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         )
         closed_review.close(self.submitter.member_profile)
 
-        response = self.client.post(
-            source_release.get_request_peer_review_url(), HTTP_ACCEPT="text/html"
-        )
+        response = self.client.post(source_release.get_request_peer_review_url(), HTTP_ACCEPT="text/html")
         reopened_review = PeerReview.get_codebase_latest_active_review(self.codebase)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, source_release.get_absolute_url())
@@ -439,9 +387,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         source_id = source_release.pk
         version_number = source_release.version_number
 
-        response = self.client.post(
-            source_release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
-        )
+        response = self.client.post(source_release.get_request_peer_review_url(), HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, 200)
         new_review = PeerReview.get_codebase_latest_active_review(self.codebase)
         self.assertNotEqual(new_review.codebase_release_id, source_id)
@@ -457,15 +403,11 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
         release.status = CodebaseRelease.Status.UNDER_REVIEW
         release.save(update_fields=["status"])
-        review = PeerReview.objects.create(
-            codebase_release=release, submitter=self.submitter.member_profile
-        )
+        review = PeerReview.objects.create(codebase_release=release, submitter=self.submitter.member_profile)
         review.set_complete_status(self.submitter.member_profile)
         PeerReview.objects.filter(pk=review.pk).update(closed=True)
 
-        response = self.client.post(
-            release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
-        )
+        response = self.client.post(release.get_request_peer_review_url(), HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             PeerReview.objects.filter(codebase_release__codebase=self.codebase).count(),
@@ -473,9 +415,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         )
 
     @patch("library.models.PeerReview.send_author_requested_peer_review_email")
-    def test_completed_review_cannot_restart_even_with_draft_release_status(
-        self, notify
-    ):
+    def test_completed_review_cannot_restart_even_with_draft_release_status(self, notify):
         self.login(self.submitter, self.user_factory.password)
         release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
         review = PeerReview.objects.create(
@@ -485,13 +425,9 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             closed=True,
         )
         release_count = self.codebase.releases.count()
-        response = self.client.post(
-            release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
-        )
+        response = self.client.post(release.get_request_peer_review_url(), HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, 400)
-        response = self.client.post(
-            review.get_change_closed_url(), {"action": "reopen"}
-        )
+        response = self.client.post(review.get_change_closed_url(), {"action": "reopen"})
         self.assertEqual(response.status_code, 400)
         review.refresh_from_db()
         release.refresh_from_db()
@@ -508,12 +444,8 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             codebase_release=first, submitter=self.submitter.member_profile, closed=True
         )
         second = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
-        PeerReview.objects.create(
-            codebase_release=second, submitter=self.submitter.member_profile
-        )
-        response = self.client.post(
-            closed_review.get_change_closed_url(), {"action": "reopen"}
-        )
+        PeerReview.objects.create(codebase_release=second, submitter=self.submitter.member_profile)
+        response = self.client.post(closed_review.get_change_closed_url(), {"action": "reopen"})
         self.assertEqual(response.status_code, 400)
         closed_review.refresh_from_db()
         self.assertTrue(closed_review.closed)
@@ -521,20 +453,14 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
     def test_invalid_close_action_returns_bad_request(self):
         self.login(self.submitter, self.user_factory.password)
         release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
-        review = PeerReview.objects.create(
-            codebase_release=release, submitter=self.submitter.member_profile
-        )
-        response = self.client.post(
-            review.get_change_closed_url(), {"action": "invalid"}
-        )
+        review = PeerReview.objects.create(codebase_release=release, submitter=self.submitter.member_profile)
+        response = self.client.post(review.get_change_closed_url(), {"action": "invalid"})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(review.event_set.count(), 0)
 
     def test_both_restart_paths_require_uploaded_files(self):
         self.login(self.submitter, self.user_factory.password)
-        release = ReleaseSetup.setUpPublishableDraftRelease(
-            self.codebase, with_files=False
-        )
+        release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase, with_files=False)
         review = PeerReview.objects.create(
             codebase_release=release,
             submitter=self.submitter.member_profile,
@@ -557,9 +483,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         editor = self.user_factory.create(username="editor", is_superuser=True)
         self.login(editor, self.user_factory.password)
         release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
-        review = PeerReview.objects.create(
-            codebase_release=release, submitter=self.submitter.member_profile
-        )
+        review = PeerReview.objects.create(codebase_release=release, submitter=self.submitter.member_profile)
         url = review.get_absolute_url()
         for data in (
             {},
@@ -568,9 +492,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             {"status": "complete"},
         ):
             with self.subTest(data=data):
-                response = self.client.put(
-                    url, data, format="json", HTTP_ACCEPT="application/json"
-                )
+                response = self.client.put(url, data, format="json", HTTP_ACCEPT="application/json")
                 self.assertEqual(response.status_code, 400)
         review.refresh_from_db()
         self.assertFalse(review.is_complete)
@@ -583,9 +505,7 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
         self.codebase = CodebaseFactory(submitter=self.submitter).create()
         self.release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
 
-    def request_reviews_concurrently(
-        self, first_release, second_release, second_review=None
-    ):
+    def request_reviews_concurrently(self, first_release, second_release, second_review=None):
         if connection.vendor != "postgresql":
             self.skipTest("Requires PostgreSQL row locks and lock diagnostics")
 
@@ -616,9 +536,7 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
                 client = APIClient()
                 if name == "second" and second_review is not None:
                     client.force_login(self.submitter)
-                    return client.post(
-                        second_review.get_change_closed_url(), {"action": "reopen"}
-                    )
+                    return client.post(second_review.get_change_closed_url(), {"action": "reopen"})
                 client.force_authenticate(self.submitter)
                 return client.post(
                     release.get_request_peer_review_url(),
@@ -627,11 +545,14 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
             finally:
                 connections.close_all()
 
-        with patch.object(
-            PeerReview,
-            "get_codebase_latest_active_review",
-            side_effect=hold_first_request,
-        ), ThreadPoolExecutor(max_workers=2) as executor:
+        with (
+            patch.object(
+                PeerReview,
+                "get_codebase_latest_active_review",
+                side_effect=hold_first_request,
+            ),
+            ThreadPoolExecutor(max_workers=2) as executor,
+        ):
             first = executor.submit(request_review, "first", first_release)
             try:
                 self.assertTrue(first_checked_review.wait(timeout=10))
@@ -641,9 +562,7 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
                 blocked = False
                 while monotonic() < deadline:
                     with connection.cursor() as cursor:
-                        cursor.execute(
-                            "SELECT pg_blocking_pids(%s)", [backend_pids["second"]]
-                        )
+                        cursor.execute("SELECT pg_blocking_pids(%s)", [backend_pids["second"]])
                         blocked = backend_pids["first"] in cursor.fetchone()[0]
                     if blocked or second.done():
                         break
@@ -666,9 +585,7 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
             submitter=self.submitter.member_profile,
             closed=True,
         )
-        responses = self.request_reviews_concurrently(
-            self.release, second_release, second_review=second_review
-        )
+        responses = self.request_reviews_concurrently(self.release, second_release, second_review=second_review)
         self.assertEqual([response.status_code for response in responses], [200, 400])
         first_review.refresh_from_db()
         second_review.refresh_from_db()
@@ -680,18 +597,14 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
     def test_concurrent_requests_reopen_review_once(self, notify):
         self.release.status = CodebaseRelease.Status.UNDER_REVIEW
         self.release.save(update_fields=["status"])
-        review = PeerReview.objects.create(
-            codebase_release=self.release, submitter=self.submitter.member_profile
-        )
+        review = PeerReview.objects.create(codebase_release=self.release, submitter=self.submitter.member_profile)
         review.close(self.submitter.member_profile)
         release_count = self.codebase.releases.count()
         responses = self.request_reviews_concurrently(self.release, self.release)
 
         for response in responses:
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(
-                response.json()["reviewReleaseUrl"], self.release.get_absolute_url()
-            )
+            self.assertEqual(response.json()["reviewReleaseUrl"], self.release.get_absolute_url())
         review.refresh_from_db()
         self.release.refresh_from_db()
         self.assertFalse(review.closed)
@@ -702,26 +615,20 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
             1,
         )
         self.assertEqual(
-            review.event_set.filter(
-                action=PeerReviewEvent.REVIEW_REOPENED.name
-            ).count(),
+            review.event_set.filter(action=PeerReviewEvent.REVIEW_REOPENED.name).count(),
             1,
         )
         notify.assert_called_once()
 
     @patch("library.models.PeerReview.send_author_requested_peer_review_email")
-    def test_concurrent_requests_from_different_releases_create_one_review(
-        self, notify
-    ):
+    def test_concurrent_requests_from_different_releases_create_one_review(self, notify):
         second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
         release_count = self.codebase.releases.count()
         responses = self.request_reviews_concurrently(self.release, second_release)
 
         for response in responses:
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(
-                response.json()["reviewReleaseUrl"], self.release.get_absolute_url()
-            )
+            self.assertEqual(response.json()["reviewReleaseUrl"], self.release.get_absolute_url())
         review = PeerReview.objects.get(codebase_release__codebase=self.codebase)
         self.assertEqual(review.codebase_release_id, self.release.pk)
         self.assertFalse(review.closed)
@@ -731,9 +638,7 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
         notify.assert_called_once()
 
 
-class CodebaseReleaseUnpublishedFilesTestCase(
-    ApiAccountMixin, ResponseStatusCodesMixin, TestCase
-):
+class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase):
     """Test file handling for creating a release. Only user with change permission on a unpublished release should be
     able to list, destroy or create files. No user should be able to create or destroy files from a published release
     """
@@ -741,9 +646,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
     def setUp(self):
         self.user_factory = UserFactory()
         self.submitter = self.user_factory.create(username="submitter")
-        self.superuser = self.user_factory.create(
-            username="superuser", is_superuser=True
-        )
+        self.superuser = self.user_factory.create(username="superuser", is_superuser=True)
         self.other_user = self.user_factory.create(username="other_user")
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
@@ -756,9 +659,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         api = self.codebase_release.get_fs_api()
 
         # Unpublished codebase release permissions
-        response = self.client.post(
-            api.get_originals_list_url(category=FileCategories.code)
-        )
+        response = self.client.post(api.get_originals_list_url(category=FileCategories.code))
         self.assertResponseNotFound(response)
         for user, expected_status_code in [
             (self.submitter, status.HTTP_400_BAD_REQUEST),
@@ -781,9 +682,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
 
         # Published codebase release permissions
         self.client.logout()
-        response = self.client.post(
-            api.get_originals_list_url(category=FileCategories.code)
-        )
+        response = self.client.post(api.get_originals_list_url(category=FileCategories.code))
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [
             (self.submitter, status.HTTP_403_FORBIDDEN),
@@ -805,9 +704,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         api = self.codebase_release.get_fs_api()
 
         # Unpublished codebase release permissions
-        response = self.client.get(
-            api.get_originals_list_url(category=FileCategories.code)
-        )
+        response = self.client.get(api.get_originals_list_url(category=FileCategories.code))
         self.assertResponseNotFound(response)
         for user, expected_status_code in [
             (self.submitter, status.HTTP_200_OK),
@@ -852,9 +749,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         path_to_foo = pathlib.Path("foo.txt")
         api = self.codebase_release.get_fs_api()
         # Unpublished codebase release permissions
-        response = self.client.delete(
-            api.get_absolute_url(category=FileCategories.code, relpath=path_to_foo)
-        )
+        response = self.client.delete(api.get_absolute_url(category=FileCategories.code, relpath=path_to_foo))
         self.assertResponseNotFound(response)
         for user, expected_status_code in [
             (self.submitter, status.HTTP_400_BAD_REQUEST),
@@ -873,9 +768,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         self.client.logout()
 
         # Published codebase release permissions
-        response = self.client.delete(
-            api.get_absolute_url(category=FileCategories.code, relpath=path_to_foo)
-        )
+        response = self.client.delete(api.get_absolute_url(category=FileCategories.code, relpath=path_to_foo))
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [
             (self.submitter, status.HTTP_403_FORBIDDEN),
@@ -890,18 +783,14 @@ class CodebaseReleaseUnpublishedFilesTestCase(
             self.assertEqual(response.status_code, expected_status_code, msg=repr(user))
 
 
-class CodebaseReleaseDraftViewTestCase(
-    ApiAccountMixin, ResponseStatusCodesMixin, TestCase
-):
+class CodebaseReleaseDraftViewTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase):
     def setUp(self):
         self.user_factory = UserFactory()
         self.submitter = self.user_factory.create(username="submitter")
         self.other_user = self.user_factory.create(username="other_user")
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release(
-            status=CodebaseRelease.Status.PUBLISHED, initialize=False
-        )
+        self.codebase_release = self.codebase.create_release(status=CodebaseRelease.Status.PUBLISHED, initialize=False)
         self.path = self.codebase.get_draft_url()
 
     def test_release_creation_only_if_codebase_change_permission(self):
@@ -942,9 +831,7 @@ class CodebaseReleasePublishTestCase(TestCase):
         self.codebase_release = self.codebase.create_release(initialize=False)
         contributor_factory = ContributorFactory(user=self.submitter)
         self.contributor = contributor_factory.create()
-        self.release_contributor_factory = ReleaseContributorFactory(
-            codebase_release=self.codebase_release
-        )
+        self.release_contributor_factory = ReleaseContributorFactory(codebase_release=self.codebase_release)
 
     def test_publish_codebaserelease(self):
         with self.assertRaises(ValidationError):
@@ -954,12 +841,8 @@ class CodebaseReleasePublishTestCase(TestCase):
         with self.assertRaises(ValidationError):
             self.codebase_release.publish()
 
-        self.client.login(
-            username=self.submitter.username, password=self.user_factory.password
-        )
-        response = self.client.post(
-            self.codebase_release.regenerate_share_url, HTTP_ACCEPT="application/json"
-        )
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
+        response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT="application/json")
         self.assertEqual(response.status_code, 200)
 
         code_file = io.BytesIO(bytes("Hello world!", "utf8"))
@@ -972,18 +855,14 @@ class CodebaseReleasePublishTestCase(TestCase):
         api.add(content=code_file, category=FileCategories.code)
         api.add(content=docs_file, category=FileCategories.docs)
 
-        with self.assertRaises(
-            ValidationError, msg="Codebase has no metadata, should fail publish"
-        ):
+        with self.assertRaises(ValidationError, msg="Codebase has no metadata, should fail publish"):
             self.codebase_release.publish()
 
         # FIXME: add metadata to codebase release and verify that publish doesn't raise a ValidationError
         self.codebase_release.os = "Windows"
         self.assertRaises(ValidationError, lambda: self.codebase_release.publish())
 
-        self.codebase_release.license = License.objects.create(
-            name="0BSD", url="https://spdx.org/licenses/0BSD.html"
-        )
+        self.codebase_release.license = License.objects.create(name="0BSD", url="https://spdx.org/licenses/0BSD.html")
         self.assertRaises(ValidationError, lambda: self.codebase_release.publish())
 
         java, _created = ProgrammingLanguage.objects.get_or_create(name="Java")
@@ -994,17 +873,13 @@ class CodebaseReleasePublishTestCase(TestCase):
         )
         self.codebase_release.publish()
 
-        download_response = self.client.get(
-            self.codebase_release.get_review_download_url()
-        )
+        download_response = self.client.get(self.codebase_release.get_review_download_url())
         self.assertEqual(
             download_response.status_code,
             404,
             msg="Published model should not allow access to a review download URL",
         )
-        response = self.client.post(
-            self.codebase_release.regenerate_share_url, HTTP_ACCEPT="application/json"
-        )
+        response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT="application/json")
         self.assertEqual(
             response.status_code,
             400,
@@ -1018,9 +893,7 @@ class CodebaseRenderPageTestCase(TestCase):
         self.submitter = self.user_factory.create()
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        self.codebase.create_release(
-            status=CodebaseRelease.Status.PUBLISHED, initialize=False
-        )
+        self.codebase.create_release(status=CodebaseRelease.Status.PUBLISHED, initialize=False)
 
     def test_list(self):
         response = self.client.get(reverse("library:codebase-list"))
@@ -1037,15 +910,11 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
 
         self.codebase = codebase_factory.create(submitter=self.submitter)
         self.codebase_release = self.codebase.create_release(initialize=False)
-        release_contributor_factory = ReleaseContributorFactory(
-            codebase_release=self.codebase_release
-        )
+        release_contributor_factory = ReleaseContributorFactory(codebase_release=self.codebase_release)
         release_contributor_factory.create(contributor=contributor)
 
     def test_detail(self):
-        self.client.login(
-            username=self.submitter.username, password=self.user_factory.password
-        )
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
         response = self.client.get(
             reverse(
                 "library:codebaserelease-detail",
@@ -1080,9 +949,7 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
         cls.setUpReviewData()
 
     def setUp(self):
-        invitation_factory = PeerReviewInvitationFactory(
-            editor=self.editor, reviewer=self.reviewer, review=self.review
-        )
+        invitation_factory = PeerReviewInvitationFactory(editor=self.editor, reviewer=self.reviewer, review=self.review)
         self.invitation = invitation_factory.create()
 
     def test_accept_invitation_multiple_times(self):
@@ -1096,15 +963,9 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
 
         get_invitation_page_response_again = self.client.get(url)
         # going back to the invitation page after accepting redirects to latest feedback
-        self.assertRedirects(
-            get_invitation_page_response_again, feedback.get_absolute_url()
-        )
-        post_invitation_page_response_again = self.client.post(
-            url, data={"accepted": True}
-        )
-        self.assertRedirects(
-            post_invitation_page_response_again, feedback.get_absolute_url()
-        )
+        self.assertRedirects(get_invitation_page_response_again, feedback.get_absolute_url())
+        post_invitation_page_response_again = self.client.post(url, data={"accepted": True})
+        self.assertRedirects(post_invitation_page_response_again, feedback.get_absolute_url())
 
     def test_accept_after_decline(self):
         url = self.invitation.get_absolute_url()
@@ -1115,13 +976,9 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
         self.assertRedirects(post_invitation_page_response, url)
 
         get_invitation_page_response_again = self.client.get(url)
-        self.assertContains(
-            get_invitation_page_response_again, "declined this invitation"
-        )
+        self.assertContains(get_invitation_page_response_again, "declined this invitation")
         # candidate reviewers are allowed to decline again
-        post_invitation_page_response_again = self.client.post(
-            url, data={"accepted": False}
-        )
+        post_invitation_page_response_again = self.client.post(url, data={"accepted": False})
         self.assertRedirects(post_invitation_page_response_again, url)
         # candidate reviewers are allowed to accept after declining
         accept_invitation_response = self.client.post(url, data={"accepted": True})
@@ -1196,9 +1053,7 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
             HTTP_ACCEPT="application/json",
         )
         self.assertEqual(response.status_code, 400)
-        response = self.client.post(
-            self.invitation.get_absolute_url(), {"accepted": True}
-        )
+        response = self.client.post(self.invitation.get_absolute_url(), {"accepted": True})
         self.assertEqual(response.status_code, 403)
         self.invitation.refresh_from_db()
         self.assertIsNone(self.invitation.accepted)
@@ -1223,9 +1078,7 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
     def setUpTestData(cls):
         super().setUpTestData()
         cls.setUpReviewData()
-        invitation_factory = PeerReviewInvitationFactory(
-            editor=cls.editor, reviewer=cls.reviewer, review=cls.review
-        )
+        invitation_factory = PeerReviewInvitationFactory(editor=cls.editor, reviewer=cls.reviewer, review=cls.review)
         cls.invitation = invitation_factory.create()
 
     def setUp(self):
@@ -1256,9 +1109,7 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         self.review.close(self.submitter.member_profile)
         self.review.reopen(self.submitter.member_profile)
         self.assertEqual(self.client.get(url).status_code, 404)
-        self.assertEqual(
-            self.client.post(url, {"reviewer_submitted": True}).status_code, 404
-        )
+        self.assertEqual(self.client.post(url, {"reviewer_submitted": True}).status_code, 404)
         self.assertEqual(self.invitation.feedback_set.count(), 0)
 
     def test_close_with_submitted_feedback_requires_curatorial_handling(self):
@@ -1266,9 +1117,7 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         feedback.reviewer_submitted = True
         feedback.save(update_fields=["reviewer_submitted"])
         self.client.force_login(self.submitter)
-        response = self.client.post(
-            self.review.get_change_closed_url(), {"action": "close"}
-        )
+        response = self.client.post(self.review.get_change_closed_url(), {"action": "close"})
         self.assertEqual(response.status_code, 400)
         feedback.refresh_from_db()
         self.assertTrue(feedback.reviewer_submitted)
@@ -1287,9 +1136,7 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         self.assertEqual(self.client.get(url).status_code, 404)
 
     def test_editor_feedback_requires_editor_permission(self):
-        self.assertIn(
-            self.client.get(self.feedback.get_editor_url()).status_code, (302, 403)
-        )
+        self.assertIn(self.client.get(self.feedback.get_editor_url()).status_code, (302, 403))
 
 
 class GitHubWebhookTestCase(ResponseStatusCodesMixin, TestCase):
@@ -1306,9 +1153,7 @@ class GitHubWebhookTestCase(ResponseStatusCodesMixin, TestCase):
 
     def _create_signed_raw_request(self, body, signature=None, event="installation"):
         if signature is None:
-            hash_object = hmac.new(
-                self.secret.encode("utf-8"), msg=body, digestmod=hashlib.sha256
-            )
+            hash_object = hmac.new(self.secret.encode("utf-8"), msg=body, digestmod=hashlib.sha256)
             signature = f"sha256={hash_object.hexdigest()}"
         request = self.factory.post(
             self.path,
@@ -1451,9 +1296,7 @@ class GitHubWebhookTestCase(ResponseStatusCodesMixin, TestCase):
         request = self._create_signed_request(payload)
         response = github_sync_webhook(request)
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(
-            GithubIntegrationAppInstallation.objects.filter(user=self.user).exists()
-        )
+        self.assertFalse(GithubIntegrationAppInstallation.objects.filter(user=self.user).exists())
 
     @override_settings(GITHUB_INTEGRATION_APP_WEBHOOK_SECRET="test-secret")
     def test_non_installation_event_returns_202(self):
