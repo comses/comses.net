@@ -9,7 +9,12 @@ from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMix
 from django.core.exceptions import PermissionDenied
 from django.db import transaction, IntegrityError
 from django.db.models import Q
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import (
+    HttpResponse,
+    Http404,
+    HttpResponseRedirect,
+    HttpResponseBadRequest,
+)
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse
 from django.utils import timezone
@@ -69,6 +74,7 @@ from .forms import (
     PeerReviewInvitationForm,
     PeerReviewerFeedbackEditorForm,
     PeerReviewFilterForm,
+    PeerReviewClosedActionForm,
 )
 from .fs import (
     FileCategories,
@@ -113,6 +119,8 @@ from .serializers import (
     PeerReviewInvitationSerializer,
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
+    PeerReviewStatusSerializer,
+    PeerReviewInvitationRequestSerializer,
 )
 from .tasks import (
     import_github_release_task,
@@ -200,18 +208,22 @@ class PeerReviewChangeClosedView(PermissionRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         review = self.get_object()
-        action = request.POST.get("action")
-        if action == "close":
-            review.close(request.user.member_profile)
-        elif action == "reopen":
-            review.reopen(request.user.member_profile)
-        else:
-            raise ValidationError("Invalid action")
+        form = PeerReviewClosedActionForm(request.POST)
+        if not form.is_valid():
+            return HttpResponseBadRequest("Invalid action")
+        action = form.cleaned_data["action"]
+        try:
+            if action == "close":
+                review.close(request.user.member_profile)
+            else:
+                review.reopen(request.user.member_profile)
+        except ValidationError as exc:
+            return HttpResponseBadRequest(str(exc.detail[0]))
         messages.success(
             request,
             (f"Review successfully {action}{'d' if action == 'close' else 'ed'}"),
         )
-        return redirect(request.META.get("HTTP_REFERER", ""))
+        return redirect(request.META.get("HTTP_REFERER") or review.get_absolute_url())
 
 
 class ChangePeerReviewPermission(permissions.BasePermission):
@@ -274,21 +286,20 @@ def _change_peer_review_status(request):
     slug = request.kwargs.get("slug")
     review = get_object_or_404(PeerReview, slug=slug)
 
-    raw_status = request.data["status"]
-    try:
-        new_status = ReviewStatus(raw_status)
-    except ValueError:
-        raise ValidationError(f"status {raw_status} not valid")
+    serializer = PeerReviewStatusSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    new_status = ReviewStatus(serializer.validated_data["status"])
     review.editor_change_review_status(request.user.member_profile, new_status)
 
     return Response(data={"status": new_status.name}, status=status.HTTP_200_OK)
 
 
-class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
+class PeerReviewInvitationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
     permission_classes = (ChangePeerReviewPermission,)
     serializer_class = PeerReviewInvitationSerializer
     lookup_url_kwarg = "invitation_slug"
+    lookup_field = "slug"
 
     def get_queryset(self):
         slug = self.kwargs["slug"]
@@ -297,16 +308,16 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     @transaction.atomic
     @action(detail=False, methods=["post"])
     def send_invitation(self, request, slug):
-        data = request.data
-        candidate_reviewer_id = data.get("id")
-        member_profile_id = data.get("member_profile")["id"]
+        serializer = PeerReviewInvitationRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reviewer = serializer.validated_data["id"]
         review = get_object_or_404(PeerReview, slug=slug)
-        form_data = dict(review=review.id, editor=request.user.member_profile.id)
-        if candidate_reviewer_id is not None:
-            form_data["candidate_reviewer"] = member_profile_id
-            form_data["reviewer"] = candidate_reviewer_id
-        else:
-            raise ValidationError("Must specify id of candidate reviewer")
+        form_data = dict(
+            review=review.id,
+            editor=request.user.member_profile.id,
+            candidate_reviewer=reviewer.member_profile_id,
+            reviewer=reviewer.pk,
+        )
         form = PeerReviewInvitationForm(data=form_data)
         if form.is_valid():
             invitation = form.save()
@@ -318,16 +329,30 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     @transaction.atomic
     @action(detail=True, methods=["post"])
     def resend_invitation(self, request, slug, invitation_slug):
-        invitation = get_object_or_404(PeerReviewInvitation, slug=invitation_slug)
+        invitation = self.get_object()
         invitation.send_candidate_reviewer_email(resend=True)
         return Response(status=status.HTTP_200_OK)
 
 
-class PeerReviewInvitationUpdateView(UpdateView):
+class PeerReviewValidationMixin:
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except ValidationError as exc:
+            return HttpResponseBadRequest(str(exc.detail[0]))
+
+
+class PeerReviewInvitationUpdateView(PeerReviewValidationMixin, UpdateView):
     context_object_name = "invitation"
     form_class = PeerReviewInvitationReplyForm
     queryset = PeerReviewInvitation.objects.all()
     template_name = "library/review/invitations/update.jinja"
+
+    def get_object(self, queryset=None):
+        invitation = super().get_object(queryset)
+        if invitation.review.closed or invitation.review.is_complete:
+            raise PermissionDenied("This peer review is closed or complete.")
+        return invitation
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -348,21 +373,25 @@ class PeerReviewInvitationUpdateView(UpdateView):
             return self.object.get_absolute_url()
 
 
-class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
+class PeerReviewFeedbackViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PeerReviewerFeedback.objects.all()
     serializer_class = PeerReviewFeedbackEditorSerializer
+    permission_classes = (ChangePeerReviewPermission,)
 
     def get_queryset(self):
         slug = self.kwargs["slug"]
         return self.queryset.filter(invitation__review__slug=slug)
 
 
-class PeerReviewFeedbackUpdateView(UpdateView):
+class PeerReviewFeedbackUpdateView(PeerReviewValidationMixin, UpdateView):
     context_object_name = "review_feedback"
     form_class = PeerReviewerFeedbackReviewerForm
     template_name = "library/review/feedback/update.jinja"
     pk_url_kwarg = "feedback_id"
     queryset = PeerReviewerFeedback.objects.all()
+
+    def get_queryset(self):
+        return super().get_queryset().filter(invitation__slug=self.kwargs["slug"])
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -396,12 +425,18 @@ class PeerReviewFeedbackUpdateView(UpdateView):
             return self.object.get_absolute_url()
 
 
-class PeerReviewEditorFeedbackUpdateView(UpdateView):
+class PeerReviewEditorFeedbackUpdateView(
+    PermissionRequiredMixin, PeerReviewValidationMixin, UpdateView
+):
+    permission_required = "library.change_peerreview"
     context_object_name = "review_feedback"
     form_class = PeerReviewerFeedbackEditorForm
     template_name = "library/review/feedback/editor_update.jinja"
     pk_url_kwarg = "feedback_id"
     queryset = PeerReviewerFeedback.objects.all()
+
+    def get_queryset(self):
+        return super().get_queryset().filter(invitation__slug=self.kwargs["slug"])
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -1341,7 +1376,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         if existing_review:
             messages.info(
                 request,
-                "An active peer review already exists for this codebase. Close it below if you wish to open a new one",
+                "An active peer review already exists for this codebase.",
             )
             return self.build_review_request_response(
                 request, existing_review.codebase_release, existing_review
@@ -1363,19 +1398,20 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             )
             review = None
         else:
-            codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
-            codebase_release.save(update_fields=["status"])
             review_release = codebase_release
-            review = previous_review if has_closed_review else None
+            review = previous_review
+            if review is None:
+                review_release.status = CodebaseRelease.Status.UNDER_REVIEW
+                review_release.save(update_fields=["status"])
 
         if review is None:
             review = PeerReview.objects.create(
                 codebase_release=review_release,
                 submitter=request.user.member_profile,
             )
+            review.send_author_requested_peer_review_email()
         else:
             review.reopen(request.user.member_profile)
-        review.send_author_requested_peer_review_email()
         messages.success(request, "Peer review request submitted.")
         return self.build_review_request_response(request, review_release, review)
 

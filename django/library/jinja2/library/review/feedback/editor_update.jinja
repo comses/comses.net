@@ -15,10 +15,14 @@
     <mark>
     {{ display_reviewer_feedback(review_feedback, include_private=true) }}
     </mark>
+    {% if review_feedback.invitation.review.closed or review_feedback.invitation.review.is_complete %}
+    <p>This feedback is read-only because its review is closed or complete.</p>
+    {% else %}
     <h2>Editor Form</h2>
     <form method="post">
         {% include 'includes/form.jinja' %}
         <p class="text-muted">Reviewer recommendation: <span class="badge bg-info">{{ review_feedback.recommendation }}</span></p>
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
+    {% endif %}
 {% endblock %}

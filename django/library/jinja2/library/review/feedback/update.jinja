@@ -13,8 +13,8 @@
 {% endblock %}
 
 {% block content %}
-    {% if review_feedback.invitation.review.is_complete %}
-        <p>Peer review is complete. Please see below for a record of the feedback</p>
+    {% if review_feedback.invitation.review.closed or review_feedback.invitation.review.is_complete %}
+        <p>This feedback is read-only because its review is closed or complete.</p>
         {% for feedback in feedback_set %}
             <div class="card">
                 <div class="card-body">

@@ -47,12 +47,21 @@ from .models import (
     PeerReviewerFeedback,
     PeerReviewInvitation,
     PeerReviewEventLog,
+    ReviewStatus,
 )
 
 logger = logging.getLogger(__name__)
 
 YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
 YOUTUBE_VIDEO_ID_LENGTH = 11
+
+
+class PeerReviewStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=ReviewStatus.choices)
+
+
+class PeerReviewInvitationRequestSerializer(serializers.Serializer):
+    id = serializers.PrimaryKeyRelatedField(queryset=PeerReviewer.objects.all())
 
 
 def is_valid_youtube_url(value):
@@ -923,7 +932,8 @@ class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
 
     def get_latest_feedback_url(self, instance):
-        return instance.latest_feedback.get_absolute_url()
+        feedback = instance.feedback_set.order_by("-pk").first()
+        return feedback.get_absolute_url() if feedback is not None else None
 
     def get_codebase_release_title(self, instance):
         release = instance.review.codebase_release

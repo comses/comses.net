@@ -2,10 +2,12 @@ import logging
 import pathlib
 import semver
 import uuid
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory, BaseModelTestCase
@@ -21,9 +23,241 @@ from ..models import (
     Codebase,
     CodebaseRelease,
     License,
+    PeerReview,
+    PeerReviewEvent,
+    PeerReviewer,
+    PeerReviewerFeedback,
+    ReviewStatus,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class PeerReviewTransitionTest(BaseModelTestCase):
+    def setUp(self):
+        super().setUp()
+        self.codebase = CodebaseFactory(submitter=self.user).create()
+        self.release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        self.release.status = CodebaseRelease.Status.UNDER_REVIEW
+        self.release.save(update_fields=["status"])
+        self.review = PeerReview.objects.create(
+            codebase_release=self.release, submitter=self.user.member_profile
+        )
+
+    def create_invitation(self, accepted=True):
+        reviewer = PeerReviewer.objects.create(member_profile=self.user.member_profile)
+        return self.review.invitation_set.create(
+            editor=self.user.member_profile,
+            candidate_reviewer=self.user.member_profile,
+            reviewer=reviewer,
+            accepted=accepted,
+        )
+
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_cancel_discards_only_drafts_and_reuses_invitation_links(self, notify):
+        invitation = self.create_invitation()
+        old_feedback = invitation.feedback_set.create(
+            runnable_comments="Unsubmitted work"
+        )
+        invitation_url = invitation.get_absolute_url()
+        sent_at = invitation.date_sent
+        self.review.close(self.user.member_profile)
+        self.assertFalse(
+            PeerReviewerFeedback.objects.filter(pk=old_feedback.pk).exists()
+        )
+        with self.assertRaises(ValidationError):
+            old_feedback.validate_editable()
+        with self.assertRaises(ValidationError):
+            invitation.latest_feedback
+        self.assertEqual(invitation.feedback_set.count(), 0)
+        self.assertTrue(self.review.reopen(self.user.member_profile))
+        invitation.refresh_from_db()
+        self.assertIsNone(invitation.accepted)
+        self.assertEqual(invitation.get_absolute_url(), invitation_url)
+        self.assertEqual(invitation.date_sent, sent_at)
+        self.assertEqual(invitation.feedback_set.count(), 0)
+        fresh_feedback = invitation.accept()
+        self.assertNotEqual(fresh_feedback.pk, old_feedback.pk)
+        self.assertFalse(fresh_feedback.reviewer_submitted)
+        self.assertEqual(self.review.status, ReviewStatus.AWAITING_REVIEWER_FEEDBACK)
+        self.assertFalse(self.review.reopen(self.user.member_profile))
+        self.assertEqual(invitation.feedback_set.count(), 1)
+        notify.assert_called_once()
+
+    def test_reopen_discards_drafts_retained_by_legacy_close(self):
+        invitation = self.create_invitation()
+        feedback = invitation.feedback_set.create(runnable_comments="Old draft")
+        PeerReview.objects.filter(pk=self.review.pk).update(closed=True)
+        self.assertTrue(self.review.reopen(self.user.member_profile))
+        self.assertFalse(PeerReviewerFeedback.objects.filter(pk=feedback.pk).exists())
+        invitation.refresh_from_db()
+        self.assertIsNone(invitation.accepted)
+        fresh_feedback = invitation.accept()
+        self.assertNotEqual(fresh_feedback.pk, feedback.pk)
+        self.assertFalse(fresh_feedback.reviewer_submitted)
+
+    def test_cancel_preserves_submitted_feedback_and_editor_notes(self):
+        invitation = self.create_invitation()
+        for field, value in (
+            ("reviewer_submitted", True),
+            ("private_editor_notes", "Editorial decision notes"),
+            ("notes_to_author", "An editorial decision was communicated"),
+        ):
+            with self.subTest(field=field):
+                feedback = invitation.feedback_set.create(**{field: value})
+                with self.assertRaises(ValidationError):
+                    self.review.close(self.user.member_profile)
+                self.review.refresh_from_db()
+                self.assertFalse(self.review.closed)
+                feedback.refresh_from_db()
+                self.assertTrue(
+                    type(feedback)
+                    .objects.filter(pk=feedback.pk, **{field: value})
+                    .exists()
+                )
+                self.assertEqual(self.review.event_set.count(), 0)
+                feedback.delete()
+
+    def test_cancel_preserves_history_of_submission_or_editorial_decisions(self):
+        for action in (
+            PeerReviewEvent.REVIEWER_FEEDBACK_SUBMITTED,
+            PeerReviewEvent.REVISIONS_REQUESTED,
+            PeerReviewEvent.RELEASE_CERTIFIED,
+        ):
+            with self.subTest(action=action):
+                event = self.review.log(
+                    "Prior review work", action, self.user.member_profile
+                )
+                with self.assertRaises(ValidationError):
+                    self.review.close(self.user.member_profile)
+                self.review.refresh_from_db()
+                self.assertFalse(self.review.closed)
+                self.assertEqual(self.review.event_set.count(), 1)
+                event.delete()
+
+    def test_historically_closed_review_with_submitted_feedback_cannot_reopen(self):
+        invitation = self.create_invitation()
+        feedback = invitation.feedback_set.create(reviewer_submitted=True)
+        PeerReview.objects.filter(pk=self.review.pk).update(closed=True)
+        with self.assertRaises(ValidationError):
+            self.review.reopen(self.user.member_profile)
+        self.review.refresh_from_db()
+        self.assertTrue(self.review.closed)
+        feedback.refresh_from_db()
+        self.assertTrue(feedback.reviewer_submitted)
+
+    def test_author_changes_status_requires_curatorial_cancellation(self):
+        self.review.editor_change_review_status(
+            self.user.member_profile, ReviewStatus.AWAITING_AUTHOR_CHANGES
+        )
+        with self.assertRaises(ValidationError):
+            self.review.close(self.user.member_profile)
+        self.review.refresh_from_db()
+        self.assertFalse(self.review.closed)
+
+    def test_expired_invitations_require_resending_after_reopen(self):
+        invitation = self.create_invitation()
+        sent_at = timezone.now() - timedelta(
+            days=settings.PEER_REVIEW_INVITATION_EXPIRATION + 1
+        )
+        type(invitation).objects.filter(pk=invitation.pk).update(date_sent=sent_at)
+        self.review.close(self.user.member_profile)
+        self.review.reopen(self.user.member_profile)
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.date_sent, sent_at)
+        self.assertTrue(invitation.is_expired)
+        with self.assertRaises(ValidationError):
+            invitation.accept()
+        invitation.send_candidate_reviewer_email(resend=True)
+        sent_at = invitation.date_sent
+        feedback = invitation.accept()
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.date_sent, sent_at)
+        self.assertFalse(invitation.is_expired)
+        self.assertEqual(invitation.accept().pk, feedback.pk)
+        self.assertEqual(invitation.feedback_set.count(), 1)
+        self.assertEqual(
+            self.review.event_set.filter(
+                action=PeerReviewEvent.INVITATION_ACCEPTED.name
+            ).count(),
+            1,
+        )
+
+    def test_reopen_rejects_completed_review_without_relying_on_release_status(self):
+        self.review.status = ReviewStatus.COMPLETE
+        self.review.closed = True
+        self.review.save()
+        with self.assertRaises(ValidationError):
+            self.review.reopen(self.user.member_profile)
+        self.review.refresh_from_db()
+        self.assertTrue(self.review.closed)
+        self.assertEqual(self.review.event_set.count(), 0)
+
+    def test_reopen_rejects_another_active_review(self):
+        self.review.close(self.user.member_profile)
+        other_release = self.codebase.create_release(initialize=False)
+        PeerReview.objects.create(
+            codebase_release=other_release, submitter=self.user.member_profile
+        )
+        with self.assertRaises(ValidationError):
+            self.review.reopen(self.user.member_profile)
+        self.review.refresh_from_db()
+        self.assertTrue(self.review.closed)
+
+    def test_reopen_requires_review_ready_metadata(self):
+        self.review.close(self.user.member_profile)
+        self.release.license = None
+        self.release.save(update_fields=["license"])
+        with self.assertRaises(ValidationError):
+            self.review.reopen(self.user.member_profile)
+        self.review.refresh_from_db()
+        self.assertTrue(self.review.closed)
+
+    def test_status_selector_cannot_certify_or_demote_completed_reviews(self):
+        with self.assertRaises(ValidationError):
+            self.review.editor_change_review_status(
+                self.user.member_profile, ReviewStatus.COMPLETE
+            )
+        self.review.status = ReviewStatus.COMPLETE
+        self.review.save()
+        with self.assertRaises(ValidationError):
+            self.review.editor_change_review_status(
+                self.user.member_profile, ReviewStatus.AWAITING_REVIEWER_FEEDBACK
+            )
+
+    @patch("library.models.PeerReview.send_model_certified_email")
+    def test_certification_is_idempotent(self, notify):
+        self.assertTrue(self.review.set_complete_status(self.user.member_profile))
+        self.assertFalse(self.review.set_complete_status(self.user.member_profile))
+        self.release.refresh_from_db()
+        self.assertEqual(self.release.status, CodebaseRelease.Status.REVIEW_COMPLETE)
+        self.assertTrue(self.release.peer_reviewed)
+        self.assertEqual(
+            self.review.event_set.filter(
+                action=PeerReviewEvent.RELEASE_CERTIFIED.name
+            ).count(),
+            1,
+        )
+        notify.assert_called_once()
+
+    def test_closed_reviews_reject_certification_and_status_changes(self):
+        self.review.close(self.user.member_profile)
+        with self.assertRaises(ValidationError):
+            self.review.set_complete_status(self.user.member_profile)
+        with self.assertRaises(ValidationError):
+            self.review.editor_change_review_status(
+                self.user.member_profile, ReviewStatus.AWAITING_EDITOR_FEEDBACK
+            )
+
+    def test_repeated_close_and_status_change_do_not_duplicate_events(self):
+        self.assertFalse(
+            self.review.editor_change_review_status(
+                self.user.member_profile, self.review.status
+            )
+        )
+        self.assertTrue(self.review.close(self.user.member_profile))
+        self.assertFalse(self.review.close(self.user.member_profile))
+        self.assertEqual(self.review.event_set.count(), 1)
 
 
 class CodebaseTest(BaseModelTestCase):

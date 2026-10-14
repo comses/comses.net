@@ -2903,6 +2903,10 @@ class PeerReview(models.Model):
 
     @transaction.atomic
     def set_complete_status(self, editor: MemberProfile):
+        self._lock_for_transition()
+        if self.is_complete:
+            return False
+        self.validate_active()
         self.status = ReviewStatus.COMPLETE
         self.save()
         self.log(
@@ -2918,11 +2922,19 @@ class PeerReview(models.Model):
         self.codebase_release.codebase.peer_reviewed = True
         self.codebase_release.codebase.save()
         self.send_model_certified_email()
+        return True
 
     def log(self, message: str, action: PeerReviewEvent, author: MemberProfile):
         return self.event_set.create(message=message, action=action.name, author=author)
 
+    @transaction.atomic
     def editor_change_review_status(self, editor: MemberProfile, status: ReviewStatus):
+        self._lock_for_transition()
+        if status == ReviewStatus.COMPLETE:
+            raise ValidationError("Use Accept and certify to complete a peer review.")
+        self.validate_active()
+        if self.status == status:
+            return False
         self.log(
             author=editor,
             action=PeerReviewEvent.REVIEW_STATUS_UPDATED,
@@ -2930,8 +2942,16 @@ class PeerReview(models.Model):
         )
         self.status = status
         self.save()
+        return True
 
+    def validate_active(self):
+        if self.closed or self.is_complete or self.codebase_release.is_review_complete:
+            raise ValidationError("This peer review is closed or complete.")
+
+    @transaction.atomic
     def author_resubmitted_changes(self, changes_made=None):
+        self._lock_for_transition()
+        self.validate_active()
         author = self.submitter
         self.log(
             message=f"Release has been resubmitted for review: {changes_made}",
@@ -2940,32 +2960,96 @@ class PeerReview(models.Model):
         )
         self.send_author_updated_content_email()
 
-    def close(self, submitter_or_editor: MemberProfile):
-        if self.closed:
-            return
+    def _lock_for_transition(self):
+        """Serialize with review requests and reload state inside a transaction."""
+        Codebase.objects.select_for_update().get(pk=self.codebase_release.codebase_id)
+        self.refresh_from_db()
 
+    def validate_reopen(self):
+        self.validate_cancellable()
+        if not self.closed:
+            return
+        if self.get_codebase_latest_active_review(self.codebase_release.codebase):
+            raise ValidationError(
+                "Another active peer review already exists for this codebase."
+            )
+        self.codebase_release.validate_publishable()
+
+    def validate_cancellable(self):
+        protected_events = (
+            PeerReviewEvent.REVIEWER_FEEDBACK_SUBMITTED.name,
+            PeerReviewEvent.REVISIONS_REQUESTED.name,
+            PeerReviewEvent.RELEASE_CERTIFIED.name,
+        )
+        if (
+            self.is_complete
+            or self.is_awaiting_author_changes
+            or self.codebase_release.is_review_complete
+            or PeerReviewerFeedback.objects.for_review(self)
+            .with_review_decisions()
+            .exists()
+            or self.event_set.filter(action__in=protected_events).exists()
+        ):
+            raise ValidationError(
+                "This review has submitted feedback or an editorial decision. "
+                "Curatorial handling is required to close or reopen it."
+            )
+
+    @transaction.atomic
+    def close(self, submitter_or_editor: MemberProfile):
+        self._lock_for_transition()
+        if self.closed:
+            return False
+
+        self.validate_cancellable()
+        deleted_count, _ = (
+            PeerReviewerFeedback.objects.for_review(self).drafts().delete()
+        )
         self.closed = True
         self.log(
-            message=f"Peer review closed by {'submitter' if submitter_or_editor == self.submitter else 'editor'}",
+            message=(
+                f"Premature peer review cancelled by {'submitter' if submitter_or_editor == self.submitter else 'editor'}; "
+                f"discarded {deleted_count} unsubmitted feedback draft(s)"
+            ),
             action=PeerReviewEvent.REVIEW_CLOSED,
             author=submitter_or_editor,
         )
         self.save()
-        # do we want to send an email when a review is closed?
+        return True
 
+    @transaction.atomic
     def reopen(self, submitter_or_editor: MemberProfile):
+        self._lock_for_transition()
+        self.validate_reopen()
         if not self.closed:
-            return
+            return False
 
+        # Older close actions retained drafts; apply the same cancellation policy.
+        deleted_count, _ = (
+            PeerReviewerFeedback.objects.for_review(self).drafts().delete()
+        )
+        if not self.codebase_release.is_published:
+            self.codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
+            self.codebase_release.save(update_fields=["status"])
         self.closed = False
+        self.status = ReviewStatus.AWAITING_REVIEWER_FEEDBACK
+        self.invitation_set.update(accepted=None)
         self.log(
-            message=f"Peer review re-opened by {'submitter' if submitter_or_editor == self.submitter else 'editor'}",
+            message=(
+                f"Peer review reopened by {'submitter' if submitter_or_editor == self.submitter else 'editor'}; "
+                f"invitations reset to pending; discarded {deleted_count} retained unsubmitted feedback draft(s)"
+            ),
             action=PeerReviewEvent.REVIEW_REOPENED,
             author=submitter_or_editor,
         )
         self.save()
+        self.send_author_requested_peer_review_email()
+        return True
 
+    @transaction.atomic
     def send_author_updated_content_email(self):
+        self._lock_for_transition()
+        self.validate_active()
         qs = self.invitation_set.filter(accepted=True)
         # if there are no currently accepted invitations, status should be set to awaiting editor feedback
         self.status = (
@@ -3000,6 +3084,7 @@ class PeerReview(models.Model):
             [
                 {"value": choice[0], "label": str(choice[1])}
                 for choice in ReviewStatus.choices
+                if choice[0] != ReviewStatus.COMPLETE
             ]
         )
 
@@ -3122,10 +3207,14 @@ class PeerReviewInvitation(models.Model):
     objects = PeerReviewInvitationQuerySet.as_manager()
 
     @property
+    @transaction.atomic
     def latest_feedback(self):
-        if not self.feedback_set.exists():
-            return self.feedback_set.create()
-        return self.feedback_set.last()
+        feedback = self.feedback_set.order_by("-pk").first()
+        if feedback is not None:
+            return feedback
+        self.review._lock_for_transition()
+        self.review.validate_active()
+        return self.feedback_set.order_by("-pk").first() or self.feedback_set.create()
 
     @property
     def expiration_date(self):
@@ -3155,6 +3244,8 @@ class PeerReviewInvitation(models.Model):
 
     @transaction.atomic
     def send_author_resubmitted_email(self):
+        self.review._lock_for_transition()
+        self.review.validate_active()
         if not self.accepted:
             logger.error(
                 "Trying to send an author resubmitted notification to an unaccepted invitation - ignoring."
@@ -3174,6 +3265,8 @@ class PeerReviewInvitation(models.Model):
 
     @transaction.atomic
     def send_candidate_reviewer_email(self, resend=False):
+        self.review._lock_for_transition()
+        self.review.validate_active()
         self.date_sent = timezone.now()
         self.save(update_fields=["date_sent"])
         send_markdown_email(
@@ -3195,8 +3288,14 @@ class PeerReviewInvitation(models.Model):
 
     @transaction.atomic
     def accept(self):
+        self.review._lock_for_transition()
+        self.review.validate_active()
+        self.refresh_from_db()
+        if self.accepted is True:
+            return self.latest_feedback
+        self.validate_response()
         self.accepted = True
-        self.save()
+        self.save(update_fields=["accepted"])
         feedback = self.latest_feedback
         self.review.log(
             action=PeerReviewEvent.INVITATION_ACCEPTED,
@@ -3214,8 +3313,14 @@ class PeerReviewInvitation(models.Model):
 
     @transaction.atomic
     def decline(self):
+        self.review._lock_for_transition()
+        self.review.validate_active()
+        self.refresh_from_db()
+        if self.accepted is False:
+            return False
+        self.validate_response()
         self.accepted = False
-        self.save()
+        self.save(update_fields=["accepted"])
         self.review.log(
             action=PeerReviewEvent.INVITATION_DECLINED,
             author=self.reviewer.member_profile,
@@ -3227,6 +3332,14 @@ class PeerReviewInvitation(models.Model):
             context={"invitation": self, "profile": self.reviewer.member_profile},
             to=[settings.REVIEW_EDITOR_EMAIL],
         )
+        return True
+
+    def validate_response(self):
+        self.review.validate_active()
+        if self.is_expired and self.accepted is not True:
+            raise ValidationError(
+                "This invitation has expired. Ask the editor to resend it."
+            )
 
     def get_absolute_url(self):
         return reverse("library:peer-review-invitation", kwargs=dict(slug=self.slug))
@@ -3234,6 +3347,21 @@ class PeerReviewInvitation(models.Model):
     class Meta:
         unique_together = (("review", "reviewer"),)
         ordering = ["-date_sent"]
+
+
+class PeerReviewerFeedbackQuerySet(models.QuerySet):
+    def for_review(self, review):
+        return self.filter(invitation__review=review)
+
+    def drafts(self):
+        return self.filter(reviewer_submitted=False)
+
+    def with_review_decisions(self):
+        return self.filter(
+            Q(reviewer_submitted=True)
+            | ~Q(private_editor_notes="")
+            | ~Q(notes_to_author="")
+        )
 
 
 @register_snippet
@@ -3297,6 +3425,17 @@ class PeerReviewerFeedback(models.Model):
         ),
         default=False,
     )
+    objects = PeerReviewerFeedbackQuerySet.as_manager()
+
+    def validate_editable(self):
+        if not type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError(
+                "This feedback draft was discarded when the review was cancelled."
+            )
+        self.invitation.refresh_from_db()
+        self.invitation.review.validate_active()
+        if not self.invitation.accepted:
+            raise ValidationError("Accept the invitation before updating feedback.")
 
     def get_absolute_url(self):
         return reverse(
@@ -3319,6 +3458,8 @@ class PeerReviewerFeedback(models.Model):
         reviewer updated feedback
         """
         review = self.invitation.review
+        review._lock_for_transition()
+        self.validate_editable()
         review.status = ReviewStatus.AWAITING_EDITOR_FEEDBACK
         review.save()
         reviewer = self.invitation.reviewer.member_profile
@@ -3350,6 +3491,8 @@ class PeerReviewerFeedback(models.Model):
         editor updated feedback
         """
         review = self.invitation.review
+        review._lock_for_transition()
+        self.validate_editable()
         review.log(
             action=PeerReviewEvent.REVISIONS_REQUESTED,
             author=editor,

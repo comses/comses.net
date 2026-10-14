@@ -31,6 +31,8 @@ from library.models import (
     License,
     PeerReview,
     PeerReviewEvent,
+    ReviewStatus,
+    PeerReviewer,
 )
 from library.fs import FileCategories
 from library.tests.base import ReviewSetup
@@ -459,7 +461,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             codebase_release=release, submitter=self.submitter.member_profile
         )
         review.set_complete_status(self.submitter.member_profile)
-        review.close(self.submitter.member_profile)
+        PeerReview.objects.filter(pk=review.pk).update(closed=True)
 
         response = self.client.post(
             release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
@@ -470,6 +472,110 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             1,
         )
 
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_completed_review_cannot_restart_even_with_draft_release_status(
+        self, notify
+    ):
+        self.login(self.submitter, self.user_factory.password)
+        release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        review = PeerReview.objects.create(
+            codebase_release=release,
+            submitter=self.submitter.member_profile,
+            status=ReviewStatus.COMPLETE,
+            closed=True,
+        )
+        release_count = self.codebase.releases.count()
+        response = self.client.post(
+            release.get_request_peer_review_url(), HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.post(
+            review.get_change_closed_url(), {"action": "reopen"}
+        )
+        self.assertEqual(response.status_code, 400)
+        review.refresh_from_db()
+        release.refresh_from_db()
+        self.assertTrue(review.closed)
+        self.assertEqual(release.status, CodebaseRelease.Status.DRAFT)
+        self.assertEqual(self.codebase.releases.count(), release_count)
+        self.assertEqual(review.event_set.count(), 0)
+        notify.assert_not_called()
+
+    def test_direct_reopen_rejects_another_active_review(self):
+        self.login(self.submitter, self.user_factory.password)
+        first = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        closed_review = PeerReview.objects.create(
+            codebase_release=first, submitter=self.submitter.member_profile, closed=True
+        )
+        second = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        PeerReview.objects.create(
+            codebase_release=second, submitter=self.submitter.member_profile
+        )
+        response = self.client.post(
+            closed_review.get_change_closed_url(), {"action": "reopen"}
+        )
+        self.assertEqual(response.status_code, 400)
+        closed_review.refresh_from_db()
+        self.assertTrue(closed_review.closed)
+
+    def test_invalid_close_action_returns_bad_request(self):
+        self.login(self.submitter, self.user_factory.password)
+        release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        review = PeerReview.objects.create(
+            codebase_release=release, submitter=self.submitter.member_profile
+        )
+        response = self.client.post(
+            review.get_change_closed_url(), {"action": "invalid"}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(review.event_set.count(), 0)
+
+    def test_both_restart_paths_require_uploaded_files(self):
+        self.login(self.submitter, self.user_factory.password)
+        release = ReleaseSetup.setUpPublishableDraftRelease(
+            self.codebase, with_files=False
+        )
+        review = PeerReview.objects.create(
+            codebase_release=release,
+            submitter=self.submitter.member_profile,
+            closed=True,
+        )
+        for url, data in (
+            (release.get_request_peer_review_url(), {}),
+            (review.get_change_closed_url(), {"action": "reopen"}),
+        ):
+            with self.subTest(url=url):
+                response = self.client.post(url, data, HTTP_ACCEPT="application/json")
+                self.assertEqual(response.status_code, 400)
+        review.refresh_from_db()
+        release.refresh_from_db()
+        self.assertTrue(review.closed)
+        self.assertEqual(release.status, CodebaseRelease.Status.DRAFT)
+        self.assertEqual(review.event_set.count(), 0)
+
+    def test_editor_status_endpoint_validates_input_and_rejects_complete(self):
+        editor = self.user_factory.create(username="editor", is_superuser=True)
+        self.login(editor, self.user_factory.password)
+        release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        review = PeerReview.objects.create(
+            codebase_release=release, submitter=self.submitter.member_profile
+        )
+        url = review.get_absolute_url()
+        for data in (
+            {},
+            {"status": None},
+            {"status": "invalid"},
+            {"status": "complete"},
+        ):
+            with self.subTest(data=data):
+                response = self.client.put(
+                    url, data, format="json", HTTP_ACCEPT="application/json"
+                )
+                self.assertEqual(response.status_code, 400)
+        review.refresh_from_db()
+        self.assertFalse(review.is_complete)
+        self.assertEqual(review.event_set.count(), 0)
+
 
 class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
     def setUp(self):
@@ -477,7 +583,9 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
         self.codebase = CodebaseFactory(submitter=self.submitter).create()
         self.release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
 
-    def request_reviews_concurrently(self, first_release, second_release):
+    def request_reviews_concurrently(
+        self, first_release, second_release, second_review=None
+    ):
         if connection.vendor != "postgresql":
             self.skipTest("Requires PostgreSQL row locks and lock diagnostics")
 
@@ -506,6 +614,11 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
                 if name == "second":
                     second_connected.set()
                 client = APIClient()
+                if name == "second" and second_review is not None:
+                    client.force_login(self.submitter)
+                    return client.post(
+                        second_review.get_change_closed_url(), {"action": "reopen"}
+                    )
                 client.force_authenticate(self.submitter)
                 return client.post(
                     release.get_request_peer_review_url(),
@@ -539,6 +652,29 @@ class ConcurrentPeerReviewRequestTestCase(TransactionTestCase):
             finally:
                 allow_first_request.set()
             return [first.result(timeout=10), second.result(timeout=10)]
+
+    @patch("library.models.PeerReview.send_author_requested_peer_review_email")
+    def test_direct_reopen_serializes_with_request_for_another_release(self, notify):
+        first_review = PeerReview.objects.create(
+            codebase_release=self.release,
+            submitter=self.submitter.member_profile,
+            closed=True,
+        )
+        second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        second_review = PeerReview.objects.create(
+            codebase_release=second_release,
+            submitter=self.submitter.member_profile,
+            closed=True,
+        )
+        responses = self.request_reviews_concurrently(
+            self.release, second_release, second_review=second_review
+        )
+        self.assertEqual([response.status_code for response in responses], [200, 400])
+        first_review.refresh_from_db()
+        second_review.refresh_from_db()
+        self.assertFalse(first_review.closed)
+        self.assertTrue(second_review.closed)
+        notify.assert_called_once()
 
     @patch("library.models.PeerReview.send_author_requested_peer_review_email")
     def test_concurrent_requests_reopen_review_once(self, notify):
@@ -997,11 +1133,85 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
     def test_resend_invitation(self):
         # date_sent field should be updated when resending an invitation
         date_sent = self.invitation.date_sent
-        request = RequestFactory().post("/invitations/", data={})
-        view = PeerReviewInvitationViewSet()
-        view.resend_invitation(request, slug=None, invitation_slug=self.invitation.slug)
+        assign_perm("library.change_peerreview", self.editor.user)
+        self.client.force_login(self.editor.user)
+        response = self.client.post(
+            f"/reviews/{self.review.slug}/editor/invitations/{self.invitation.slug}/resend_invitation/",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
         self.invitation.refresh_from_db()
         self.assertGreater(self.invitation.date_sent, date_sent)
+
+    def test_review_record_apis_cannot_bypass_workflows(self):
+        assign_perm("library.change_peerreview", self.editor.user)
+        self.client.force_login(self.editor.user)
+        for resource in ("invitations", "feedback"):
+            response = self.client.post(
+                f"/reviews/{self.review.slug}/editor/{resource}/",
+                {},
+                HTTP_ACCEPT="application/json",
+            )
+            self.assertEqual(response.status_code, 405)
+
+    def test_send_invitation_validates_reviewer_id(self):
+        assign_perm("library.change_peerreview", self.editor.user)
+        self.client.force_login(self.editor.user)
+        for data in ({}, {"id": None}, {"id": "invalid"}):
+            response = self.client.post(
+                f"/reviews/{self.review.slug}/editor/invitations/send_invitation/",
+                json.dumps(data),
+                content_type="application/json",
+                HTTP_ACCEPT="application/json",
+            )
+            self.assertEqual(response.status_code, 400)
+
+    def test_send_invitation_uses_the_selected_reviewers_profile(self):
+        assign_perm("library.change_peerreview", self.editor.user)
+        self.client.force_login(self.editor.user)
+        candidate = self.user_factory.create(username="candidate")
+        reviewer = PeerReviewer.objects.create(member_profile=candidate.member_profile)
+        response = self.client.post(
+            f"/reviews/{self.review.slug}/editor/invitations/send_invitation/",
+            json.dumps(
+                {
+                    "id": reviewer.pk,
+                    "member_profile": {"id": self.submitter.member_profile.pk},
+                }
+            ),
+            content_type="application/json",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        invitation = self.review.invitation_set.get(reviewer=reviewer)
+        self.assertEqual(invitation.candidate_reviewer_id, candidate.member_profile.pk)
+
+    def test_closed_review_rejects_resends_and_invitation_responses(self):
+        assign_perm("library.change_peerreview", self.editor.user)
+        self.client.force_login(self.editor.user)
+        self.review.close(self.submitter.member_profile)
+        sent_at = self.invitation.date_sent
+        response = self.client.post(
+            f"/reviews/{self.review.slug}/editor/invitations/{self.invitation.slug}/resend_invitation/",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.post(
+            self.invitation.get_absolute_url(), {"accepted": True}
+        )
+        self.assertEqual(response.status_code, 403)
+        self.invitation.refresh_from_db()
+        self.assertIsNone(self.invitation.accepted)
+        self.assertEqual(self.invitation.date_sent, sent_at)
+
+    def test_resend_url_must_name_the_invitation_review(self):
+        assign_perm("library.change_peerreview", self.editor.user)
+        self.client.force_login(self.editor.user)
+        response = self.client.post(
+            f"/reviews/00000000-0000-0000-0000-000000000000/editor/invitations/{self.invitation.slug}/resend_invitation/",
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 404)
 
     @classmethod
     def tearDownClass(cls):
@@ -1036,6 +1246,50 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         data = PeerReviewerFeedbackReviewerForm(instance=feedback).initial
         form = PeerReviewerFeedbackReviewerForm(data.copy(), instance=feedback)
         self.assertFalse(form.is_valid())
+
+    def test_cancelled_feedback_urls_cannot_read_or_write_discarded_drafts(self):
+        release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        self.review.codebase_release = release
+        self.review.save(update_fields=["codebase_release"])
+        feedback = self.invitation.accept()
+        url = feedback.get_absolute_url()
+        self.review.close(self.submitter.member_profile)
+        self.review.reopen(self.submitter.member_profile)
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(
+            self.client.post(url, {"reviewer_submitted": True}).status_code, 404
+        )
+        self.assertEqual(self.invitation.feedback_set.count(), 0)
+
+    def test_close_with_submitted_feedback_requires_curatorial_handling(self):
+        feedback = self.invitation.accept()
+        feedback.reviewer_submitted = True
+        feedback.save(update_fields=["reviewer_submitted"])
+        self.client.force_login(self.submitter)
+        response = self.client.post(
+            self.review.get_change_closed_url(), {"action": "close"}
+        )
+        self.assertEqual(response.status_code, 400)
+        feedback.refresh_from_db()
+        self.assertTrue(feedback.reviewer_submitted)
+        self.review.refresh_from_db()
+        self.assertFalse(self.review.closed)
+
+    def test_feedback_url_must_match_its_invitation(self):
+        self.invitation.accept()
+        url = reverse(
+            "library:peer-review-feedback-edit",
+            kwargs={
+                "slug": "00000000-0000-0000-0000-000000000000",
+                "feedback_id": self.feedback.pk,
+            },
+        )
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_editor_feedback_requires_editor_permission(self):
+        self.assertIn(
+            self.client.get(self.feedback.get_editor_url()).status_code, (302, 403)
+        )
 
 
 class GitHubWebhookTestCase(ResponseStatusCodesMixin, TestCase):

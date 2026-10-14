@@ -43,7 +43,13 @@
                     </button>
                 </div>
                 <div class='modal-body'>
-                    Are you sure you wish to {{ action }} this review?
+                    {% if action == 'close' %}
+                        Closing cancels a premature review request and discards unsubmitted feedback drafts.
+                        Reviews with submitted feedback or editorial decisions require curatorial handling.
+                    {% else %}
+                        Reopening reuses this release and asks reviewers to accept again.
+                        Expired invitations must be resent by an editor.
+                    {% endif %}
                 </div>
                 <div class='modal-footer'>
                     <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
