@@ -83,6 +83,13 @@ Do not rsync a Borg repository while backup, check, prune, or compact is
 running. Off-host replication must acquire the same `.backup.lock`, copy to a
 staging destination, verify the replica, and only then publish it as current.
 
+The staging wrapper mirrors deletions with `--delete-delay`; infrastructure
+must take a pre-sync destination snapshot and retain snapshot history
+independently. Keeping deleted Borg segments in the active replica can cause
+integrity-check failures after source compaction. See
+[the replication decision record](borg-replication-design.md) for the
+snapshot contract, recovery limits, and alternative designs.
+
 ## Select a restore point
 
 List archives and verify the selected archive before any destructive action:
