@@ -3,7 +3,6 @@ Management command for indexing digest archives based on the contents of https:/
 """
 
 import logging
-import re
 import requests
 from datetime import datetime
 from django.core.management.base import BaseCommand
@@ -14,20 +13,33 @@ logger = logging.getLogger(__name__)
 
 ZENODO_COMMUNITY_API_URL = "https://zenodo.org/api/communities/comses-digest/records"
 
+def iter_zenodo_records(session):
+    url = f"{ZENODO_COMMUNITY_API_URL}?page=1&size=25&sort=publication-desc"
+
+    while url:
+        response = session.get(url, timeout=10)
+        response.raise_for_status()
+        page = response.json()
+
+        yield from page["hits"]["hits"]
+
+        url = page.get("links", {}).get("next")
 
 class Command(BaseCommand):
     help = "Update CoMSES digest archives page based on the contents of home/static/digest/"
 
     def handle(self, *args, **options):
-        ComsesDigest.objects.all().delete()
         err_msg = ""
 
-        response = requests.get(ZENODO_COMMUNITY_API_URL, params={"size": 1000, "sort": "publication-desc"})
-        if response.status_code != 200:
-            logger.error("Failed to fetch Zenodo records for CoMSES Digest.")
+        try:
+            with requests.Session() as session:
+                zenodo_records = list(iter_zenodo_records(session))
+        except requests.RequestException:
+            logger.exception("Failed to fetch Zenodo records for CoMSES Digest.")
             return
 
-        zenodo_records = response.json()["hits"]["hits"]
+        ComsesDigest.objects.all().delete()
+
         for record in zenodo_records:
             try:
                 ComsesDigest.objects.create(
