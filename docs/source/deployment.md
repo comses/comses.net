@@ -185,9 +185,20 @@ The host service must pass these variables with `docker compose exec -T -e`:
 `COMSES_BORG_REPLICATION_LOCK_WAIT_SECONDS` (1–3600), and
 `COMSES_BORG_EXPECTED_VERSION` (the exact installed Borg version).
 `COMSES_BORG_REPOSITORY` may be omitted; if supplied, it must be
-`/shared/backups/repo`. `COMSES_BORG_REPLICATION_DELETE` defaults to
-`false`; enabling it requires a separately reviewed destination policy and
-snapshot rollback test.
+`/shared/backups/repo`. Replication always uses `rsync --delete-delay` to
+remove obsolete destination segments after a transfer. The compatibility
+variable `COMSES_BORG_REPLICATION_DELETE` may be omitted or set to `true`;
+`false` and other values are rejected before transfer. Existing host units
+that explicitly pass `false` must be updated before rollout.
+
+Infrastructure must snapshot the dedicated destination volume before each
+transfer and retain snapshots independently of the source archive policy.
+The destination must contain only the replica; rsync can delete unrelated
+files in that tree. A successful transfer is not an atomic publication or
+proof of Borg integrity: verify the replica before recording success, and
+preserve the pre-sync snapshot for recovery. The design rationale, operational
+tradeoffs, and future alternatives are in
+[the replication decision record](../agents/borg-replication-design.md).
 
 Compose mounts `borg_replication_ssh_key` and
 `borg_replication_known_hosts` only in `server`, under `/run/secrets/`.

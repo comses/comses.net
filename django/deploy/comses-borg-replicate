@@ -26,7 +26,7 @@ def require_secret(path: Path) -> None:
         raise ValueError(f"{path} must not be group- or world-writable")
 
 
-def configuration(environment: dict[str, str]) -> tuple[int, bool]:
+def configuration(environment: dict[str, str]) -> int:
     repository = environment.get("COMSES_BORG_REPOSITORY", str(REPOSITORY))
     if repository != str(REPOSITORY) or REPOSITORY.resolve(strict=True) != REPOSITORY:
         raise ValueError("repository must resolve to /shared/backups/repo")
@@ -40,9 +40,8 @@ def configuration(environment: dict[str, str]) -> tuple[int, bool]:
     lock_wait = int(raw_wait)
     if not 0 < lock_wait <= MAX_LOCK_WAIT_SECONDS:
         raise ValueError("lock wait must be between 1 and 3600 seconds")
-    delete = environment.get("COMSES_BORG_REPLICATION_DELETE", "false")
-    if delete not in ("false", "true"):
-        raise ValueError("delete must be true or false")
+    if environment.get("COMSES_BORG_REPLICATION_DELETE", "true") != "true":
+        raise ValueError("replication requires deletion; delete must be true")
     for path in (IDENTITY, KNOWN_HOSTS):
         require_secret(path)
     expected_version = environment.get("COMSES_BORG_EXPECTED_VERSION", "")
@@ -50,7 +49,7 @@ def configuration(environment: dict[str, str]) -> tuple[int, bool]:
         char not in "0123456789." for char in expected_version
     ):
         raise ValueError("expected Borg version must be an exact numeric version")
-    return lock_wait, delete == "true"
+    return lock_wait
 
 
 def wait_for_backup_lock(lockfile, seconds: int) -> None:
@@ -68,7 +67,7 @@ def wait_for_backup_lock(lockfile, seconds: int) -> None:
 def replicate(environment: dict[str, str] | None = None) -> int:
     environment = dict(os.environ if environment is None else environment)
     os.umask(0o077)
-    lock_wait, delete = configuration(environment)
+    lock_wait = configuration(environment)
     for program in ("borg", "rsync", "ssh"):
         if shutil.which(program, path=environment.get("PATH")) is None:
             raise RuntimeError(f"{program} is unavailable")
@@ -91,11 +90,12 @@ def replicate(environment: dict[str, str] | None = None) -> int:
         "--partial",
         "--itemize-changes",
         "--stats",
+        # Compaction removes segments; retaining them makes the replica inconsistent.
+        # Infrastructure preserves older repository states in pre-sync snapshots.
+        "--delete-delay",
         "-e",
         ssh,
     ]
-    if delete:
-        rsync.append("--delete-delay")
     rsync.extend(["--", f"{REPOSITORY}/", DESTINATION])
     borg_environment = environment | {
         "BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK": "yes"
