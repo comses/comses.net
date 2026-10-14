@@ -4,7 +4,7 @@ import json
 import logging
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
-from logging.handlers import WatchedFileHandler
+from contextlib import nullcontext
 from pathlib import Path
 from threading import Barrier
 from unittest.mock import patch
@@ -18,6 +18,7 @@ from core.request_logging import (
     RequestContextFilter,
     RequestMetadataFilter,
     RequestMetadataFormatter,
+    RequestMetadataHandler,
     RequestMetadataMiddleware,
     configure_request_logging,
     request_context,
@@ -28,7 +29,11 @@ def fail(request):
     raise ValueError("sensitive exception text")
 
 
-urlpatterns = [path("fail/", fail)]
+def forbidden(request):
+    return HttpResponse(status=403)
+
+
+urlpatterns = [path("fail/", fail), path("forbidden/", forbidden)]
 
 
 class RequestLoggingTests(SimpleTestCase):
@@ -74,6 +79,7 @@ class RequestLoggingTests(SimpleTestCase):
             set(record),
             {
                 "layer",
+                "timestamp",
                 "event",
                 "request_id",
                 "request_id_source",
@@ -211,7 +217,7 @@ class RequestLoggingTests(SimpleTestCase):
     def test_watched_handler_reopens_after_rename(self):
         with tempfile.TemporaryDirectory() as directory:
             active = Path(directory) / "request-metadata.jsonl"
-            handler = WatchedFileHandler(active)
+            handler = RequestMetadataHandler(active)
             try:
                 record = logging.LogRecord("probe", 20, "", 0, "before", (), None)
                 handler.handle(record)
@@ -240,19 +246,194 @@ class RequestLoggingTests(SimpleTestCase):
         self.assertFalse(config["loggers"]["request_metadata"]["propagate"])
         self.assertEqual(
             config["handlers"]["request_metadata"]["class"],
-            "logging.handlers.WatchedFileHandler",
+            "core.request_logging.RequestMetadataHandler",
         )
 
-    def test_writer_failure_preserves_response_and_exception(self):
+    def test_timestamp_uses_record_creation_and_duration_is_monotonic(self):
         with (
-            patch("core.request_logging.metadata_logger.info", side_effect=OSError),
-            patch("sys.stderr", io.StringIO()) as diagnostic,
+            patch("logging.time.time", return_value=1609459200.123),
+            patch("core.request_logging.perf_counter", side_effect=[10, 10.25]),
         ):
-            response = RequestMetadataMiddleware(
-                lambda request: HttpResponse(status=204)
-            )(self.factory.head("/"))
-            self.assertEqual(response.status_code, 204)
-            with self.assertRaisesRegex(ValueError, "sensitive"):
-                RequestMetadataMiddleware(fail)(self.factory.head("/"))
-            self.assertNotIn("sensitive", diagnostic.getvalue())
-            self.assertIn("request_metadata_write_failed", diagnostic.getvalue())
+            RequestMetadataMiddleware(lambda request: HttpResponse())(
+                self.factory.head("/")
+            )
+        (record,) = self.records()
+        self.assertEqual(record["timestamp"], "2021-01-01T00:00:00.123+00:00")
+        self.assertEqual(record["duration_ms"], 250.0)
+
+    @override_settings(
+        ROOT_URLCONF=__name__,
+        MIDDLEWARE=["core.request_logging.RequestMetadataMiddleware"],
+    )
+    def test_explicit_error_response_keeps_identity_after_middleware_returns(self):
+        edge_id = str(uuid4())
+        with self.assertLogs("django.request", level="WARNING") as captured:
+            # assertLogs replaces handlers, so attach the configured handler filter.
+            logger = logging.getLogger("django.request")
+            logger.handlers[0].addFilter(RequestContextFilter())
+            response = self.client.get("/forbidden/", HTTP_X_REQUEST_ID=edge_id)
+            self.assertEqual(request_context.get(), (None, None))
+            logger.warning("unrelated")
+        error, unrelated = captured.records
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(error.status_code, 403)
+        self.assertEqual(error.request_id, edge_id)
+        self.assertEqual(error.request_id_source, "incoming")
+        self.assertEqual(self.records()[0]["request_id"], error.request_id)
+        self.assertEqual(self.records()[0]["status"], 403)
+        self.assertIsNone(unrelated.request_id)
+        self.assertIsNone(unrelated.request_id_source)
+
+    def test_request_fallback_reads_only_valid_assigned_identity(self):
+        class AssignedRequest:
+            request_id = str(uuid4())
+            request_id_source = "incoming"
+
+            @property
+            def META(self):
+                raise AssertionError("Raw headers must not be inspected")
+
+        request = AssignedRequest()
+        record = logging.LogRecord("core", 20, "", 0, "", (), None)
+        record.request = request
+        for identity, source, valid in (
+            (request.request_id, "incoming", True),
+            ("bad\nsecret", "incoming", False),
+            (str(uuid4()), "unknown", False),
+            (None, None, False),
+        ):
+            with self.subTest(identity=identity, source=source):
+                request.request_id, request.request_id_source = identity, source
+                RequestContextFilter().filter(record)
+                expected = (identity, source) if valid else (None, None)
+                self.assertEqual(
+                    (record.request_id, record.request_id_source), expected
+                )
+        active_id = str(uuid4())
+        token = request_context.set((active_id, "incoming"))
+        try:
+            RequestContextFilter().filter(record)
+            self.assertEqual(record.request_id, active_id)
+        finally:
+            request_context.reset(token)
+
+    def test_handler_failures_preserve_response_exception_and_clear_context(self):
+        class FailingStream(io.StringIO):
+            def __init__(self, operation):
+                super().__init__()
+                self.operation = operation
+
+            def write(self, value):
+                if self.operation == "write":
+                    raise OSError("sensitive write failure")
+                return super().write(value)
+
+            def flush(self):
+                if self.operation == "flush":
+                    raise OSError("sensitive flush failure")
+                return super().flush()
+
+        for operation in ("write", "flush", "reopen"):
+            for raise_exceptions in (True, False):
+                with (
+                    self.subTest(
+                        operation=operation, raise_exceptions=raise_exceptions
+                    ),
+                    tempfile.TemporaryDirectory() as directory,
+                    patch.object(logging, "raiseExceptions", raise_exceptions),
+                    patch("sys.stderr", io.StringIO()) as diagnostic,
+                ):
+                    active = Path(directory) / "metadata.jsonl"
+                    handler = RequestMetadataHandler(active)
+                    handler.setFormatter(RequestMetadataFormatter())
+                    handler.addFilter(RequestMetadataFilter())
+                    self.logger.handlers = [handler]
+                    if operation == "reopen":
+                        active.rename(active.with_suffix(".1"))
+                        reopen = patch.object(
+                            handler, "_open", side_effect=OSError("secret reopen")
+                        )
+                    else:
+                        handler.stream.close()
+                        handler.stream = FailingStream(operation)
+                        # Exercise real StreamHandler.emit write/flush and handleError.
+                        reopen = nullcontext()
+                    try:
+                        with reopen:
+                            response = RequestMetadataMiddleware(
+                                lambda request: HttpResponse(status=204)
+                            )(self.factory.head("/"))
+                            self.assertEqual(response.status_code, 204)
+                            self.assertEqual(request_context.get(), (None, None))
+                            with self.assertRaisesRegex(ValueError, "sensitive"):
+                                RequestMetadataMiddleware(fail)(self.factory.head("/"))
+                            self.assertEqual(request_context.get(), (None, None))
+
+                            async def view(request):
+                                return HttpResponse(status=204)
+
+                            async def async_fail(request):
+                                raise ValueError("sensitive exception text")
+
+                            async def run_async_requests():
+                                response = await RequestMetadataMiddleware(view)(
+                                    self.factory.head("/")
+                                )
+                                self.assertEqual(response.status_code, 204)
+                                self.assertEqual(request_context.get(), (None, None))
+                                with self.assertRaisesRegex(ValueError, "sensitive"):
+                                    await RequestMetadataMiddleware(async_fail)(
+                                        self.factory.head("/")
+                                    )
+                                self.assertEqual(request_context.get(), (None, None))
+
+                            asyncio.run(run_async_requests())
+                        self.assertEqual(
+                            diagnostic.getvalue(),
+                            "request_metadata_write_failed\n" * 4,
+                        )
+                    finally:
+                        # Disable the injected flush failure for handler cleanup.
+                        if isinstance(handler.stream, FailingStream):
+                            handler.stream.operation = None
+                        handler.close()
+
+    def test_stderr_io_failure_does_not_replace_response_or_exception(self):
+        for error in (OSError, ValueError):
+            with (
+                self.subTest(error=error),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                active = Path(directory) / "metadata.jsonl"
+                handler = RequestMetadataHandler(active)
+                handler.setFormatter(RequestMetadataFormatter())
+                handler.addFilter(RequestMetadataFilter())
+                self.logger.handlers = [handler]
+                try:
+                    # StreamHandler catches the real flush error and calls handleError.
+                    with (
+                        patch.object(handler, "flush", side_effect=OSError),
+                        patch("sys.stderr.write", side_effect=error),
+                    ):
+                        response = RequestMetadataMiddleware(
+                            lambda request: HttpResponse()
+                        )(self.factory.head("/"))
+                        self.assertEqual(response.status_code, 200)
+                        with self.assertRaisesRegex(ValueError, "sensitive"):
+                            RequestMetadataMiddleware(fail)(self.factory.head("/"))
+                        self.assertEqual(request_context.get(), (None, None))
+                    # A reopen error escapes the handler and is caught by middleware.
+                    active.rename(active.with_suffix(".1"))
+                    with (
+                        patch.object(handler, "_open", side_effect=OSError),
+                        patch("sys.stderr.write", side_effect=error),
+                    ):
+                        response = RequestMetadataMiddleware(
+                            lambda request: HttpResponse()
+                        )(self.factory.head("/"))
+                        self.assertEqual(response.status_code, 200)
+                        with self.assertRaisesRegex(ValueError, "sensitive"):
+                            RequestMetadataMiddleware(fail)(self.factory.head("/"))
+                        self.assertEqual(request_context.get(), (None, None))
+                finally:
+                    handler.close()

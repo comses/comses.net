@@ -51,6 +51,10 @@ unchanged. It assigns `request.request_id` and `request.request_id_source`,
 returns the application ID in `X-Request-ID`, and makes the identity available to
 configured application handlers via `RequestContextFilter` and `ContextVar`.
 Application text logs gain those two fields; they remain separate from metadata.
+For Django error-response logs emitted after middleware returns, the filter
+falls back only to the validated assigned `request_id` and `request_id_source`
+attributes on `record.request`. It never reads raw headers or retains request
+objects. Unrelated records receive no identity.
 Context is reset in `finally`, including errors and logging failures. Sync
 threads and async tasks are isolated. Work spawned outside the request lifecycle
 must manage its own context; do not retain request objects or copy request
@@ -58,15 +62,32 @@ context into independent background jobs.
 
 Django's dedicated, non-propagating `request_metadata` logger has exactly one
 file handler. Its filter requires a completion event and its formatter emits
-only `layer`, `event`, `request_id`, `request_id_source`, `status`, `duration_ms`.
+only `layer`, `timestamp`, `event`, `request_id`, `request_id_source`, `status`,
+`duration_ms`. Nginx's allowlist is `layer`, `timestamp`, `request_id`, `status`,
+`request_time`, `upstream_response_time`, `upstream_status`, `request_length`.
+Neither stream includes URLs, query strings, credentials, cookies, or bodies.
 It ignores message, exception and arbitrary extra data. Application messages and
 exception text cannot enter this stream. Existing Django and Sentry exception
 reporting remains in place: this middleware reports status, not a second
 exception. Django-converted errors and escaping exceptions get status 500;
-worker termination/harakiri cannot guarantee a completion event. Failed file
-reopen emits only the fixed stderr diagnostic `request_metadata_write_failed`
-and does not replace the response or original exception. Monitor that diagnostic
-and missing metadata.
+worker termination/harakiri cannot guarantee a completion event. The minimal
+`RequestMetadataHandler` subclass of `WatchedFileHandler` reports write/flush
+failures through `handleError()` directly to stderr. Reopen failures are caught
+around the completion emit. Each failure produces only the fixed diagnostic
+`request_metadata_write_failed`, without recursive logging, raw records,
+exception text, or duplicate diagnostics, regardless of `logging.raiseExceptions`.
+Stderr I/O failures are suppressed. Logging failures preserve the response or
+original exception and always reset request context. The lost event is not
+retried; monitor the diagnostic and missing metadata.
+
+Both streams use a timezone-explicit RFC 3339 `timestamp` at log-event creation.
+Nginx uses `$time_iso8601` with whole-second precision and the worker's local
+UTC offset (for example, `2026-10-13T20:00:00+00:00`). Django derives its UTC
+value from `LogRecord.created`, with millisecond precision (for example,
+`2026-10-13T20:00:00.123+00:00`). Normalize offsets when comparing timestamps;
+they are wall-clock values, so host clock skew can affect ordering. Fractional
+precision differs by layer; neither timestamp is a request-start timestamp.
+The inspection script includes `timestamp` in its output allowlist.
 
 `duration_ms` uses a monotonic clock and covers middleware processing through
 response creation, including normal template rendering. For streaming responses,
@@ -276,7 +297,8 @@ before activating writers and again after a controlled staging rotation.
 Use the infrastructure runbook's existing section 3 destinations unchanged.
 Replace its pending-adoption paragraph with a link to this runbook. Replace its
 app-host Python extraction block with `check-request-metadata` below; this adds
-`duration_ms` and `request_id_source` to the allowlist and requires `incoming`.
+`timestamp`, `duration_ms` and `request_id_source` to the allowlist and requires
+`incoming`.
 The following is the exact replacement for the dynamic staging probe.
 
 From the workstation, `ssh arbutus_staging`, then run in Bash on the edge:
@@ -353,23 +375,41 @@ internal logging files during rollback. No database rollback is needed.
 
 ## Verification evidence and remaining limits
 
-Local verification on 2026-10-07: 11 targeted Django tests passed via
-`make test TEST_ARGS=core.tests.test_request_logging` in a disposable Compose
-project with fresh database/shared paths. The cached server image was reused;
-only the disposable Makefile skipped image rebuilding. The copied local `.env`
-selected Elasticsearch 7.17.28, whose cached image failed in logging initialization.
-The disposable stack used cached Elasticsearch 8.15.5 with security disabled and
-native logging instead; no repository Elasticsearch configuration was changed.
-The source files under test were mounted from the disposable checkout. This
-proves the targeted behavior in that runtime, not a freshly built release image.
-No migration artifacts were generated in the working checkout.
+Reverified on 2026-10-14 before committing the logging follow-up: all 15 Django
+tests passed via `make test TEST_ARGS=core.tests.test_request_logging` in a fresh
+disposable Compose project with copied source, synthetic credentials, an internal
+network, isolated database/storage and no published ports. The cached
+`comses/server:dev` image was reused; only the disposable Makefile omitted the
+build prerequisite. Both Nginx configuration subcases passed using cached
+Nginx 1.30.5. The inspection-script regression, Ruff lint/format checks, and
+`git diff --check` also passed. No actionable issue was found in this review.
+The disposable services were removed afterward; no deployment was performed.
 
-Both Nginx integration subcases passed. Rotation policy syntax also passed
-`logrotate --debug` in an isolated cached server container; files were absent,
-so this did not execute postrotate or verify host scheduling. Ruff and
-`git diff --check` passed for the changed implementation.
+Logging follow-up verification on 2026-10-13: all 15 targeted Django tests passed
+via `make test TEST_ARGS=core.tests.test_request_logging` in a disposable Compose
+project under `/tmp`, with copied source, test-only credentials, fresh database
+and shared storage paths, and no published ports. A disposable Makefile retained
+the repository test invocation while reusing cached `comses/server:dev` without
+an image build. PostgreSQL 16/PostGIS 3.5, Elasticsearch 7.17.28 with its native
+logging configuration, and Redis 7 were isolated test dependencies. The suite
+passed with no system-check issues. No migration artifacts were generated in the
+working checkout. This verifies the mounted source in the cached runtime, not a
+newly built release image.
 
-Local Nginx tests validate original syntax with cached `nginx:stable` 1.30.4 and
+Both Nginx integration subcases passed via
+`python3 deploy/tests/test_request_metadata_nginx.py` using Nginx 1.30.5, including
+timezone-explicit timestamps and existing forwarding/rotation checks. The
+inspection regression passed via
+`python3 deploy/tests/test_request_metadata_inspection.py`, verifying timestamps
+and sensitive-field exclusion in extracted evidence. Ruff lint/format checks
+and `git diff --check` passed for the changed files. All test containers were
+removed afterward; existing services and infrastructure were untouched.
+
+The companion rotation policy passed `logrotate --debug` in an isolated cached
+server container on 2026-10-07. The log files were absent, so this verified syntax
+without executing postrotate or establishing host scheduling.
+
+Local Nginx tests validate original syntax with `nginx:stable` 1.30.5 and
 exercise a temporary Unix listener/uWSGI stub, JSON allowlisting, static/missing
 upstream values, malformed/duplicate IDs, 502 records and rename/reopen. They
 do not establish the live-host image version, network trust or journal transport.
@@ -379,6 +419,11 @@ sequences are not simulated by the single-upstream fixture.
 Local Django tests cover incoming/fallback identities, threads/async tasks,
 converted/escaping exceptions, completion events, streaming limitations,
 sensitive-field omission, sink isolation, file reopen and writer-failure behavior.
+Regression tests also cover deterministic creation timestamps versus monotonic
+duration, explicit 403 logs after middleware returns, subsequent unrelated logs,
+actual handler write/flush failures with injected streams and both `logging.raiseExceptions`
+settings for sync and async requests, reopen failure, and suppressed stderr
+failures through both the handler and middleware recovery paths.
 No live probe, service reload, production mutation, installed rotation, hourly
 scheduling or live retention verification has been performed. Infrastructure
 must install/audit the companion policy and schedule, verify trusted routing,
@@ -388,4 +433,5 @@ separate rollout after staging evidence.
 References: [Nginx JSON logging](https://nginx.org/en/docs/http/ngx_http_log_module.html),
 [Nginx uWSGI header forwarding](https://nginx.org/en/docs/http/ngx_http_uwsgi_module.html#uwsgi_pass_request_headers),
 [Python watched files](https://docs.python.org/3/library/logging.handlers.html#watchedfilehandler),
+[Django handler error-response ordering](https://github.com/django/django/blob/stable/5.2.x/django/core/handlers/base.py#L136-L172),
 [Django middleware exception conversion](https://docs.djangoproject.com/en/4.2/topics/http/middleware/#exception-handling).

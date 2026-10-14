@@ -12,6 +12,7 @@ if len(sys.argv) != 2 or not re.fullmatch(
     sys.exit("Expected one canonical UUIDv4")
 fields = (
     "layer",
+    "timestamp",
     "request_id",
     "request_id_source",
     "event",
