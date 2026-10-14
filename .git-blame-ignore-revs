@@ -7,6 +7,9 @@
 # place new entries at the top with a prefix comment + optional date
 #
 #
+# style: Ruff 120-column formatting 2026-10-13
+d0ebff7ee4a3adf78b76b14a3395de07efaa3761
+
 # initial black run
 3c9dac51d049c4fcf92ab42460962bb091829134
 
