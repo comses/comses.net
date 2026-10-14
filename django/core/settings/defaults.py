@@ -300,9 +300,7 @@ SENTRY_DSN = os.getenv("SENTRY_DSN", "https://sentry.example.com/2")
 SECRET_KEY = read_secret("django_secret_key", os.getenv("SECRET_KEY"))
 # Separate from SECRET_KEY so Django signing-key rotation does not change
 # stable download-analysis pseudonyms.
-DOWNLOAD_ANALYTICS_HMAC_KEY = read_secret(
-    "download_analytics_hmac_key", os.getenv("DOWNLOAD_ANALYTICS_HMAC_KEY")
-)
+DOWNLOAD_ANALYTICS_HMAC_KEY = read_secret("download_analytics_hmac_key", os.getenv("DOWNLOAD_ANALYTICS_HMAC_KEY"))
 
 # regular settings
 
@@ -462,9 +460,7 @@ STATICFILES_FINDERS = [
 DJANGO_VITE_ASSETS_PATH = os.path.join(SHARE_DIR, "vite")
 DJANGO_VITE_STATIC_URL_PREFIX = "bundles"
 DJANGO_VITE_DEV_SERVER_PORT = 5173
-DJANGO_VITE_MANIFEST_PATH = os.path.join(
-    DJANGO_VITE_ASSETS_PATH, DJANGO_VITE_STATIC_URL_PREFIX, "manifest.json"
-)
+DJANGO_VITE_MANIFEST_PATH = os.path.join(DJANGO_VITE_ASSETS_PATH, DJANGO_VITE_STATIC_URL_PREFIX, "manifest.json")
 
 STATIC_ROOT = os.path.join(SHARE_DIR, "static")
 STATIC_URL = "/static/"
@@ -489,9 +485,7 @@ WAGTAIL_FRONTEND_LOGIN_URL = "account_login"
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.DjangoObjectPermissions",
-    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.DjangoObjectPermissions",),
     "DEFAULT_RENDERER_CLASSES": (
         "core.renderers.RootContextHTMLRenderer",
         "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
@@ -566,16 +560,10 @@ GITHUB_CLIENT_SECRET = read_secret("github_client_secret")
 GITHUB_INTEGRATION_APP_ID = os.getenv("GITHUB_INTEGRATION_APP_ID", "")
 GITHUB_INTEGRATION_APP_NAME = os.getenv("GITHUB_INTEGRATION_APP_NAME", "")
 GITHUB_INTEGRATION_APP_PRIVATE_KEY = read_secret("github_integration_app_private_key")
-GITHUB_INTEGRATION_APP_INSTALLATION_ID = int(
-    os.getenv("GITHUB_INTEGRATION_APP_INSTALLATION_ID") or 0
-)
-GITHUB_INTEGRATION_APP_WEBHOOK_SECRET = read_secret(
-    "github_integration_app_webhook_secret"
-)
+GITHUB_INTEGRATION_APP_INSTALLATION_ID = int(os.getenv("GITHUB_INTEGRATION_APP_INSTALLATION_ID") or 0)
+GITHUB_INTEGRATION_APP_WEBHOOK_SECRET = read_secret("github_integration_app_webhook_secret")
 GITHUB_MODEL_LIBRARY_ORG_NAME = os.getenv("GITHUB_MODEL_LIBRARY_ORG_NAME", "")
-GITHUB_INDIVIDUAL_FILE_SIZE_LIMIT = int(
-    os.getenv("GITHUB_INDIVIDUAL_FILE_SIZE_LIMIT") or 100 * 1024 * 1024
-)
+GITHUB_INDIVIDUAL_FILE_SIZE_LIMIT = int(os.getenv("GITHUB_INDIVIDUAL_FILE_SIZE_LIMIT") or 100 * 1024 * 1024)
 
 TEST_BASIC_AUTH_PASSWORD = os.getenv("TEST_BASIC_AUTH_PASSWORD", "test password")
 TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)
@@ -606,9 +594,7 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-DISCOURSE_BASE_URL = os.getenv(
-    "DISCOURSE_BASE_URL", "https://staging-discourse.comses.net"
-)
+DISCOURSE_BASE_URL = os.getenv("DISCOURSE_BASE_URL", "https://staging-discourse.comses.net")
 DISCOURSE_SSO_SECRET = read_secret("discourse_sso_secret", "unconfigured")
 DISCOURSE_API_KEY = read_secret("discourse_api_key", "unconfigured")
 DISCOURSE_API_USERNAME = os.getenv("DISCOURSE_API_USERNAME", "unconfigured")

@@ -26,9 +26,10 @@ class MigrationDumpTaskTests(TestCase):
         }
         ctx = Context()
 
-        with patch.dict(
-            os.environ, {"DB_MIGRATION_TIMESTAMP": "20260523T220000"}, clear=False
-        ), patch.object(ctx, "run") as run_mock:
+        with (
+            patch.dict(os.environ, {"DB_MIGRATION_TIMESTAMP": "20260523T220000"}, clear=False),
+            patch.object(ctx, "run") as run_mock,
+        ):
             dump_migration(ctx, force=True)
 
         create_pgpass_file.assert_called_once_with(ctx, db_key="default")
@@ -78,9 +79,10 @@ class MigrationRestoreTaskTests(TestCase):
         }
         ctx = Context()
 
-        with patch.dict(
-            os.environ, {"DB_MIGRATION_TIMESTAMP": "20260523T220000"}, clear=False
-        ), patch.object(ctx, "run") as run_mock:
+        with (
+            patch.dict(os.environ, {"DB_MIGRATION_TIMESTAMP": "20260523T220000"}, clear=False),
+            patch.object(ctx, "run") as run_mock,
+        ):
             restore_from_dump(ctx, force=True, migrate=False)
 
         drop.assert_called_once_with(ctx, database="default", create=True)
@@ -93,9 +95,7 @@ class MigrationRestoreTaskTests(TestCase):
 
     @patch("curator.invoke_tasks.database.drop")
     @patch("curator.invoke_tasks.database.get_database_settings")
-    def test_legacy_dump_that_creates_database_restores_through_template1(
-        self, get_database_settings, drop
-    ):
+    def test_legacy_dump_that_creates_database_restores_through_template1(self, get_database_settings, drop):
         get_database_settings.return_value = {
             "db_name": "comsesnet",
             "db_host": "db",
@@ -106,14 +106,9 @@ class MigrationRestoreTaskTests(TestCase):
         with tempfile.TemporaryDirectory() as directory:
             dumpfile = Path(directory) / "comsesnet.sql.gz"
             with gzip.open(dumpfile, "wt", encoding="utf-8") as stream:
-                stream.write(
-                    "CREATE DATABASE comsesnet WITH TEMPLATE = template0;\n"
-                    "\\connect comsesnet\n"
-                )
+                stream.write("CREATE DATABASE comsesnet WITH TEMPLATE = template0;\n\\connect comsesnet\n")
             with patch.object(ctx, "run") as run_mock:
-                restore_from_dump(
-                    ctx, dumpfile=str(dumpfile), force=True, migrate=False
-                )
+                restore_from_dump(ctx, dumpfile=str(dumpfile), force=True, migrate=False)
 
         drop.assert_called_once_with(ctx, database="default", create=False)
         self.assertIn("-h db template1 comsesnet", run_mock.call_args.args[0])
@@ -121,9 +116,7 @@ class MigrationRestoreTaskTests(TestCase):
 
     @patch("curator.invoke_tasks.database.drop")
     @patch("curator.invoke_tasks.database.get_database_settings")
-    def test_legacy_dump_rejects_a_different_created_database(
-        self, get_database_settings, drop
-    ):
+    def test_legacy_dump_rejects_a_different_created_database(self, get_database_settings, drop):
         get_database_settings.return_value = {
             "db_name": "comsesnet",
             "db_host": "db",
@@ -138,8 +131,6 @@ class MigrationRestoreTaskTests(TestCase):
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "not target"):
-                restore_from_dump(
-                    ctx, dumpfile=str(dumpfile), force=True, migrate=False
-                )
+                restore_from_dump(ctx, dumpfile=str(dumpfile), force=True, migrate=False)
 
         drop.assert_not_called()

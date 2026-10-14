@@ -52,9 +52,7 @@ def on_user_save(sender, instance: User, created, update_fields=None, **kwargs):
 
 
 @receiver(post_save, sender=MemberProfile, dispatch_uid="member_profile_discourse_sync")
-def on_member_profile_save(
-    sender, instance: MemberProfile, update_fields=None, **kwargs
-):
+def on_member_profile_save(sender, instance: MemberProfile, update_fields=None, **kwargs):
     """
     Keep DiscourseConnect user data in sync when profile-backed fields change.
 

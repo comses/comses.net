@@ -40,9 +40,7 @@ class Command(BaseCommand):
         # get all unique user ids that have submitted codebases with CC licenses
         releases_with_cc = CodebaseRelease.objects.with_cc_license()
         unique_submitter_ids = set(
-            releases_with_cc.values_list("submitter", flat=True).distinct()
-            if not test_user_id
-            else [test_user_id]
+            releases_with_cc.values_list("submitter", flat=True).distinct() if not test_user_id else [test_user_id]
         )
         users = User.objects.filter(id__in=unique_submitter_ids)
         user_emails = [user.email for user in users if user.id not in sent_user_ids]
@@ -66,9 +64,7 @@ class Command(BaseCommand):
         sent_user_ids = self._read_sent_user_ids()
         unset_ids = unique_submitter_ids - sent_user_ids
         if unset_ids:
-            logger.warning(
-                f"Failed to send emails to the following user ids: {unset_ids}"
-            )
+            logger.warning(f"Failed to send emails to the following user ids: {unset_ids}")
         else:
             logger.info(f"""
 

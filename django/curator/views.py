@@ -22,9 +22,7 @@ TAG_CLEANUP_ACTIONS = {
     TagCleanupAction.find_by_platform_and_language.name: lambda: TagCleanup.objects.bulk_create(
         TagCleanup.find_groups_by_platform_and_language()
     ),
-    TagCleanupAction.delete_all_active.name: lambda: TagCleanup.objects.filter(
-        transaction_id__isnull=True
-    ).delete(),
+    TagCleanupAction.delete_all_active.name: lambda: TagCleanup.objects.filter(transaction_id__isnull=True).delete(),
 }
 
 
@@ -46,9 +44,7 @@ def confirm_spam_view(request, instance_id):
         user = spam_moderation.content_object.submitter
         user.is_active = False
         user.save()
-        messages.success(
-            request, f"Content confirmed as spam and user: {user} deactivated."
-        )
+        messages.success(request, f"Content confirmed as spam and user: {user} deactivated.")
     spam_moderation.status = SpamModeration.Status.SPAM
     spam_moderation.reviewer = request.user
     spam_moderation.save()

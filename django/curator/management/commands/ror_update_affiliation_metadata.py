@@ -29,17 +29,13 @@ class Command(BaseCommand):
         """
         force = options["force"]
         with requests.Session() as session:
-
             for profile in MemberProfile.objects.public().with_affiliations():
-
                 should_update_profile = False
                 for affiliation in profile.affiliations:
                     if "ror_id" not in affiliation:
                         continue
                     if "coordinates" not in affiliation or force:
-                        updated_affiliation_data = self.lookup_ror_id(
-                            affiliation["ror_id"], session
-                        )
+                        updated_affiliation_data = self.lookup_ror_id(affiliation["ror_id"], session)
                         if updated_affiliation_data:
                             affiliation.update(**updated_affiliation_data)
                             should_update_profile = True

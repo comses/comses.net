@@ -6,10 +6,7 @@ from guardian import shortcuts as sc
 def make_change_delete_view_perms(model):
     model_name = model._meta.model_name
     app_label = model._meta.app_label
-    return [
-        "{}.{}_{}".format(app_label, action, model_name)
-        for action in ["change", "delete", "view"]
-    ]
+    return ["{}.{}_{}".format(app_label, action, model_name) for action in ["change", "delete", "view"]]
 
 
 def get_viewable_objects_for_user(user, queryset):
@@ -27,9 +24,7 @@ def get_viewable_objects_for_user(user, queryset):
         has_object_permission_queryset = sc.get_objects_for_user(
             user, perms=perms, any_perm=True, accept_global_perms=False, klass=queryset
         )
-        queryset &= (
-            has_object_permission_queryset | is_public_queryset | is_submitter_queryset
-        )
+        queryset &= has_object_permission_queryset | is_public_queryset | is_submitter_queryset
 
     return queryset
 

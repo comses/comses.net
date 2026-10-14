@@ -72,14 +72,10 @@ def build_search_query(input_text: str) -> SearchQuery:
             two_word_queries.append(Boost(Phrase(two_word_phrase), boost=3.0))
 
     # Make the search fuzzy using Fuzzy for individual words if word length > 3, otherwise use Phrase
-    single_word_queries = [
-        Fuzzy(word) if len(word) > 3 else Phrase(word) for word in words
-    ]
+    single_word_queries = [Fuzzy(word) if len(word) > 3 else Phrase(word) for word in words]
 
     # Combine all queries
-    all_queries = (
-        [fuzzy_full_query, exact_match_query] + two_word_queries + single_word_queries
-    )
+    all_queries = [fuzzy_full_query, exact_match_query] + two_word_queries + single_word_queries
 
     # Combine all queries using Or
     combined_query = Or(all_queries)

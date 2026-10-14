@@ -15,9 +15,7 @@ class SyncDiscourseUsersCommandTestCase(TestCase):
         inactive_user.save(update_fields=["is_active"])
         stdout = StringIO()
 
-        with patch(
-            "core.management.commands.sync_discourse_users.sync_discourse_user"
-        ) as sync_user:
+        with patch("core.management.commands.sync_discourse_users.sync_discourse_user") as sync_user:
             call_command("sync_discourse_users", "--dry-run", stdout=stdout)
 
         output = stdout.getvalue()

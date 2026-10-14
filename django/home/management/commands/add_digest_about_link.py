@@ -19,7 +19,6 @@ DIGEST_ARCHIVE_PAGE_LINK = [("Digest", "/digest/")]
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         try:
             about_pages = [

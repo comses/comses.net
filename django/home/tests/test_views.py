@@ -19,9 +19,7 @@ class WagtailAdminLoginTestCase(TestCase):
         self.staff = self.user_factory.create(is_staff=True)
 
     def assertLoginStatusCodeMatchForUser(self, user, status_code):
-        success = self.client.login(
-            username=user.username, password=self.user_factory.password
-        )
+        success = self.client.login(username=user.username, password=self.user_factory.password)
         if success:
             response = self.client.get(reverse("wagtailadmin_home"))
             self.assertEqual(response.status_code, status_code)
@@ -32,9 +30,7 @@ class WagtailAdminLoginTestCase(TestCase):
     def test_regular_login(self):
         regular_user = self.user_factory.create()
         # default behavior for wagtail admin login failed is a 302 redirect to the login page
-        response = self.assertLoginStatusCodeMatchForUser(
-            regular_user, status.HTTP_302_FOUND
-        )
+        response = self.assertLoginStatusCodeMatchForUser(regular_user, status.HTTP_302_FOUND)
         message = response.context["message"]
         self.assertEqual(message, "You do not have permission to access the admin.")
 
@@ -50,9 +46,7 @@ class WagtailAdminLoginTestCase(TestCase):
 
     def test_access_admin_login(self):
         content_type = ContentType.objects.get(model="admin")
-        permission = Permission.objects.get(
-            content_type=content_type, codename="access_admin"
-        )
+        permission = Permission.objects.get(content_type=content_type, codename="access_admin")
         access_admin_user = self.user_factory.create()
         access_admin_user.user_permissions.add(permission)
         self.assertLoginStatusCodeMatchForUser(access_admin_user, status.HTTP_200_OK)

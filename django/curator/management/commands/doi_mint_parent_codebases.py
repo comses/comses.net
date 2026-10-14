@@ -211,7 +211,6 @@ def mint_parent_codebases(interactive=True, dry_run=True):
 
 
 class Command(BaseCommand):
-
     def add_arguments(self, parser):
         parser.add_argument(
             "--interactive",

@@ -60,7 +60,6 @@ class LoginFailure(Exception):
 
 
 class ApiAccountMixin:
-
     user_factory = UserFactory()
 
     def create_representative_users(self, submitter, user_factory=None):
@@ -84,16 +83,16 @@ class ApiAccountMixin:
             password = self.user_factory.password
         authenticated = self.client.login(username=user.username, password=password)
         if not authenticated:
-            raise LoginFailure(
-                f"Failed to login as {user.username} with password {password}"
-            )
+            raise LoginFailure(f"Failed to login as {user.username} with password {password}")
         return user, authenticated
 
 
 class ResponseStatusCodesMixin:
     def responseErrorMessage(self, response, name):
         user = response.wsgi_request.user
-        user_msg = f"<{user} is_superuser={user.is_superuser} is_active={user.is_active} is_anonymous={user.is_anonymous}>"
+        user_msg = (
+            f"<{user} is_superuser={user.is_superuser} is_active={user.is_active} is_anonymous={user.is_anonymous}>"
+        )
         data = getattr(response, "data", None)
         msg = f"Response not {name} for user {user_msg}"
         if data is not None:
@@ -175,12 +174,8 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
     def check_retrieve_permissions(self, user, instance):
         """Validate view permissions against a user with no initial guardian permissions.
         Does not handle being inside a collection of another model"""
-        response = self.client.get(
-            instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json"
-        )
-        has_perm = user.has_perm(
-            create_perm_str(self.model_class(), "view"), obj=instance
-        )
+        response = self.client.get(instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json")
+        has_perm = user.has_perm(create_perm_str(self.model_class(), "view"), obj=instance)
         if has_perm:
             self.assertResponseOk(response)
         else:
@@ -214,9 +209,7 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
             self.assertResponsePermissionDenied(response)
 
     def check_destroy_permissions(self, user, instance):
-        response = self.client.delete(
-            instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json"
-        )
+        response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json")
         has_perm = user.has_perm(create_perm_str(instance, "delete"), obj=instance)
         if has_perm:
             self.assertResponseDeleted(response)
@@ -225,14 +218,10 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
 
     def check_list_permissions(self, user, instance):
         """A user has list view permissions on an instance if the instance is public"""
-        list_response = self.client.get(
-            instance.get_list_url(), HTTP_ACCEPT="application/json", format="json"
-        )
+        list_response = self.client.get(instance.get_list_url(), HTTP_ACCEPT="application/json", format="json")
         self.assertResponseOk(list_response)
         is_visible_in_list = len(list_response.data["results"]) > 0
-        is_instance_public = (
-            instance._meta.model.objects.public().filter(id=instance.id).exists()
-        )
+        is_instance_public = instance._meta.model.objects.public().filter(id=instance.id).exists()
         self.assertEqual(is_visible_in_list, is_instance_public)
 
     def with_logged_in(self, user, instance, method):

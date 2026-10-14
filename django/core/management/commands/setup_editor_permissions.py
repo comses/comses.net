@@ -30,23 +30,15 @@ class Command(BaseCommand):
             editor_group.page_permissions.all().delete()
 
         # special case for wagtail admin access
-        wagtail_admin_content_type = ContentType.objects.get(
-            app_label="wagtailadmin", model="admin"
-        )
-        editor_group.permissions.add(
-            Permission.objects.get(content_type=wagtail_admin_content_type)
-        )
+        wagtail_admin_content_type = ContentType.objects.get(app_label="wagtailadmin", model="admin")
+        editor_group.permissions.add(Permission.objects.get(content_type=wagtail_admin_content_type))
 
         for app_label, model_name in self.CONTENT_TYPE_TUPLES:
             ct = ContentType.objects.get(app_label=app_label, model=model_name)
-            for permission in Permission.objects.filter(content_type=ct).exclude(
-                codename__startswith="delete"
-            ):
+            for permission in Permission.objects.filter(content_type=ct).exclude(codename__startswith="delete"):
                 editor_group.permissions.add(permission)
 
         for page_slug in self.EDITOR_PAGE_SLUGS:
             page = Page.objects.get(slug=page_slug)
             for permission_type in ("add", "edit"):
-                GroupPagePermission.objects.create(
-                    group=editor_group, page=page, permission_type=permission_type
-                )
+                GroupPagePermission.objects.create(group=editor_group, page=page, permission_type=permission_type)

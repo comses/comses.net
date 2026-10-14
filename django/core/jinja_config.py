@@ -137,9 +137,7 @@ def generate_search_form_inputs(query_params):
     if query_params:
         # parse_qsl handles splitting and unquoting key-value pairs and generates a list of tuples
         # do not include the actual query in the query parameters
-        incoming_query_params = [
-            pair for pair in parse_qsl(query_params) if pair[0] != "query"
-        ]
+        incoming_query_params = [pair for pair in parse_qsl(query_params) if pair[0] != "query"]
         search_parameters.update(convert_keys_to_camel_case(incoming_query_params))
 
     logger.debug("search parameters: %s", search_parameters)
@@ -158,9 +156,7 @@ def get_discourse_username(member_profile) -> str:
     # member_profile may be a MemberProfile model instance or a serialized dict
     # from RelatedMemberProfileSerializer (which includes "username" and "id").
     if isinstance(member_profile, dict):
-        return sanitize_username(
-            username=member_profile["username"], seed=member_profile["id"]
-        )
+        return sanitize_username(username=member_profile["username"], seed=member_profile["id"])
     return get_sanitized_username(member_profile)
 
 

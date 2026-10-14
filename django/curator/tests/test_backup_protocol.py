@@ -19,11 +19,11 @@ from curator.invoke_tasks.borg import (
 class BackupProtocolTests(TestCase):
     def test_success_marker_is_written_after_verified_backup(self):
         with tempfile.TemporaryDirectory() as backup_root:
-            with override_settings(BACKUP_ROOT=backup_root), patch(
-                "curator.invoke_tasks.borg.db.backup"
-            ) as database_backup, patch(
-                "curator.invoke_tasks.borg.backup", return_value="archive-name"
-            ) as borg_backup:
+            with (
+                override_settings(BACKUP_ROOT=backup_root),
+                patch("curator.invoke_tasks.borg.db.backup") as database_backup,
+                patch("curator.invoke_tasks.borg.backup", return_value="archive-name") as borg_backup,
+            ):
                 backup_all(Context())
 
             database_backup.assert_called_once()
@@ -46,9 +46,10 @@ class BackupProtocolTests(TestCase):
         with tempfile.TemporaryDirectory() as backup_root:
             marker = Path(backup_root) / "last-successful-backup"
             marker.write_text("archive=test\n", encoding="ascii")
-            with override_settings(BACKUP_ROOT=backup_root), patch(
-                "curator.invoke_tasks.borg._prune"
-            ) as prune:
+            with (
+                override_settings(BACKUP_ROOT=backup_root),
+                patch("curator.invoke_tasks.borg._prune") as prune,
+            ):
                 borg_prune(Context())
 
             prune.assert_called_once()
@@ -60,9 +61,10 @@ class BackupProtocolTests(TestCase):
             old_timestamp = marker.stat().st_mtime - MAX_PRUNE_BACKUP_AGE_SECONDS - 1
             os.utime(marker, (old_timestamp, old_timestamp))
 
-            with override_settings(BACKUP_ROOT=backup_root), patch(
-                "curator.invoke_tasks.borg._prune"
-            ) as prune:
+            with (
+                override_settings(BACKUP_ROOT=backup_root),
+                patch("curator.invoke_tasks.borg._prune") as prune,
+            ):
                 with self.assertRaisesRegex(RuntimeError, "too old"):
                     borg_prune(Context())
 
@@ -84,20 +86,26 @@ class RestoreProtocolTests(TestCase):
     def test_files_are_rotated_only_after_database_and_migrations_succeed(self):
         events = []
         ctx = Context()
-        with tempfile.TemporaryDirectory() as working_directory, patch(
-            "curator.invoke_tasks.borg.check_archive",
-            side_effect=lambda *args: events.append("check"),
-        ), patch("curator.invoke_tasks.borg.delete_latest_uncompressed_backup"), patch(
-            "curator.invoke_tasks.borg._extract",
-            side_effect=lambda *args, **kwargs: events.append("extract"),
-        ), patch(
-            "curator.invoke_tasks.borg._restore_database",
-            side_effect=lambda *args, **kwargs: events.append("database"),
-        ), patch.object(
-            ctx, "run", side_effect=lambda *args, **kwargs: events.append("migrate")
-        ), patch(
-            "curator.invoke_tasks.borg._restore_files",
-            side_effect=lambda *args: events.append("files"),
+        with (
+            tempfile.TemporaryDirectory() as working_directory,
+            patch(
+                "curator.invoke_tasks.borg.check_archive",
+                side_effect=lambda *args: events.append("check"),
+            ),
+            patch("curator.invoke_tasks.borg.delete_latest_uncompressed_backup"),
+            patch(
+                "curator.invoke_tasks.borg._extract",
+                side_effect=lambda *args, **kwargs: events.append("extract"),
+            ),
+            patch(
+                "curator.invoke_tasks.borg._restore_database",
+                side_effect=lambda *args, **kwargs: events.append("database"),
+            ),
+            patch.object(ctx, "run", side_effect=lambda *args, **kwargs: events.append("migrate")),
+            patch(
+                "curator.invoke_tasks.borg._restore_files",
+                side_effect=lambda *args: events.append("files"),
+            ),
         ):
             _restore(
                 ctx,
@@ -111,16 +119,17 @@ class RestoreProtocolTests(TestCase):
 
     def test_files_are_not_rotated_when_database_restore_fails(self):
         ctx = Context()
-        with tempfile.TemporaryDirectory() as working_directory, patch(
-            "curator.invoke_tasks.borg.check_archive"
-        ), patch("curator.invoke_tasks.borg.delete_latest_uncompressed_backup"), patch(
-            "curator.invoke_tasks.borg._extract"
-        ), patch(
-            "curator.invoke_tasks.borg._restore_database",
-            side_effect=RuntimeError("restore failed"),
-        ), patch(
-            "curator.invoke_tasks.borg._restore_files"
-        ) as restore_files:
+        with (
+            tempfile.TemporaryDirectory() as working_directory,
+            patch("curator.invoke_tasks.borg.check_archive"),
+            patch("curator.invoke_tasks.borg.delete_latest_uncompressed_backup"),
+            patch("curator.invoke_tasks.borg._extract"),
+            patch(
+                "curator.invoke_tasks.borg._restore_database",
+                side_effect=RuntimeError("restore failed"),
+            ),
+            patch("curator.invoke_tasks.borg._restore_files") as restore_files,
+        ):
             with self.assertRaisesRegex(RuntimeError, "restore failed"):
                 _restore(
                     ctx,

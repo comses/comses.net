@@ -9,7 +9,12 @@ from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMix
 from django.core.exceptions import PermissionDenied
 from django.db import transaction, IntegrityError
 from django.db.models import Q
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import (
+    HttpResponse,
+    Http404,
+    HttpResponseRedirect,
+    HttpResponseBadRequest,
+)
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse
 from django.utils import timezone
@@ -69,6 +74,7 @@ from .forms import (
     PeerReviewInvitationForm,
     PeerReviewerFeedbackEditorForm,
     PeerReviewFilterForm,
+    PeerReviewClosedActionForm,
 )
 from .fs import (
     FileCategories,
@@ -113,6 +119,8 @@ from .serializers import (
     PeerReviewInvitationSerializer,
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
+    PeerReviewStatusSerializer,
+    PeerReviewInvitationRequestSerializer,
 )
 from .tasks import (
     import_github_release_task,
@@ -200,18 +208,22 @@ class PeerReviewChangeClosedView(PermissionRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         review = self.get_object()
-        action = request.POST.get("action")
-        if action == "close":
-            review.close(request.user.member_profile)
-        elif action == "reopen":
-            review.reopen(request.user.member_profile)
-        else:
-            raise ValidationError("Invalid action")
+        form = PeerReviewClosedActionForm(request.POST)
+        if not form.is_valid():
+            return HttpResponseBadRequest("Invalid action")
+        action = form.cleaned_data["action"]
+        try:
+            if action == "close":
+                review.close(request.user.member_profile)
+            else:
+                review.reopen(request.user.member_profile)
+        except ValidationError as exc:
+            return HttpResponseBadRequest(str(exc.detail[0]))
         messages.success(
             request,
             (f"Review successfully {action}{'d' if action == 'close' else 'ed'}"),
         )
-        return redirect(request.META.get("HTTP_REFERER", ""))
+        return redirect(request.META.get("HTTP_REFERER") or review.get_absolute_url())
 
 
 class ChangePeerReviewPermission(permissions.BasePermission):
@@ -274,21 +286,20 @@ def _change_peer_review_status(request):
     slug = request.kwargs.get("slug")
     review = get_object_or_404(PeerReview, slug=slug)
 
-    raw_status = request.data["status"]
-    try:
-        new_status = ReviewStatus(raw_status)
-    except ValueError:
-        raise ValidationError(f"status {raw_status} not valid")
+    serializer = PeerReviewStatusSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    new_status = ReviewStatus(serializer.validated_data["status"])
     review.editor_change_review_status(request.user.member_profile, new_status)
 
     return Response(data={"status": new_status.name}, status=status.HTTP_200_OK)
 
 
-class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
+class PeerReviewInvitationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
     permission_classes = (ChangePeerReviewPermission,)
     serializer_class = PeerReviewInvitationSerializer
     lookup_url_kwarg = "invitation_slug"
+    lookup_field = "slug"
 
     def get_queryset(self):
         slug = self.kwargs["slug"]
@@ -297,16 +308,16 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     @transaction.atomic
     @action(detail=False, methods=["post"])
     def send_invitation(self, request, slug):
-        data = request.data
-        candidate_reviewer_id = data.get("id")
-        member_profile_id = data.get("member_profile")["id"]
+        serializer = PeerReviewInvitationRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reviewer = serializer.validated_data["id"]
         review = get_object_or_404(PeerReview, slug=slug)
-        form_data = dict(review=review.id, editor=request.user.member_profile.id)
-        if candidate_reviewer_id is not None:
-            form_data["candidate_reviewer"] = member_profile_id
-            form_data["reviewer"] = candidate_reviewer_id
-        else:
-            raise ValidationError("Must specify id of candidate reviewer")
+        form_data = dict(
+            review=review.id,
+            editor=request.user.member_profile.id,
+            candidate_reviewer=reviewer.member_profile_id,
+            reviewer=reviewer.pk,
+        )
         form = PeerReviewInvitationForm(data=form_data)
         if form.is_valid():
             invitation = form.save()
@@ -318,16 +329,30 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     @transaction.atomic
     @action(detail=True, methods=["post"])
     def resend_invitation(self, request, slug, invitation_slug):
-        invitation = get_object_or_404(PeerReviewInvitation, slug=invitation_slug)
+        invitation = self.get_object()
         invitation.send_candidate_reviewer_email(resend=True)
         return Response(status=status.HTTP_200_OK)
 
 
-class PeerReviewInvitationUpdateView(UpdateView):
+class PeerReviewValidationMixin:
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except ValidationError as exc:
+            return HttpResponseBadRequest(str(exc.detail[0]))
+
+
+class PeerReviewInvitationUpdateView(PeerReviewValidationMixin, UpdateView):
     context_object_name = "invitation"
     form_class = PeerReviewInvitationReplyForm
     queryset = PeerReviewInvitation.objects.all()
     template_name = "library/review/invitations/update.jinja"
+
+    def get_object(self, queryset=None):
+        invitation = super().get_object(queryset)
+        if invitation.review.closed or invitation.review.is_complete:
+            raise PermissionDenied("This peer review is closed or complete.")
+        return invitation
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -348,28 +373,30 @@ class PeerReviewInvitationUpdateView(UpdateView):
             return self.object.get_absolute_url()
 
 
-class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
+class PeerReviewFeedbackViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PeerReviewerFeedback.objects.all()
     serializer_class = PeerReviewFeedbackEditorSerializer
+    permission_classes = (ChangePeerReviewPermission,)
 
     def get_queryset(self):
         slug = self.kwargs["slug"]
         return self.queryset.filter(invitation__review__slug=slug)
 
 
-class PeerReviewFeedbackUpdateView(UpdateView):
+class PeerReviewFeedbackUpdateView(PeerReviewValidationMixin, UpdateView):
     context_object_name = "review_feedback"
     form_class = PeerReviewerFeedbackReviewerForm
     template_name = "library/review/feedback/update.jinja"
     pk_url_kwarg = "feedback_id"
     queryset = PeerReviewerFeedback.objects.all()
 
+    def get_queryset(self):
+        return super().get_queryset().filter(invitation__slug=self.kwargs["slug"])
+
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         if not self.object.invitation.accepted:
-            raise PermissionDenied(
-                _("Sorry, you have already declined this invitation")
-            )
+            raise PermissionDenied(_("Sorry, you have already declined this invitation"))
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -396,12 +423,16 @@ class PeerReviewFeedbackUpdateView(UpdateView):
             return self.object.get_absolute_url()
 
 
-class PeerReviewEditorFeedbackUpdateView(UpdateView):
+class PeerReviewEditorFeedbackUpdateView(PermissionRequiredMixin, PeerReviewValidationMixin, UpdateView):
+    permission_required = "library.change_peerreview"
     context_object_name = "review_feedback"
     form_class = PeerReviewerFeedbackEditorForm
     template_name = "library/review/feedback/editor_update.jinja"
     pk_url_kwarg = "feedback_id"
     queryset = PeerReviewerFeedback.objects.all()
+
+    def get_queryset(self):
+        return super().get_queryset().filter(invitation__slug=self.kwargs["slug"])
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -443,9 +474,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
         criteria = {}
         if published_start_date and published_end_date:
             if published_start_date < published_end_date:
-                criteria.update(
-                    first_published_at__range=[published_start_date, published_end_date]
-                )
+                criteria.update(first_published_at__range=[published_start_date, published_end_date])
             else:
                 logger.warning(
                     "invalid date range: %s, %s",
@@ -467,9 +496,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
             # FIXME: this does not work for the same reason tags__name__in does not work, e.g.,
             # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
             # criteria.update(releases__release_languages__programming_language__name__in=programming_languages)
-            codebases = Codebase.objects.public(
-                releases__programming_languages__name__in=programming_languages
-            )
+            codebases = Codebase.objects.public(releases__programming_languages__name__in=programming_languages)
             criteria.update(id__in=codebases.values_list("id", flat=True))
 
         return get_search_queryset(
@@ -484,9 +511,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
     lookup_field = "identifier"
     lookup_value_regex = r"[\w\-\.]+"
     pagination_class = SmallResultSetPagination
-    queryset = (
-        Codebase.objects.with_tags().with_featured_images().order_by("-last_modified")
-    )
+    queryset = Codebase.objects.with_tags().with_featured_images().order_by("-last_modified")
     filter_backends = (OrderingFilter, CodebaseFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
     serializer_class = CodebaseSerializer
@@ -515,14 +540,10 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
                 language_facets = queryset.facet("all_release_programming_languages")
             except NotImplementedError:
                 # Some backends (e.g. database search backend) do not implement facet support.
-                logger.info(
-                    "Skipping language facets for codebase list because backend does not support faceting"
-                )
+                logger.info("Skipping language facets for codebase list because backend does not support faceting")
                 language_facets = None
             if language_facets:
-                logger.debug(
-                    "Appending language_facets to response: %s", language_facets
-                )
+                logger.debug("Appending language_facets to response: %s", language_facets)
                 # remove '0' key which represents releases with no programming languages
                 if "0" in language_facets:
                     del language_facets["0"]
@@ -537,16 +558,12 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(
-        detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated]
-    )
+    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def submitted_codebases(self, request, *args, **kwargs):
         """
         Returns a list of codebases submitted by the requesting user
         """
-        queryset = (
-            self.get_queryset().filter(submitter=request.user).order_by("-date_created")
-        )
+        queryset = self.get_queryset().filter(submitter=request.user).order_by("-date_created")
         serializer = RelatedCodebaseSerializer(
             queryset,
             many=True,
@@ -569,9 +586,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         super().perform_create(serializer)
         codebase = serializer.instance
         initial_version = self.request.query_params.get("initial_version")
-        return codebase.get_or_create_draft(
-            initial_version=initial_version, submitter=self.request.user
-        )
+        return codebase.get_or_create_draft(initial_version=initial_version, submitter=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -595,11 +610,7 @@ class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, CodebaseViewSet):
     lookup_field = "identifier"
     lookup_value_regex = r"[\w\-\.]+"
     pagination_class = SmallResultSetPagination
-    queryset = (
-        Codebase.objects.with_tags()
-        .with_featured_images()
-        .order_by("-first_published_at")
-    )
+    queryset = Codebase.objects.with_tags().with_featured_images().order_by("-first_published_at")
     filter_backends = (OrderingFilter, CodebaseFilter)
     ordering_fields = (
         "first_published_at",
@@ -644,9 +655,7 @@ class CanChangeCodebase(permissions.BasePermission):
         return request.user.has_perm("library.change_codebase", codebase)
 
 
-class CodebaseGitRemoteViewSet(
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
-):
+class CodebaseGitRemoteViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     queryset = CodebaseGitRemote.objects.all()
     permission_classes = (CanChangeCodebase, GitHubIntegrationPermission)
     pagination_class = None
@@ -668,13 +677,9 @@ class CodebaseGitRemoteViewSet(
     def _forward_integrity_error(self, e: IntegrityError):
         msg = str(e)
         if "single_active_remote" in msg:
-            raise ValidationError(
-                "There can only be one active repository for a codebase at a time."
-            )
+            raise ValidationError("There can only be one active repository for a codebase at a time.")
         else:
-            raise ValidationError(
-                "This repository is already connected to another model."
-            )
+            raise ValidationError("This repository is already connected to another model.")
 
     def update(self, request, *args, **kwargs):
         try:
@@ -714,14 +719,10 @@ class CodebaseGitRemoteViewSet(
             Q(release__codebase=codebase) | Q(codebase=codebase),
             status=GitRefSyncState.Status.RUNNING,
         ).exists():
-            raise ValidationError(
-                "Push already in progress for this codebase. Please wait."
-            )
+            raise ValidationError("Push already in progress for this codebase. Please wait.")
 
         # start all push jobs for this remote (set remotes and mark running)
-        started = GitRefSyncState.start_all_push_jobs_for_codebase(
-            codebase, active_remote
-        )
+        started = GitRefSyncState.start_all_push_jobs_for_codebase(codebase, active_remote)
         if not started:
             return Response(status=status.HTTP_204_NO_CONTENT)
         # enqueue task to carry out all the push jobs we just started
@@ -741,9 +742,7 @@ class CodebaseGitRemoteViewSet(
     def local_releases(self, request, *args, **kwargs):
         """Return all local releases for this codebase with git ref sync states."""
         codebase = self.get_codebase()
-        qs = CodebaseRelease.objects.filter(codebase=codebase).select_related(
-            "codebase", "git_ref_sync_state"
-        )
+        qs = CodebaseRelease.objects.filter(codebase=codebase).select_related("codebase", "git_ref_sync_state")
         releases = list(qs)
         releases.sort(key=lambda r: Version(r.version_number), reverse=True)
         serializer = CodebaseReleaseWithGitRefSyncStateSerializer(
@@ -767,9 +766,7 @@ class CodebaseGitRemoteViewSet(
             return Response(releases, status=status.HTTP_200_OK)
         except Exception as e:
             logger.exception("Failed to fetch GitHub releases: %s", e)
-            raise ValidationError(
-                "Unable to fetch GitHub releases for the active remote"
-            )
+            raise ValidationError("Unable to fetch GitHub releases for the active remote")
 
     @action(detail=False, methods=["post"])
     def import_github_release(self, request, *args, **kwargs):
@@ -789,27 +786,19 @@ class CodebaseGitRemoteViewSet(
         custom_version = request.data.get("custom_version")
         if custom_version is not None:
             if not isinstance(custom_version, str):
-                raise ValidationError(
-                    "'custom_version' must be a semantic version like X.Y.Z"
-                )
+                raise ValidationError("'custom_version' must be a semantic version like X.Y.Z")
             candidate = custom_version.strip()
             parsed_version = extract_semver(candidate)
-            is_exact_semver = parsed_version and (
-                candidate == parsed_version or candidate == f"v{parsed_version}"
-            )
+            is_exact_semver = parsed_version and (candidate == parsed_version or candidate == f"v{parsed_version}")
             if not is_exact_semver:
-                raise ValidationError(
-                    "'custom_version' must be a semantic version like X.Y.Z"
-                )
+                raise ValidationError("'custom_version' must be a semantic version like X.Y.Z")
             custom_version = parsed_version
         # require existing sync state
         sync_state = ImportedReleaseSyncState.objects.filter(
             remote=active_remote, github_release_id=str(github_release_id)
         ).first()
         if not sync_state:
-            raise ValidationError(
-                "Import not prepared. refresh GitHub releases and try again."
-            )
+            raise ValidationError("Import not prepared. refresh GitHub releases and try again.")
         if sync_state.status == ImportedReleaseSyncState.Status.RUNNING:
             raise ValidationError("GitHub release import is already in progress")
         # mark as RUNNING and dispatch import task
@@ -834,9 +823,7 @@ class CodebaseGitRemoteViewSet(
         codebase = self.get_codebase()
         installation = codebase.submitter.github_integration_app_installation
         if not installation:
-            raise ValidationError(
-                "Installation of the Github integration app is required"
-            )
+            raise ValidationError("Installation of the Github integration app is required")
 
         is_preexisting = bool(request.data.get("is_preexisting", False))
         if not codebase.live and not is_preexisting:
@@ -849,9 +836,7 @@ class CodebaseGitRemoteViewSet(
         validator = GitHubRepoValidator(repo_name)
         try:
             validator.validate_format()
-            repo_html_url = validator.get_url_for_connectable_user_repo(
-                installation, is_preexisting
-            )
+            repo_html_url = validator.get_url_for_connectable_user_repo(installation, is_preexisting)
         except ValueError as e:
             error_message = e.args[0] if e.args else "Invalid repository configuration"
             raise ValidationError(error_message)
@@ -877,9 +862,7 @@ class CodebaseGitRemoteViewSet(
                 # a manual disconnect (where the refs still point to the old remote)
                 previous_remote = GitRefSyncState.get_last_remote_for_codebase(codebase)
                 if previous_remote and previous_remote.id != new_remote.id:
-                    GitRefSyncState.reassign_remotes_for_codebase(
-                        codebase=codebase, remote=new_remote
-                    )
+                    GitRefSyncState.reassign_remotes_for_codebase(codebase=codebase, remote=new_remote)
         except IntegrityError as e:
             self._forward_integrity_error(e)
         return Response(
@@ -911,9 +894,7 @@ class CodebaseGitRemoteViewSet(
         """Build or update the local git mirror for this codebase without pushing."""
         codebase = self.get_codebase()
         build_local_git_repo(codebase.id)
-        return Response(
-            status=status.HTTP_202_ACCEPTED, data="Local repository build started."
-        )
+        return Response(status=status.HTTP_202_ACCEPTED, data="Local repository build started.")
 
 
 class GitHubSyncOverviewView(TemplateView):
@@ -934,9 +915,7 @@ class GitHubSyncOverviewView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["github_model_library_org_name"] = (
-            settings.GITHUB_MODEL_LIBRARY_ORG_NAME
-        )
+        context["github_model_library_org_name"] = settings.GITHUB_MODEL_LIBRARY_ORG_NAME
         return context
 
 
@@ -977,13 +956,9 @@ def github_sync_webhook(request):
             return HttpResponse("Malformed payload", status=400)
         # match based on the uid
         uid = sender["id"]
-        social_account = SocialAccount.objects.filter(
-            provider="github", uid=str(uid)
-        ).first()
+        social_account = SocialAccount.objects.filter(provider="github", uid=str(uid)).first()
         if not social_account:
-            logger.warning(
-                "No matching social account found for installation event: %s", payload
-            )
+            logger.warning("No matching social account found for installation event: %s", payload)
             return HttpResponse(status=404)
         if action == "deleted":
             installation = GithubIntegrationAppInstallation.objects.filter(
@@ -1031,9 +1006,7 @@ class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             raise ValidationError({"file": ["This field is required"]})
         image = codebase.import_media(fileobj, user=request.user)
         if image is None:
-            raise ValidationError(
-                [{"msg": {"detail": "file is not an image", "stage": "media"}}]
-            )
+            raise ValidationError([{"msg": {"detail": "file is not an image", "stage": "media"}}])
         codebase.save()
         return Response(status=status.HTTP_201_CREATED)
 
@@ -1056,9 +1029,7 @@ class CodebaseReleaseDraftView(PermissionRequiredMixin, View):
     def has_permission(self):
         if has_permission_to_create_release(view=self, request=self.request):
             return True
-        raise PermissionDenied(
-            "Sorry, you do not have permissions to create a new draft release for this codebase."
-        )
+        raise PermissionDenied("Sorry, you do not have permissions to create a new draft release for this codebase.")
 
     def post(self, *args, **kwargs):
         identifier = kwargs["identifier"]
@@ -1092,16 +1063,10 @@ class NestedCodebaseReleasePermission(permissions.BasePermission):
 class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj: CodebaseRelease):
         if obj.live:
-            raise DrfPermissionDenied(
-                "Cannot access unpublished files of published release"
-            )
+            raise DrfPermissionDenied("Cannot access unpublished files of published release")
         if obj.is_review_complete:
-            raise DrfPermissionDenied(
-                "Cannot modify unpublished files of a release that has been peer reviewed"
-            )
-        if request.method == "GET" and not request.user.has_perm(
-            "library.change_codebaserelease", obj=obj
-        ):
+            raise DrfPermissionDenied("Cannot modify unpublished files of a release that has been peer reviewed")
+        if request.method == "GET" and not request.user.has_perm("library.change_codebaserelease", obj=obj):
             raise DrfPermissionDenied("Must have change permission to view release")
         return True
 
@@ -1118,9 +1083,7 @@ def build_archive_download_response(codebase_release, review_archive=False):
     fs_api = codebase_release.get_fs_api()
     response = HttpResponse()
     response["Content-Type"] = ""
-    response["Content-Disposition"] = "attachment; filename={}".format(
-        codebase_release.archive_filename
-    )
+    response["Content-Disposition"] = "attachment; filename={}".format(codebase_release.archive_filename)
     # response['Content-Length'] = fs_api.archive_size
     archive_uri = fs_api.archive_uri
     archive_absolute_path = fs_api.archivepath
@@ -1136,9 +1099,7 @@ def build_archive_download_response(codebase_release, review_archive=False):
     return response
 
 
-class CodebaseReleaseShareViewSet(
-    CommonViewSetMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
-):
+class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
     viewset supporting private codebase release share page (e.g., Download for Review)
     """
@@ -1167,9 +1128,7 @@ class CodebaseReleaseShareViewSet(
         if codebase_release.live:
             raise Http404("Cannot download review archive on published release")
         try:
-            response = build_archive_download_response(
-                codebase_release, review_archive=True
-            )
+            response = build_archive_download_response(codebase_release, review_archive=True)
         except FileNotFoundError:
             logger.error(
                 "Unable to find review archive for codebase release %s (%s)",
@@ -1217,9 +1176,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         codebase_release_serializer = self.get_serializer_class()
         serializer = codebase_release_serializer(codebase_release)
         headers = self.get_success_headers(serializer.data)
-        return Response(
-            status=status.HTTP_201_CREATED, data=serializer.data, headers=headers
-        )
+        return Response(status=status.HTTP_201_CREATED, data=serializer.data, headers=headers)
 
     def list(self, request, *args, **kwargs):
         identifier = kwargs["identifier"]
@@ -1242,11 +1199,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         if self.action == "list":
             return queryset.public()
         else:
-            return (
-                queryset.accessible(user=self.request.user)
-                .with_submitter()
-                .with_codebase()
-            )
+            return queryset.accessible(user=self.request.user).with_submitter().with_codebase()
 
     @action(detail=True, methods=["put"])
     @transaction.atomic
@@ -1269,13 +1222,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     def regenerate_share_uuid(self, request, **kwargs):
         codebase_release = self.get_object()
         if codebase_release.live:
-            raise ValidationError(
-                {
-                    "non_field_errors": [
-                        "Cannot regenerate share uuid on published release"
-                    ]
-                }
-            )
+            raise ValidationError({"non_field_errors": ["Cannot regenerate share uuid on published release"]})
         codebase_release.regenerate_share_uuid()
         return Response(
             data=request.build_absolute_uri(codebase_release.share_url),
@@ -1308,72 +1255,64 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
                 response = HttpResponseRedirect(codebase_release.get_absolute_url())
                 messages.error(request, msg)
                 return response
-            return Response(
-                data={"non_field_errors": [msg]}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(data={"non_field_errors": [msg]}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     @transaction.atomic
     def request_peer_review(self, request, identifier, version_number):
         """
-        If a peer review is requestable (publishable, not reviewed, no related review exists, and not imported+published):
-        - Create a new "under review" draft release if the release from which the request was made is published
-        - Otherwise, update the existing draft release to be "under review"
-        - Create a new peer review object and send an email to the author
+        Return an active review, reopen a closed review, or create a new one.
+
+        Published releases are copied to a review draft; unpublished releases are
+        reused. Notify the review editor when creating or reopening a review.
         """
+        # Serialize requests across all releases, including when no review exists.
+        # Read the release and review state only after acquiring the codebase lock.
+        codebase = get_object_or_404(Codebase.objects.select_for_update(), identifier=identifier)
         codebase_release = get_object_or_404(
             CodebaseRelease,
-            codebase__identifier=identifier,
+            codebase=codebase,
             version_number=version_number,
         )
         if codebase_release.is_imported and codebase_release.is_published:
             raise ValidationError(
                 "Cannot request a peer review for an imported release that has already been published. As a workaround, you can make another release on GitHub and request a peer review for that."
             )
-        codebase_release.validate_publishable()
-        existing_review = PeerReview.get_codebase_latest_active_review(
-            codebase_release.codebase
-        )
-        # if there is an existing active review, simply redirect to that release
+        existing_review = PeerReview.get_codebase_latest_active_review(codebase_release.codebase)
         if existing_review:
-            review = existing_review
-            review_release = existing_review.codebase_release
-            created = False
-        # if not create a new review
-        else:
-            # first, check if this release status is already under or completed review
-            # if so, something went wrong so we'll
-            if codebase_release.is_under_review or codebase_release.is_review_complete:
-                raise ValidationError(
-                    "Cannot re-request a review on a release that has already completed or is undergoing review."
-                )
-            # if the release is published, make a new draft copy
-            elif codebase_release.is_published:
-                review_release = (
-                    codebase_release.codebase.create_review_draft_from_release(
-                        codebase_release
-                    )
-                )
-            # if the release is a draft/unpublished, change the status
-            else:
-                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
-                codebase_release.save(update_fields=["status"])
-                review_release = codebase_release
+            messages.info(
+                request,
+                "An active peer review already exists for this codebase.",
+            )
+            return self.build_review_request_response(request, existing_review.codebase_release, existing_review)
 
+        codebase_release.validate_publishable()
+        previous_review = getattr(codebase_release, "review", None)
+        has_closed_review = previous_review is not None and previous_review.closed
+        if codebase_release.is_review_complete or (codebase_release.is_under_review and not has_closed_review):
+            raise ValidationError(
+                "Cannot re-request a review on a release that has already completed or is undergoing review."
+            )
+
+        if codebase_release.is_published:
+            review_release = codebase_release.codebase.create_review_draft_from_release(codebase_release)
+            review = None
+        else:
+            review_release = codebase_release
+            review = previous_review
+            if review is None:
+                review_release.status = CodebaseRelease.Status.UNDER_REVIEW
+                review_release.save(update_fields=["status"])
+
+        if review is None:
             review = PeerReview.objects.create(
                 codebase_release=review_release,
                 submitter=request.user.member_profile,
             )
             review.send_author_requested_peer_review_email()
-            created = True
-
-        if created:
-            messages.success(request, "Peer review request submitted.")
         else:
-            messages.info(
-                request,
-                "An active peer review already exists for this codebase. Close it below if you wish to open a new one",
-            )
+            review.reopen(request.user.member_profile)
+        messages.success(request, "Peer review request submitted.")
         return self.build_review_request_response(request, review_release, review)
 
     def build_review_request_response(self, request, codebase_release, review):
@@ -1474,9 +1413,7 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
             [
                 r"codebases/(?P<identifier>[\w\-.]+)",
                 r"/releases/(?P<version_number>\d+\.\d+\.\d+)",
-                r"/files/{}/(?P<category>{})".format(
-                    cls.stage.name, "|".join(c.name for c in FileCategories)
-                ),
+                r"/files/{}/(?P<category>{})".format(cls.stage.name, "|".join(c.name for c in FileCategories)),
             ]
         )
 
@@ -1522,9 +1459,7 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
         kwargs = parser_context["kwargs"]
         identifier = kwargs["identifier"]
         version_number = kwargs["version_number"]
-        obj = get_object_or_404(
-            queryset, codebase__identifier=identifier, version_number=version_number
-        )
+        obj = get_object_or_404(queryset, codebase__identifier=identifier, version_number=version_number)
 
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
@@ -1583,11 +1518,7 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
             raise ValidationError({"file": ["This field is required"]})
         msgs = fs_api.add(content=fileobj, category=category)
         logs, level = msgs.serialize()
-        status_code = (
-            status.HTTP_400_BAD_REQUEST
-            if level > MessageLevels.info
-            else status.HTTP_202_ACCEPTED
-        )
+        status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
         return Response(status=status_code, data=logs)
 
     def destroy(self, request, *args, **kwargs):
@@ -1597,11 +1528,7 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
         category = self.get_category()
         msgs = fs_api.delete(category=category, relpath=pathlib.Path(relpath))
         logs, level = msgs.serialize()
-        status_code = (
-            status.HTTP_400_BAD_REQUEST
-            if level > MessageLevels.info
-            else status.HTTP_202_ACCEPTED
-        )
+        status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
         return Response(status=status_code, data=logs)
 
     @action(detail=False, methods=["DELETE"])
@@ -1687,9 +1614,7 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
     def form_valid(self, form):
         # update all codebase releases with invalid licenses with their mapped alternative
         try:
-            releases_with_cc = CodebaseRelease.objects.with_cc_license(
-                submitter=self.request.user
-            )
+            releases_with_cc = CodebaseRelease.objects.with_cc_license(submitter=self.request.user)
             for release in releases_with_cc:
                 candidate_license_name = self.LICENSE_MAPPING.get(release.license.name)
                 release.license = License.objects.get(name=candidate_license_name)

@@ -10,9 +10,7 @@ DATACITE_TEST_MODE = False
 
 DEBUG = False
 DJANGO_VITE_DEV_MODE = False
-DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(
-    Environment.PRODUCTION
-)
+DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(Environment.PRODUCTION)
 
 EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[comses.net]")
 # See http://django-allauth.readthedocs.io/en/latest/providers.html#orcid for more context.

@@ -66,9 +66,7 @@ class CommonViewSetMixin:
             elif hasattr(self, "model"):
                 self.namespace = _common_namespace_path(self.model)
             else:
-                logger.error(
-                    "invalid mixin, no namespace, queryset or model set on self"
-                )
+                logger.error("invalid mixin, no namespace, queryset or model set on self")
         return self.namespace
 
     def get_template_names(self):
@@ -100,16 +98,12 @@ class PermissionRequiredByHttpMethodMixin:
 
     def get_template_names(self):
         # assumes any class using this mixin will have a model attribute and an edit.<ext>
-        namespace = (
-            self.namespace if self.namespace else _common_namespace_path(self.model)
-        )
+        namespace = self.namespace if self.namespace else _common_namespace_path(self.model)
         file_ext = self.ext if self.ext else "jinja"
         return [f"{namespace}/edit.{file_ext}"]
 
     def get_required_permissions(self, request=None):
-        perms = ViewRestrictedObjectPermissions.get_required_object_permissions(
-            self.method, self.model
-        )
+        perms = ViewRestrictedObjectPermissions.get_required_object_permissions(self.method, self.model)
         return perms
 
     def check_permissions(self):
@@ -117,9 +111,7 @@ class PermissionRequiredByHttpMethodMixin:
         # user.has_perms hasn't been called yet so django-guardian
         # hasn't replaced the AnonymousUser with an actual user object
         if user.is_anonymous:
-            return redirect_to_login(
-                self.request.get_full_path(), settings.LOGIN_URL, "next"
-            )
+            return redirect_to_login(self.request.get_full_path(), settings.LOGIN_URL, "next")
         if hasattr(self, "get_object"):
             obj = self.get_object()
         else:
@@ -201,9 +193,7 @@ class SpamCatcherSerializerMixin(serializers.Serializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["content"] = serializers.CharField(
-            required=False, allow_blank=True, write_only=True
-        )
+        self.fields["content"] = serializers.CharField(required=False, allow_blank=True, write_only=True)
         self.fields["loaded_time"] = serializers.DateTimeField(required=False)
 
     def validate(self, attrs):
@@ -266,9 +256,7 @@ class SpamCatcherViewSetMixin:
         ]
         for field in required_fields:
             if not hasattr(instance, field):
-                raise ValueError(
-                    f"instance {instance} does not have a {field} attribute"
-                )
+                raise ValueError(f"instance {instance} does not have a {field} attribute")
 
     @action(detail=True, methods=["post"], permission_classes=[ModeratorPermissions])
     def mark_spam(self, request, **kwargs):
@@ -298,9 +286,7 @@ class SpamCatcherViewSetMixin:
         if "spam_context" in serializer.context:
             try:
                 self._validate_content_object(serializer.instance)
-                self._record_spam(
-                    serializer.instance, serializer.context["spam_context"]
-                )
+                self._record_spam(serializer.instance, serializer.context["spam_context"])
             except ValueError as e:
                 logger.warning("Cannot flag %s as spam: %s", serializer.instance, e)
 

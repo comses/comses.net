@@ -8,6 +8,9 @@ config.mk
 # vscode
 .devcontainer
 .vscode
+!/.vscode/
+/.vscode/*
+!/.vscode/settings.json
 volar.config.[jt]s
 vetur.config.[jt]s
 

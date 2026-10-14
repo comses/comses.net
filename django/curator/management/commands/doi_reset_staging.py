@@ -63,16 +63,11 @@ def reset_all_dois(interactive=True, dry_run=True):
     for release, log in invalid_releases:
         with open("invalid_releases.csv", "w") as f:
             writer = csv.writer(f)
-            writer.writerow(
-                ["CodebaseRelease ID", "Status Code", "Reason", "Datacite Metadata"]
-            )
-            writer.writerow(
-                [release.pk, log.http_status, log.message, release.datacite.to_dict()]
-            )
+            writer.writerow(["CodebaseRelease ID", "Status Code", "Reason", "Datacite Metadata"])
+            writer.writerow([release.pk, log.http_status, log.message, release.datacite.to_dict()])
 
 
 class Command(BaseCommand):
-
     def add_arguments(self, parser):
         parser.add_argument(
             "--interactive",

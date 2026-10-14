@@ -1,67 +1,117 @@
 # Codebase Review Workflow
 
-Review workflow for the CoMSES computational model library that enables authors to submit a specific codebase version for a peer review certification process similar in spirit to PlOS One, i.e., a structural / software integrity review that checks:
+Peer review assesses a model release's narrative documentation, code quality,
+and reproducibility from the supplied instructions. Reviewers provide feedback
+and recommend acceptance or revisions. A review editor decides whether to certify
+the release.
 
-1.  Does the codebase have accompanying narrative documentation?
-2.  Is the code clean / well-written / well-commented? (formatted properly, etc.)
-3.  Can you run the model with the provided instructions?
+A **release** is a particular version of a model and its supporting files. A
+**review** is the assessment of that release. Each release has one review at most,
+and a model can have only one active review at a time.
 
-Each of these questions has two other fields associated with it:
+An active review is open and incomplete. **Closing** a review stops the review
+process. **Completing** a review records the editor's certification decision.
+Certification applies to the reviewed release; publication is a separate step.
+A completed review cannot be reopened.
 
-1.  a select box "Does not meet standards", "Partially meets standards", "Fully meets standards"
-2.  Free form notes field
+## The review process
 
-At the end, a final recommendation:
+1. **The author requests review.** The release must include the required metadata,
+   code, and documentation. The review editor receives a notification.
+2. **The editor invites reviewers.** Reviewers accept or decline their
+   invitations. After accepting, they can save draft feedback and submit a
+   recommendation.
+3. **The editor considers the feedback.** If revisions are needed, the editor
+   sends notes to the author. The author updates the release and uses the option
+   to notify reviewers of changes so they can assess the revisions.
+4. **The editor accepts and certifies the release.** Once satisfied with the
+   submission, the editor uses **Accept and certify** on submitted reviewer
+   feedback. The author receives a certification email.
 
-1.  Do not certify / deny
-2.  Revise and resubmit
-3.  Certify / accept
+The review status shows who needs to act next. The editor can change a pending
+status to reflect progress.
 
-## Review statuses
+| Status | Meaning |
+| --- | --- |
+| Awaiting reviewer feedback | Reviewers need to respond. The editor may need to assign reviewers or resend invitations. |
+| Awaiting editor feedback | The editor needs to consider reviewer feedback. |
+| Awaiting author release changes | The editor has requested revisions from the author. |
+| Review is complete | The editor has certified the release. |
 
-Reviews have the following statuses:
+## Requesting review
 
-1.  Review requested (editor needs to invite a peer reviewer)
-2.  Reviewers invited (editor sent emails to candidate peer reviewers who will accept / decline the request to review the given codebase)
-3.  Reviewer accepted (candidate peer reviewer will perform the codebase review, timer is set to periodically remind the reviewer and after a certain amount of time, the editor also needs to be notified)
-4.  Reviewer declined (editor action required, go back to step 2 to invite candidate peer reviewers)
-5.  Review completed (peer reviewer has filled out the codebase review form and submit a final recommendation to be taken by the editor)
-6.  The editor has the final say whether or not to accept the reviewer's recommendation and will manually change the status of the review to `Accepted, Denied, or Revise/Resubmit`
-7.  If revise / resubmit, the author can make changes to their codebase version and then resubmit it for review, which brings it back to Step 1 (with the history of changes preserved).
+For an unpublished release, requesting review uses that release and its existing
+version number. For a published release, the system creates an unpublished review
+draft with copies of its files and metadata. The published release remains
+unchanged. Imported releases that have already been published are not eligible
+for a review request.
 
-## Sample workflow
+If the model already has an active review, requesting review again uses that
+review. It does not create another review or send another editor
+notification. If the chosen unpublished release has a closed review, the request
+follows the reopening process below.
 
-- Codebase submitter requests a review for a specific codebase release version
-- Review shows up in an admin / editor visible queue with the appropriate status
-- Review manager / admin selects a review in the New Review Requests queue and selects (one or more) candidate reviewer(s) to invite via customized form-letter email
-- Candidate reviewers can be a Full CoMSES Member, any user that has published a model in the Model Library, or an outside individual not registered on the site. (All reviewers who accept the model review will gain full CoMSES member status if they do not already possess that status.)
-- Search interface to find candidate reviewers (probably by tags related to a user, either via the profile or past codebase release submissions)
-- Candidate reviewer listings should also show review metadata many times they've been invited, accepted, or declined to review.
-- Outside candidates can be provided by entering their name and email address. If a non-registered user is invited to perform a review they are given a fast-track link that, if they accept the offer to review the model, registers them as a CoMSES member.
-- If a user who has published a model in the Model Library who is not a full CoMSES member accepts the offer to review a model, that user is then registered as a full CoMSES member.
-- CoMSES Editor selects N candidates from the pool and clicks a button to send an email to them inviting them to review the model. The existing email templates are currently stored in the DB, accessible via admin/config/comses_settings/modelreviews/templates
-- The email invitation offers the candidate a choice to accept or decline the review. If the candidate reviewer declines the review, they can submit additional suggested reviewers (in a single textfield to be shown to the CoMSES Editor).
-- If a candidate declines to review, the editor is notified to select a new candidate to invite
-- Each reviewer is given `X` days to complete their review.
-- A reminder email should be sent to a reviewer after `Y, Y<X` days to remind them to complete their review.
-- As each reviewer submits their model review, an email is sent to the Editor Manager, informing them.
-- Once all N reviewers have completed their reviews, the Editor is notified that their attention is required on the case.
-- Editor reviews case and reviewer recommendations. He/she makes a determination on whether the model certification should be Reviewed, Declined, or Revise and Resubmit and notifies the author with relevant, curated review info.
-- If the review is determined to be “Reviewed”, Editor closes case, the model is flagged as peer reviewed, the Editor generates a DOI for the model, and an email is sent informing the author.
-- If the review is determined to be “Declined”, the case is closed, and an email is sent to the author notifying them of the decision (NOTE: when will this ever happen?)
+## Closing a review
 
-## Review roles
+Closing ends an open review without certifying the release. It may be appropriate
+when a request was premature or spurious, when an author is not adequately
+addressing reviewer concerns, or when other circumstances prevent the review
+from continuing. The editor should determine how to handle the case based on the
+work already recorded.
 
-- all CoMSES Members can submit a codebase release version for review.
-- CoMSES Editor manages an individual model review case and finds reviewers for the model
-- full CoMSES Members can serve as individual reviewers if they accept the review (excepting the submitter of course)
+The author who requested the review or a review editor can use **Close review**
+when no reviewer has submitted feedback and no editorial decision has been
+recorded. Closing discards unsubmitted feedback drafts. It retains the release,
+reviewer invitations and their responses, and the review history. The history
+records who closed the review and how many drafts were discarded.
 
-## Review configuration
+Reviews with submitted feedback, editor notes, or a request for author revisions
+require curatorial handling to close. This also applies when the review history
+records an earlier feedback submission or editorial decision. The ordinary close
+action preserves this work and directs the user to seek curatorial handling.
+Closing must not undo certification; withdrawing a published, peer-reviewed model
+also requires curatorial oversight.
 
-- Number of reviewers  
-  - integer
-  - the default number of reviewers to invite for a model review
+While a review is closed, reviewers cannot respond to invitations or update
+feedback, and editors cannot send invitations or change the review status.
+Closing an already closed review leaves its state and history unchanged.
 
-- Days to complete review  
-  - integer
-  - the number of days the reviewers have to submit the review before receiving daily notifications
+## Reopening a closed request
+
+The author who requested the review or a review editor can use **Re-open review**.
+For an unpublished release, the author can also request review again from the
+release page. Both routes require the release to have the metadata, code, and
+documentation needed for review.
+
+A closed review can be reopened through these actions only if it has no submitted
+feedback or editorial decisions, including any recorded in its history. Otherwise,
+manual curation by a maintainer or admin is needed. A completed review cannot be 
+reopened, and a closed review cannot be reopened while another review of the same 
+model is active.
+
+Reopening uses the same review and release, preserving the version number. It
+sets the review to **Awaiting reviewer feedback** and notifies the editor once.
+Any remaining unsubmitted feedback drafts are discarded so reviewers begin with
+fresh feedback.
+
+Existing reviewer invitations keep their links but return to pending. Reviewers
+must accept again before adding feedback. Invitation expiry dates remain the
+same: the editor must resend an expired invitation before the reviewer can
+respond. Reopening does not email reviewers, so the editor should decide which
+invitations to resend or which additional reviewers to invite.
+
+Repeating a reopening request does not reset the review again or send another
+editor notification. Authors who are revising a release during an active review
+should notify reviewers of their changes through the existing review process.
+
+## Certification and publication
+
+Only **Accept and certify** completes a review. Changing the review status alone
+does not certify the release. Certification marks the release and model as peer
+reviewed, records the editor's decision in the review history, and emails the
+author. The reviewed unpublished release can then proceed to publication.
+
+Certification does not publish the release or assign a DOI. Publication and DOI
+assignment follow the release's publication process. Completed reviews retain
+their feedback and history for inspection. Their feedback is read-only, and
+ordinary review actions cannot change or reverse their certification.

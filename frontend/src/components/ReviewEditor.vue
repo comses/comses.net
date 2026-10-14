@@ -1,12 +1,19 @@
 <template>
   <div class="row">
     <div class="col-sm-12 col-md-8">
-      <div v-if="closed" class="alert alert-danger">
+      <div v-if="status === 'complete'" class="alert alert-success">
+        This review is complete. Its feedback is read-only.
+      </div>
+      <div v-else-if="closed" class="alert alert-danger">
         <b>This review is closed.</b> Re-open it to invite reviewers or send feedback.
       </div>
-      <ReviewInvitations :review-id="reviewId" :disabled="closed" @pollEvents="retrieveEvents" />
+      <ReviewInvitations
+        :review-id="reviewId"
+        :disabled="closed || status === 'complete'"
+        @pollEvents="retrieveEvents"
+      />
       <h2 class="mt-4">Feedback</h2>
-      <ReviewFeedback :review-id="reviewId" :disabled="closed" />
+      <ReviewFeedback :review-id="reviewId" :disabled="closed || status === 'complete'" />
     </div>
     <div class="col-sm-12 col-md-4">
       <ReviewEventLog :events="events" :errors="eventErrors" />

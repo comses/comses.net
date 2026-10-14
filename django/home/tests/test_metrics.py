@@ -34,9 +34,7 @@ class MetricsTestCase(TestCase):
         m = Metrics()
         min_start_year = 2012
         OS_NAMES = ("linux", "other", "platform_independent", "windows", "macos")
-        highcharts_timeseries = m.convert_release_metrics_to_timeseries(
-            self.os_metrics, start_year=min_start_year
-        )
+        highcharts_timeseries = m.convert_release_metrics_to_timeseries(self.os_metrics, start_year=min_start_year)
         for chart_data in highcharts_timeseries:
             # 2012 and 2013 should also be 0
             self.assertEqual(
@@ -50,7 +48,5 @@ class MetricsTestCase(TestCase):
                 0,
                 f"5th entry (2016) should be 0 {chart_data['name']}",
             )
-            self.assertTrue(
-                chart_data["name"] in OS_NAMES, f"Invalid OS name {chart_data['name']}"
-            )
+            self.assertTrue(chart_data["name"] in OS_NAMES, f"Invalid OS name {chart_data['name']}")
             self.assertEqual(len(chart_data["data"]), 7, "Should be 7 years of data")

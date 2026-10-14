@@ -16,9 +16,7 @@ PROVIDERS = {
 
 VIDEO_PATTERN = (
     r"\!\[(?P<alt>[^\]]*)\]\((https?://(www\.|)({0}|{1})\S*)"
-    r"(?<!png)(?<!jpg)(?<!jpeg)(?<!gif)\)".format(
-        PROVIDERS["youtube"]["re"], PROVIDERS["vimeo"]["re"]
-    )
+    r"(?<!png)(?<!jpg)(?<!jpeg)(?<!gif)\)".format(PROVIDERS["youtube"]["re"], PROVIDERS["vimeo"]["re"])
 )
 
 

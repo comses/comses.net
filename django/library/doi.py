@@ -89,7 +89,7 @@ def get_welcome_message(dry_run: bool):
         Production Mode
         """
     return f"""{ENV_MESSAGE}\n\n
-            Dry Run Mode: {'On' if dry_run else 'Off'}\n
+            Dry Run Mode: {"On" if dry_run else "Off"}\n
             """
 
 
@@ -186,9 +186,7 @@ class DataCiteApi:
         try:
             schema45.validator.validate(metadata_dict)
         except Exception as e:
-            logger.error(
-                "Invalid DataCite metadata: %s", schema45.tostring(metadata_dict), e
-            )
+            logger.error("Invalid DataCite metadata: %s", schema45.tostring(metadata_dict), e)
             raise DataCiteError(f"Invalid DataCite metadata: {metadata_dict}")
         return datacite_metadata, metadata_dict
 
@@ -219,12 +217,8 @@ class DataCiteApi:
         datacite_metadata = codebase_or_release.datacite
 
         try:
-            datacite_metadata, metadata_dict = self._validate_metadata(
-                datacite_metadata
-            )
-            doi = self.datacite_client.public_doi(
-                metadata_dict, url=codebase_or_release.permanent_url
-            )
+            datacite_metadata, metadata_dict = self._validate_metadata(datacite_metadata)
+            doi = self.datacite_client.public_doi(metadata_dict, url=codebase_or_release.permanent_url)
             codebase_or_release.doi = doi
             codebase_or_release.save()
         except DataCiteError as e:
@@ -242,13 +236,9 @@ class DataCiteApi:
             "metadata_hash": datacite_metadata.hash(),
         }
         if isinstance(codebase_or_release, Codebase):
-            log_record_dict.update(
-                codebase=codebase_or_release, action=DataCiteAction.CREATE_CODEBASE_DOI
-            )
+            log_record_dict.update(codebase=codebase_or_release, action=DataCiteAction.CREATE_CODEBASE_DOI)
         elif isinstance(codebase_or_release, CodebaseRelease):
-            log_record_dict.update(
-                release=codebase_or_release, action=DataCiteAction.CREATE_RELEASE_DOI
-            )
+            log_record_dict.update(release=codebase_or_release, action=DataCiteAction.CREATE_RELEASE_DOI)
         return self._save_log_record(**log_record_dict), http_status == 200
 
     @classmethod
@@ -258,9 +248,7 @@ class DataCiteApi:
         its latest log entry
         """
         try:
-            newest_log_entry = DataCiteRegistrationLog.objects.latest_entry(
-                codebase_or_release
-            )
+            newest_log_entry = DataCiteRegistrationLog.objects.latest_entry(codebase_or_release)
             # always force refresh cached datacite property in case it was computed earlier
             if hasattr(codebase_or_release, "datacite"):
                 del codebase_or_release.datacite
@@ -282,16 +270,12 @@ class DataCiteApi:
         doi = codebase_or_release.doi
         if self.dry_run:
             logger.debug("DRY RUN")
-            logger.debug(
-                "Updating DOI metadata for codebase_or_release: %s", codebase_or_release
-            )
+            logger.debug("Updating DOI metadata for codebase_or_release: %s", codebase_or_release)
             logger.debug("Metadata: %s", codebase_or_release.datacite)
             return DataCiteRegistrationLog(), True
         if hasattr(codebase_or_release, "datacite"):
             del codebase_or_release.datacite
-        datacite_metadata, metadata_dict = self._validate_metadata(
-            codebase_or_release.datacite
-        )
+        datacite_metadata, metadata_dict = self._validate_metadata(codebase_or_release.datacite)
         http_status = 200
         message = f"Successfully updated metadata for {doi}."
         updated_metadata_dict = {"attributes": {**metadata_dict}}
@@ -395,17 +379,12 @@ class DataCiteApi:
                     if comses_metadata[key] and datacite_metadata[key]:
                         if str(comses_metadata[key]) != str(datacite_metadata[key]):
                             different_attributes.append(key)
-                    elif not (
-                        comses_metadata[key] in EMPTY_VALS
-                        and datacite_metadata[key] in EMPTY_VALS
-                    ):
+                    elif not (comses_metadata[key] in EMPTY_VALS and datacite_metadata[key] in EMPTY_VALS):
                         different_attributes.append(key)
                     else:
                         continue
 
-                if not DataCiteApi._is_deep_inclusive(
-                    comses_metadata[key], datacite_metadata[key]
-                ):
+                if not DataCiteApi._is_deep_inclusive(comses_metadata[key], datacite_metadata[key]):
                     # if sent_data[key] != received_data[key]:
 
                     # FIXME: identifiers is not considered by the Fabrica API...
@@ -450,9 +429,7 @@ class DataCiteApi:
         - item: Codebase | CodebaseRelease
         """
         if self.dry_run:
-            logger.debug(
-                "Dry run metadata check for %s", codebase_or_release.datacite.to_dict()
-            )
+            logger.debug("Dry run metadata check for %s", codebase_or_release.datacite.to_dict())
             return True
         if not codebase_or_release.doi:
             logger.warning(
@@ -468,9 +445,7 @@ class DataCiteApi:
                 datacite_metadata,
                 comses_metadata,
             )
-            return DataCiteApi.is_metadata_equivalent(
-                comses_metadata, datacite_metadata
-            )
+            return DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata)
         except Exception as e:
             logger.error(e)
             return False
@@ -518,13 +493,9 @@ class DataCiteApi:
         3. Update metadata for parent codebase and sibling releases
         """
 
-        peer_reviewed_releases_without_dois = (
-            CodebaseRelease.objects.public().reviewed().without_doi()
-        )
+        peer_reviewed_releases_without_dois = CodebaseRelease.objects.public().reviewed().without_doi()
 
-        total_peer_reviewed_releases_without_dois = (
-            peer_reviewed_releases_without_dois.count()
-        )
+        total_peer_reviewed_releases_without_dois = peer_reviewed_releases_without_dois.count()
         logger.info(
             "Minting DOIs for %s peer reviewed releases without DOIs",
             total_peer_reviewed_releases_without_dois,
@@ -570,14 +541,10 @@ class DataCiteApi:
             mint_release_doi_log, ok = self.mint_public_doi(release)
             if not ok:
                 logger.error("Could not mint DOI for release %s. Skipping.", release.pk)
-                invalid_releases.append(
-                    (release, mint_release_doi_log, "Unable to mint DOI for release")
-                )
+                invalid_releases.append((release, mint_release_doi_log, "Unable to mint DOI for release"))
                 continue
 
-            logger.debug(
-                "Updating metadata for parent codebase of release %s", release.pk
-            )
+            logger.debug("Updating metadata for parent codebase of release %s", release.pk)
             """
             Update parent Codebase metadata for new release DOI
             """
@@ -603,9 +570,7 @@ class DataCiteApi:
             next_release = release.get_next_release()
 
             if previous_release and previous_release.doi:
-                update_previous_release_doi_log, ok = self.update_doi_metadata(
-                    previous_release
-                )
+                update_previous_release_doi_log, ok = self.update_doi_metadata(previous_release)
                 if not ok:
                     logger.error(
                         "Failed to update metadata for previous_release %s",
@@ -622,9 +587,7 @@ class DataCiteApi:
             if next_release and next_release.doi:
                 update_next_release_doi_log, ok = self.update_doi_metadata(next_release)
                 if not ok:
-                    logger.error(
-                        "Failed to update metadata for next_release %s", next_release.pk
-                    )
+                    logger.error("Failed to update metadata for next_release %s", next_release.pk)
                     invalid_releases.append(
                         (
                             release,
@@ -649,9 +612,7 @@ class DataCiteApi:
         """
         if not self.dry_run:
             print(VERIFICATION_MESSAGE)
-            logger.info(
-                "Verifying: all peer reviewed releases without DOIs and their parent codebases have valid DOIs"
-            )
+            logger.info("Verifying: all peer reviewed releases without DOIs and their parent codebases have valid DOIs")
             invalid_codebases = []
             invalid_releases = []
 
@@ -674,9 +635,7 @@ class DataCiteApi:
                     invalid_codebases,
                 )
             else:
-                logger.info(
-                    "SUCCESS: All parent codebases of peer reviewed releases without DOIs have valid DOIs."
-                )
+                logger.info("SUCCESS: All parent codebases of peer reviewed releases without DOIs have valid DOIs.")
             if invalid_releases:
                 logger.error(
                     "FAILURE: %s CodebaseReleases with invalid or missing DOIs: %s",
@@ -684,6 +643,4 @@ class DataCiteApi:
                     invalid_releases,
                 )
             else:
-                logger.info(
-                    "SUCCESS: All peer reviewed releases without DOIs have valid DOIs."
-                )
+                logger.info("SUCCESS: All peer reviewed releases without DOIs have valid DOIs.")

@@ -177,25 +177,19 @@ def rest_exception_handler(exc, context):
 
 
 def permission_denied(request, exception, template_name="403.jinja", context=None):
-    response = render(
-        request=request, template_name=template_name, context=context, status=403
-    )
+    response = render(request=request, template_name=template_name, context=context, status=403)
     return response
 
 
 def page_not_found(request, exception, template_name="404.jinja", context=None):
-    response = render(
-        request=request, template_name=template_name, context=context, status=404
-    )
+    response = render(request=request, template_name=template_name, context=context, status=404)
     return response
 
 
 def other_400_error(request, exception, template_name="other_400.jinja", context=None):
     if context is None:
         context = {}
-    context["description"] = (
-        "Method Not Allowed" if exception.status_code == 405 else "Other error"
-    )
+    context["description"] = "Method Not Allowed" if exception.status_code == 405 else "Other error"
     context["status"] = exception.status_code
     response = render(
         request=request,
@@ -207,9 +201,7 @@ def other_400_error(request, exception, template_name="other_400.jinja", context
 
 
 def server_error(request, template_name="500.jinja", context=None):
-    response = render(
-        request=request, template_name=template_name, context=context, status=500
-    )
+    response = render(request=request, template_name=template_name, context=context, status=500)
     return response
 
 
@@ -272,9 +264,7 @@ def librarian_sso(request):
     `groups` is filtered to ComsesGroups values rather than taken from user.groups, keeping it a
     closed admin-managed set with no substring collisions.
     """
-    if not settings.LIBRARIAN_BASE_URL or not is_sso_secret_configured(
-        settings.LIBRARIAN_SSO_SECRET
-    ):
+    if not settings.LIBRARIAN_BASE_URL or not is_sso_secret_configured(settings.LIBRARIAN_SSO_SECRET):
         # an empty secret is never a state to sign from
         raise Http404("The CoMSES Librarian integration is not configured")
 
@@ -286,9 +276,7 @@ def librarian_sso(request):
     user = request.user
     if not ComsesGroups.LIBRARIAN.is_member(user):
         logger.info("refused librarian sso for non-member user %s", user.pk)
-        return permission_denied(
-            request, None, template_name="core/librarian_sso_denied.jinja"
-        )
+        return permission_denied(request, None, template_name="core/librarian_sso_denied.jinja")
 
     member_group_names = set(user.groups.values_list("name", flat=True))
     params = {
@@ -297,9 +285,7 @@ def librarian_sso(request):
         "email": user.email,
         "username": user.username,
         "name": user.get_full_name(),
-        "groups": ",".join(
-            g.value for g in ComsesGroups if g.value in member_group_names
-        ),
+        "groups": ",".join(g.value for g in ComsesGroups if g.value in member_group_names),
         # convenience for the Librarian's logs; non-members are refused above and it performs its
         # own exact-match check against `groups` regardless
         "is_librarian_user": "true",
@@ -336,9 +322,7 @@ class ToggleFollowUser(APIView):
         username = request.data["username"]
         source = request.user
         target = User.objects.get(username=username)
-        follow_user, created = FollowUser.objects.get_or_create(
-            source=source, target=target
-        )
+        follow_user, created = FollowUser.objects.get_or_create(source=source, target=target)
         if created:
             target.following.add(follow_user)
         else:
@@ -416,9 +400,7 @@ class MemberProfileImageUploadView(generics.CreateAPIView):
         file_obj = request.data["file"]
         member_profile = get_object_or_404(MemberProfile, **kwargs)
         # FIXME: perform validity checks on the file_obj (jpg, png, etc only)
-        image = Image.objects.create(
-            title=file_obj.name, file=ImageFile(file_obj), uploaded_by_user=request.user
-        )
+        image = Image.objects.create(title=file_obj.name, file=ImageFile(file_obj), uploaded_by_user=request.user)
         member_profile.picture = image
         member_profile.save()
         return Response(data=image.get_rendition("fill-150x150").url, status=200)
@@ -461,12 +443,9 @@ class EventFilter(filters.BaseFilterBackend):
         query_params = request.query_params
         logger.debug("query params %s", query_params)
         submission_deadline__gte = parse_date(
-            query_params.get("submission_deadline__gte")
-            or query_params.get("submission_deadline_after")
+            query_params.get("submission_deadline__gte") or query_params.get("submission_deadline_after")
         )
-        start_date__gte = parse_date(
-            query_params.get("start_date__gte") or query_params.get("start_date_after")
-        )
+        start_date__gte = parse_date(query_params.get("start_date__gte") or query_params.get("start_date_after"))
         tags = request.query_params.getlist("tags")
 
         criteria = {}
@@ -483,17 +462,9 @@ class EventFilter(filters.BaseFilterBackend):
         )
 
 
-class EventViewSet(
-    SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet
-):
+class EventViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = EventSerializer
-    queryset = (
-        Event.objects.with_tags()
-        .with_submitter()
-        .with_expired()
-        .with_started()
-        .order_by("-date_created")
-    )
+    queryset = Event.objects.with_tags().with_submitter().with_expired().with_started().order_by("-date_created")
     pagination_class = SmallResultSetPagination
     filter_backends = (OrderingFilter, EventFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
@@ -554,21 +525,11 @@ class EventViewSet(
                 calendar_events = []
                 queryset, start, end = self.get_calendar_queryset()
                 for event in list(queryset):
-                    if (
-                        event.early_registration_deadline
-                        and start <= event.early_registration_deadline <= end
-                    ):
-                        calendar_events.append(
-                            self.to_calendar_early_registration_deadline_event(event)
-                        )
+                    if event.early_registration_deadline and start <= event.early_registration_deadline <= end:
+                        calendar_events.append(self.to_calendar_early_registration_deadline_event(event))
 
-                    if (
-                        event.submission_deadline
-                        and start <= event.submission_deadline <= end
-                    ):
-                        calendar_events.append(
-                            self.to_calendar_submission_deadline_event(event)
-                        )
+                    if event.submission_deadline and start <= event.submission_deadline <= end:
+                        calendar_events.append(self.to_calendar_submission_deadline_event(event))
 
                     if event.start_date:
                         min_date = max(start, event.start_date)
@@ -579,14 +540,9 @@ class EventViewSet(
                             calendar_events.append(self.to_calendar_event(event))
             else:
                 # FIXME: revert if this turns out to be a terrible idea
-                return redirect(
-                    reverse("core:event-list")
-                    + "?{0}".format(request.query_params.urlencode())
-                )
+                return redirect(reverse("core:event-list") + "?{0}".format(request.query_params.urlencode()))
 
-        return Response(
-            data=calendar_events, template_name="core/events/calendar.jinja"
-        )
+        return Response(data=calendar_events, template_name="core/events/calendar.jinja")
 
 
 class JobFilter(filters.BaseFilterBackend):
@@ -594,13 +550,9 @@ class JobFilter(filters.BaseFilterBackend):
         if view.action != "list":
             return queryset
         query_params = request.query_params
-        date_created = parse_datetime(
-            query_params.get("date_created__gte")
-            or query_params.get("date_created_after")
-        )
+        date_created = parse_datetime(query_params.get("date_created__gte") or query_params.get("date_created_after"))
         application_deadline = parse_date(
-            query_params.get("application_deadline__gte")
-            or query_params.get("application_deadline_after")
+            query_params.get("application_deadline__gte") or query_params.get("application_deadline_after")
         )
         tags = query_params.getlist("tags")
         criteria = {}
@@ -611,17 +563,10 @@ class JobFilter(filters.BaseFilterBackend):
         return get_search_queryset(query_params, queryset, tags=tags, criteria=criteria)
 
 
-class JobViewSet(
-    SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet
-):
+class JobViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
-    queryset = (
-        Job.objects.with_tags()
-        .with_submitter()
-        .with_expired()
-        .order_by("-date_created")
-    )
+    queryset = Job.objects.with_tags().with_submitter().with_expired().order_by("-date_created")
     filter_backends = (OrderingFilter, JobFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
     ordering_fields = (

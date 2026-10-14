@@ -164,12 +164,8 @@ class Command(BaseCommand):
         # responsible practices page
         try:
             # first check for existence of a good-practices page
-            MarkdownPage.objects.filter(slug="good-practices").update(
-                slug="responsible-practices"
-            )
-            responsible_practices_page = MarkdownPage.objects.get(
-                slug="responsible-practices"
-            )
+            MarkdownPage.objects.filter(slug="good-practices").update(slug="responsible-practices")
+            responsible_practices_page = MarkdownPage.objects.get(slug="responsible-practices")
             responsible_practices_page.breadcrumbs.all().delete()
         except MarkdownPage.DoesNotExist:
             responsible_practices_page = MarkdownPage(slug="responsible-practices")
@@ -181,9 +177,7 @@ class Command(BaseCommand):
             )
         )
         responsible_practices_page.title = "Responsible Scientific Software Practices"
-        responsible_practices_page.heading = (
-            "Responsible Practices for Scientific Software Development"
-        )
+        responsible_practices_page.heading = "Responsible Practices for Scientific Software Development"
         responsible_practices_page.description = RESPONSIBLE_PRACTICES_DESCRIPTION
         responsible_practices_page.body.raw = RESPONSIBLE_PRACTICES_BODY
         if not responsible_practices_page.is_child_of(education_page):

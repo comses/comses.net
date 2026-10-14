@@ -21,9 +21,7 @@ class ArchivedQueryHits(models.Model):
     @classmethod
     def archive_from_daily_hits(cls):
         # get the last date we updated the archive
-        last_updated = (
-            cls.objects.aggregate(Max("last_updated"))["last_updated__max"] or date.min
-        )
+        last_updated = cls.objects.aggregate(Max("last_updated"))["last_updated__max"] or date.min
 
         logger.info("Archiving search query hits, last updated: %s", last_updated)
 

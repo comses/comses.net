@@ -75,12 +75,8 @@ class Command(BaseCommand):
                 load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME),
             )
 
-            TagCleanup.objects.dump(
-                load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME)
-            )
+            TagCleanup.objects.dump(load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME))
         elif not view:
-            raise Exception(
-                "restore directory, dump, method or view action must be specified"
-            )
+            raise Exception("restore directory, dump, method or view action must be specified")
         if view:
             self.handle_view()

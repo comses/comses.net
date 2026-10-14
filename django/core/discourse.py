@@ -129,9 +129,7 @@ def get_categories(number_of_categories=5, mock=False):
         data = get_mock_forum_categories(number_of_categories=number_of_categories)
 
     categories = data["category_list"]["categories"]
-    readable_categories = [
-        category for category in categories if category["read_restricted"] == False
-    ]
+    readable_categories = [category for category in categories if category["read_restricted"] == False]
     sorted_categories = sorted(readable_categories, key=lambda x: x["position"])
     return sorted_categories[:number_of_categories]
 
@@ -197,14 +195,10 @@ def sync_discourse_user(user):
             and sso_record.get("external_id") == member_profile.short_uuid
         )
         if sync_successful:
-            logger.debug(
-                "Successfully synced user %s with discourse: %s", user, sso_record
-            )
+            logger.debug("Successfully synced user %s with discourse: %s", user, sso_record)
             return True
         else:
-            logger.error(
-                "Unsuccessful sync for user %s with discourse: %s", user, _response_data
-            )
+            logger.error("Unsuccessful sync for user %s with discourse: %s", user, _response_data)
 
     except (requests.RequestException, ValueError):
         logger.exception("Failed sync request for user %s", user)
@@ -232,11 +226,7 @@ def sanitize_username(
     Handles character-class cleanup, collapsing separators, edge trimming,
     and confusing extensions. Does not guarantee uniqueness or minimum length.
     """
-    s = (
-        unicodedata.normalize("NFKD", username)
-        .encode("ascii", "ignore")
-        .decode("ascii")
-    )
+    s = unicodedata.normalize("NFKD", username).encode("ascii", "ignore").decode("ascii")
     s = s.casefold()
     s = INVALID_CHARACTERS_PATTERN.sub("-", s)
     s = REPEATED_SPECIAL_CHAR_PATTERN.sub("-", s)

@@ -64,9 +64,7 @@ def cleanup_existing_dois(interactive=True, dry_run=True):
         unreviewed_releases_with_dois.update(doi=None)
 
     # mint DOIs for all public peer reviewed CodebaseReleases without a DOI
-    reviewed_releases_without_dois = (
-        CodebaseRelease.objects.reviewed().public().without_doi()
-    )
+    reviewed_releases_without_dois = CodebaseRelease.objects.reviewed().public().without_doi()
     invalid_releases = []
     for release in reviewed_releases_without_dois:
         try:
@@ -87,12 +85,8 @@ def cleanup_existing_dois(interactive=True, dry_run=True):
     for release, log in invalid_releases:
         with open("invalid_releases.csv", "w") as f:
             writer = csv.writer(f)
-            writer.writerow(
-                ["CodebaseRelease ID", "Status Code", "Reason", "Datacite Metadata"]
-            )
-            writer.writerow(
-                [release.pk, log.http_status, log.message, release.datacite.to_dict()]
-            )
+            writer.writerow(["CodebaseRelease ID", "Status Code", "Reason", "Datacite Metadata"])
+            writer.writerow([release.pk, log.http_status, log.message, release.datacite.to_dict()])
 
 
 class Command(BaseCommand):

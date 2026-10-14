@@ -323,9 +323,7 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
                     " Please remove all files and try again."
                 )
             )
-        if os.listdir(os.path.join(self.location, category.name)) and fs.is_archive(
-            name
-        ):
+        if os.listdir(os.path.join(self.location, category.name)) and fs.is_archive(name):
             msgs.append(
                 self.error(
                     "This archive cannot be added because files have already been archived here. "
@@ -391,9 +389,7 @@ class BaseCodebaseReleaseFsApi(ABC):
 
     @property
     def rootdir(self):
-        return Path(
-            settings.LIBRARY_ROOT, str(self.uuid), "releases", str(self.release_id)
-        ).absolute()
+        return Path(settings.LIBRARY_ROOT, str(self.uuid), "releases", str(self.release_id)).absolute()
 
     @property
     def aip_dir(self):
@@ -552,9 +548,7 @@ class BaseCodebaseReleaseFsApi(ABC):
         try:
             cff_contents = self.cff_contents
         except Exception as e:
-            logger.exception(
-                f"error generating CITATION.cff for release {self.release}: {e}"
-            )
+            logger.exception(f"error generating CITATION.cff for release {self.release}: {e}")
             return False
         if force or not path.exists():
             with path.open(mode="w", encoding="utf-8") as cff_out:
@@ -720,11 +714,7 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
             else:
                 try:
                     rel_parent = p.parent.relative_to(self.sip_contents_dir)
-                    category_str = (
-                        str(rel_parent)
-                        if rel_parent != Path(".")
-                        else FileCategories.metadata.name
-                    )
+                    category_str = str(rel_parent) if rel_parent != Path(".") else FileCategories.metadata.name
                 except ValueError:
                     # parent is not a subdirectory of sip_contents_dir
                     category_str = FileCategories.metadata.name
@@ -774,9 +764,7 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
             logger.debug("adding file: %s", path.relative_to(self.originals_dir))
             category = get_category(Path(name).parts[0])
             with File(path.open("rb")) as f:
-                msgs.append(
-                    self._add_to_sip(name=str(name), content=f, category=category)
-                )
+                msgs.append(self._add_to_sip(name=str(name), content=f, category=category))
 
         return msgs
 
@@ -824,9 +812,7 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         for category in FileCategories:
             source_files = source_fs_api.list(StagingDirectories.originals, category)
             for relpath in source_files:
-                with source_fs_api.retrieve(
-                    StagingDirectories.originals, category, Path(relpath)
-                ) as file_content:
+                with source_fs_api.retrieve(StagingDirectories.originals, category, Path(relpath)) as file_content:
                     self.add(category, file_content, name=relpath)
 
     def delete(self, category: FileCategories, relpath: Path):
@@ -872,12 +858,7 @@ class CategoryManifestManager:
         """return an appropriate category name for a file based on its extension.
         currently defaults to code for all files except pdfs, which can be reasonably assumed to be docs
         """
-        if (
-            name.suffix == ".pdf"
-            or name.suffix == ".docx"
-            or name.suffix == ".doc"
-            or name.suffix == ".md"
-        ):
+        if name.suffix == ".pdf" or name.suffix == ".docx" or name.suffix == ".doc" or name.suffix == ".md":
             return FileCategories.docs.name
         return FileCategories.code.name
 
@@ -948,11 +929,7 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
 
     def list(self, stage=StagingDirectories.sip, category=None):
         if category is not None:
-            return [
-                str(relpath)
-                for relpath, cat in self.manifest.data.items()
-                if cat == category.name
-            ]
+            return [str(relpath) for relpath, cat in self.manifest.data.items() if cat == category.name]
         else:
             return list(self.manifest.data.keys())
 
@@ -971,9 +948,7 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
                 contents["contents"].append(self.list_sip_contents(p))
             else:
                 relpath = p.relative_to(self.sip_contents_dir)
-                category_str = self.manifest.data.get(
-                    str(relpath), FileCategories.metadata.name
-                )
+                category_str = self.manifest.data.get(str(relpath), FileCategories.metadata.name)
                 contents["contents"].append(
                     {
                         "label": p.name,
@@ -1039,9 +1014,7 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         extract_zip_without_top_dir(archive_path, Path(sip_storage.location))
         logger.info(f"extracted imported release archive to {sip_storage.location}")
 
-    def import_release_package(
-        self, installation_token: str, download_url: str | None = None
-    ) -> tuple[dict, dict]:
+    def import_release_package(self, installation_token: str, download_url: str | None = None) -> tuple[dict, dict]:
         """import a release archive from a remote URL (imported_release_sync_state.download_url by default)
         by downloading into the originals storage and extracting into the SIP storage.
 
@@ -1127,9 +1100,7 @@ class CodebaseGitRepositoryApi:
     def author(self):
         profile = self.codebase.submitter.member_profile
         author_email = (
-            f"{profile.github_username}@users.noreply.github.com"
-            if profile.github_username
-            else profile.email
+            f"{profile.github_username}@users.noreply.github.com" if profile.github_username else profile.email
         )
         return Actor(profile.name, author_email)
 
@@ -1164,9 +1135,7 @@ class CodebaseGitRepositoryApi:
         except InvalidGitRepositoryError:
             if should_exist:
                 raise RuntimeError(f"Repository {self.repo_dir} does not exist")
-            self.repo = Repo.init(
-                self.repo_dir, initial_branch=self.DEFAULT_BRANCH_NAME
-            )
+            self.repo = Repo.init(self.repo_dir, initial_branch=self.DEFAULT_BRANCH_NAME)
         except Exception as e:
             logger.exception(e)
             raise RuntimeError(f"Failed to initialize git repository")
@@ -1175,9 +1144,7 @@ class CodebaseGitRepositoryApi:
         """checkout the default (main) branch and create/update the git ref sync state if requested"""
         self.repo.git.checkout(self.DEFAULT_BRANCH_NAME)
         if update_main_git_ref_sync_state:
-            main_state = self.codebase.get_or_create_main_git_ref_sync_state(
-                self.DEFAULT_BRANCH_NAME
-            )
+            main_state = self.codebase.get_or_create_main_git_ref_sync_state(self.DEFAULT_BRANCH_NAME)
             main_state.record_build(commit_sha=self.repo.head.commit.hexsha)
 
     def clear_existing_files(self):
@@ -1248,9 +1215,7 @@ class CodebaseGitRepositoryApi:
         # unless this is the first commit
         if self.DEFAULT_BRANCH_NAME in self.repo.heads:
             self.checkout_main()
-        commit_msg = (
-            f"Release {release.version_number}\n\n{release.release_notes.raw}\n"
-        )
+        commit_msg = f"Release {release.version_number}\n\n{release.release_notes.raw}\n"
         for rc in release.coauthor_release_contributors:
             contributor = rc.contributor
             email = ""
@@ -1365,13 +1330,10 @@ class CodebaseGitRepositoryApi:
         latest_built_state = self.codebase.latest_release_git_ref_sync_state()
         if latest_built_state is not None:
             if not all(
-                Version(release.version_number)
-                > Version(latest_built_state.release.version_number)
+                Version(release.version_number) > Version(latest_built_state.release.version_number)
                 for release in releases
             ):
-                raise ValueError(
-                    "Releases must be higher than the latest mirrored release to append"
-                )
+                raise ValueError("Releases must be higher than the latest mirrored release to append")
         # make sure the releases are ordered by version number
         releases = sorted(releases, key=lambda r: Version(r.version_number))
         # append releases to the git repo by adding files, committing, and creating a branch
@@ -1419,12 +1381,7 @@ class CodebaseGitRepositoryApi:
         dir1 = Path(dir1)
         dir2 = Path(dir2)
         comparison = filecmp.dircmp(dir1, dir2, ignore=ignore)
-        if (
-            comparison.left_only
-            or comparison.right_only
-            or comparison.diff_files
-            or comparison.funny_files
-        ):
+        if comparison.left_only or comparison.right_only or comparison.diff_files or comparison.funny_files:
             return False
         else:
             for subdir in comparison.common_dirs:
@@ -1449,9 +1406,7 @@ class ArchiveExtractor:
 
         elif mimetype == "application/rar":
             if hasattr(filename, "name"):
-                raise TypeError(
-                    "RAR archives cannot be extracted from file objects. Requires string filename"
-                )
+                raise TypeError("RAR archives cannot be extracted from file objects. Requires string filename")
 
             with rarfile.RarFile(filename, "r") as r:
                 r.extractall(path=unpack_destination)
@@ -1471,18 +1426,12 @@ class ArchiveExtractor:
                 try:
                     msg = self.extractall(unpack_destination=d, filename=filename)
                 except zipfile.BadZipFile as e:
-                    msg = create_fs_message(
-                        e, StagingDirectories.sip, MessageLevels.error
-                    )
+                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
                 except tarfile.TarError as e:
-                    msg = create_fs_message(
-                        e, StagingDirectories.sip, MessageLevels.error
-                    )
+                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
                 except Exception as e:
                     logger.exception("Error unpacking archive")
-                    msg = create_fs_message(
-                        e, StagingDirectories.sip, MessageLevels.error
-                    )
+                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
 
                 if msg is not None:
                     return msg
@@ -1491,19 +1440,11 @@ class ArchiveExtractor:
                 for unpacked_file in Path(rootdir).rglob("*"):
                     if unpacked_file.is_file():
                         with File(unpacked_file.open("rb")) as unpacked_fileobj:
-                            relpath = Path(
-                                category.name, unpacked_file.relative_to(rootdir)
-                            )
-                            msgs.append(
-                                self.sip_storage.log_save(
-                                    name=str(relpath), content=unpacked_fileobj
-                                )
-                            )
+                            relpath = Path(category.name, unpacked_file.relative_to(rootdir))
+                            msgs.append(self.sip_storage.log_save(name=str(relpath), content=unpacked_fileobj))
                 msgs.downgrade()
         except Exception as e:
-            msgs.append(
-                create_fs_message(str(e), StagingDirectories.sip, MessageLevels.error)
-            )
+            msgs.append(create_fs_message(str(e), StagingDirectories.sip, MessageLevels.error))
         return msgs
 
 

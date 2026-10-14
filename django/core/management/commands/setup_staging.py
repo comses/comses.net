@@ -30,14 +30,8 @@ class Command(BaseCommand):
         # set Django Site object metadata appropriately
         site = Site.objects.first()
         site.site_name = "CoMSES Net Test Site"
-        site.hostname = (
-            "localhost:8000"
-            if settings.DEPLOY_ENVIRONMENT.is_development
-            else "staging.comses.net"
-        )
+        site.hostname = "localhost:8000" if settings.DEPLOY_ENVIRONMENT.is_development else "staging.comses.net"
         site.save()
         # set up robots.txt to deny all
         call_command("setup_robots_txt", "--no-allow")
-        logger.debug(
-            "Completed test site setup for environment %s", settings.DEPLOY_ENVIRONMENT
-        )
+        logger.debug("Completed test site setup for environment %s", settings.DEPLOY_ENVIRONMENT)

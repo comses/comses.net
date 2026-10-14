@@ -285,19 +285,13 @@ class GeneralSearch:
 
     @classmethod
     def set_codebase_urls(cls, results: Dict[int, CodebaseSearchResult]):
-        codebases = (
-            Codebase.objects.filter(id__in=results.keys()).only("identifier").in_bulk()
-        )
+        codebases = Codebase.objects.filter(id__in=results.keys()).only("identifier").in_bulk()
         for id in results.keys():
             results[id].url = codebases[id].get_absolute_url()
 
     @classmethod
     def set_member_profile_urls(cls, results: Dict[int, MemberProfileSearchResult]):
-        member_profiles = (
-            MemberProfile.objects.filter(id__in=results.keys())
-            .only("user__username")
-            .in_bulk()
-        )
+        member_profiles = MemberProfile.objects.filter(id__in=results.keys()).only("user__username").in_bulk()
         for id in results.keys():
             results[id].url = member_profiles[id].get_absolute_url()
 

@@ -248,9 +248,7 @@ class Command(BaseCommand):
         except ConferenceIndexPage.DoesNotExist:
             landing_page = LandingPage.objects.first()
             landing_page.add_child(instance=conference_index_page)
-            revision = conference_index_page.save_revision(
-                user=User.objects.get(pk=3), submitted_for_moderation=False
-            )
+            revision = conference_index_page.save_revision(user=User.objects.get(pk=3), submitted_for_moderation=False)
             revision.publish()
         self.build_comses_2017_page(conference_index_page)
         self.build_comses_2018_page(conference_index_page)

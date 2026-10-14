@@ -14,9 +14,7 @@ def update_license(ctx, license_path=None):
     for elasticsearch_host in es_hosts:
         if license_path is None:
             ctx.run(
-                "curl -XPOST 'http://{0}:9200/_xpack/license/start_basic?acknowledge=true'".format(
-                    elasticsearch_host
-                )
+                "curl -XPOST 'http://{0}:9200/_xpack/license/start_basic?acknowledge=true'".format(elasticsearch_host)
             )
         else:
             ctx.run(

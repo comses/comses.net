@@ -41,11 +41,7 @@ def resolve_tag_to_language(tag_name: str, lang_list: list) -> tuple:
 
 def _remove_duplicate_release_languages() -> None:
     """Remove non-versioned ReleaseLanguage when a versioned one exists (e.g. NetLogo + NetLogo 6.2)."""
-    dupes = (
-        ReleaseLanguage.objects.values("release", "programming_language")
-        .annotate(n=Count("id"))
-        .filter(n__gt=1)
-    )
+    dupes = ReleaseLanguage.objects.values("release", "programming_language").annotate(n=Count("id")).filter(n__gt=1)
     for d in dupes:
         rls = ReleaseLanguage.objects.filter(
             release_id=d["release"],
@@ -325,9 +321,7 @@ class Command(BaseCommand):
             if tag.tag.name in skip_forever:
                 continue
 
-            programming_language_name, version = resolve_tag_to_language(
-                tag.tag.name, programming_languages
-            )
+            programming_language_name, version = resolve_tag_to_language(tag.tag.name, programming_languages)
             if programming_language_name is None and tag.tag.name in session_aliases:
                 programming_language_name = session_aliases[tag.tag.name]
 
@@ -345,9 +339,7 @@ class Command(BaseCommand):
                 session_aliases[tag.tag.name] = programming_language_name
 
             try:
-                programming_language = ProgrammingLanguage.objects.get(
-                    name__iexact=programming_language_name
-                )
+                programming_language = ProgrammingLanguage.objects.get(name__iexact=programming_language_name)
             except ObjectDoesNotExist:
                 programming_language = ProgrammingLanguage.objects.create(
                     name=programming_language_name,

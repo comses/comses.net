@@ -66,7 +66,6 @@ def get_github_installation_status(user):
 
 
 class GitHubRepoValidator:
-
     def __init__(self, repo_name: str):
         self.repo_name = repo_name
 
@@ -105,18 +104,14 @@ class GitHubRepoValidator:
             try:
                 # this should raise a 404 if the repository is empty
                 github_repo.get_contents("")
-                raise ValueError(
-                    f"Repository at https://github.com/{full_name} is not empty"
-                )
+                raise ValueError(f"Repository at https://github.com/{full_name} is not empty")
             except GithubException as e:
                 if e.status == 404:
                     return github_repo.html_url
                 raise
         return github_repo.html_url
 
-    def _check_installation_access(
-        self, installation: GithubIntegrationAppInstallation
-    ) -> None:
+    def _check_installation_access(self, installation: GithubIntegrationAppInstallation) -> None:
         """check that the GitHub app installation has access to the repository"""
         auth = Auth.AppAuth(
             settings.GITHUB_INTEGRATION_APP_ID,
@@ -185,15 +180,11 @@ class GitHubApi:
     ) -> str | None:
         """Return an installation access token appropriate for the given remote."""
         if remote.is_user_repo:
-            return GitHubApi.get_user_installation_access_token(
-                getattr(remote, "installation", None)
-            )
+            return GitHubApi.get_user_installation_access_token(getattr(remote, "installation", None))
         return GitHubApi.get_org_installation_access_token()
 
     @staticmethod
-    def get_release_raw_for_remote(
-        remote: CodebaseGitRemote, github_release_id: str | int
-    ) -> dict:
+    def get_release_raw_for_remote(remote: CodebaseGitRemote, github_release_id: str | int) -> dict:
         """Fetch a GitHub release raw dict for owner/repo of the remote."""
         token = GitHubApi.get_installation_access_token_for_remote(remote)
         if not token:
@@ -246,13 +237,9 @@ class GitHubApi:
             settings.GITHUB_INTEGRATION_APP_PRIVATE_KEY,
         )
         integration = GithubIntegration(auth=auth)
-        installation_auth = integration.get_access_token(
-            settings.GITHUB_INTEGRATION_APP_INSTALLATION_ID
-        )
+        installation_auth = integration.get_access_token(settings.GITHUB_INTEGRATION_APP_INSTALLATION_ID)
         token = installation_auth.token
-        seconds_until_expiration = (
-            installation_auth.expires_at - timezone.now()
-        ).total_seconds()
+        seconds_until_expiration = (installation_auth.expires_at - timezone.now()).total_seconds()
         # cache the token for 1 minute less than the expiration time
         cache.set(
             INSTALLATION_ACCESS_TOKEN_REDIS_KEY,
@@ -279,9 +266,7 @@ class GitHubApi:
         try:
             return github.get_repo(full_name)
         except UnknownObjectException as exc:
-            raise ValueError(
-                f"Github repository https://github.com/{full_name} does not exist or is private"
-            ) from exc
+            raise ValueError(f"Github repository https://github.com/{full_name} does not exist or is private") from exc
 
     def _create_org_repo(self):
         """create a new repository in the CoMSES model library organization
@@ -317,9 +302,7 @@ class GitHubApi:
         remote = local_repo.remote(name="origin")
 
         # determine refs to push
-        branch_name = branch_name or (
-            f"{CodebaseGitRepositoryApi.RELEASE_BRANCH_PREFIX}{release.version_number}"
-        )
+        branch_name = branch_name or (f"{CodebaseGitRepositoryApi.RELEASE_BRANCH_PREFIX}{release.version_number}")
         tag_name = tag_name or release.version_number
         repo = local_repo
         try:
@@ -432,12 +415,7 @@ def _serialize_github_release_listing_item(release) -> tuple[dict, dict]:
     raw = getattr(release, "raw_data", {}) or {}
     release_id = str(raw.get("id") or getattr(release, "id", ""))
     tag = raw.get("tag_name") or getattr(release, "tag_name", "") or ""
-    name = (
-        raw.get("name")
-        or getattr(release, "title", None)
-        or getattr(release, "name", "")
-        or ""
-    )
+    name = raw.get("name") or getattr(release, "title", None) or getattr(release, "name", "") or ""
     version = extract_semver(tag or name or "")
     data = {
         "id": release_id,
@@ -446,12 +424,9 @@ def _serialize_github_release_listing_item(release) -> tuple[dict, dict]:
         "html_url": raw.get("html_url") or getattr(release, "html_url", ""),
         "zipball_url": raw.get("zipball_url") or getattr(release, "zipball_url", ""),
         "draft": bool(raw.get("draft", getattr(release, "draft", False))),
-        "prerelease": bool(
-            raw.get("prerelease", getattr(release, "prerelease", False))
-        ),
+        "prerelease": bool(raw.get("prerelease", getattr(release, "prerelease", False))),
         "created_at": raw.get("created_at") or getattr(release, "created_at", None),
-        "published_at": raw.get("published_at")
-        or getattr(release, "published_at", None),
+        "published_at": raw.get("published_at") or getattr(release, "published_at", None),
         "has_semantic_versioning": bool(version),
         "version": version or "",
     }
@@ -481,9 +456,7 @@ def list_github_releases_for_remote(remote: CodebaseGitRemote) -> list[dict]:
         release_id = data["id"]
         # annotate whether this release has already been imported for this remote
         imported_state = (
-            ImportedReleaseSyncState.objects.filter(
-                remote=remote, github_release_id=release_id
-            )
+            ImportedReleaseSyncState.objects.filter(remote=remote, github_release_id=release_id)
             .order_by("-last_modified")
             .first()
         )
@@ -494,20 +467,12 @@ def list_github_releases_for_remote(remote: CodebaseGitRemote) -> list[dict]:
             data["created_by_integration"] = True
         else:
             try:
-                if imported_state is None or (
-                    imported_state.status == ImportedReleaseSyncState.Status.PENDING
-                ):
-                    imported_state = ImportedReleaseSyncState.for_github_release(
-                        remote, raw
-                    )
+                if imported_state is None or (imported_state.status == ImportedReleaseSyncState.Status.PENDING):
+                    imported_state = ImportedReleaseSyncState.for_github_release(remote, raw)
             except Exception as e:
-                logger.warning(
-                    "failed to upsert imported sync state for %s: %s", release_id, e
-                )
+                logger.warning("failed to upsert imported sync state for %s: %s", release_id, e)
         if imported_state:
-            data["imported_sync_state"] = ImportedReleaseSyncStateSerializer(
-                imported_state
-            ).data
+            data["imported_sync_state"] = ImportedReleaseSyncStateSerializer(imported_state).data
 
         results.append(data)
 
@@ -519,9 +484,7 @@ def list_github_releases_for_remote(remote: CodebaseGitRemote) -> list[dict]:
     return results
 
 
-def _is_release_created_by_integration(
-    gh_release_raw: dict, remote: CodebaseGitRemote
-) -> bool:
+def _is_release_created_by_integration(gh_release_raw: dict, remote: CodebaseGitRemote) -> bool:
     """skip releases created by the integration app"""
     author = gh_release_raw.get("author") or {}
     if not isinstance(author, dict):
@@ -558,9 +521,7 @@ class GitHubReleaseImporter:
             remote=self.remote, github_release_id=self.github_release_id
         ).first()
         if not self.sync_state:
-            raise ValueError(
-                "Missing ImportedReleaseSyncState: sync state must be created beforehand"
-            )
+            raise ValueError("Missing ImportedReleaseSyncState: sync state must be created beforehand")
         self._reimporting = False
 
         if not self.sync_state.download_url:
@@ -595,9 +556,7 @@ class GitHubReleaseImporter:
                 # otherwise import as a brand new release
                 return self.import_new_release(custom_version=custom_version)
         except Exception as e:
-            logger.exception(
-                f"Error importing GitHub release with id {self.github_release_id}): {e}"
-            )
+            logger.exception(f"Error importing GitHub release with id {self.github_release_id}): {e}")
             return self.log_failure("An unexpected error occurred")
 
     def import_new_release(self, custom_version: str | None = None) -> bool:
@@ -614,13 +573,9 @@ class GitHubReleaseImporter:
         if not version_number and custom_version:
             version_number = custom_version
         if not version_number:
-            return self.log_failure(
-                "Missing a semantic version number (X.X.X) in the release tag or name"
-            )
+            return self.log_failure("Missing a semantic version number (X.X.X) in the release tag or name")
         if self.codebase.releases.filter(version_number=version_number).exists():
-            return self.log_failure(
-                f"Release with version {version_number} already exists"
-            )
+            return self.log_failure(f"Release with version {version_number} already exists")
 
         # create a new imported codebase release and link to existing sync state
         with transaction.atomic():
@@ -640,15 +595,11 @@ class GitHubReleaseImporter:
 
     def reimport_release(self, release) -> bool:
         # refresh cached metadata
-        gh_release_raw = GitHubApi.get_release_raw_for_remote(
-            self.remote, self.github_release_id
-        )
+        gh_release_raw = GitHubApi.get_release_raw_for_remote(self.remote, self.github_release_id)
         # the same download url indicates nothing actually changed, skip import
         if self.sync_state.download_url == gh_release_raw.get("zipball_url"):
             return self.log_success("Attempted reimport, no changes detected")
-        self.sync_state = ImportedReleaseSyncState.for_github_release(
-            self.remote, gh_release_raw
-        )
+        self.sync_state = ImportedReleaseSyncState.for_github_release(self.remote, gh_release_raw)
         return self._import_package_and_metadata(release)
 
     def _resolve_tags(self, tag_names: list[str]) -> list:
@@ -665,9 +616,7 @@ class GitHubReleaseImporter:
                 resolved_tags.append(tag_name)
         return resolved_tags
 
-    def _create_release_languages(
-        self, release: CodebaseRelease, language_names: list[str]
-    ) -> None:
+    def _create_release_languages(self, release: CodebaseRelease, language_names: list[str]) -> None:
         # assign programming languages to the release
         # since these come from github, we assume they are real languages and
         # always create them if they don't already exist
@@ -677,12 +626,8 @@ class GitHubReleaseImporter:
             normalized_name = name.strip()
             if not normalized_name:
                 continue
-            programming_language, _created = (
-                ProgrammingLanguage.objects.get_or_create_by_name(normalized_name)
-            )
-            ReleaseLanguage.objects.get_or_create(
-                release=release, programming_language=programming_language
-            )
+            programming_language, _created = ProgrammingLanguage.objects.get_or_create_by_name(normalized_name)
+            ReleaseLanguage.objects.get_or_create(release=release, programming_language=programming_language)
 
     def _import_package_and_metadata(self, release) -> bool:
         # import the release package

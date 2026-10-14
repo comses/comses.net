@@ -61,9 +61,7 @@ def import_github_release_task(
         if not sync_state:
             raise ValueError("Missing sync state for GitHub release import")
 
-        importer = GitHubReleaseImporter(
-            remote=remote, github_release_id=str(github_release_id)
-        )
+        importer = GitHubReleaseImporter(remote=remote, github_release_id=str(github_release_id))
         importer.import_or_reimport(custom_version=custom_version)
     except Exception as e:
         try:
@@ -145,9 +143,7 @@ def update_fs_release_metadata(release_id: int):
     try:
         release = CodebaseRelease.objects.get(id=release_id)
     except CodebaseRelease.DoesNotExist:
-        logger.warning(
-            "Skipping metadata rebuild for missing CodebaseRelease id=%s", release_id
-        )
+        logger.warning("Skipping metadata rebuild for missing CodebaseRelease id=%s", release_id)
         return
     codebase = release.codebase
     try:
@@ -184,7 +180,7 @@ def sync_release_submitter_to_discourse(release_id: int):
     """
     Ensure the release submitter's Discourse account exists/is current before the
     Discourse embed crawler visits the published release page, so topic ownership
-    isn't misattributed to the fallback embed user. This task should be idempotent 
+    isn't misattributed to the fallback embed user. This task should be idempotent
     and keyed on the submitter's stable short_uuid external_id.
     """
     from core.discourse import sync_discourse_user

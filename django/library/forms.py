@@ -1,8 +1,10 @@
 import logging
 
 from django import forms
+from django.db import transaction
 from django.forms.utils import ErrorDict
 from django.utils.translation import gettext_lazy as _
+from rest_framework.exceptions import ValidationError
 
 from .models import (
     PeerReviewerFeedback,
@@ -13,12 +15,26 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+class PeerReviewClosedActionForm(forms.Form):
+    action = forms.ChoiceField(choices=[("close", "Close"), ("reopen", "Reopen")])
+
+
 class PeerReviewInvitationForm(forms.ModelForm):
     """
     Sends an invitation to a candidate reviewer
     """
 
+    def clean(self):
+        data = super().clean()
+        review = data.get("review")
+        if review and (review.closed or review.is_complete):
+            raise forms.ValidationError("This peer review is closed or complete.")
+        return data
+
+    @transaction.atomic
     def save(self, commit=True):
+        self.instance.review._lock_for_transition()
+        self.instance.review.validate_active()
         return super().save(commit)
 
     class Meta:
@@ -42,9 +58,20 @@ class PeerReviewInvitationReplyForm(forms.ModelForm):
             raise forms.ValidationError("Please accept or decline the invitation")
         return data
 
+    def clean(self):
+        data = super().clean()
+        try:
+            self.instance.validate_response()
+        except ValidationError as exc:
+            raise forms.ValidationError(str(exc.detail[0])) from exc
+        return data
+
+    @transaction.atomic
     def save(self, commit=True):
-        invitation = super().save(commit=commit)
-        if invitation.accepted:
+        if not commit:
+            return super().save(commit=False)
+        invitation = self.instance
+        if self.cleaned_data["accepted"]:
             invitation.accept()
         else:
             invitation.decline()
@@ -72,18 +99,14 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
     def clean_recommendation(self):
         recommendation = self.cleaned_data["recommendation"]
         if not recommendation:
-            raise forms.ValidationError(
-                "Please select a valid recommendation (accept or revise)."
-            )
+            raise forms.ValidationError("Please select a valid recommendation (accept or revise).")
         return recommendation
 
     def clean_narrative_documentation_comments(self):
         # allow empty comments is narrative documentation is approved (checked)
         if self.cleaned_data["has_narrative_documentation"]:
             return self.cleaned_data["narrative_documentation_comments"]
-        return self._check_char_field_has_content(
-            field_name="narrative_documentation_comments"
-        )
+        return self._check_char_field_has_content(field_name="narrative_documentation_comments")
 
     def clean_clean_code_comments(self):
         if self.cleaned_data["has_clean_code"]:
@@ -98,34 +121,21 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
     def clean(self):
         cleaned_data = super().clean()
         reviewer_submitted = cleaned_data.get("reviewer_submitted")
-        if (
-            reviewer_submitted
-            and cleaned_data.get("recommendation") == ReviewerRecommendation.ACCEPT.name
-        ):
+        if reviewer_submitted and cleaned_data.get("recommendation") == ReviewerRecommendation.ACCEPT.name:
             has_narrative_documentation = cleaned_data["has_narrative_documentation"]
             has_clean_code = cleaned_data["has_clean_code"]
             is_runnable = cleaned_data["is_runnable"]
 
             checklist_errors = []
             if not has_narrative_documentation:
-                checklist_errors.append(
-                    _(
-                        "Recommended releases must have accompanying narrative documentation."
-                    )
-                )
+                checklist_errors.append(_("Recommended releases must have accompanying narrative documentation."))
             if not has_clean_code:
-                checklist_errors.append(
-                    _("Recommended releases should have clean code.")
-                )
+                checklist_errors.append(_("Recommended releases should have clean code."))
             if not is_runnable:
-                checklist_errors.append(
-                    _("Recommended releases must have runnable code.")
-                )
+                checklist_errors.append(_("Recommended releases must have runnable code."))
 
             if checklist_errors:
-                raise forms.ValidationError(
-                    [forms.ValidationError(e) for e in checklist_errors]
-                )
+                raise forms.ValidationError([forms.ValidationError(e) for e in checklist_errors])
 
         return cleaned_data
 
@@ -142,15 +152,18 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
         self._clean_fields()
         if not self.cleaned_data.get("reviewer_submitted", True):
             self._errors = ErrorDict()
-        if self.instance.invitation.review.is_complete:
-            self.add_error(
-                field=None, error="Feedback cannot be updated on a completed review"
-            )
+        try:
+            self.instance.validate_editable()
+        except ValidationError as exc:
+            self.add_error(field=None, error=str(exc.detail[0]))
         # FIXME: we should not rely on internal marked methods, need to clean this up
         self._clean_form()
         self._post_clean()
 
+    @transaction.atomic
     def save(self, commit=True):
+        self.instance.invitation.review._lock_for_transition()
+        self.instance.validate_editable()
         feedback = super().save(commit)
         if feedback.reviewer_submitted:
             feedback.reviewer_completed()
@@ -190,7 +203,20 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
     def clean_notes_to_author(self):
         return self._check_char_field_has_content("notes_to_author")
 
+    def clean(self):
+        data = super().clean()
+        try:
+            self.instance.validate_editable()
+        except ValidationError as exc:
+            raise forms.ValidationError(str(exc.detail[0])) from exc
+        if not self.instance.reviewer_submitted:
+            raise forms.ValidationError("Wait for the reviewer to submit fresh feedback.")
+        return data
+
+    @transaction.atomic
     def save(self, commit=True):
+        self.instance.invitation.review._lock_for_transition()
+        self.instance.validate_editable()
         feedback = super().save(commit)
         if self.cleaned_data["accept"]:
             feedback.invitation.review.set_complete_status(editor=self.editor)

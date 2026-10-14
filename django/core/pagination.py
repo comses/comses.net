@@ -55,9 +55,7 @@ class SmallResultSetPagination(PageNumberPagination):
             elif key in ["published_before", "published_after"]:
                 try:
                     publication_date = parser.isoparse(values[0]).date()
-                    filters.append(
-                        f"{key.replace('_', ' ')} {publication_date.isoformat()}"
-                    )
+                    filters.append(f"{key.replace('_', ' ')} {publication_date.isoformat()}")
                 except ValueError:
                     # FIXME: this default behavior duplicates what we want to do in the else clause below
                     filters.extend(v.replace("_", " ") for v in values)
@@ -90,9 +88,7 @@ class SmallResultSetPagination(PageNumberPagination):
             size = cls.page_size
         try:
             es_settings = getattr(settings, "WAGTAILSEARCH_BACKENDS", {})
-            max_result_window = es_settings["default"]["INDEX_SETTINGS"]["settings"][
-                "index"
-            ]["max_result_window"]
+            max_result_window = es_settings["default"]["INDEX_SETTINGS"]["settings"]["index"]["max_result_window"]
         except KeyError as e:
             logger.warning(
                 "max_result_window not set for Elasticsearch, setting to default %s",
@@ -124,9 +120,7 @@ class SmallResultSetPagination(PageNumberPagination):
         return Response(context)
 
     @classmethod
-    def create_paginated_context_data(
-        cls, query, data, page, count, query_params, size=None
-    ):
+    def create_paginated_context_data(cls, query, data, page, count, query_params, size=None):
         """
         Creates the paginated context data for jinja search templates
 
@@ -149,11 +143,7 @@ class SmallResultSetPagination(PageNumberPagination):
         # ceiling division https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python
         num_pages = -(-limited_count // size)
 
-        page_range = list(
-            range(
-                max(2, limited_page_number - 3), min(num_pages, limited_page_number + 4)
-            )
-        )
+        page_range = list(range(max(2, limited_page_number - 3), min(num_pages, limited_page_number + 4)))
 
         num_results = 0
 

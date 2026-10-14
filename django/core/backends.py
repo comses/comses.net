@@ -50,9 +50,7 @@ def get_model(perm):
     except ValueError:
         logger.error("Failed to split {}".format(perm))
         raise
-    permission = Permission.objects.get(
-        content_type__app_label=app_label, codename=codename
-    )
+    permission = Permission.objects.get(content_type__app_label=app_label, codename=codename)
     return permission.content_type.model_class()
 
 

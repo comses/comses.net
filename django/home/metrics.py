@@ -27,9 +27,7 @@ class Metrics:
         recompute and cache metrics data in redis
         """
         all_data = self.generate_metrics_data()
-        cache.set(
-            Metrics.REDIS_METRICS_KEY, all_data, Metrics.DEFAULT_METRICS_CACHE_TIMEOUT
-        )
+        cache.set(Metrics.REDIS_METRICS_KEY, all_data, Metrics.DEFAULT_METRICS_CACHE_TIMEOUT)
         return all_data
 
     def generate_metrics_data(self):
@@ -177,9 +175,7 @@ class Metrics:
                 "series": [
                     {
                         "name": "Models",
-                        "data": self.to_timeseries(
-                            total_models_by_year, min_start_year
-                        ),
+                        "data": self.to_timeseries(total_models_by_year, min_start_year),
                     }
                 ],
             },
@@ -190,9 +186,7 @@ class Metrics:
                 "series": [
                     {
                         "name": "Peer Reviewed Models",
-                        "data": self.to_timeseries(
-                            reviewed_models_by_year, min_start_year
-                        ),
+                        "data": self.to_timeseries(reviewed_models_by_year, min_start_year),
                     }
                 ],
             },
@@ -209,9 +203,7 @@ class Metrics:
             },
             "releasesByOs": self.get_release_os_timeseries(min_start_year),
             "releasesByPlatform": self.get_release_platform_timeseries(min_start_year),
-            "releasesByLanguage": self.get_release_programming_language_timeseries(
-                min_start_year
-            ),
+            "releasesByLanguage": self.get_release_programming_language_timeseries(min_start_year),
         }
         return model_metrics, min_start_year
 
@@ -240,9 +232,7 @@ class Metrics:
                 "series": [
                     {
                         "name": "Releases",
-                        "data": self.to_timeseries(
-                            total_releases_by_year, min_start_year
-                        ),
+                        "data": self.to_timeseries(total_releases_by_year, min_start_year),
                     }
                 ],
             },
@@ -253,9 +243,7 @@ class Metrics:
                 "series": [
                     {
                         "name": "Peer Reviewed releases",
-                        "data": self.to_timeseries(
-                            reviewed_releases_by_year, min_start_year
-                        ),
+                        "data": self.to_timeseries(reviewed_releases_by_year, min_start_year),
                     }
                 ],
             },
@@ -324,17 +312,13 @@ class Metrics:
             "title": "Models by OS",
             "yLabel": "# Releases",
             "startYear": start_year,
-            "series": self.convert_release_metrics_to_timeseries(
-                os_metrics, start_year, "operating_systems"
-            ),
+            "series": self.convert_release_metrics_to_timeseries(os_metrics, start_year, "operating_systems"),
         }
 
     def get_release_platform_timeseries(self, start_year):
         platform_metrics = list(
             CodebaseRelease.objects.public()
-            .values(
-                platform=F("platform_tags__name"), year=F("first_published_at__year")
-            )
+            .values(platform=F("platform_tags__name"), year=F("first_published_at__year"))
             .annotate(count=Count("year"))
             .order_by("year")
         )
@@ -342,9 +326,7 @@ class Metrics:
             "title": "Models by Platform",
             "yLabel": "# Releases",
             "startYear": start_year,
-            "series": self.convert_release_metrics_to_timeseries(
-                platform_metrics, start_year, "platform"
-            ),
+            "series": self.convert_release_metrics_to_timeseries(platform_metrics, start_year, "platform"),
         }
 
     def get_release_programming_language_timeseries(self, start_year):
@@ -436,9 +418,7 @@ class Metrics:
             category = df.columns[0]
         if start_year < df["year"].min():
             # add an empty record for the start year
-            start_year_df = pd.DataFrame(
-                [["other", start_year, 0]], columns=[category, "year", "count"]
-            )
+            start_year_df = pd.DataFrame([["other", start_year, 0]], columns=[category, "year", "count"])
             df = pd.concat([start_year_df, df])
         # set up a pivot table with year columns and row categories (e.g., os, platform, lang)
         categories_by_year = df.pivot_table(
@@ -448,33 +428,20 @@ class Metrics:
             aggfunc="first",
             fill_value=0,
         )
-        full_date_range = pd.date_range(
-            str(df["year"].min()), str(df["year"].max()), freq="YS"
-        )
+        full_date_range = pd.date_range(str(df["year"].min()), str(df["year"].max()), freq="YS")
         # reindex the columns to include all years in the range
-        categories_by_year = categories_by_year.reindex(
-            columns=full_date_range.year, fill_value=0
-        )
+        categories_by_year = categories_by_year.reindex(columns=full_date_range.year, fill_value=0)
 
         # Extract rows whose max values are less than 10,
         # and integrate into an 'other' row
-        included_categories_mask = (
-            categories_by_year.max(axis=1) >= Metrics.MINIMUM_CATEGORY_COUNT
-        )
-        other_categories_mask = (
-            categories_by_year.max(axis=1) < Metrics.MINIMUM_CATEGORY_COUNT
-        )
+        included_categories_mask = categories_by_year.max(axis=1) >= Metrics.MINIMUM_CATEGORY_COUNT
+        other_categories_mask = categories_by_year.max(axis=1) < Metrics.MINIMUM_CATEGORY_COUNT
         # build a new dataframe with the included categories and an 'other' row
         result_df = categories_by_year.loc[included_categories_mask]
         # this generates a SettingWithCopyWarning
         # See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy"
-        result_df.loc["other"] = categories_by_year.loc[other_categories_mask].sum(
-            axis=0
-        )
+        result_df.loc["other"] = categories_by_year.loc[other_categories_mask].sum(axis=0)
 
         # Convert result data frame into a list of Metrics Series objects
         category_list = result_df.index.drop_duplicates().tolist()
-        return [
-            {"name": category, "data": result_df.loc[category].tolist()}
-            for category in category_list
-        ]
+        return [{"name": category, "data": result_df.loc[category].tolist()} for category in category_list]

@@ -75,7 +75,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         conference_index_title = "CoMSES Virtual Conferences"
-        conference_index_page = ConferenceIndexPage.objects.get(
-            title=conference_index_title
-        )
+        conference_index_page = ConferenceIndexPage.objects.get(title=conference_index_title)
         self.build_comses_2019_page(conference_index_page)

@@ -4,7 +4,7 @@
       <div
         class="card mb-2 position-relative"
         v-for="feedback in sortedFeedbackItems"
-        :key="feedback.dateCreated"
+        :key="feedback.id"
       >
         <div class="card-body py-2 px-3">
           <a v-if="!disabled" :href="feedback.editorUrl" class="stretched-link"></a>
