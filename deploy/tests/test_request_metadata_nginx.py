@@ -14,6 +14,7 @@ import tempfile
 import threading
 import time
 import unittest
+from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -192,6 +193,7 @@ class NginxMetadataTests(unittest.TestCase):
             self.assertIn(records[3]["upstream_response_time"], ("", "-"))
             fields = {
                 "layer",
+                "timestamp",
                 "request_id",
                 "status",
                 "request_time",
@@ -202,6 +204,13 @@ class NginxMetadataTests(unittest.TestCase):
             for record in records:
                 self.assertEqual(set(record), fields)
                 self.assertEqual(record["layer"], "nginx")
+                self.assertRegex(
+                    record["timestamp"],
+                    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$",
+                )
+                timestamp = datetime.fromisoformat(record["timestamp"])
+                self.assertIsNotNone(timestamp.utcoffset())
+                self.assertLess(abs(timestamp.timestamp() - time.time()), 30)
                 self.assertGreater(record["request_length"], 0)
             self.assertNotIn("sensitive", active.read_text())
             archived = directory / "metadata.1"

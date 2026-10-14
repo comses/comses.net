@@ -6,6 +6,8 @@ import re
 import sys
 from contextlib import suppress
 from contextvars import ContextVar
+from datetime import UTC, datetime
+from logging.handlers import WatchedFileHandler
 from time import perf_counter
 from uuid import uuid4
 
@@ -16,6 +18,12 @@ UUID4 = re.compile(
 )
 request_context = ContextVar("request_context", default=(None, None))
 metadata_logger = logging.getLogger("request_metadata")
+IDENTITY_SOURCES = (
+    "incoming",
+    "fallback_missing",
+    "fallback_invalid",
+    "fallback_duplicate",
+)
 
 
 def request_identity(value):
@@ -32,6 +40,17 @@ class RequestContextFilter(logging.Filter):
 
     def filter(self, record):
         record.request_id, record.request_id_source = request_context.get()
+        if record.request_id is None:
+            # Django logs explicit error responses after middleware has returned.
+            request = getattr(record, "request", None)
+            request_id = getattr(request, "request_id", None)
+            source = getattr(request, "request_id_source", None)
+            if (
+                isinstance(request_id, str)
+                and UUID4.fullmatch(request_id) is not None
+                and source in IDENTITY_SOURCES
+            ):
+                record.request_id, record.request_id_source = request_id, source
         return True
 
 
@@ -41,13 +60,7 @@ class RequestMetadataFilter(logging.Filter):
             getattr(record, "event", None) == "request_finished"
             and isinstance(getattr(record, "request_id", None), str)
             and UUID4.fullmatch(record.request_id) is not None
-            and getattr(record, "request_id_source", None)
-            in (
-                "incoming",
-                "fallback_missing",
-                "fallback_invalid",
-                "fallback_duplicate",
-            )
+            and getattr(record, "request_id_source", None) in IDENTITY_SOURCES
             and type(getattr(record, "status", None)) is int
             and type(getattr(record, "duration_ms", None)) is float
         )
@@ -60,6 +73,9 @@ class RequestMetadataFormatter(logging.Formatter):
         return json.dumps(
             {
                 "layer": "django",
+                "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(
+                    timespec="milliseconds"
+                ),
                 "event": "request_finished",
                 "request_id": record.request_id,
                 "request_id_source": record.request_id_source,
@@ -69,6 +85,17 @@ class RequestMetadataFormatter(logging.Formatter):
             allow_nan=False,
             separators=(",", ":"),
         )
+
+
+def report_metadata_write_failure():
+    # Never log recursively or include the record/exception, even in debug mode.
+    with suppress(OSError, ValueError):
+        print("request_metadata_write_failed", file=sys.stderr)
+
+
+class RequestMetadataHandler(WatchedFileHandler):
+    def handleError(self, record):
+        report_metadata_write_failure()
 
 
 class RequestMetadataMiddleware:
@@ -103,8 +130,7 @@ class RequestMetadataMiddleware:
             )
         except OSError:
             # A failed reopen must not replace the response or original exception.
-            with suppress(OSError):
-                print("request_metadata_write_failed", file=sys.stderr)
+            report_metadata_write_failure()
         finally:
             request_context.reset(token)
 
@@ -149,7 +175,7 @@ def configure_request_logging(config, directory):
         )
     config["formatters"]["request_metadata"] = {"()": RequestMetadataFormatter}
     config["handlers"]["request_metadata"] = {
-        "class": "logging.handlers.WatchedFileHandler",
+        "class": "core.request_logging.RequestMetadataHandler",
         "filename": str(directory / "request-metadata.jsonl"),
         "formatter": "request_metadata",
         "filters": ["request_metadata"],
