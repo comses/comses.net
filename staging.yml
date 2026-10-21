@@ -25,7 +25,16 @@ services:
       - discovery.seed_hosts=elasticsearch
       - cluster.initial_master_nodes=elasticsearch,es02
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms768m -Xmx768m"
+    mem_limit: 2g
+    mem_reservation: 1g
+    memswap_limit: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+        reservations:
+          memory: 1g
     ulimits:
       memlock:
         soft: -1
