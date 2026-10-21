@@ -27,7 +27,7 @@ DEBIAN_TEST_UID=39002
 # real /srv/logs/comses and /srv/backups/comses bind mounts.
 build_fixture() {
     local root=$1
-    mkdir -p "$root/docker/shared"/{library,media,redis,elasticsearch/primary,elasticsearch/secondary,static,tls/well-known,logs/nginx,backups/repo}
+    mkdir -p "$root/docker/shared"/{library,media,redis,elasticsearch/v9/primary,elasticsearch/v9/secondary,static,tls/well-known,logs/nginx,backups/repo}
     mkdir -p "$root/docker/pgdata" "$root/docker/secrets" "$root/srv-logs" "$root/srv-backups"
 
     sudo chown 0:0 "$root/docker/shared"
@@ -36,8 +36,8 @@ build_fixture() {
     sudo chmod 0700 "$root/docker/pgdata"
     sudo chown 999:1000 "$root/docker/shared/redis"
     sudo chmod 0750 "$root/docker/shared/redis"
-    sudo chown 1000:0 "$root/docker/shared/elasticsearch/primary" "$root/docker/shared/elasticsearch/secondary"
-    sudo chmod 0750 "$root/docker/shared/elasticsearch/primary" "$root/docker/shared/elasticsearch/secondary"
+    sudo chown 1000:0 "$root/docker/shared/elasticsearch/v9/primary" "$root/docker/shared/elasticsearch/v9/secondary"
+    sudo chmod 0750 "$root/docker/shared/elasticsearch/v9/primary" "$root/docker/shared/elasticsearch/v9/secondary"
     sudo chown 101:101 "$root/docker/shared/logs/nginx"
     sudo chmod 0750 "$root/docker/shared/logs/nginx"
     chmod 0700 "$root/docker/secrets"

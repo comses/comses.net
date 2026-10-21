@@ -74,11 +74,11 @@ $(DOCKER_SHARED_DIR):
 	done
 	@# Elasticsearch writes as UID 1000. Once prepared, this subtree may not be traversable by the host user.
 	@if [ ! -e ${DOCKER_SHARED_DIR}/elasticsearch ]; then \
-		mkdir -p ${DOCKER_SHARED_DIR}/elasticsearch/primary ${DOCKER_SHARED_DIR}/elasticsearch/secondary ; \
-		chmod 0777 ${DOCKER_SHARED_DIR}/elasticsearch ${DOCKER_SHARED_DIR}/elasticsearch/primary ${DOCKER_SHARED_DIR}/elasticsearch/secondary ; \
+		mkdir -p ${DOCKER_SHARED_DIR}/elasticsearch/v9/primary ${DOCKER_SHARED_DIR}/elasticsearch/v9/secondary ; \
+		chmod 0777 ${DOCKER_SHARED_DIR}/elasticsearch ${DOCKER_SHARED_DIR}/elasticsearch/v9 ${DOCKER_SHARED_DIR}/elasticsearch/v9/primary ${DOCKER_SHARED_DIR}/elasticsearch/v9/secondary ; \
 	elif [ -w ${DOCKER_SHARED_DIR}/elasticsearch ]; then \
-		mkdir -p ${DOCKER_SHARED_DIR}/elasticsearch/primary ${DOCKER_SHARED_DIR}/elasticsearch/secondary ; \
-		chmod 0777 ${DOCKER_SHARED_DIR}/elasticsearch ${DOCKER_SHARED_DIR}/elasticsearch/primary ${DOCKER_SHARED_DIR}/elasticsearch/secondary ; \
+		mkdir -p ${DOCKER_SHARED_DIR}/elasticsearch/v9/primary ${DOCKER_SHARED_DIR}/elasticsearch/v9/secondary ; \
+		chmod 0777 ${DOCKER_SHARED_DIR}/elasticsearch ${DOCKER_SHARED_DIR}/elasticsearch/v9 ${DOCKER_SHARED_DIR}/elasticsearch/v9/primary ${DOCKER_SHARED_DIR}/elasticsearch/v9/secondary ; \
 	fi
 	@for d in ${DOCKER_LOG_SUBDIRS} ; do \
 		mkdir -p ${COMSES_LOG_ROOT}/$$d ; \

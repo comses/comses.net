@@ -2,6 +2,11 @@ services:
   elasticsearch:
     environment:
       - discovery.type=single-node
+    networks:
+      - default
+      - search
+    ports:
+      - "127.0.0.1:9200:9200"
   vite:
     ports:
       - "127.0.0.1:5173:5173"

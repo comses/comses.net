@@ -246,10 +246,10 @@ ROOT_URLCONF = "core.urls"
 # tune down elasticsearch complaints
 warnings.simplefilter("ignore", category=ElasticsearchWarning)
 
-# configure elasticsearch 7 wagtail backend
+# configure Elasticsearch 9 Wagtail backend
 WAGTAILSEARCH_BACKENDS = {
     "default": {
-        "BACKEND": "wagtail.search.backends.elasticsearch7",
+        "BACKEND": "wagtail.search.backends.elasticsearch9",
         "URLS": ["http://elasticsearch:9200"],
         "ATOMIC_REBUILD": True,
         "AUTO_UPDATE": True,

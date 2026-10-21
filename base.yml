@@ -17,15 +17,17 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
     healthcheck:
-      test: curl -u elastic:elastic -s -f elasticsearch:9200/_cat/health >/dev/null || exit 1
+      test: curl -s -f http://localhost:9200/_cat/health >/dev/null || exit 1
       interval: 30s
       timeout: 10s
       retries: 5
-    ports:
-      - "127.0.0.1:9200:9200"
+    networks:
+      - search
     environment:
       - node.name=elasticsearch
       - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.security.autoconfiguration.enabled=false
       - "ES_JAVA_OPTS=-Xms768m -Xmx768m"
     mem_limit: 2g
     mem_reservation: 1g
@@ -51,7 +53,7 @@ services:
         bind:
           create_host_path: false
       - type: bind
-        source: ${COMSES_SHARED_ROOT:-./docker/shared}/elasticsearch/primary
+        source: ${COMSES_SHARED_ROOT:-./docker/shared}/elasticsearch/v9/primary
         target: /usr/share/elasticsearch/data
         bind:
           create_host_path: false
@@ -147,6 +149,13 @@ services:
         condition: service_started
     env_file:
       - ./.env
+    networks:
+      - default
+      - search
+
+networks:
+  search:
+    internal: true
 
 secrets:
   datacite_api_password:

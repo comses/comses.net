@@ -27,7 +27,7 @@ def expected_mounts(environment):
             True,
         ),
         ("elasticsearch", "/usr/share/elasticsearch/data"): (
-            f"{shared_root}/elasticsearch/primary",
+            f"{shared_root}/elasticsearch/v9/primary",
             False,
         ),
         ("server", "/shared"): (shared_root, False),
@@ -36,7 +36,7 @@ def expected_mounts(environment):
     }
     if environment in {"staging", "prod"}:
         mounts[("es02", "/usr/share/elasticsearch/data")] = (
-            f"{shared_root}/elasticsearch/secondary",
+            f"{shared_root}/elasticsearch/v9/secondary",
             False,
         )
         mounts.update(
