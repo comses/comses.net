@@ -60,6 +60,31 @@ docker compose exec server inv sh
 docker compose exec server ./manage.py <command>
 ```
 
+## Planned host shutdown
+
+Drain or place the host into maintenance at the infrastructure/load-balancer
+layer first. Then run the repository-defined ordered shutdown:
+
+```bash
+make stop
+sudo sync
+sudo systemctl poweroff
+```
+
+`make stop` stops ingress before the application workers, persists Redis,
+allows extended graceful-stop timeouts, stops the remaining stateful services,
+and fails if any project service remains running or required `SIGKILL`. It does
+not regenerate Compose configuration or power off the host.
+
+After the host boots, verify its persistent mounts before starting or checking
+the stack:
+
+```bash
+findmnt -T /srv/apps/comses
+docker compose up -d
+docker compose ps
+```
+
 `db.init` and development container startup apply committed migrations only;
 production startup does not generate migration files. Generate new migrations
 explicitly during development with `inv db.make-migrations`, review them, and

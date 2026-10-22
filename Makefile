@@ -161,6 +161,47 @@ endif
 	sleep 42
 	docker compose exec server inv prepare
 
+.PHONY: stop
+stop:
+	@test -f docker-compose.yml || { echo "docker-compose.yml is required; refusing to regenerate configuration during shutdown" >&2; exit 1; }
+ifneq ($(filter staging prod,$(DEPLOY_ENVIRONMENT)),)
+	docker compose stop --timeout 120 nginx
+endif
+	docker compose stop --timeout 180 server
+	@set -eu; \
+	if docker compose ps --status running --services | grep -Fxq redis; then \
+		redis_save=$$(docker compose exec -T redis redis-cli -s /data/redis.sock SAVE) || { \
+			echo "Redis SAVE failed; refusing to stop stateful services" >&2; \
+			exit 1; \
+		}; \
+		if [ "$$redis_save" != OK ]; then \
+			echo "Redis SAVE returned an unexpected response; refusing to stop stateful services" >&2; \
+			exit 1; \
+		fi; \
+	fi
+	docker compose stop --timeout 120
+	@set -eu; \
+	remaining_services=$$(docker compose ps --status running --services); \
+	if [ -n "$$remaining_services" ]; then \
+		echo "Services still running after graceful stop:" >&2; \
+		printf '%s\n' "$$remaining_services" >&2; \
+		exit 1; \
+	fi; \
+	force_killed_services=; \
+	for container_id in $$(docker compose ps --all --quiet); do \
+		container_state=$$(docker inspect --format '{{.Name}} {{.State.ExitCode}}' "$$container_id"); \
+		container_name=$${container_state% *}; \
+		exit_code=$${container_state##* }; \
+		if [ "$$exit_code" -eq 137 ]; then \
+			force_killed_services="$$force_killed_services $${container_name#/}"; \
+		fi; \
+	done; \
+	if [ -n "$$force_killed_services" ]; then \
+		echo "Containers required SIGKILL after their graceful-stop timeout:$$force_killed_services" >&2; \
+		exit 1; \
+	fi
+	@echo "CoMSES services stopped; shut down the host separately after any infrastructure maintenance checks."
+
 .PHONY: prepare-host-storage
 prepare-host-storage:
 	deploy/scripts/prepare-host-storage
