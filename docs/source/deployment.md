@@ -192,8 +192,12 @@ media, and repository files, verifies the new archive with `borg check
 Restore verifies the selected archive, restores and migrates the database, and
 only then rotates live filesystem content.
 
-Monthly pruning uses the same operation lock and proceeds only when the last
-verified local backup is no more than 48 hours old.
+Pruning and compaction are operator-initiated maintenance; the image installs no
+monthly pruning cron entry. `inv borg.prune` previews the retention policy.
+`--apply` requires confirmation and a recent verified local backup. Infrastructure
+owns off-host recovery protection and coordinated maintenance. Follow
+`docs/agents/backup-restore-runbook.md` for the local commands and the link to the
+infrastructure procedure, including reconciliation after compaction.
 
 ### Staging off-host replica interface
 

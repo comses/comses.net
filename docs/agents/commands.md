@@ -37,7 +37,7 @@ See `docs/agents/backup-restore-runbook.md` before restoring production state.
 ```bash
 docker compose exec server inv borg.init borg.backup-all # locked, validated DB + filesystem backup
 docker compose exec server inv borg.list # list available restore points
-docker compose exec server inv borg.prune # locked monthly retention task
+docker compose exec server inv borg.prune # preview only; no pruning or compaction
 docker compose exec server inv borg.restore --archive="<archive>" # destructive full restore
 make restore # destructive local restore from packaged/downloaded Borg repository
 ```
@@ -47,6 +47,12 @@ Staging off-host replication uses `/code/deploy/comses-borg-replicate` in the
 snapshot is available; see `docs/source/deployment.md#staging-off-host-replica-interface`
 for the fixed environment interface and preflight checks. Do not invoke the
 wrapper directly as a substitute for the host service.
+
+Retention is operator-initiated maintenance. Applying pruning also compacts the
+local repository and requires confirmation. Infrastructure owns the recovery
+checkpoints and subsequent replica reconciliation and verification. Follow the maintenance
+section in `docs/agents/backup-restore-runbook.md`; the application does not
+verify cloud snapshots or update the replica by itself.
 
 ## Django Test Commands
 

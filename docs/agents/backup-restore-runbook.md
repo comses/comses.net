@@ -80,8 +80,10 @@ off-host replica independently; local Borg verification does not prove that a
 replica exists or is current.
 
 Do not rsync a Borg repository while backup, check, prune, or compact is
-running. Off-host replication must acquire the same `.backup.lock`, copy to a
-staging destination, verify the replica, and only then publish it as current.
+running. Off-host replication must acquire the same `.backup.lock`. The staging
+implementation updates a dedicated active mirror protected by pre-sync snapshots;
+that mirror is unavailable to readers during transfer and remains unverified
+until a separate destination check passes.
 
 The staging wrapper mirrors deletions with `--delete-delay`; infrastructure
 must take a pre-sync destination snapshot and retain snapshot history
@@ -178,23 +180,54 @@ Also verify representative published releases, file downloads, media, staff
 login, search, and background-task processing. Confirm that database records and
 stored files correspond to the selected restore point.
 
-## Retention and restore drills
+## Explicit retention maintenance
 
-The server image schedules pruning monthly. The task acquires the same lock as
-backup and refuses to prune when the local successful-backup marker is missing
-or older than 48 hours. Run it manually with:
+The server image does not schedule pruning or compaction. Daily backup creation
+and verification remain automatic. Infrastructure owns the coordinated maintenance
+procedure, off-host verification, snapshots, retention records, and scheduling.
+For staging, follow the [infrastructure maintenance runbook](https://github.com/comses/infrastructure/blob/main/docs/comses-borg-maintenance.md)
+before applying local retention. Production requires its own reviewed procedure.
+
+Preview the local retention policy with:
 
 ```bash
 docker compose exec -T server inv borg.prune
 ```
 
-The retention policy keeps 14 daily, 4 weekly, 12 monthly, and all yearly
-archives. Review repository growth periodically because yearly retention is
-unbounded.
+This is a dry run and never compacts. After satisfying the infrastructure
+maintenance prerequisites, apply from an interactive terminal:
 
-The current task cannot verify off-host replication until that workflow exposes
-a replica success marker. Monitor replication separately and do not treat local
-prune eligibility as proof that the replica is current.
+```bash
+docker compose exec server inv borg.prune --apply
+```
+
+The command repeats the preview and requires confirmation while holding the
+shared backup lock, then prunes and compacts under that lock. If pruning fails,
+compaction does not start. It refuses retention when the local successful-backup
+marker is missing, older than 48 hours, or in the future. The application does
+not verify off-host recovery prerequisites or manage cloud snapshots.
+
+Pruning and compaction change repository files without advancing the local backup
+marker. Complete infrastructure reconciliation and destination verification after
+applying; never prune or compact the mirrored repository independently. If local
+maintenance fails, inspect source integrity before retrying. A later transfer
+failure requires reconciliation, not replaying local pruning.
+
+The local retention policy keeps 14 daily, 4 weekly, 12 monthly, and all yearly
+archives. Monitor local storage and repository growth because pruning is explicit
+and yearly retention is unbounded. Do not add `--apply` to cron or invoke
+`borg compact` separately as routine maintenance.
+
+### Deployment transition
+
+Removing the source cron script does not change an existing container. Rebuild
+and recreate the server through the normal deployment procedure, then verify
+`/etc/cron.monthly/prune-backups` is absent. If replacing the container must wait,
+disable that installed cron entry explicitly before beginning maintenance. Check
+that no prune or compaction is already running; removing the schedule does not
+stop an existing process.
+
+## Restore drills
 
 Periodically restore a selected off-host archive into an explicitly disposable
 database and isolated shared root. A successful `borg check` is not a substitute

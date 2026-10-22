@@ -81,7 +81,6 @@ WORKDIR /code
 COPY ./deploy/cron.daily/* /etc/cron.daily/
 COPY ./deploy/cron.hourly/* /etc/cron.hourly/
 COPY ./deploy/cron.weekly/* /etc/cron.weekly/
-COPY ./deploy/cron.monthly/* /etc/cron.monthly/
 ARG RUN_SCRIPT
 COPY ${RUN_SCRIPT} /etc/service/django/run
 COPY ./deploy/huey.sh /etc/service/huey/run
