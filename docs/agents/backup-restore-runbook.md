@@ -24,6 +24,12 @@ last successful local backup, not evidence of successful off-host replication.
 
 ## Routine backup
 
+The server image pins Borg 1.4.5 in `django/requirements.txt`, installs it in the
+application virtual environment, and exposes it at `/usr/local/bin/borg`.
+Ubuntu's `borgbackup` package is not installed.
+The image supports create/check/extract and replication without FUSE; `borg mount`
+is not provided by this installation. Use extraction for restore drills.
+
 The server image installs `/code/deploy/cron.daily/backup`, which invokes
 `borg.backup-all` inside the container. The equivalent operator command is:
 
@@ -78,6 +84,29 @@ docker compose exec -T server tail -n 100 /shared/logs/comses-backup.log
 Treat a missing or stale success marker as a failed backup. Also verify the
 off-host replica independently; local Borg verification does not prove that a
 replica exists or is current.
+
+### Borg 1.4.5 rollout
+
+Rebuild and recreate the server through the normal deployment procedure, then
+check `docker compose exec -T server borg --version` reports `borg 1.4.5`.
+Set the infrastructure source role's `borg_replica_source_expected_borg_version`
+to `1.4.5` (it supplies `COMSES_BORG_EXPECTED_VERSION`); its existing `1.2.8`
+default will make replication fail closed after this upgrade. Coordinate the
+destination verifier's Borg installation as well. This checkout does not deploy
+or update either infrastructure role.
+
+For repositories already on 1.2.8 with the earlier TAM security migration
+completed, no repository conversion or `borg upgrade` is required. Keep legacy
+exit codes (the default); do not enable `BORG_EXIT_CODES=modern` without reviewing
+callers. See the upstream
+[upgrade notes](https://borgbackup.readthedocs.io/en/1.4.5/changes.html#borg-1-2-x-to-1-4-x).
+
+Before production, run the standalone replication suite described in
+`docs/agents/borg-replication-design.md` in the rebuilt image, then exercise a
+staging backup, replica transfer, full destination check, archive extraction and
+disposable database restore. No test command should mount the live shared tree.
+
+### Replication serialization
 
 Do not rsync a Borg repository while backup, check, prune, or compact is
 running. Off-host replication must acquire the same `.backup.lock`. The staging

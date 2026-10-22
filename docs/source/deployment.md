@@ -201,6 +201,10 @@ infrastructure procedure, including reconciliation after compaction.
 
 ### Staging off-host replica interface
 
+The server image now pins Borg 1.4.5; update infrastructure's expected-version
+setting together with the image (see the Borg rollout section in
+`docs/agents/backup-restore-runbook.md`).
+
 The fixed `/code/deploy/comses-borg-replicate` command is available in the
 `server` image for infrastructure-managed staging replication. It reads the
 existing `/shared/backups/repo`, waits for the same

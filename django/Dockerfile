@@ -23,11 +23,17 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         build-essential \
         ca-certificates \
         git \
+        libacl1-dev \
         libffi-dev \
         libjpeg-turbo8-dev \
+        liblz4-dev \
         libpq-dev \
+        libssl-dev \
         libxml2-dev \
         libxslt-dev \
+        libxxhash-dev \
+        libzstd-dev \
+        pkg-config \
         python3-dev \
         python3-pip \
         python3-setuptools \
@@ -53,14 +59,18 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         && yes | /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh \
         && apt-get -qq update \
         && apt-get -qq install -y --no-install-recommends -o=Dpkg::Use-Pty=0 \
-        borgbackup \
         ca-certificates \
         clamav \
         clamav-daemon \
         curl \
         git \
+        libacl1 \
         libgeoip1 \
+        liblz4-1 \
         libpython3.12t64 \
+        libssl3t64 \
+        libxxhash0 \
+        libzstd1 \
         openssh-client \
         postgresql-client-16 \
         python3 \
@@ -75,6 +85,8 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+# A stable path also works for cron and commands outside the application venv.
+RUN ln -s ${VIRTUAL_ENV}/bin/borg /usr/local/bin/borg && borg --version
 
 WORKDIR /code
 

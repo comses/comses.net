@@ -41,7 +41,7 @@ class BorgReplicationWrapperTests(unittest.TestCase):
             """#!/usr/bin/env python3
 import json, os, subprocess, sys
 if sys.argv[1:] == ["--version"]:
-    print(os.environ.get("FAKE_BORG_VERSION", "borg 1.2.8"))
+    print(os.environ.get("FAKE_BORG_VERSION", "borg 1.4.5"))
     sys.exit()
 with open(os.environ["FAKE_LOG"], "a") as log:
     log.write(json.dumps(["borg", *sys.argv[1:]]) + "\\n")
@@ -65,7 +65,7 @@ sys.exit(int(os.environ.get("FAKE_RSYNC_EXIT", "0")))
             "COMSES_BORG_REPOSITORY": str(self.repo),
             "COMSES_BORG_REPLICATION_DESTINATION": replicate.DESTINATION,
             "COMSES_BORG_REPLICATION_LOCK_WAIT_SECONDS": "1",
-            "COMSES_BORG_EXPECTED_VERSION": "1.2.8",
+            "COMSES_BORG_EXPECTED_VERSION": "1.4.5",
         }
         self.environment.pop("COMSES_BORG_REPLICATION_DELETE", None)
         patches = [
@@ -147,9 +147,11 @@ sys.exit(int(os.environ.get("FAKE_RSYNC_EXIT", "0")))
         self.assertFalse(self.log.exists())
 
     def test_rejects_wrong_borg_version(self):
-        self.environment["FAKE_BORG_VERSION"] = "borg 2.0.0"
-        with self.assertRaisesRegex(RuntimeError, "unexpected Borg version"):
-            replicate.replicate(self.environment)
+        for version in ("1.2.8", "1.4.4", "2.0.0"):
+            with self.subTest(version=version):
+                self.environment["FAKE_BORG_VERSION"] = f"borg {version}"
+                with self.assertRaisesRegex(RuntimeError, "unexpected Borg version"):
+                    replicate.replicate(self.environment)
         self.assertFalse(self.log.exists())
 
     def test_waits_for_primary_backup_lock(self):

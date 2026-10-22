@@ -95,6 +95,15 @@ full data verification and their extracted payloads matched the expected bytes.
 This validates the wrapper change in the cached runtime, not a rebuilt release
 image or live snapshot recovery.
 
+On 2026-10-22, the rebuilt `comses/server:borg-1.4.5` image passed all seven
+standalone tests, including the real-tool prune/compact/mirror/extraction case.
+Borg resolved through `/usr/local/bin/borg` under normal and cron PATHs; the
+application environment passed `pip check`. A separate fixture created by the
+cached 1.2.8 image passed `check --verify-data` and extraction in 1.4.5, then
+accepted another archive; both old and new payloads extracted correctly.
+All repositories were disposable, with network disabled and no application data
+mounts. These checks do not validate live SSH restrictions or Cinder recovery.
+
 From the repository root, run in a disposable server container without application
 data mounts or network (substitute the appropriate built image tag):
 
