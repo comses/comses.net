@@ -68,6 +68,10 @@ What `make deploy` does:
 
 ## Redis socket readiness and recovery
 
+Compose uses `redis:8-alpine`. The Python `redis` package version is a client
+version and is managed separately in `django/requirements.txt`. For the one-time
+Redis 7 deployment transition, follow `docs/agents/redis-upgrade-runbook.md`.
+
 Redis listens on `/data/redis.sock`, backed by `docker/shared/redis`; Django
 and Huey connect to the same socket as `/shared/redis/redis.sock`. Compose gates
 server startup on a Redis socket PING health check. Container state `running`
