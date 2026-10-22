@@ -205,6 +205,10 @@ The server image now pins Borg 1.4.5; update infrastructure's expected-version
 setting together with the image (see the Borg rollout section in
 `docs/agents/backup-restore-runbook.md`).
 
+The interface documented here still pushes from CoMSES. The intended move to a
+backup-staging pull is reviewed in `docs/agents/borg-pull-review.md` and is not
+activated by the version upgrade.
+
 The fixed `/code/deploy/comses-borg-replicate` command is available in the
 `server` image for infrastructure-managed staging replication. It reads the
 existing `/shared/backups/repo`, waits for the same

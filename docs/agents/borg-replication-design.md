@@ -6,6 +6,10 @@ that a host service, snapshot policy, or live replica has been deployed or teste
 
 ## Decision and reason
 
+Update, 2026-10-22: the intended next direction is a backup-staging pull; see
+`docs/agents/borg-pull-review.md` for the proposed ownership and locking contract.
+The existing push wrapper below remains in place pending infrastructure cutover.
+
 Keep the existing local Borg repository and infrastructure-managed off-host
 rsync workflow. Make `--delete-delay` mandatory for every transfer. Infrastructure
 snapshots preserve older destination states independently of source retention.

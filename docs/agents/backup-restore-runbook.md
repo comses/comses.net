@@ -108,6 +108,10 @@ disposable database restore. No test command should mount the live shared tree.
 
 ### Replication serialization
 
+The proposed backup-host pull is reviewed in
+`docs/agents/borg-pull-review.md`. The procedure below remains the existing push
+implementation until that infrastructure transition is tested.
+
 Do not rsync a Borg repository while backup, check, prune, or compact is
 running. Off-host replication must acquire the same `.backup.lock`. The staging
 implementation updates a dedicated active mirror protected by pre-sync snapshots;
