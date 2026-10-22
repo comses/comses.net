@@ -98,8 +98,9 @@ This platform manages scientific software artifacts and publication metadata. Th
 
 - Use Conventional Commits with imperative subjects of at most 72 characters.
 - Use scopes only for established repository areas.
-- For non-trivial changes, explain the rationale in the body.
-- Reference related issues or PRs in the body or footer when known.
+- For non-trivial changes, use concise lowercase `-` bullets in the body to explain the rationale and operationally relevant details.
+- Keep each bullet concrete and independently legible; omit a body when the subject already explains the complete change.
+- Prefer branch-wide issue references in the pull request description. Do not repeat the same issue footer across every commit in a branch. Add a lowercase commit footer only when standalone traceability matters, such as for a direct fix, backport, or independently cherry-picked change.
 
 ## Environment and Commands
 

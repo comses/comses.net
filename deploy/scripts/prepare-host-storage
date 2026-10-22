@@ -92,8 +92,9 @@ for path in \
     "$SHARED_ROOT/backups/repo" \
     "$SHARED_ROOT/data" \
     "$SHARED_ROOT/elasticsearch" \
-    "$SHARED_ROOT/elasticsearch/primary" \
-    "$SHARED_ROOT/elasticsearch/secondary" \
+    "$SHARED_ROOT/elasticsearch/v9" \
+    "$SHARED_ROOT/elasticsearch/v9/primary" \
+    "$SHARED_ROOT/elasticsearch/v9/secondary" \
     "$SHARED_ROOT/extract" \
     "$SHARED_ROOT/incoming" \
     "$SHARED_ROOT/library" \
@@ -125,8 +126,9 @@ mkdir -p "$SHARED_ROOT/backups/repo"
 ensure_exact_dir "$POSTGRES_ROOT" "$POSTGRES_UID" "$POSTGRES_GID" 0700
 ensure_exact_dir "$SHARED_ROOT/redis" "$REDIS_UID" "$REDIS_GID" 0750
 ensure_exact_dir "$SHARED_ROOT/elasticsearch" "$ELASTICSEARCH_UID" "$ELASTICSEARCH_GID" 0750
-ensure_exact_dir "$SHARED_ROOT/elasticsearch/primary" "$ELASTICSEARCH_UID" "$ELASTICSEARCH_GID" 0750
-ensure_exact_dir "$SHARED_ROOT/elasticsearch/secondary" "$ELASTICSEARCH_UID" "$ELASTICSEARCH_GID" 0750
+ensure_exact_dir "$SHARED_ROOT/elasticsearch/v9" "$ELASTICSEARCH_UID" "$ELASTICSEARCH_GID" 0750
+ensure_exact_dir "$SHARED_ROOT/elasticsearch/v9/primary" "$ELASTICSEARCH_UID" "$ELASTICSEARCH_GID" 0750
+ensure_exact_dir "$SHARED_ROOT/elasticsearch/v9/secondary" "$ELASTICSEARCH_UID" "$ELASTICSEARCH_GID" 0750
 ensure_exact_dir "$LOG_ROOT/nginx" "$NGINX_UID" "$NGINX_GID" 0750
 ensure_exact_dir "$SECRETS_ROOT" "$DEPLOY_UID" "$DEPLOY_GID" 0700
 while IFS= read -r -d '' secret_file; do

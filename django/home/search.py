@@ -3,14 +3,12 @@ from collections import defaultdict
 from textwrap import shorten
 from typing import Dict
 
+from core.models import Platform
 from django.apps import apps
-from elasticsearch_dsl import Search, Q
-from itertools import combinations
+from elasticsearch.dsl import Q, Search
+from library.models import Codebase
 from wagtail.models import Page
 from wagtail.search.backends import get_search_backend
-
-from core.models import Platform
-from library.models import Codebase
 
 # FIXME: eventually these should live in the `home` app
 from .models import Event, FaqEntry, Job, Journal, MemberProfile
