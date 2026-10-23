@@ -31,8 +31,10 @@ include .env
 
 # Resolve the physical checkout once for every Compose invocation, including
 # rendering and recursive builds. Leave Compose project-name selection intact.
+DOCKER ?= docker
+SLEEP ?= sleep
 COMPOSE_ROOT := $(shell pwd -P)
-COMPOSE := docker compose --project-directory "$(COMPOSE_ROOT)"
+COMPOSE := $(DOCKER) compose --project-directory "$(COMPOSE_ROOT)"
 ifneq ($(filter staging prod,$(DEPLOY_ENVIRONMENT)),)
 COMSES_APP_ROOT ?= /srv/apps/comses
 COMSES_SHARED_ROOT ?= /srv/apps/comses/docker/shared
@@ -163,7 +165,7 @@ ifneq ($(DEPLOY_ENVIRONMENT),dev)
 	$(COMPOSE) pull -q nginx
 endif
 	$(COMPOSE) up -d --quiet-pull
-	sleep 42
+	$(SLEEP) 42
 	$(COMPOSE) exec server inv prepare
 
 .PHONY: stop
@@ -194,7 +196,7 @@ endif
 	fi; \
 	force_killed_services=; \
 	for container_id in $$($(COMPOSE) ps --all --quiet); do \
-		container_state=$$(docker inspect --format '{{.Name}} {{.State.ExitCode}}' "$$container_id"); \
+		container_state=$$($(DOCKER) inspect --format '{{.Name}} {{.State.ExitCode}}' "$$container_id"); \
 		container_name=$${container_state% *}; \
 		exit_code=$${container_state##* }; \
 		if [ "$$exit_code" -eq 137 ]; then \
@@ -218,6 +220,10 @@ storage-preflight:
 .PHONY: test-storage-scripts
 test-storage-scripts:
 	deploy/scripts/tests/run-tests.sh
+
+.PHONY: test-deploy-contracts
+test-deploy-contracts:
+	python3 -m unittest deploy.tests.test_makefile
 
 .PHONY: verify-compose-storage
 verify-compose-storage: docker-compose.yml
@@ -278,7 +284,7 @@ $(E2E_REPO_PATH):
 e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
 	$(COMPOSE) -f docker-compose.yml -f e2e.yml build -q
 	$(COMPOSE) -f docker-compose.yml -f e2e.yml up -d --quiet-pull
-	sleep 42
+	$(SLEEP) 42
 	$(COMPOSE) -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \
 		inv prepare"

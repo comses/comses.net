@@ -62,6 +62,13 @@ docker compose exec server inv test # test suite in running container
 docker compose exec server inv test --tests=library.tests.test_models # targeted tests
 ```
 
+## Deployment Test Commands
+
+```bash
+make test-deploy-contracts # unprivileged Makefile command and shutdown contracts
+make test-storage-scripts # privileged disposable storage ownership/mount checks
+```
+
 ## Cypress E2E Commands
 
 ```bash
