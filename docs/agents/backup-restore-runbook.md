@@ -89,11 +89,9 @@ replica exists or is current.
 
 Rebuild and recreate the server through the normal deployment procedure, then
 check `docker compose exec -T server borg --version` reports `borg 1.4.5`.
-Set the infrastructure source role's `borg_replica_source_expected_borg_version`
-to `1.4.5` (it supplies `COMSES_BORG_EXPECTED_VERSION`); its existing `1.2.8`
-default will make replication fail closed after this upgrade. Coordinate the
-destination verifier's Borg installation as well. This checkout does not deploy
-or update either infrastructure role.
+Infrastructure installs its own pinned Borg 1.4.5 runtime on source and backup
+hosts. It does not use the application executable for replication. Coordinate
+host runtime changes through the infrastructure rollout procedure.
 
 For repositories already on 1.2.8 with the earlier TAM security migration
 completed, no repository conversion or `borg upgrade` is required. Keep legacy
@@ -101,29 +99,26 @@ exit codes (the default); do not enable `BORG_EXIT_CODES=modern` without reviewi
 callers. See the upstream
 [upgrade notes](https://borgbackup.readthedocs.io/en/1.4.5/changes.html#borg-1-2-x-to-1-4-x).
 
-Before production, run the standalone replication suite described in
-`docs/agents/borg-replication-design.md` in the rebuilt image, then exercise a
-staging backup, replica transfer, full destination check, archive extraction and
-disposable database restore. No test command should mount the live shared tree.
+Before production, exercise a staging backup, infrastructure-managed pull, full
+destination check, archive extraction and disposable database restore. Use the
+infrastructure replication tests and acceptance procedure linked from
+`docs/agents/borg-replication-design.md`; the retired application push suite no
+longer applies. Test commands must not mount live application data.
 
 ### Replication serialization
 
-The proposed backup-host pull is reviewed in
-`docs/agents/borg-pull-review.md`. The procedure below remains the existing push
-implementation until that infrastructure transition is tested.
+Infrastructure's host-side source exporter acquires the same `.backup.lock` and
+Borg repository lock throughout the pull. The application keeps its local backup,
+marker, prune/compact and restore protocol. No new application export task,
+container replication credential, or Cinder interface is required.
 
-Do not rsync a Borg repository while backup, check, prune, or compact is
-running. Off-host replication must acquire the same `.backup.lock`. The staging
-implementation updates a dedicated active mirror protected by pre-sync snapshots;
-that mirror is unavailable to readers during transfer and remains unverified
-until a separate destination check passes.
-
-The staging wrapper mirrors deletions with `--delete-delay`; infrastructure
-must take a pre-sync destination snapshot and retain snapshot history
-independently. Keeping deleted Borg segments in the active replica can cause
-integrity-check failures after source compaction. See
-[the replication decision record](borg-replication-design.md) for the
-snapshot contract, recovery limits, and alternative designs.
+The backup host creates a pre-transfer destination snapshot and mirrors deletions
+with `--delete-delay`. Readers must not use the active mirror during transfer;
+a separate destination check establishes integrity. Transfer, integrity and tested
+recovery are distinct records. Source retention still requires explicit maintenance
+and subsequent same-backup reconciliation; it does not advance the local backup
+marker. Follow `docs/agents/borg-replication-design.md` and the linked infrastructure
+procedures for snapshot protection, locking, verification and recovery.
 
 ## Select a restore point
 

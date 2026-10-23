@@ -121,8 +121,6 @@ services:
       - librarian_sso_secret
       - mail_api_key
       - youtube_api_key
-      - borg_replication_ssh_key
-      - borg_replication_known_hosts
     volumes:
       - type: bind
         source: ${COMSES_APP_ROOT:-.}/deploy/elasticsearch.conf.d
@@ -166,10 +164,6 @@ networks:
     internal: true
 
 secrets:
-  borg_replication_ssh_key:
-    file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/borg_replication_ssh_key
-  borg_replication_known_hosts:
-    file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/borg_replication_known_hosts
   datacite_api_password:
     file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/datacite_api_password
   db_password:

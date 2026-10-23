@@ -64,6 +64,10 @@ for environment in dev test staging prod; do
                 "COMSES_LOG_ROOT=$FIXTURE/logs" \
                 "COMSES_SECRETS_ROOT=$FIXTURE/secrets" >/dev/null
         )
+        if compgen -G "$FIXTURE/secrets/borg_replication_*" >/dev/null; then
+            echo "not ok - application created retired Borg push secrets" >&2
+            exit 1
+        fi
         python3 - "$COMPOSE_TEST_CAPTURE" "$PROJECT" "$environment" <<'PY'
 import json
 import sys

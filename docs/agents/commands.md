@@ -42,11 +42,11 @@ docker compose exec server inv borg.restore --archive="<archive>" # destructive 
 make restore # destructive local restore from packaged/downloaded Borg repository
 ```
 
-Staging off-host replication uses `/code/deploy/comses-borg-replicate` in the
-`server` container. Infrastructure runs it only after a destination-volume
-snapshot is available; see `docs/source/deployment.md#staging-off-host-replica-interface`
-for the fixed environment interface and preflight checks. Do not invoke the
-wrapper directly as a substitute for the host service.
+Infrastructure pulls the staging replica from the backup host. Its source exporter
+reads the host-visible repository under the existing application and Borg locks;
+there is no application replication command or container replication credential.
+Use the infrastructure rollout and maintenance procedures linked from
+`docs/agents/borg-replication-design.md` for pull, verification and reconciliation.
 
 Retention is operator-initiated maintenance. Applying pruning also compacts the
 local repository and requires confirmation. Infrastructure owns the recovery

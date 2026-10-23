@@ -74,7 +74,6 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         openssh-client \
         postgresql-client-16 \
         python3 \
-        rsync \
         unrar-free \
         unzip \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \

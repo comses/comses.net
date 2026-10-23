@@ -58,12 +58,15 @@ application, deployment, or operators group.
 | 6. Disposable state | Compose `sockets` volume, container writable layers, and Docker-managed service stdout | Unix sockets and runtime scratch data | service-specific; no authoritative data | Application/Docker runtime |
 
 The application-local Borg repository remains `/shared/backups/repo` inside the
-server container. Infrastructure replicates it to
-`borg-replica@backup-01.staging.internal:/`. Keep its SSH private key and pinned
-host key under `/srv/apps/comses/docker/secrets`; never put replication
-credentials in the shared tree, log tree, image, or repository. TLS terminates
-upstream in the current production topology. If certificate private keys are
-later stored on this host, place them under the secret root, not
+server container, backed by `/srv/backups/comses/repo` on deployed hosts.
+Infrastructure's source exporter holds `/srv/backups/comses/.backup.lock` (the
+same inode as the container's `/shared/backups/.backup.lock`) and the Borg lock
+while the backup host pulls into `/srv/backups/borg/comses-staging`.
+The backup host retains its pull private key; the application has no replication
+key or destination snapshot credential. See `docs/agents/borg-replication-design.md`.
+
+TLS terminates upstream in the current production topology. If certificate private
+keys are later stored on this host, place them under the secret root, not
 `docker/shared/tls` (which contains only public ACME challenge files).
 Application and nginx file logs are bound to `/srv/logs/comses`; PostgreSQL,
 Redis, and Elasticsearch currently emit operational diagnostics to container

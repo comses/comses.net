@@ -205,54 +205,30 @@ infrastructure procedure, including reconciliation after compaction.
 
 ### Staging off-host replica interface
 
-The server image now pins Borg 1.4.5; update infrastructure's expected-version
-setting together with the image (see the Borg rollout section in
-`docs/agents/backup-restore-runbook.md`).
+Infrastructure owns backup-host pull on `backup-staging`. It installs a pinned
+Borg 1.4.5 host runtime and a constrained source exporter; the application
+container supplies no replication command, SSH private key, or cloud credential.
+The source exporter reads the host-visible `/srv/backups/comses/repo`, which is
+mounted in the application as `/shared/backups/repo`.
 
-The interface documented here still pushes from CoMSES. The intended move to a
-backup-staging pull is reviewed in `docs/agents/borg-pull-review.md` and is not
-activated by the version upgrade.
+The application continues to capture and verify local backups and atomically
+write `/shared/backups/last-successful-backup`. The exporter holds the same
+`.backup.lock` and Borg repository lock for the full export, and checks that the
+admitted backup has not changed. Do not replace the backup directory or lock file
+while either application or exporter operations are active.
 
-The fixed `/code/deploy/comses-borg-replicate` command is available in the
-`server` image for infrastructure-managed staging replication. It reads the
-existing `/shared/backups/repo`, waits for the same
-`/shared/backups/.backup.lock` used by backup and prune, then holds Borg's
-repository lock for the entire rsync transfer. It does not schedule runs,
-create Cinder snapshots, or write a success marker; infrastructure owns those
-steps. This is staging-only and is not a production backup workflow.
+The backup host owns admission, pre-transfer Cinder snapshots, rsync mirroring
+with deletions, retry policy and transfer records. Independent integrity checks
+and recovery drills are separate acceptance steps; a successful transfer does
+not establish either. The application does not schedule replication or manage
+snapshot retention. See `docs/agents/borg-replication-design.md` for the application
+contract and links to the infrastructure rollout and maintenance procedures.
 
-The host service must pass these variables with `docker compose exec -T -e`:
-`COMSES_BORG_REPLICATION_DESTINATION=borg-replica@backup-01.staging.internal:/`,
-`COMSES_BORG_REPLICATION_LOCK_WAIT_SECONDS` (1–3600), and
-`COMSES_BORG_EXPECTED_VERSION` (the exact installed Borg version).
-`COMSES_BORG_REPOSITORY` may be omitted; if supplied, it must be
-`/shared/backups/repo`. Replication always uses `rsync --delete-delay` to
-remove obsolete destination segments after a transfer. The compatibility
-variable `COMSES_BORG_REPLICATION_DELETE` may be omitted or set to `true`;
-`false` and other values are rejected before transfer. Existing host units
-that explicitly pass `false` must be updated before rollout.
-
-Infrastructure must snapshot the dedicated destination volume before each
-transfer and retain snapshots independently of the source archive policy.
-The destination must contain only the replica; rsync can delete unrelated
-files in that tree. A successful transfer is not an atomic publication or
-proof of Borg integrity: verify the replica before recording success, and
-preserve the pre-sync snapshot for recovery. The design rationale, operational
-tradeoffs, and future alternatives are in
-[the replication decision record](../agents/borg-replication-design.md).
-
-Compose mounts `borg_replication_ssh_key` and
-`borg_replication_known_hosts` only in `server`, under `/run/secrets/`.
-The backing files live in the ignored `docker/secrets/` directory (or the
-configured `COMSES_SECRETS_ROOT`). Empty local placeholders are allowed for
-Compose rendering, but the wrapper rejects empty or writable files before
-network access. Before a staging run, verify that the container has Borg,
-rsync, and OpenSSH, the mounted files are nonempty, and the Borg version
-matches the supplied value. A nonzero exit means no transfer success should
-be recorded; inspect the host service journal and preserve the pre-sync
-snapshot. A copied Borg lock may need manual recovery, but run
-`borg break-lock` on a replica only after independently confirming no
-process is using it.
+After deploying this removal, regenerate Compose and recreate `server` to remove
+the old secret mounts and wrapper from the running container. Infrastructure must
+keep the source free of destination-write identities and snapshot credentials;
+removing a Compose declaration does not revoke credentials or delete old backing
+files. Retire any remaining credentials through the infrastructure procedure.
 
 To package the Borg repository for `make restore`:
 
