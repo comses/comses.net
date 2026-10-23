@@ -170,12 +170,12 @@ endif
 stop:
 	@test -f docker-compose.yml || { echo "docker-compose.yml is required; refusing to regenerate configuration during shutdown" >&2; exit 1; }
 ifneq ($(filter staging prod,$(DEPLOY_ENVIRONMENT)),)
-	docker compose stop --timeout 120 nginx
+	$(COMPOSE) stop --timeout 120 nginx
 endif
-	docker compose stop --timeout 180 server
+	$(COMPOSE) stop --timeout 180 server
 	@set -eu; \
-	if docker compose ps --status running --services | grep -Fxq redis; then \
-		redis_save=$$(docker compose exec -T redis redis-cli -s /data/redis.sock SAVE) || { \
+	if $(COMPOSE) ps --status running --services | grep -Fxq redis; then \
+		redis_save=$$($(COMPOSE) exec -T redis redis-cli -s /data/redis.sock SAVE) || { \
 			echo "Redis SAVE failed; refusing to stop stateful services" >&2; \
 			exit 1; \
 		}; \
@@ -184,16 +184,16 @@ endif
 			exit 1; \
 		fi; \
 	fi
-	docker compose stop --timeout 120
+	$(COMPOSE) stop --timeout 120
 	@set -eu; \
-	remaining_services=$$(docker compose ps --status running --services); \
+	remaining_services=$$($(COMPOSE) ps --status running --services); \
 	if [ -n "$$remaining_services" ]; then \
 		echo "Services still running after graceful stop:" >&2; \
 		printf '%s\n' "$$remaining_services" >&2; \
 		exit 1; \
 	fi; \
 	force_killed_services=; \
-	for container_id in $$(docker compose ps --all --quiet); do \
+	for container_id in $$($(COMPOSE) ps --all --quiet); do \
 		container_state=$$(docker inspect --format '{{.Name}} {{.State.ExitCode}}' "$$container_id"); \
 		container_name=$${container_state% *}; \
 		exit_code=$${container_state##* }; \
