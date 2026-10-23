@@ -96,6 +96,7 @@ class MakefileContractTests(unittest.TestCase):
         self.ps_count.unlink(missing_ok=True)
         process_environment = os.environ.copy()
         for name in (
+            "DOCKER_BUILD_FLAGS",
             "FAKE_REDIS_RUNNING",
             "FAKE_REDIS_SAVE_FAIL",
             "FAKE_REDIS_SAVE_RESPONSE",
