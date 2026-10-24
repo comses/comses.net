@@ -4,6 +4,14 @@ This is the canonical procedure for CoMSES.Net database and shared-file backups
 and restores. Run commands from the repository root. Deployed hosts use
 `/srv/apps/comses`; development uses the checkout root.
 
+For host reconstruction from an identified replicated backup, use the
+[seed-and-release provisioning workflow](seed-provisioning.md). Infrastructure
+delivers the selected working repository and target; this application owns safe
+configuration, runtime selection, existing restore/migrations and validation.
+Use the same application phases for staging, production rebuilds and drills;
+environment authority and activation remain separate. The workflow never selects
+the latest archive implicitly or marks infrastructure recovery evidence passed.
+
 ## Scope and invariants
 
 Each Borg archive contains:

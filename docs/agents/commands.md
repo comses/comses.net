@@ -32,6 +32,15 @@ docker compose exec vite npm run tls # vue tests, lint, prettier
 
 ## Backup And Restore Workflow (Borg)
 
+For a fresh installation, rebuild or recovery drill, use the application-owned
+[seed provisioning workflow](seed-provisioning.md). It pairs an explicit seed
+with an exact checked-out release and holds activation separately:
+
+```bash
+python3 deploy/scripts/provision-from-seed --help
+make test-seed-provisioning # unprivileged workflow contracts; no database reset
+```
+
 See `docs/agents/backup-restore-runbook.md` before restoring production state.
 
 ```bash

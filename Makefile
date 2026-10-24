@@ -225,6 +225,10 @@ test-storage-scripts:
 test-deploy-contracts:
 	python3 -m unittest deploy.tests.test_makefile
 
+.PHONY: test-seed-provisioning
+test-seed-provisioning:
+	python3 -m unittest deploy.tests.test_seed_provisioning
+
 .PHONY: verify-compose-storage
 verify-compose-storage: docker-compose.yml
 	@deploy/scripts/verify-compose-storage

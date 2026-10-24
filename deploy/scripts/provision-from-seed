@@ -1,0 +1,454 @@
+#!/usr/bin/env python3
+"""Application-owned, operator-gated provisioning from an explicit Borg seed."""
+
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
+from contextlib import contextmanager
+from datetime import UTC, datetime
+from pathlib import Path
+
+PHASES = ("configure", "build", "inspect", "restore", "validate")
+DATA_SERVICES = ("db", "redis", "elasticsearch", "es02")
+CONTAINER_REPO = "/shared/backups/repo"
+
+# Stream the dump through the application's pg_restore, retaining only version
+# headers. Do not place the dump in the boot filesystem or print its contents.
+DUMP_METADATA = r"""
+import json, re, subprocess, sys
+repo, archive, database = sys.argv[1:]
+extract = subprocess.Popen(["borg", "extract", "--stdout", repo + "::" + archive,
+    "backups/latest/" + database + ".dump"], stdout=subprocess.PIPE)
+listing = subprocess.Popen(["pg_restore", "--list"], stdin=extract.stdout,
+    stdout=subprocess.PIPE, text=True)
+extract.stdout.close()
+versions = {}
+for line in listing.stdout:
+    match = re.match(r";\s+Dumped (from database|by pg_dump) version: (.+)", line)
+    if match:
+        versions[match[1]] = match[2].strip()
+listing_status, extract_status = listing.wait(), extract.wait()
+if listing_status or extract_status or len(versions) != 2:
+    raise SystemExit("Seed requires a readable custom-format dump with version headers")
+print(json.dumps(versions))
+"""
+
+BASIC_VALIDATION = r"""
+import json, os
+from pathlib import Path
+import django
+django.setup()
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import connection
+assert settings.EMAIL_BACKEND == "django.core.mail.backends.locmem.EmailBackend"
+assert settings.DATACITE_DRY_RUN == "true"
+assert not settings.HUEY["immediate"]
+with connection.cursor() as cursor:
+    cursor.execute("SELECT 1")
+    assert cursor.fetchone()[0] == 1
+get_user_model().objects.exists()
+roots = {}
+for name in ("LIBRARY_ROOT", "MEDIA_ROOT", "REPOSITORY_ROOT"):
+    root = Path(getattr(settings, name))
+    if not root.is_dir():
+        raise SystemExit("Restored content directory is missing: " + name)
+    sample = None
+    for parent, dirs, files in os.walk(root, followlinks=False):
+        for filename in files:
+            path = Path(parent) / filename
+            if path.is_file() and not path.is_symlink():
+                with path.open("rb") as stream:
+                    stream.read(1)
+                sample = True
+                break
+        if sample:
+            break
+    roots[name] = {"directory_present": True, "sample_file_read": bool(sample)}
+print(json.dumps({"database_query": "passed", "content": roots}))
+"""
+
+
+def now():
+    return datetime.now(UTC).isoformat()
+
+
+def run(argv, *, cwd, env, capture=False):
+    result = subprocess.run(
+        argv,
+        cwd=cwd,
+        env=env,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE if capture else None,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip() if capture else None
+
+
+def seed_identity(path):
+    seed = json.load(sys.stdin) if str(path) == "-" else json.loads(path.read_text())
+    required = {"schema", "kind", "repository_id", "archive", "archive_id", "evidence_ref"}
+    if (
+        not isinstance(seed, dict)
+        or set(seed) != required
+        or type(seed["schema"]) is not int
+        or seed["schema"] != 1
+        or seed["kind"] != "borg"
+    ):
+        raise ValueError("Seed manifest must match the documented schema 1 Borg contract")
+    for name in ("repository_id", "archive_id"):
+        if not isinstance(seed[name], str) or not re.fullmatch(r"[0-9a-f]{64}", seed[name]):
+            raise ValueError("Seed repository and archive IDs must be full lowercase hex IDs")
+    # Existing Invoke restore constructs shell commands; restrict that boundary.
+    if not isinstance(seed["archive"], str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:+-]{0,199}", seed["archive"]):
+        raise ValueError("Archive name contains unsupported characters")
+    ref = seed["evidence_ref"]
+    if not isinstance(ref, str) or not ref or len(ref) > 2048 or "://" in ref or "\n" in ref:
+        raise ValueError("Evidence reference must be a non-secret local path or URN")
+    return seed
+
+
+def write_record(path, record):
+    temporary = path.with_suffix(".tmp")
+    with temporary.open("w") as stream:
+        os.chmod(temporary, 0o600)
+        json.dump(record, stream, indent=2)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    temporary.replace(path)
+
+
+def matching_record(path, identity):
+    if not path.exists():
+        return None
+    record = json.loads(path.read_text())
+    if (
+        not isinstance(record, dict)
+        or type(record.get("schema")) is not int
+        or record.get("schema") != 1
+        or not isinstance(record.get("phases"), dict)
+        or any(
+            name not in PHASES
+            or not isinstance(phase, dict)
+            or phase.get("outcome") not in ("running", "failed", "completed")
+            for name, phase in record["phases"].items()
+        )
+    ):
+        raise ValueError("Execution record has an unsupported schema or phase state")
+    if record.get("identity") != identity:
+        raise ValueError("Execution identities changed; use a new reviewed execution record")
+    return record
+
+
+@contextmanager
+def exclusive(root):
+    with (root / ".provisioning.lock").open("a") as stream:
+        os.chmod(stream.name, 0o600)
+        fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        yield
+
+
+class Provisioner:
+    def __init__(self, root, args):
+        self.root, self.args = root, args
+        self.env = dict(
+            os.environ,
+            DEPLOY_ENVIRONMENT=args.environment,
+            COMSES_STORAGE_AUTHORITY="new",
+            COMSES_PROVISION_ENVIRONMENT=args.environment,
+            DEPLOY_UID=str(os.getuid()),
+            DEPLOY_GID=str(os.getgid()),
+            COMSES_LOG_ROOT="/srv/logs/comses",
+            COMSES_BACKUPS_ROOT="/srv/backups/comses",
+        )
+        self.docker = ["sudo", "-n", "docker"] if args.sudo_docker else ["docker"]
+        self.project = "comses-seed-" + hashlib.sha256(args.target_id.encode()).hexdigest()[:12]
+        self.compose = [
+            *self.docker,
+            "compose",
+            "--project-directory",
+            str(root),
+            "--project-name",
+            self.project,
+            "--file",
+            str(root / "docker-compose.yml"),
+            "--file",
+            str(root / "recovery.yml"),
+        ]
+
+    def call(self, argv, capture=False):
+        return run(argv, cwd=self.root, env=self.env, capture=capture)
+
+    def oneoff(self, service, entrypoint, *argv, capture=False):
+        return self.call(
+            [
+                *self.compose,
+                "run",
+                "--rm",
+                "--no-deps",
+                "--interactive=false",
+                "--no-tty",
+                "--entrypoint",
+                entrypoint,
+                service,
+                *argv,
+            ],
+            capture,
+        )
+
+    def images(self, services=None):
+        config = json.loads(self.call([*self.compose, "config", "--format", "json"], True))
+        images = {}
+        for service in services or ("server", "vite", *DATA_SERVICES):
+            tag = config["services"][service]["image"]
+            info = json.loads(
+                self.call(
+                    [
+                        *self.docker,
+                        "image",
+                        "inspect",
+                        "--format",
+                        '{"id":{{json .Id}},"digests":{{json .RepoDigests}}}',
+                        tag,
+                    ],
+                    True,
+                )
+            )
+            images[service] = {"tag": tag, **info}
+        return images
+
+    def refuse_application_writers(self):
+        ids = self.call([*self.docker, "ps", "--quiet"], True).split()
+        for container in ids:
+            info = json.loads(
+                self.call(
+                    [
+                        *self.docker,
+                        "inspect",
+                        "--format",
+                        '{"labels":{{json .Config.Labels}},"mounts":{{json .Mounts}}}',
+                        container,
+                    ],
+                    True,
+                )
+            )
+            labels = info["labels"] or {}
+            touches_target = any(
+                Path(mount.get("Source", "/")).is_relative_to(self.root)
+                or mount.get("Source", "").startswith("/srv/backups/comses")
+                for mount in info["mounts"]
+            )
+            if labels.get("com.docker.compose.project") == self.project:
+                if labels.get("com.docker.compose.service") not in DATA_SERVICES:
+                    raise ValueError("Stop application/one-off containers before provisioning")
+            elif touches_target:
+                raise ValueError("Another running container uses the application target")
+
+    def configure(self):
+        template = (self.root / "deploy/conf/config.mk.template").read_text()
+        expected = template.replace("${DEPLOY_ENVIRONMENT}", self.args.environment).replace(
+            "${COMSES_STORAGE_AUTHORITY}", "new"
+        )
+        config = self.root / "config.mk"
+        if config.exists() and config.read_text() != expected:
+            raise ValueError("Existing config.mk differs; explicit operator reconciliation required")
+        config.write_text(expected)
+        config.chmod(0o600)
+        self.call(["make", "secrets", "docker-compose.yml", "DOCKER=" + shlex.join(self.docker)])
+        (self.root / "docker-compose.yml").chmod(0o600)
+        self.call([*self.compose, "config", "--quiet"])
+        return {"profile": "operator-only", "activation": "held"}
+
+    def build(self):
+        self.call([*self.compose, "build", "--pull", "server", "vite"])
+        self.oneoff("vite", "npm", "run", "build")
+        return {"images": self.images(("server", "vite"))}
+
+    def inspect(self, seed):
+        self.call([*self.compose, "pull", *DATA_SERVICES])
+        versions = {
+            "postgres": self.oneoff("db", "postgres", "--version", capture=True),
+            "pg_restore": self.oneoff("server", "pg_restore", "--version", capture=True),
+            "borg": self.oneoff("server", "borg", "--version", capture=True),
+        }
+        self.verify_seed(seed)
+        config = json.loads(self.call([*self.compose, "config", "--format", "json"], True))
+        database = config["services"]["db"]["environment"]["POSTGRES_DB"]
+        if not re.fullmatch(r"[A-Za-z0-9_]+", database):
+            raise ValueError("Database name unsupported for seed restoration")
+        dump = json.loads(
+            self.oneoff(
+                "server", "python", "-c", DUMP_METADATA, CONTAINER_REPO, seed["archive"], database, capture=True
+            )
+        )
+        database_major = re.search(r"PostgreSQL\) (\d+)", versions["postgres"]).group(1)
+        client_major = re.search(r"PostgreSQL\) (\d+)", versions["pg_restore"]).group(1)
+        if any(value.split(".")[0] != database_major for value in dump.values()) or client_major != database_major:
+            raise ValueError("Seed/server/client major mismatch; use a separately reviewed upgrade workflow")
+        return {"versions": versions, "dump_versions": dump, "images": self.images()}
+
+    def verify_seed(self, seed):
+        info = json.loads(
+            self.oneoff("server", "borg", "info", "--json", CONTAINER_REPO + "::" + seed["archive"], capture=True)
+        )
+        if info["repository"]["id"] != seed["repository_id"] or len(info["archives"]) != 1:
+            raise ValueError("Working repository does not match the selected seed")
+        if info["archives"][0]["id"] != seed["archive_id"]:
+            raise ValueError("Selected archive fingerprint does not match seed evidence")
+
+    def restore(self, seed):
+        self.call([*self.compose, "up", "--detach", "--wait", *DATA_SERVICES])
+        self.oneoff(
+            "server", "inv", "borg.restore", "--repo=" + CONTAINER_REPO, "--archive=" + seed["archive"], "--force"
+        )
+        return {"restoration": "completed", "activation": "held"}
+
+    def validate(self):
+        self.oneoff("server", "python", "/code/manage.py", "check")
+        self.oneoff("server", "python", "/code/manage.py", "migrate", "--check")
+        checks = json.loads(self.oneoff("server", "python", "-c", BASIC_VALIDATION, capture=True))
+        return {"checks": checks, "outcome": "basic-validation-passed-activation-held", "functional_attestation": False}
+
+    def apply(self, identity, phases):
+        state = self.args.state_dir
+        path = state / "execution.json"
+        record = matching_record(path, identity) or {
+            "schema": 1,
+            "identity": identity,
+            "started_at": now(),
+            "phases": {},
+        }
+        state.mkdir(parents=True, exist_ok=True, mode=0o700)
+        state.chmod(0o700)
+        for phase in phases:
+            # Recheck actual target and source checkout even when earlier phases completed.
+            if self.call(["git", "rev-parse", "HEAD"], True) != identity["release"]:
+                raise ValueError("Application checkout changed")
+            if (
+                self.call(["findmnt", "--noheadings", "--output", "UUID", "--mountpoint", "/srv"], True)
+                != identity["filesystem_uuid"]
+            ):
+                raise ValueError("Target filesystem changed")
+            self.refuse_application_writers()
+            self.call([str(self.root / "deploy/scripts/storage-preflight")])
+            previous = record["phases"].get(phase, {})
+            if phase in ("restore", "validate") or (phase == "inspect" and previous.get("outcome") == "completed"):
+                inspected = record["phases"].get("inspect", {}).get("result")
+                if not inspected or self.images() != inspected["images"]:
+                    raise ValueError("Runtime image identities changed or inspection is missing")
+                self.verify_seed(identity["seed"])
+            if previous.get("outcome") == "completed" and phase != "validate":
+                self.call([*self.compose, "config", "--quiet"])
+                if phase == "build":
+                    if self.images(("server", "vite")) != previous["result"]["images"]:
+                        raise ValueError("Built image identities changed; use a new reviewed execution")
+                print("phase=" + phase + " action=already-completed")
+                continue
+            for prerequisite in PHASES[: PHASES.index(phase)]:
+                if record["phases"].get(prerequisite, {}).get("outcome") != "completed":
+                    raise ValueError("Complete prerequisite phase first: " + prerequisite)
+            if phase == "restore" and previous and not self.args.retry_restore:
+                raise ValueError("Interrupted/failed restore requires --retry-restore and renewed target confirmation")
+            record["phases"][phase] = {"outcome": "running", "started_at": now()}
+            write_record(path, record)
+            start = time.monotonic()
+            print("phase=" + phase + " action=run", flush=True)
+            try:
+                result = (
+                    getattr(self, phase)(identity["seed"])
+                    if phase in ("inspect", "restore")
+                    else getattr(self, phase)()
+                )
+            except Exception:
+                record["phases"][phase].update(outcome="failed", finished_at=now(), seconds=time.monotonic() - start)
+                write_record(path, record)
+                raise
+            record["phases"][phase].update(
+                outcome="completed", finished_at=now(), seconds=time.monotonic() - start, result=result
+            )
+            write_record(path, record)
+        print(json.dumps({"execution_record": str(path), "activation": "held"}))
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--seed", type=Path, required=True, help="Schema 1 seed manifest path, or - for JSON stdin")
+    parser.add_argument("--release", required=True, help="Exact checked-out commit SHA")
+    parser.add_argument("--environment", choices=("staging", "prod"), required=True)
+    parser.add_argument("--target-id", required=True, help="Infrastructure-attested target identity")
+    parser.add_argument("--state-dir", type=Path, required=True)
+    parser.add_argument("--phase", choices=(*PHASES, "all"), default="all")
+    parser.add_argument("--apply", action="store_true", help="Default is read-only preview")
+    parser.add_argument("--confirm-target", help="Repeat target ID to authorize restoring data")
+    parser.add_argument("--retry-restore", action="store_true")
+    parser.add_argument("--sudo-docker", action="store_true")
+    args = parser.parse_args(argv)
+    repositories = (Path("/srv/backups/comses/repo"), Path("/srv/apps/comses/docker/shared/backups/repo"))
+    if not args.state_dir.is_absolute() or any(args.state_dir.resolve().is_relative_to(path) for path in repositories):
+        parser.error("Execution records need an absolute path outside the working Borg repository")
+    if not re.fullmatch(r"[0-9a-f]{40}", args.release) or not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", args.target_id):
+        parser.error("Use an exact release SHA and a simple target identity")
+    root = Path(__file__).resolve().parents[2]
+    workflow = Provisioner(root, args)
+    seed = seed_identity(args.seed)
+    if workflow.call(["git", "rev-parse", "HEAD"], True) != args.release:
+        raise ValueError("Requested release is not checked out")
+    for path in ("deploy/scripts/provision-from-seed", "recovery.yml", "django/core/settings/recovery.py"):
+        workflow.call(["git", "cat-file", "-e", "HEAD:" + path])
+    workflow.call(["git", "diff", "--quiet", "HEAD", "--", "Makefile", "recovery.yml", "deploy", "django"])
+    filesystem_uuid = workflow.call(["findmnt", "--noheadings", "--output", "UUID", "--mountpoint", "/srv"], True)
+    if not filesystem_uuid:
+        raise ValueError("A mounted /srv filesystem is required")
+    phases = list(PHASES) if args.phase == "all" else [args.phase]
+    identity = {
+        "seed": seed,
+        "release": args.release,
+        "environment": args.environment,
+        "target_id": args.target_id,
+        "filesystem_uuid": filesystem_uuid,
+        "application_root": str(root),
+        "compose_project": workflow.project,
+    }
+    record = matching_record(args.state_dir / "execution.json", identity)
+    if not args.apply:
+        print(
+            json.dumps(
+                {
+                    "outcome": "preview",
+                    "identity": identity,
+                    "phases": phases,
+                    "phase_status": {
+                        phase: (record or {}).get("phases", {}).get(phase, {}).get("outcome", "not-started")
+                        for phase in phases
+                    },
+                    "activation": "held",
+                },
+                indent=2,
+            )
+        )
+        return
+    if "restore" in phases and args.confirm_target != args.target_id:
+        parser.error("Restoration requires --confirm-target equal to --target-id")
+    with exclusive(root):
+        workflow.apply(identity, phases)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as error:
+        # Do not echo subprocess output, Compose config or secret-bearing environments.
+        print(
+            "Seed provisioning stopped: " + (str(error) if isinstance(error, ValueError) else type(error).__name__),
+            file=sys.stderr,
+        )
+        sys.exit(1)
