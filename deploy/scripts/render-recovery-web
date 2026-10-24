@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Render operator-only HTTP overrides from the normal deployment configuration."""
+
+import argparse
+import hashlib
+import json
+import os
+import re
+from pathlib import Path
+
+
+def render(root, environment, runtime_directory):
+    source = root / "deploy/nginx" / ("nginx-staging.conf" if environment == "staging" else "nginx-haproxy.conf")
+    original = source.read_text()
+    nginx, count = re.subn(r"(listen\s+80\s+)proxy_protocol(\s*;)", r"\g<1>\2", original)
+    if count != 1:
+        raise ValueError("Expected one normal HTTP listener using PROXY protocol")
+    nginx = re.sub(r"^\s*real_ip_header\s+proxy_protocol\s*;\s*$", "", nginx, flags=re.MULTILINE)
+    params_source = root / "deploy/nginx/uwsgi_params"
+    params, count = re.subn(r"(uwsgi_param\s+UWSGI_SCHEME\s+)https(\s*;)", r"\g<1>http\2", params_source.read_text())
+    if count != 1:
+        raise ValueError("Expected one normal uWSGI scheme parameter")
+    override = {
+        "services": {
+            "server": {"entrypoint": ["/etc/service/django/run"], "command": [], "restart": "no"},
+            "nginx": {
+                "volumes": [
+                    {
+                        "type": "bind",
+                        "source": str(runtime_directory / "nginx.conf"),
+                        "target": "/etc/nginx/nginx.conf",
+                        "read_only": True,
+                        "bind": {"create_host_path": False},
+                    },
+                    {
+                        "type": "bind",
+                        "source": str(runtime_directory / "uwsgi_params"),
+                        "target": "/etc/nginx/uwsgi_params",
+                        "read_only": True,
+                        "bind": {"create_host_path": False},
+                    },
+                ]
+            },
+        }
+    }
+    evidence = {
+        "environment": environment,
+        "sources": {
+            str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in (source, params_source)
+        },
+        "web_entrypoint": "/etc/service/django/run",
+        "transport": "loopback-http-without-edge-proxy-protocol",
+    }
+    return {
+        "nginx.conf": nginx,
+        "uwsgi_params": params,
+        "compose.json": json.dumps(override, indent=2) + "\n",
+        "sources.json": json.dumps(evidence, indent=2) + "\n",
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--environment", required=True, choices=("staging", "prod"))
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--runtime-dir", type=Path, required=True)
+    args = parser.parse_args()
+    if not args.output_dir.is_absolute() or not args.runtime_dir.is_absolute():
+        parser.error("Use absolute configuration directories")
+    files = render(Path(__file__).resolve().parents[2], args.environment, args.runtime_dir)
+    args.output_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+    for name, value in files.items():
+        path = args.output_dir / name
+        if path.is_symlink() or (path.exists() and path.read_text() != value):
+            raise ValueError("Existing recovery HTTP configuration differs: " + name)
+    for name, value in files.items():
+        path = args.output_dir / name
+        if path.exists():
+            continue
+        with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as stream:
+            stream.write(value)
+            stream.flush()
+            os.fsync(stream.fileno())
+    print(args.output_dir / "compose.json")
+
+
+if __name__ == "__main__":
+    main()

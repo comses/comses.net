@@ -15,7 +15,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
-PHASES = ("configure", "build", "inspect", "restore", "validate")
+PHASES = ("configure", "build", "inspect", "restore", "prepare", "validate")
 DATA_SERVICES = ("db", "redis", "elasticsearch", "es02")
 CONTAINER_REPO = "/shared/backups/repo"
 
@@ -317,6 +317,10 @@ class Provisioner:
         )
         return {"restoration": "completed", "activation": "held"}
 
+    def prepare(self):
+        self.oneoff("server", "inv", "prepare")
+        return {"derived_data": "prepared", "activation": "held"}
+
     def validate(self):
         self.oneoff("server", "python", "/code/manage.py", "check")
         self.oneoff("server", "python", "/code/manage.py", "migrate", "--check")
@@ -346,7 +350,9 @@ class Provisioner:
             self.refuse_application_writers()
             self.call([str(self.root / "deploy/scripts/storage-preflight")])
             previous = record["phases"].get(phase, {})
-            if phase in ("restore", "validate") or (phase == "inspect" and previous.get("outcome") == "completed"):
+            if phase in ("restore", "prepare", "validate") or (
+                phase == "inspect" and previous.get("outcome") == "completed"
+            ):
                 inspected = record["phases"].get("inspect", {}).get("result")
                 if not inspected or self.images() != inspected["images"]:
                     raise ValueError("Runtime image identities changed or inspection is missing")

@@ -168,6 +168,11 @@ endif
 	$(SLEEP) 42
 	$(COMPOSE) exec server inv prepare
 
+# Application preparation is shared by normal deployment and seed recovery.
+.PHONY: prepare
+prepare:
+	$(COMPOSE) run --rm --no-deps --interactive=false --no-tty --entrypoint inv server prepare
+
 .PHONY: stop
 stop:
 	@test -f docker-compose.yml || { echo "docker-compose.yml is required; refusing to regenerate configuration during shutdown" >&2; exit 1; }

@@ -105,7 +105,10 @@ Add `--apply --phase <name>` to run one phase:
    with the explicit archive and `--force`. That command verifies archive data,
    extracts on `/shared`, restores the database, applies migrations and restores
    library/media/repository files. It is destructive to this target.
-5. `validate`: Run Django checks, require no outstanding migrations, query the
+5. `prepare`: Run the same `inv prepare` task as normal deployment to collect static
+   assets and rebuild search indexes from the restored database. This starts no
+   web server, workers or cron and does not repeat restoration.
+6. `validate`: Run Django checks, require no outstanding migrations, query the
    database and check restored content directories/sample readability. Re-running
    this phase repeats checks instead of accepting an old validation marker.
 
@@ -144,3 +147,48 @@ workers, schedules and integrations only under a separately reviewed operational
 step after acceptance. A drill keeps those controls held. Infrastructure exports
 the execution receipt and functional acceptance alongside snapshot/volume evidence
 before deleting the ephemeral host or target.
+
+## Operator-only web acceptance using the normal deployment stack
+
+Use nginx and the selected release's `/etc/service/django/run` uWSGI entrypoint
+for HTTP acceptance. `runserver` cannot implement the application's
+`X-Accel-Redirect` download handoff and is not a download validation route.
+The normal `inv prepare` task must complete after restore before checking search.
+`make prepare` exposes that task separately. Web startup below uses existing
+images and explicitly starts only server and nginx.
+
+Render a configuration layer on top of the ordinary generated Compose file and
+`recovery.yml`:
+
+```sh
+python3 deploy/scripts/render-recovery-web --environment staging \
+  --output-dir /absolute/operator/web \
+  --runtime-dir /absolute/target/web
+```
+
+When rendering on the target, use the same directory for both arguments. Transfer
+all generated files if rendering on the operator workstation. The renderer derives
+nginx configuration from the normal staging/production configuration; it removes
+PROXY protocol from the listener because the operator tunnel bypasses the edge,
+and uses HTTP in uWSGI parameters. It retains the normal socket, static/media
+mounts, `internal` library location and authorization handoff. `sources.json`
+records the original configuration hashes. Keep this layer outside the checkout,
+retain its hashes with drill evidence, and do not claim it was part of an older
+application pin. Existing differing output is refused rather than overwritten.
+
+Review the merged configuration before starting anything. Use the recorded Compose
+project, `-f docker-compose.yml -f recovery.yml -f /absolute/target/web/compose.json
+--profile recovery-http` for every Compose command. Confirm recovery settings,
+nginx port `127.0.0.1:8080`, and the normal uWSGI entrypoint, then pull nginx and run
+`run --rm --no-deps --interactive=false --no-tty --entrypoint nginx nginx -t`.
+After explicit operator approval, stop the temporary web test container if one
+exists and run `up -d --no-deps --no-build --pull never server nginx`.
+This is the same Compose web stack and uWSGI/nginx application configuration as
+normal deployment, with the recovery safety layer retained. It is not a normal
+`make deploy` invocation: workers, schedules, external integrations and public
+activation remain held, and existing restored data is not replaced.
+
+Use the operator SSH tunnel for browser checks. Require a nonempty valid published
+archive and compare its hash with an independently obtained copy. Record functional
+acceptance separately; browser reachability and a successful basic validation
+marker do not prove downloadable artifact fidelity.

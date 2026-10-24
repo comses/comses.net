@@ -165,6 +165,70 @@ class SeedProvisioningTests(unittest.TestCase):
         self.assertEqual(merged["server"]["environment"]["DJANGO_SETTINGS_MODULE"], "core.settings.recovery")
         self.assertEqual(len(merged["nginx"]["ports"]), 1)
         self.assertEqual(merged["nginx"]["ports"][0]["host_ip"], "127.0.0.1")
+        renderer_loader = SourceFileLoader("web_profile", str(ROOT / "deploy/scripts/render-recovery-web"))
+        renderer = module_from_spec(spec_from_loader(renderer_loader.name, renderer_loader))
+        renderer_loader.exec_module(renderer)
+        overlay = self.root / "web.json"
+        overlay.write_text(renderer.render(ROOT, "staging", self.root)["compose.json"])
+        command = result.args[:]
+        command[command.index("--profile") : command.index("--profile")] = ["-f", str(overlay)]
+        web = json.loads(subprocess.check_output(command, text=True))["services"]
+        self.assertEqual(web["server"]["entrypoint"], ["/etc/service/django/run"])
+        self.assertFalse(web["server"].get("command"))
+        self.assertEqual(web["server"]["environment"]["DJANGO_SETTINGS_MODULE"], "core.settings.recovery")
+        self.assertEqual(web["nginx"]["ports"], merged["nginx"]["ports"])
+        self.assertEqual(web["server"]["restart"], "no")
+
+    def test_prepare_reuses_normal_deployment_task_without_restore(self):
+        self.provisioner.oneoff = Mock()
+        self.provisioner.prepare()
+        self.provisioner.oneoff.assert_called_once_with("server", "inv", "prepare")
+        self.provisioner.call.assert_not_called()
+
+    def test_recovery_web_reuses_deployment_configs_and_internal_downloads(self):
+        loader = SourceFileLoader("recovery_web", str(ROOT / "deploy/scripts/render-recovery-web"))
+        renderer = module_from_spec(spec_from_loader(loader.name, loader))
+        loader.exec_module(renderer)
+        for environment in ("staging", "prod"):
+            with self.subTest(environment=environment):
+                files = renderer.render(ROOT, environment, Path("/operator/web"))
+                nginx = files["nginx.conf"]
+                self.assertNotIn("listen      80 proxy_protocol", nginx)
+                self.assertNotRegex(nginx, r"listen\s+80\s+proxy_protocol")
+                self.assertIn("internal;", nginx)
+                self.assertIn("alias /library;", nginx)
+                self.assertIn("uwsgi_pass", nginx)
+                self.assertNotIn("UWSGI_SCHEME       https;", files["uwsgi_params"])
+                override = json.loads(files["compose.json"])
+                self.assertEqual(override["services"]["server"]["entrypoint"], ["/etc/service/django/run"])
+                self.assertEqual(override["services"]["server"]["command"], [])
+                self.assertNotIn("ports", override["services"]["nginx"])
+
+    def test_web_renderer_resumes_and_refuses_changed_output_before_writing(self):
+        output = self.root / "web"
+        argv = [
+            sys.executable,
+            str(ROOT / "deploy/scripts/render-recovery-web"),
+            "--environment",
+            "staging",
+            "--output-dir",
+            str(output),
+            "--runtime-dir",
+            "/operator/web",
+        ]
+        subprocess.run(argv, capture_output=True, check=True)
+        original = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in output.iterdir()}
+        subprocess.run(argv, capture_output=True, check=True)
+        self.assertEqual(original, {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in output.iterdir()})
+        (output / "nginx.conf").unlink()
+        (output / "sources.json").write_text("changed")
+        result = subprocess.run(argv, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((output / "nginx.conf").exists())
+        (output / "sources.json").unlink()
+        (output / "sources.json").symlink_to(output / "uwsgi_params")
+        self.assertNotEqual(subprocess.run(argv, capture_output=True).returncode, 0)
+        self.assertEqual((output / "uwsgi_params").read_bytes(), original["uwsgi_params"][0])
 
     def test_restore_starts_only_data_and_always_names_archive(self):
         self.provisioner.oneoff = Mock()
