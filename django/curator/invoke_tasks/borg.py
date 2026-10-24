@@ -28,31 +28,47 @@ def borg_list(ctx):
     ctx.run(f"borg list {settings.BORG_ROOT}", echo=True, env=environment())
 
 
-def _prune(ctx):
+def _prune(ctx, *, dry_run=True):
     # FIXME: provide cli override of these defaults
     daily = 14
     weekly = 4
     monthly = 12
     yearly = -1
     ctx.run(
-        f"borg prune --verbose --list --keep-daily {daily} --keep-weekly {weekly} --keep-monthly {monthly} --keep-yearly {yearly} {settings.BORG_ROOT}",
+        f"borg prune {'--dry-run ' if dry_run else ''}--verbose --list --keep-daily {daily} --keep-weekly {weekly} --keep-monthly {monthly} --keep-yearly {yearly} {settings.BORG_ROOT}",
         echo=True,
         env=environment(),
     )
-    ctx.run(f"borg compact --verbose {settings.BORG_ROOT}")
+    if not dry_run:
+        ctx.run(f"borg compact --verbose {settings.BORG_ROOT}", env=environment())
 
 
-@task(name="prune", aliases=["p"])
-def borg_prune(ctx):
-    success_path = Path(settings.BACKUP_ROOT) / "last-successful-backup"
-    if not success_path.is_file():
-        raise RuntimeError("refusing to prune without a successful backup marker")
-    marker_age = datetime.now(timezone.utc).timestamp() - success_path.stat().st_mtime
-    if marker_age > MAX_PRUNE_BACKUP_AGE_SECONDS:
-        raise RuntimeError("refusing to prune: last successful backup is too old")
-
+@task(
+    name="prune",
+    aliases=["p"],
+    help={
+        "apply": "Apply the previewed retention policy and compact after confirmation",
+    },
+)
+def borg_prune(ctx, apply=False):
+    """Preview retention; apply only within the operator maintenance runbook."""
     with exclusive_backup_operation("prune"):
+        success_path = Path(settings.BACKUP_ROOT) / "last-successful-backup"
+        if not success_path.is_file():
+            raise RuntimeError("refusing to prune without a successful backup marker")
+        marker_age = (
+            datetime.now(timezone.utc).timestamp() - success_path.stat().st_mtime
+        )
+        if not 0 <= marker_age <= MAX_PRUNE_BACKUP_AGE_SECONDS:
+            raise RuntimeError(
+                "refusing to prune: last successful backup is too old or in the future"
+            )
         _prune(ctx)
+        if apply:
+            confirm(
+                "Apply the removals above and compact the local repository (y/n)? "
+            )
+            _prune(ctx, dry_run=False)
 
 
 @task(aliases=["b"])

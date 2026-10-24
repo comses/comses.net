@@ -1,0 +1,32 @@
+# Companion policy for infrastructure to install root-owned. Not installed by make deploy.
+# Run logrotate at least hourly; 50M is a threshold, not a hard per-file cap.
+/srv/logs/comses/request-metadata.jsonl {
+    su root root
+    daily
+    maxsize 50M
+    rotate 14
+    maxage 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 root root
+    # WatchedFileHandler reopens before the next emit; no process reload needed.
+}
+
+/srv/logs/comses/nginx/request-metadata.jsonl {
+    su root root
+    daily
+    maxsize 50M
+    rotate 14
+    maxage 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 root root
+    sharedscripts
+    postrotate
+        /usr/bin/docker compose --project-directory /srv/apps/comses -f /srv/apps/comses/docker-compose.yml exec -T nginx nginx -s reopen
+    endscript
+}

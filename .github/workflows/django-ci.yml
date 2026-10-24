@@ -16,5 +16,9 @@ jobs:
       DOCKER_BUILD_FLAGS: --quiet
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: run deployment contract tests
+        run: make test-deploy-contracts
+      - name: run deployment storage tests
+        run: make test-storage-scripts
       - name: build containers and run Django tests
         run: make test

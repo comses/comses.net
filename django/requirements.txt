@@ -1,5 +1,6 @@
 bagit==1.9.0
 bleach==6.4.0
+borgbackup==1.4.5
 datacite==1.4.0
 dedupe==3.0.3
 # dedupe 3.0.3 still uses IFBucket.byValue, removed in BTrees 6.5.

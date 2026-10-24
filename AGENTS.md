@@ -110,5 +110,6 @@ This platform manages scientific software artifacts and publication metadata. Th
 - See `docs/agents/commands.md` for a minimal command index used by humans and agents
 - Prefer repo-root-relative paths for links (for example, `docs/agents/commands.md`), not machine-absolute paths (for example, `/home/...`).
 - Keep operational runbooks, backup and restore procedures, and full command catalogs in project docs
+- Keep seed restoration, application configuration and validation in the shared [seed provisioning workflow](docs/agents/seed-provisioning.md); infrastructure owns cloud/storage/trust and activation remains a separate operator decision.
 - Keep this file policy-focused; avoid long procedural walkthroughs
 - `CLAUDE.md` should import this file (`@AGENTS.md`) rather than duplicate it, to avoid the two drifting apart

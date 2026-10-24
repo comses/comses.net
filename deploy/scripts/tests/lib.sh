@@ -60,25 +60,11 @@ make_fixture_root() {
 # under $1 as living on a non-root Cinder-backed filesystem, and otherwise
 # delegates to the real findmnt.
 fake_findmnt_bin() {
-    local fixture_root=$1 bin_dir
+    local fixture_root=$1 bin_dir fixture
     bin_dir=$(mktemp -d "${TMPDIR:-/tmp}/comses-storage-test-bin.XXXXXX")
-    cat >"$bin_dir/findmnt" <<EOF
-#!/usr/bin/env bash
-set -euo pipefail
-path=\${*: -1}
-case " \$* " in
-    *" --mountpoint "*)
-        [ "\${COMSES_TEST_MISSING_SRV_MOUNT:-0}" != 1 ] || exit 1
-        ;;
-esac
-case "\$path" in
-    ${fixture_root}*)
-        echo "${fixture_root}"
-        exit 0
-        ;;
-esac
-exec /usr/bin/findmnt "\$@"
-EOF
+    fixture="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/fixtures/findmnt"
+    cp "$fixture" "$bin_dir/findmnt"
+    printf '%s\n' "$fixture_root" >"$bin_dir/findmnt.root"
     chmod +x "$bin_dir/findmnt"
     echo "$bin_dir"
 }

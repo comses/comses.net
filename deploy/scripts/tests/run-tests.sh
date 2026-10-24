@@ -3,7 +3,7 @@
 # operates only on disposable mktemp fixtures, never real /srv storage.
 set -uo pipefail
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SCRIPT_DIR=$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 status=0
 
 for test_script in "$SCRIPT_DIR"/test-*.sh; do

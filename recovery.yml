@@ -1,0 +1,27 @@
+services:
+  server:
+    # Bypass the image's init process, including cron and the Huey consumer.
+    # Restore commands later use `run --rm --no-deps --entrypoint ... server`.
+    entrypoint: ["/bin/sleep"]
+    command: ["infinity"]
+    restart: "no"
+    environment:
+      DJANGO_SETTINGS_MODULE: core.settings.recovery
+      COMSES_PROVISION_ENVIRONMENT: ${COMSES_PROVISION_ENVIRONMENT:-staging}
+      SENTRY_DSN: ""
+      DATACITE_DRY_RUN: "true"
+      BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK: "yes"
+      BORG_RELOCATED_REPO_ACCESS_IS_OK: "yes"
+  db:
+    restart: "no"
+  redis:
+    restart: "no"
+  elasticsearch:
+    restart: "no"
+  es02:
+    restart: "no"
+  nginx:
+    restart: "no"
+    profiles: ["recovery-http"]
+    ports: !override
+      - "127.0.0.1:8080:80"

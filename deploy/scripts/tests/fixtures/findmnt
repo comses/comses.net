@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fixture_root=$(<"${BASH_SOURCE[0]}.root")
+path=${*: -1}
+case " $* " in
+    *" --mountpoint "*)
+        [ "${COMSES_TEST_MISSING_SRV_MOUNT:-0}" != 1 ] || exit 1
+        ;;
+esac
+case "$path" in
+    "$fixture_root"*)
+        echo "$fixture_root"
+        exit 0
+        ;;
+esac
+exec /usr/bin/findmnt "$@"
