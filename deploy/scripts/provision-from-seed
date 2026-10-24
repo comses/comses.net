@@ -28,12 +28,17 @@ extract = subprocess.Popen(["borg", "extract", "--stdout", repo + "::" + archive
     "backups/latest/" + database + ".dump"], stdout=subprocess.PIPE)
 listing = subprocess.Popen(["pg_restore", "--list"], stdin=extract.stdout,
     stdout=subprocess.PIPE, text=True)
-extract.stdout.close()
 versions = {}
 for line in listing.stdout:
     match = re.match(r";\s+Dumped (from database|by pg_dump) version: (.+)", line)
     if match:
         versions[match[1]] = match[2].strip()
+# pg_restore --list exits after the table of contents, before the dump's data.
+# Keep a reader open and drain the remainder so Borg can finish and report
+# extraction errors. Discard bytes in bounded chunks; never retain dump data.
+for chunk in iter(lambda: extract.stdout.read(1024 * 1024), b""):
+    pass
+extract.stdout.close()
 listing_status, extract_status = listing.wait(), extract.wait()
 if listing_status or extract_status or len(versions) != 2:
     raise SystemExit("Seed requires a readable custom-format dump with version headers")

@@ -322,27 +322,32 @@ class SeedProvisioningTests(unittest.TestCase):
         record = json.loads((self.args.state_dir / "execution.json").read_text())
         self.assertTrue(all(phase["outcome"] == "completed" for phase in record["phases"].values()))
 
-    def test_dump_header_pipeline_rejects_failed_extraction(self):
+    def test_dump_header_pipeline_drains_after_listing_and_rejects_failures(self):
         import shlex
 
         for name, program in {
-            "borg": "import os,sys; sys.stdout.write('dump'); sys.exit(int(os.getenv('FAIL_EXTRACT', '0')))",
+            "borg": (
+                "import os,sys; sys.stdout.buffer.write(b'x' * (8 * 1024 * 1024)); "
+                "sys.exit(int(os.getenv('FAIL_EXTRACT', '0')))"
+            ),
             "pg_restore": (
-                "import sys; sys.stdin.read(); "
+                "import os,sys; sys.stdin.buffer.read(1); "
                 "print(';     Dumped from database version: 18.1'); "
-                "print(';     Dumped by pg_dump version: 18.1')"
+                "print(';     Dumped by pg_dump version: 18.1'); sys.exit(int(os.getenv('FAIL_LIST', '0')))"
             ),
         }.items():
             path = self.root / name
             path.write_text("#!/bin/sh\nexec " + shlex.quote(sys.executable) + " -c " + shlex.quote(program) + "\n")
             path.chmod(0o755)
-        env = dict(os.environ, PATH=str(self.root), FAIL_EXTRACT="0")
+        env = dict(os.environ, PATH=str(self.root), FAIL_EXTRACT="0", FAIL_LIST="0")
         argv = [sys.executable, "-c", workflow.DUMP_METADATA, "/repo", "exact-archive", "comsesnet"]
-        result = subprocess.run(argv, env=env, capture_output=True, text=True, check=True)
+        result = subprocess.run(argv, env=env, capture_output=True, text=True, check=True, timeout=15)
         self.assertEqual(json.loads(result.stdout)["from database"], "18.1")
-        env["FAIL_EXTRACT"] = "1"
-        result = subprocess.run(argv, env=env, capture_output=True, text=True)
-        self.assertNotEqual(result.returncode, 0)
+        for failure in ("FAIL_EXTRACT", "FAIL_LIST"):
+            with self.subTest(failure=failure):
+                failed_env = env | {failure: "1"}
+                result = subprocess.run(argv, env=failed_env, capture_output=True, text=True, timeout=15)
+                self.assertNotEqual(result.returncode, 0)
 
     def test_failure_is_persisted_without_secret_output(self):
         self.configure_calls()
