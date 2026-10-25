@@ -46,7 +46,7 @@ pyyaml>=6.0.1
 # used for institution -> affiliation data migration
 rapidfuzz==3.14.3
 rarfile==4.2
-redis==7.1.0
+redis==8.1.0
 requests==2.34.2
 semver==3.0.4
 sentry-cli==3.6.0
