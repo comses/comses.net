@@ -4,8 +4,8 @@
 # live under a disposable mktemp tree; never touches real /srv storage.
 set -uo pipefail
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=$(cd "$SCRIPT_DIR/../../.." && pwd)
+SCRIPT_DIR=$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+REPO_ROOT=$(CDPATH= cd "$SCRIPT_DIR/../../.." && pwd)
 PREPARE_HOST_STORAGE="$REPO_ROOT/deploy/scripts/prepare-host-storage"
 # shellcheck source=./lib.sh
 . "$SCRIPT_DIR/lib.sh"

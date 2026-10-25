@@ -6,8 +6,8 @@
 # storage. Run directly or via `make test-storage-scripts`.
 set -uo pipefail
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=$(cd "$SCRIPT_DIR/../../.." && pwd)
+SCRIPT_DIR=$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+REPO_ROOT=$(CDPATH= cd "$SCRIPT_DIR/../../.." && pwd)
 STORAGE_PREFLIGHT="$REPO_ROOT/deploy/scripts/storage-preflight"
 # shellcheck source=./lib.sh
 . "$SCRIPT_DIR/lib.sh"

@@ -4,6 +4,14 @@ This is the canonical procedure for CoMSES.Net database and shared-file backups
 and restores. Run commands from the repository root. Deployed hosts use
 `/srv/apps/comses`; development uses the checkout root.
 
+For host reconstruction from an identified replicated backup, use the
+[seed-and-release provisioning workflow](seed-provisioning.md). Infrastructure
+delivers the selected working repository and target; this application owns safe
+configuration, runtime selection, existing restore/migrations and validation.
+Use the same application phases for staging, production rebuilds and drills;
+environment authority and activation remain separate. The workflow never selects
+the latest archive implicitly or marks infrastructure recovery evidence passed.
+
 ## Scope and invariants
 
 Each Borg archive contains:
@@ -23,6 +31,12 @@ updates `/shared/backups/last-successful-backup`. A marker is evidence of the
 last successful local backup, not evidence of successful off-host replication.
 
 ## Routine backup
+
+The server image pins Borg 1.4.5 in `django/requirements.txt`, installs it in the
+application virtual environment, and exposes it at `/usr/local/bin/borg`.
+Ubuntu's `borgbackup` package is not installed.
+The image supports create/check/extract and replication without FUSE; `borg mount`
+is not provided by this installation. Use extraction for restore drills.
 
 The server image installs `/code/deploy/cron.daily/backup`, which invokes
 `borg.backup-all` inside the container. The equivalent operator command is:
@@ -79,9 +93,40 @@ Treat a missing or stale success marker as a failed backup. Also verify the
 off-host replica independently; local Borg verification does not prove that a
 replica exists or is current.
 
-Do not rsync a Borg repository while backup, check, prune, or compact is
-running. Off-host replication must acquire the same `.backup.lock`, copy to a
-staging destination, verify the replica, and only then publish it as current.
+### Borg 1.4.5 rollout
+
+Rebuild and recreate the server through the normal deployment procedure, then
+check `docker compose exec -T server borg --version` reports `borg 1.4.5`.
+Infrastructure installs its own pinned Borg 1.4.5 runtime on source and backup
+hosts. It does not use the application executable for replication. Coordinate
+host runtime changes through the infrastructure rollout procedure.
+
+For repositories already on 1.2.8 with the earlier TAM security migration
+completed, no repository conversion or `borg upgrade` is required. Keep legacy
+exit codes (the default); do not enable `BORG_EXIT_CODES=modern` without reviewing
+callers. See the upstream
+[upgrade notes](https://borgbackup.readthedocs.io/en/1.4.5/changes.html#borg-1-2-x-to-1-4-x).
+
+Before production, exercise a staging backup, infrastructure-managed pull, full
+destination check, archive extraction and disposable database restore. Use the
+infrastructure replication tests and acceptance procedure linked from
+`docs/agents/borg-replication-design.md`; the retired application push suite no
+longer applies. Test commands must not mount live application data.
+
+### Replication serialization
+
+Infrastructure's host-side source exporter acquires the same `.backup.lock` and
+Borg repository lock throughout the pull. The application keeps its local backup,
+marker, prune/compact and restore protocol. No new application export task,
+container replication credential, or Cinder interface is required.
+
+The backup host creates a pre-transfer destination snapshot and mirrors deletions
+with `--delete-delay`. Readers must not use the active mirror during transfer;
+a separate destination check establishes integrity. Transfer, integrity and tested
+recovery are distinct records. Source retention still requires explicit maintenance
+and subsequent same-backup reconciliation; it does not advance the local backup
+marker. Follow `docs/agents/borg-replication-design.md` and the linked infrastructure
+procedures for snapshot protection, locking, verification and recovery.
 
 ## Select a restore point
 
@@ -171,23 +216,54 @@ Also verify representative published releases, file downloads, media, staff
 login, search, and background-task processing. Confirm that database records and
 stored files correspond to the selected restore point.
 
-## Retention and restore drills
+## Explicit retention maintenance
 
-The server image schedules pruning monthly. The task acquires the same lock as
-backup and refuses to prune when the local successful-backup marker is missing
-or older than 48 hours. Run it manually with:
+The server image does not schedule pruning or compaction. Daily backup creation
+and verification remain automatic. Infrastructure owns the coordinated maintenance
+procedure, off-host verification, snapshots, retention records, and scheduling.
+For staging, follow the [infrastructure maintenance runbook](https://github.com/comses/infrastructure/blob/main/docs/comses-borg-maintenance.md)
+before applying local retention. Production requires its own reviewed procedure.
+
+Preview the local retention policy with:
 
 ```bash
 docker compose exec -T server inv borg.prune
 ```
 
-The retention policy keeps 14 daily, 4 weekly, 12 monthly, and all yearly
-archives. Review repository growth periodically because yearly retention is
-unbounded.
+This is a dry run and never compacts. After satisfying the infrastructure
+maintenance prerequisites, apply from an interactive terminal:
 
-The current task cannot verify off-host replication until that workflow exposes
-a replica success marker. Monitor replication separately and do not treat local
-prune eligibility as proof that the replica is current.
+```bash
+docker compose exec server inv borg.prune --apply
+```
+
+The command repeats the preview and requires confirmation while holding the
+shared backup lock, then prunes and compacts under that lock. If pruning fails,
+compaction does not start. It refuses retention when the local successful-backup
+marker is missing, older than 48 hours, or in the future. The application does
+not verify off-host recovery prerequisites or manage cloud snapshots.
+
+Pruning and compaction change repository files without advancing the local backup
+marker. Complete infrastructure reconciliation and destination verification after
+applying; never prune or compact the mirrored repository independently. If local
+maintenance fails, inspect source integrity before retrying. A later transfer
+failure requires reconciliation, not replaying local pruning.
+
+The local retention policy keeps 14 daily, 4 weekly, 12 monthly, and all yearly
+archives. Monitor local storage and repository growth because pruning is explicit
+and yearly retention is unbounded. Do not add `--apply` to cron or invoke
+`borg compact` separately as routine maintenance.
+
+### Deployment transition
+
+Removing the source cron script does not change an existing container. Rebuild
+and recreate the server through the normal deployment procedure, then verify
+`/etc/cron.monthly/prune-backups` is absent. If replacing the container must wait,
+disable that installed cron entry explicitly before beginning maintenance. Check
+that no prune or compaction is already running; removing the schedule does not
+stop an existing process.
+
+## Restore drills
 
 Periodically restore a selected off-host archive into an explicitly disposable
 database and isolated shared root. A successful `borg check` is not a substitute

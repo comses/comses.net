@@ -183,3 +183,7 @@ vignettes/*.pdf
 
 # End of https://www.toptal.com/developers/gitignore/api/r
 
+# Host-local application provisioning lock and receipts; never seed data.
+/.provisioning.lock
+/.provisioning/
+

@@ -32,15 +32,36 @@ docker compose exec vite npm run tls # vue tests, lint, prettier
 
 ## Backup And Restore Workflow (Borg)
 
+For a fresh installation, rebuild or recovery drill, use the application-owned
+[seed provisioning workflow](seed-provisioning.md). It pairs an explicit seed
+with an exact checked-out release and holds activation separately:
+
+```bash
+python3 deploy/scripts/provision-from-seed --help
+make test-seed-provisioning # unprivileged workflow contracts; no database reset
+```
+
 See `docs/agents/backup-restore-runbook.md` before restoring production state.
 
 ```bash
 docker compose exec server inv borg.init borg.backup-all # locked, validated DB + filesystem backup
 docker compose exec server inv borg.list # list available restore points
-docker compose exec server inv borg.prune # locked monthly retention task
+docker compose exec server inv borg.prune # preview only; no pruning or compaction
 docker compose exec server inv borg.restore --archive="<archive>" # destructive full restore
 make restore # destructive local restore from packaged/downloaded Borg repository
 ```
+
+Infrastructure pulls the staging replica from the backup host. Its source exporter
+reads the host-visible repository under the existing application and Borg locks;
+there is no application replication command or container replication credential.
+Use the infrastructure rollout and maintenance procedures linked from
+`docs/agents/borg-replication-design.md` for pull, verification and reconciliation.
+
+Retention is operator-initiated maintenance. Applying pruning also compacts the
+local repository and requires confirmation. Infrastructure owns the recovery
+checkpoints and subsequent replica reconciliation and verification. Follow the maintenance
+section in `docs/agents/backup-restore-runbook.md`; the application does not
+verify cloud snapshots or update the replica by itself.
 
 ## Django Test Commands
 
@@ -48,6 +69,13 @@ make restore # destructive local restore from packaged/downloaded Borg repositor
 make test # full suite
 docker compose exec server inv test # test suite in running container
 docker compose exec server inv test --tests=library.tests.test_models # targeted tests
+```
+
+## Deployment Test Commands
+
+```bash
+make test-deploy-contracts # unprivileged Makefile command and shutdown contracts
+make test-storage-scripts # privileged disposable storage ownership/mount checks
 ```
 
 ## Cypress E2E Commands

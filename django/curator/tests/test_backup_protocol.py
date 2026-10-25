@@ -10,6 +10,7 @@ from invoke import Context
 
 from curator.invoke_tasks.borg import (
     MAX_PRUNE_BACKUP_AGE_SECONDS,
+    _prune,
     _restore,
     backup_all,
     borg_prune,
@@ -17,6 +18,78 @@ from curator.invoke_tasks.borg import (
 
 
 class BackupProtocolTests(TestCase):
+    def test_retention_preview_never_compacts(self):
+        ctx = Context()
+        with patch.object(ctx, "run") as run:
+            _prune(ctx)
+        run.assert_called_once()
+        self.assertIn("borg prune --dry-run ", run.call_args.args[0])
+
+    def test_retention_apply_compacts_only_after_successful_prune(self):
+        ctx = Context()
+        with patch.object(ctx, "run") as run:
+            _prune(ctx, dry_run=False)
+        self.assertEqual(run.call_count, 2)
+        self.assertNotIn("--dry-run", run.call_args_list[0].args[0])
+        self.assertIn("borg compact ", run.call_args_list[1].args[0])
+        with patch.object(ctx, "run", side_effect=RuntimeError("prune failed")) as run:
+            with self.assertRaisesRegex(RuntimeError, "prune failed"):
+                _prune(ctx, dry_run=False)
+        run.assert_called_once()
+
+    def test_apply_previews_and_requires_operator_confirmation_under_lock(self):
+        with tempfile.TemporaryDirectory() as backup_root:
+            (Path(backup_root) / "last-successful-backup").write_text("archive=test\n")
+            events = []
+
+            def confirm_under_lock(prompt):
+                with (Path(backup_root) / ".backup.lock").open("a+") as lockfile:
+                    with self.assertRaises(BlockingIOError):
+                        fcntl.flock(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                self.assertIn("compact the local repository", prompt)
+                events.append("confirm")
+
+            with (
+                override_settings(BACKUP_ROOT=backup_root),
+                patch(
+                    "curator.invoke_tasks.borg._prune",
+                    side_effect=lambda ctx, **kwargs: events.append(
+                        "apply" if kwargs.get("dry_run") is False else "preview"
+                    ),
+                ),
+                patch(
+                    "curator.invoke_tasks.borg.confirm", side_effect=confirm_under_lock
+                ),
+            ):
+                borg_prune(Context(), apply=True)
+            self.assertEqual(events, ["preview", "confirm", "apply"])
+
+    def test_declined_confirmation_does_not_apply_retention(self):
+        with tempfile.TemporaryDirectory() as backup_root:
+            (Path(backup_root) / "last-successful-backup").write_text("archive=test\n")
+            with (
+                override_settings(BACKUP_ROOT=backup_root),
+                patch("curator.invoke_tasks.borg._prune") as prune,
+                patch(
+                    "curator.invoke_tasks.borg.confirm",
+                    side_effect=RuntimeError("Aborted"),
+                ),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "Aborted"):
+                    borg_prune(Context(), apply=True)
+            prune.assert_called_once()
+            self.assertEqual(prune.call_args.kwargs, {})
+
+    def test_prune_requires_a_successful_backup_marker(self):
+        with tempfile.TemporaryDirectory() as backup_root:
+            with (
+                override_settings(BACKUP_ROOT=backup_root),
+                patch("curator.invoke_tasks.borg._prune") as prune,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "without a successful"):
+                    borg_prune(Context())
+            prune.assert_not_called()
+
     def test_success_marker_is_written_after_verified_backup(self):
         with tempfile.TemporaryDirectory() as backup_root:
             with (
@@ -80,6 +153,20 @@ class BackupProtocolTests(TestCase):
                 with override_settings(BACKUP_ROOT=backup_root):
                     with self.assertRaisesRegex(RuntimeError, "cannot start prune"):
                         borg_prune(Context())
+
+    def test_future_backup_marker_prevents_applying_retention(self):
+        with tempfile.TemporaryDirectory() as backup_root:
+            marker = Path(backup_root) / "last-successful-backup"
+            marker.write_text("archive=test\n", encoding="ascii")
+            future_timestamp = marker.stat().st_mtime + 3600
+            os.utime(marker, (future_timestamp, future_timestamp))
+            with override_settings(BACKUP_ROOT=backup_root), patch(
+                "curator.invoke_tasks.borg._prune"
+            ) as prune, patch("curator.invoke_tasks.borg.confirm") as confirm:
+                with self.assertRaisesRegex(RuntimeError, "in the future"):
+                    borg_prune(Context(), apply=True)
+            prune.assert_not_called()
+            confirm.assert_not_called()
 
 
 class RestoreProtocolTests(TestCase):
