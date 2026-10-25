@@ -3,12 +3,43 @@ import random
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.utils import timezone
 
-from core.models import Event, Job
+from core.models import ComsesGroups, Event, Job, MemberProfile
+from library.models import PeerReviewer
 from .base import BaseModelTestCase, JobFactory, EventFactory
 
 logger = logging.getLogger(__name__)
+
+
+class MemberProfileTest(BaseModelTestCase):
+    def test_listing_metadata_uses_prefetched_relations(self):
+        profile = self.user.member_profile
+        Group.objects.create(name=ComsesGroups.FULL_MEMBER.value)
+        ComsesGroups.FULL_MEMBER.add(self.user)
+        PeerReviewer.objects.create(member_profile=profile)
+        profile.tags.add("agent-based modeling")
+        profile.save()
+        other_profile = self.create_user(username="other_user").member_profile
+
+        profiles = {
+            member_profile.pk: member_profile
+            for member_profile in MemberProfile.objects.public()
+            .with_tags()
+            .with_user()
+            .filter(pk__in=(profile.pk, other_profile.pk))
+        }
+        profile = profiles[profile.pk]
+        other_profile = profiles[other_profile.pk]
+
+        with self.assertNumQueries(0):
+            self.assertTrue(profile.full_member)
+            self.assertTrue(profile.is_reviewer)
+            self.assertEqual([tag.name for tag in profile.tags.all()], ["agent-based modeling"])
+            self.assertFalse(other_profile.full_member)
+            self.assertFalse(other_profile.is_reviewer)
+            self.assertEqual(list(other_profile.tags.all()), [])
 
 
 class JobTest(BaseModelTestCase):

@@ -95,6 +95,9 @@ class ComsesGroups(Enum):
     @staticmethod
     def is_group_member(user, group_name: str):
         if group_name:
+            prefetched_groups = getattr(user, "_prefetched_objects_cache", {}).get("groups")
+            if prefetched_groups is not None:
+                return any(group.name == group_name for group in prefetched_groups)
             return user.groups.filter(name=group_name).exists()
         return False
 
@@ -283,10 +286,10 @@ class MemberProfileQuerySet(models.QuerySet):
         )
 
     def with_user(self):
-        return self.select_related("user")
+        return self.select_related("user", "peer_reviewer").prefetch_related("user__groups")
 
     def with_tags(self):
-        return self.prefetch_related("tagged_members__tag")
+        return self.prefetch_related("tags")
 
     def full_members(self, **kwargs):
         return ComsesGroups.FULL_MEMBER.member_profiles(**kwargs)
