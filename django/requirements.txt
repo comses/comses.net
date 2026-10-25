@@ -44,7 +44,7 @@ PyGithub==2.5.0
 pytz==2026.2
 pyyaml>=6.0.1
 # used for institution -> affiliation data migration
-rapidfuzz==3.14.3
+rapidfuzz==3.14.6
 rarfile==4.2
 redis==7.1.0
 requests==2.34.2
