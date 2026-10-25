@@ -1,6 +1,9 @@
 import logging
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.conf import settings
+from django.http import Http404
 from rest_framework.test import APIClient
 
 from django.urls import reverse
@@ -8,10 +11,26 @@ from django.test import TestCase
 
 from .base import create_test_user, update_index, JobFactory, EventFactory
 from .permissions_base import BaseViewSetTestCase
-from core.views import EventViewSet, JobViewSet
+from core.views import EventViewSet, JobViewSet, rest_exception_handler
 from core.models import Job, Event, SpamModeration, ComsesGroups
 
 logger = logging.getLogger(__name__)
+
+
+class RestExceptionHandlerTestCase(TestCase):
+    @patch("core.views.page_not_found")
+    def test_html_renderer_uses_html_not_found_response(self, page_not_found):
+        expected_response = object()
+        page_not_found.return_value = expected_response
+        request = SimpleNamespace(accepted_renderer=SimpleNamespace(format="html"))
+        exception = Http404()
+
+        response = rest_exception_handler(exception, {"request": request})
+
+        self.assertIs(response, expected_response)
+        page_not_found.assert_called_once_with(
+            request, exception, context={"request": request}
+        )
 
 
 class JobViewSetTestCase(BaseViewSetTestCase):

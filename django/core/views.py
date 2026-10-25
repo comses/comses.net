@@ -163,7 +163,8 @@ def make_error(request, should_raise=True):
 def rest_exception_handler(exc, context):
     request = context.get("request")
     logger.warning("DRF exception handler %s", exc, exc_info=True)
-    if request and request.accepted_media_type == "text/html":
+    accepted_renderer = getattr(request, "accepted_renderer", None)
+    if accepted_renderer and accepted_renderer.format == "html":
         if isinstance(exc, (Http404, NotFound)):
             return page_not_found(request, exc, context=context)
         elif isinstance(exc, (PermissionDenied, DrfPermissionDenied, NotAuthenticated)):

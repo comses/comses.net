@@ -1,8 +1,6 @@
-from .staging import *
+from core.sentry import configure_sentry
 
-# FIXME: probably better to have a common mixin instead of pulling all staging.py settings since this also brings in
-# remove staging specific apps like fixture_magic
-INSTALLED_APPS.remove("fixture_magic")
+from .deployed import *
 
 # datacite configuration
 DATACITE_PREFIX = "10.25937"
@@ -10,12 +8,14 @@ DATACITE_TEST_MODE = False
 
 DEBUG = False
 DJANGO_VITE_DEV_MODE = False
-DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(Environment.PRODUCTION)
+DEPLOY_ENVIRONMENT, WAGTAILADMIN_BASE_URL, BASE_URL = set_environment(
+    Environment.PRODUCTION
+)
 
 EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[comses.net]")
 # See http://django-allauth.readthedocs.io/en/latest/providers.html#orcid for more context.
 #
-# staging settings include a customized sandbox orcid provider that we remove in production. In production, the ORCID
+# Default settings include a customized sandbox ORCID provider that we remove in production. In production, the ORCID
 # provider works out of the box without any additional configuration.
 #
 # remove sandbox orcid provider from SOCIALACCOUNT_PROVIDERS
@@ -101,3 +101,11 @@ TEMPLATES = [
         },
     },
 ]
+
+SENTRY_TRACES_SAMPLE_RATE = 0.1
+configure_sentry(
+    dsn=SENTRY_DSN,
+    release=RELEASE_VERSION,
+    environment=DEPLOY_ENVIRONMENT.name.lower(),
+    traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+)

@@ -160,6 +160,19 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         self.action = "retrieve"
         self.check_retrieve()
 
+    def test_retrieve_with_parameterized_html_accept_redirects_to_latest_release(self):
+        self.login(self.submitter)
+        response = self.client.get(
+            self.instance.get_absolute_url(),
+            HTTP_ACCEPT="text/html; charset=utf-8",
+        )
+
+        self.assertRedirects(
+            response,
+            self.instance.latest_version.get_absolute_url(),
+            fetch_redirect_response=False,
+        )
+
     def test_update(self):
         self.action = "update"
         self.check_update()
