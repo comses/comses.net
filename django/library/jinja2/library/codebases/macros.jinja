@@ -50,10 +50,11 @@
         <div class="row">
             <div class="col-md-12 col-lg-3">
                 <a href="{{ codebase.get_absolute_url() }}">
-                {% if not codebase.featured_images.exists() %}
+                {% set featured_image = codebase.get_featured_image() %}
+                {% if not featured_image %}
                     <img alt='No submitted images' src="holder.js/175x175?text={{'No submitted images'|urlencode}}" class="img-fluid img-thumbnail">
                 {% else %}
-                    {{ image(codebase.featured_images.first(), "fill-175x175", class="img-fluid img-thumbnail") }}
+                    {{ image(featured_image, "fill-175x175", class="img-fluid img-thumbnail") }}
                 {% endif %}
                 </a>
             </div>
@@ -98,10 +99,11 @@
                 <div class="summary">
                     {{ markdown(codebase.summarized_description) }}
                 </div>
-                {% if codebase.tags.exists() %}
+                {% set codebase_tags = codebase.tagged_codebases.all() %}
+                {% if codebase_tags %}
                     <div class="tag-list">
-                        {% for tag in codebase.tags.all() %}
-                            {{ search_tag_href(tag, category='codebases') }}
+                        {% for codebase_tag in codebase_tags %}
+                            {{ search_tag_href(codebase_tag.tag, category='codebases') }}
                         {% endfor %}
                     </div>
                 {% endif %}

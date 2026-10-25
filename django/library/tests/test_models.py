@@ -21,6 +21,7 @@ from ..models import (
     ProgrammingLanguage,
     ReleaseLanguage,
     Codebase,
+    CodebaseImage,
     CodebaseRelease,
     License,
     PeerReview,
@@ -247,6 +248,37 @@ class CodebaseTest(BaseModelTestCase):
             self.c1.base_git_dir,
             pathlib.Path(settings.REPOSITORY_ROOT, str(self.c1.uuid)),
         )
+
+    def test_public_listing_metadata_uses_prefetched_relations(self):
+        self.c1.live = True
+        self.c1.save(update_fields=["live"])
+        release = self.c1.create_release(status=CodebaseRelease.Status.PUBLISHED, initialize=False)
+        contributor = ContributorFactory(self.user).create()
+        ReleaseContributorFactory(release).create(contributor)
+        self.c1.tags.add("agent-based model")
+        self.c1.save(rebuild_metadata=False, rebuild_release_metadata=False)
+        image = CodebaseImage.objects.create(
+            codebase=self.c1,
+            title="Featured image",
+            file="featured.png",
+            width=1,
+            height=1,
+        )
+        self.assertEqual(Codebase.objects.get(pk=self.c1.pk).get_featured_image(), image)
+
+        codebase = Codebase.objects.with_tags().with_featured_images().public().get(pk=self.c1.pk)
+
+        with self.assertNumQueries(0):
+            self.assertEqual(codebase.get_featured_image(), image)
+            self.assertEqual(codebase.all_contributors, [contributor])
+            self.assertEqual(
+                codebase.all_contributors[0].member_profile_url(),
+                self.user.member_profile.get_absolute_url(),
+            )
+            self.assertEqual(
+                [codebase_tag.tag.name for codebase_tag in codebase.tagged_codebases.all()],
+                ["agent-based model"],
+            )
 
     def test_create_release(self):
         release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)

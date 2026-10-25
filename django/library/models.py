@@ -481,12 +481,16 @@ class CodebaseQuerySet(models.QuerySet):
         if user is not None:
             release_qs = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
             codebase_qs = get_viewable_objects_for_user(user=user, queryset=self.filter(**kwargs))
+            release_prefetch = Prefetch("releases", release_qs.with_release_contributors(release_contributor_qs))
         else:
             release_qs = CodebaseRelease.objects.public().only("id", "codebase_id")
             codebase_qs = self.filter(live=True, **kwargs)
-        return codebase_qs.prefetch_related(
-            Prefetch("releases", release_qs.with_release_contributors(release_contributor_qs))
-        )
+            release_prefetch = Prefetch(
+                "releases",
+                release_qs.with_release_contributors(release_contributor_qs),
+                to_attr="_published_releases_with_contributors",
+            )
+        return codebase_qs.prefetch_related(release_prefetch)
 
     def with_reviews(self, reviews):
         return (
@@ -1146,9 +1150,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         )
 
     def get_featured_image(self):
-        if self.featured_images.exists():
-            return self.featured_images.first()
-        return None
+        prefetched_images = getattr(self, "_prefetched_objects_cache", {}).get("featured_images")
+        if prefetched_images is not None:
+            return prefetched_images[0] if prefetched_images else None
+        return self.featured_images.first()
 
     def get_image_urls(self, spec="max-900x600"):
         urls = []
@@ -1252,6 +1257,14 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         There should not be any duplicates.
         FIXME: do not use for citation generation at the moment as the set of contributors is unordered
         """
+        prefetched_releases = getattr(self, "_published_releases_with_contributors", None)
+        if prefetched_releases is not None:
+            contributors = {}
+            for release in prefetched_releases:
+                for release_contributor in release.codebase_contributors.all():
+                    contributor = release_contributor.contributor
+                    contributors[contributor.pk] = contributor
+            return list(contributors.values())
         return self._get_unique_contributors(ReleaseContributor.objects)
 
     @property
@@ -1605,9 +1618,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def with_release_contributors(self, release_contributor_qs=None, user=None):
         if release_contributor_qs is None:
             release_contributor_qs = ReleaseContributor.objects.only("id", "contributor_id", "release_id")
-        release_contributor_qs = release_contributor_qs.prefetch_related(
-            Prefetch("contributor", Contributor.objects.prefetch_related("user"))
-        )
+        release_contributor_qs = release_contributor_qs.select_related("contributor__user__member_profile")
         return self.prefetch_related(Prefetch("codebase_contributors", release_contributor_qs))
 
     def with_platforms(self):
