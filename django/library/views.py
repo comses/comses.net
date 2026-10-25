@@ -592,7 +592,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         instance = self.get_object()
         # check content negotiation to see if we should redirect to the latest release detail page or if this is an API
         # request for a JSON serialization of this Codebase.
-        if request.accepted_media_type == "text/html":
+        if request.accepted_renderer.format == "html":
             current_version = instance.latest_version
             if not current_version:
                 # no latest_version set, try to retrieve the latest accessible release for this user
