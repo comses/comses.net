@@ -62,6 +62,9 @@ PATH := $(HOME)/.local/bin:$(PATH)
 # https://unix.stackexchange.com/questions/235223/makefile-include-env-file
 # https://www.gnu.org/software/make/manual/html_node/Variables_002fRecursion.html
 .EXPORT_ALL_VARIABLES:
+# release-version rewrites .env after Make has parsed it. Let Compose read the
+# updated file instead of exporting Make's stale RELEASE_VERSION value.
+unexport RELEASE_VERSION
 
 .PHONY: build
 build: docker-compose.yml secrets $(COMPOSE_STORAGE_PREREQUISITES)

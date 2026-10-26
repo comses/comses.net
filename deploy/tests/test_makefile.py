@@ -103,6 +103,7 @@ class MakefileContractTests(unittest.TestCase):
             "FAKE_FINAL_RUNNING",
             "FAKE_CONTAINER_IDS",
             "FAKE_EXIT_CODE",
+            "RELEASE_VERSION",
         ):
             process_environment.pop(name, None)
         process_environment.update(
@@ -175,6 +176,36 @@ class MakefileContractTests(unittest.TestCase):
                         list(self.secrets.glob("borg_replication_*")),
                         "application recreated retired Borg push secrets",
                     )
+
+    def test_compose_render_uses_release_updated_in_same_invocation(self):
+        bin_directory = self.root / "bin"
+        bin_directory.mkdir()
+        fake_git = bin_directory / "git"
+        fake_git.write_text(
+            "#!/bin/sh\nprintf '%s\\n' new-release\n", encoding="utf-8"
+        )
+        fake_git.chmod(0o755)
+
+        envreplace = self.project / "deploy/scripts/envreplace"
+        shutil.copy(ROOT / "deploy/scripts/envreplace", envreplace)
+        envreplace.chmod(0o755)
+        (self.project / ".env").write_text(
+            "RELEASE_VERSION=old-release\n", encoding="utf-8"
+        )
+
+        _, records = self.run_make(
+            "docker-compose.yml",
+            environment={"PATH": f"{bin_directory}:{os.environ['PATH']}"},
+        )
+
+        config_record = next(
+            record for record in records if "config" in record.get("args", [])
+        )
+        self.assertEqual(config_record["release_version"], "new-release")
+        self.assertEqual(
+            (self.project / ".env").read_text(encoding="utf-8"),
+            "RELEASE_VERSION=new-release\n",
+        )
 
     def test_stop_uses_physical_project_directory_and_ordered_shutdown(self):
         for deployment in ("dev", "test", "staging", "prod"):

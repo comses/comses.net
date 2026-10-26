@@ -8,12 +8,21 @@ import sys
 
 
 def append_record(arguments):
+    release_version = os.environ.get("RELEASE_VERSION")
+    environment_file = Path(".env")
+    if release_version is None and environment_file.exists():
+        for line in environment_file.read_text(encoding="utf-8").splitlines():
+            if line.startswith("RELEASE_VERSION="):
+                release_version = line.partition("=")[2]
+                break
+
     with Path(os.environ["FAKE_DOCKER_LOG"]).open("a", encoding="utf-8") as stream:
         stream.write(
             json.dumps(
                 {
                     "args": arguments,
                     "project_name": os.environ.get("COMPOSE_PROJECT_NAME"),
+                    "release_version": release_version,
                 }
             )
             + "\n"
