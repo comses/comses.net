@@ -1,0 +1,80 @@
+{% extends "wagtailadmin/base.html" %}
+{% block titletag %}Spam{% endblock %}
+
+{% block extra_css %}{{ block.super }}{% include "curator/spam/_styles.html" %}{% endblock %}
+
+{% block content %}
+  {% include "wagtailadmin/shared/header.html" with title="Spam" icon="warning" %}
+  <div class="nice-padding spam-admin">
+    {% include "curator/spam/_config.html" %}
+
+    <form method="get" class="spam-filters" aria-label="Filter spam checks">
+      <div>
+        <label for="spam-status">Status</label>
+        <select id="spam-status" name="tab">
+          {% for key, label in tabs %}<option value="{{ key }}"{% if key == tab %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="spam-type">Content type</label>
+        <select id="spam-type" name="type">
+          <option value="">Everything</option>
+          {% for key, label in kinds %}<option value="{{ key }}"{% if key == kind %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="spam-sort">Sort</label>
+        <select id="spam-sort" name="sort">
+          {% for key, label in sorts %}<option value="{{ key }}"{% if key == sort %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="button button-secondary" type="submit">Apply</button>
+    </form>
+    {% if sort == "uncertain" %}<p>Closest to the P(spam) threshold first, excluding manually reviewed records.</p>{% endif %}
+
+    {% if rows %}
+      <div class="listing-with-x-scroll">
+        <table class="listing spam-list">
+          <thead><tr><th scope="col">Content</th><th scope="col">P(spam)</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
+          <tbody>
+            {% for moderation, content in rows %}
+              <tr>
+                <td class="title">
+                  <h2><a href="{% url 'curator_spam:detail' moderation.pk %}">{{ content.title }}</a></h2>
+                  <p>
+                    {{ content.kind|capfirst }}
+                    {% if moderation.submitter %} · {{ moderation.submitter.username }}, joined {{ moderation.submitter.date_joined|date:"M j, Y" }}{% endif %}
+                    · {{ moderation.detection_method|default:"manual" }}{% if moderation.detection_details.fallback_from %} (fallback){% endif %}
+                    {% if moderation.reviewer %} · {% if moderation.corrected %}corrected{% else %}confirmed{% endif %} by {{ moderation.reviewer.username }}{% endif %}
+                    · <span title="{{ moderation.last_modified }}">{{ moderation.last_modified|timesince }} ago</span>
+                  </p>
+                </td>
+                <td>{% include "curator/spam/_score.html" %}</td>
+                <td><strong class="{% if moderation.status == 'spam' %}w-text-critical-200{% else %}w-text-positive-100{% endif %}">{{ moderation.get_status_display }}</strong></td>
+                <td>
+                  <form method="post" action="{% url 'curator_spam:review' moderation.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button class="button button-small button-secondary{% if moderation.status != 'spam' %} no{% endif %}" name="decision"
+                      value="{% if moderation.status == 'spam' %}not_spam{% else %}spam{% endif %}">{% if moderation.status == 'spam' %}Mark not spam{% else %}Mark spam{% endif %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page.paginator.num_pages > 1 %}
+        <nav class="pagination" aria-label="Pagination">
+          <p>Page {{ page.number }} of {{ page.paginator.num_pages }}</p>
+          <ul>
+            {% if page.has_previous %}<li class="prev"><a href="?tab={{ tab }}&sort={{ sort }}{% if kind %}&type={{ kind }}{% endif %}&page={{ page.previous_page_number }}">Previous</a></li>{% endif %}
+            {% if page.has_next %}<li class="next"><a href="?tab={{ tab }}&sort={{ sort }}{% if kind %}&type={{ kind }}{% endif %}&page={{ page.next_page_number }}">Next</a></li>{% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <p>No records match these filters.</p>
+    {% endif %}
+  </div>
+{% endblock %}

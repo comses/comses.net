@@ -5,12 +5,14 @@ from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from .models import SpamModeration
 from .permissions import ViewRestrictedObjectPermissions, ModeratorPermissions
+from .tasks import queue_spam_check
 
 logger = logging.getLogger(__name__)
 
@@ -179,16 +181,20 @@ class HtmlListModelMixin:
 
 
 class SpamCatcherViewSetMixin:
-    """Lets moderators mark content as spam."""
+    """
+    queues a spam check after content is created, and lets moderators mark content as spam
+    """
+
+    def perform_create(self, serializer: serializers.Serializer):
+        super().perform_create(serializer)
+        self.handle_spam_detection(serializer)
 
     def _validate_content_object(self, instance):
-        # make sure that the instance has a spam_moderation attribute as well as the
-        # necessary fields for displaying the spam content in the admin
+        # make sure that the instance can be moderated and linked to from the spam admin
         required_fields = [
             "spam_moderation",
             "is_marked_spam",
             "get_absolute_url",
-            "title",
         ]
         for field in required_fields:
             if not hasattr(instance, field):
@@ -217,3 +223,12 @@ class SpamCatcherViewSetMixin:
             spam_moderation.notes = notes
             spam_moderation.save()
         return redirect(instance.get_list_url())
+
+    def handle_spam_detection(self, serializer: serializers.Serializer):
+        instance = serializer.instance
+        try:
+            self._validate_content_object(instance)
+        except ValueError as e:
+            logger.warning("Cannot check %s for spam: %s", instance, e)
+            return
+        queue_spam_check(instance)

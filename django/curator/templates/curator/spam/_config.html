@@ -1,0 +1,16 @@
+<section class="spam-config" aria-label="Spam detection settings">
+  <div class="w-flex w-items-center w-gap-4 w-mb-4">
+    <strong{% if config.enabled %} class="w-text-positive-100"{% endif %}>{% if config.enabled %}Detection on{% else %}Detection off{% endif %}</strong>
+    <a class="button button-small button-secondary" href="{{ config_url }}">Configure</a>
+  </div>
+  <div class="spam-providers">
+    {% for slot in models %}
+      <div>
+        <strong>{{ slot.role }}</strong>
+        <p>{{ slot.provider }}<br><code>{{ slot.model }}</code></p>
+        <p class="w-text-text-meta">Spam threshold {{ slot.threshold|floatformat:2 }}{% if forloop.first and not forloop.last %} · fallback after {{ config.primary_timeout }}s{% endif %}</p>
+        {% if not slot.has_api_key %}<p class="w-text-critical-200">No API key deployed — skipped</p>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>

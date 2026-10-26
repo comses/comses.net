@@ -9,9 +9,12 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
 from django.contrib.postgres.fields import ArrayField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
+from django.db.models.fields.json import KT
+from django.db.models.functions import Abs, Cast
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -21,8 +24,8 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
-from wagtail.admin.panels import FieldPanel
-from wagtail.contrib.settings.models import BaseSiteSetting, register_setting
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from wagtail.contrib.settings.models import BaseGenericSetting, BaseSiteSetting, register_setting
 from wagtail.images.models import Image
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
@@ -130,15 +133,27 @@ class SiteSettings(BaseSiteSetting):
         return settings.DEPLOY_ENVIRONMENT
 
 
+class SpamModerationQuerySet(models.QuerySet):
+    def least_certain(self):
+        """
+        Closest-to-threshold decisions first; records without scores last
+        """
+        margin = Abs(
+            Cast(KT("detection_details__spam_probability"), models.FloatField())
+            - Cast(KT("detection_details__threshold"), models.FloatField())
+        )
+        return self.annotate(margin=margin).order_by(models.F("margin").asc(nulls_last=True), "-last_modified")
+
+
 class SpamModeration(models.Model):
     class Status(models.TextChoices):
-        UNREVIEWED = "unreviewed", _("Unreviewed")
-        SPAM = "spam", _("Confirmed spam")
-        NOT_SPAM = "not_spam", _("Confirmed not spam")
+        SPAM = "spam", _("Spam")
+        NOT_SPAM = "not_spam", _("Not spam")
 
+    # decided by spam detection, or by the reviewer when there is one
     status = models.CharField(
         choices=Status.choices,
-        default=Status.UNREVIEWED,
+        default=Status.SPAM,
         max_length=32,
     )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -160,6 +175,52 @@ class SpamModeration(models.Model):
         blank=True,
     )
 
+    objects = SpamModerationQuerySet.as_manager()
+
+    @property
+    def spam_probability(self) -> float | None:
+        return self.detection_details.get("spam_probability")
+
+    @property
+    def threshold(self) -> float | None:
+        return self.detection_details.get("threshold")
+
+    @property
+    def flagged_by_model(self) -> bool:
+        return self.spam_probability is not None and self.spam_probability >= self.threshold
+
+    @property
+    def corrected(self) -> bool:
+        """
+        A reviewer overruled the spam detection model
+        """
+        return (
+            self.reviewer_id is not None
+            and self.spam_probability is not None
+            and (self.status == self.Status.SPAM) != self.flagged_by_model
+        )
+
+    def has_checked(self, content: dict) -> bool:
+        """
+        Whether the spam detection model already decided on exactly this content
+        """
+        return self.detection_details.get("input") == content
+
+    @property
+    def submitter(self):
+        """
+        The account responsible for the moderated object, which may be the account itself
+        """
+        content = self.content_object
+        return content if isinstance(content, User) else getattr(content, "submitter", None)
+
+    def review(self, reviewer: User, is_spam: bool, notes: str = ""):
+        self.status = self.Status.SPAM if is_spam else self.Status.NOT_SPAM
+        self.reviewer = reviewer
+        if notes:
+            self.notes = notes
+        self.save()
+
     def mark_not_spam(self, reviewer: User, detection_details=None):
         logger.info("user %s marking %s as not spam", reviewer, self)
         self.status = self.Status.NOT_SPAM
@@ -176,11 +237,83 @@ class SpamModeration(models.Model):
         related_object = self.content_object
         if hasattr(related_object, "is_marked_spam"):
             related_object.spam_moderation = self
-            related_object.is_marked_spam = self.status != self.Status.NOT_SPAM
+            related_object.is_marked_spam = self.status == self.Status.SPAM
             related_object.save()
 
     def __str__(self):
         return f"SpamModeration: {self.status} - {self.reviewer} - {self.content_object}"
+
+
+def linked_account_providers(user: User) -> list[str]:
+    return sorted(user.socialaccount_set.values_list("provider", flat=True))
+
+
+@register_setting(icon="warning")
+class SpamDetectionSettings(BaseGenericSetting):
+    """
+    Spam detection asks the primary model, then the fallback model if the primary has no API key deployed, fails,
+    or is too slow
+    """
+
+    class Provider(models.TextChoices):
+        ASU = "asu", _("ASU Research Computing (Verdicts API)")
+        CLOUDFLARE = "cloudflare", _("Cloudflare (decision models)")
+
+    enabled = models.BooleanField(default=False, help_text=_("Check new submissions and member profile edits for spam"))
+    primary_provider = models.CharField(max_length=32, choices=Provider.choices, default=Provider.ASU)
+    primary_model = models.CharField(
+        max_length=128,
+        default="gemma4-31b-it",
+        help_text=_("Model ID. Use an instruct model; ASU reasoning models score poorly"),
+    )
+    primary_threshold = models.FloatField(
+        default=0.8,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text=_("Content at or above this spam probability is marked as spam. Recalibrate when changing models"),
+    )
+    primary_timeout = models.PositiveSmallIntegerField(
+        default=15,
+        help_text=_(
+            "Seconds to wait for the primary model before falling back. ASU queues requests when busy, so this "
+            "keeps a slow queue from delaying checks"
+        ),
+    )
+    fallback_provider = models.CharField(
+        max_length=32,
+        choices=Provider.choices,
+        default=Provider.CLOUDFLARE,
+        blank=True,
+        help_text=_("Leave blank to retry the primary model instead"),
+    )
+    fallback_model = models.CharField(max_length=128, default="clef-omni", blank=True)
+    fallback_threshold = models.FloatField(
+        default=0.8,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+    )
+
+    panels = [
+        FieldPanel("enabled"),
+        MultiFieldPanel(
+            [
+                FieldPanel("primary_provider", heading=_("Provider")),
+                FieldPanel("primary_model", heading=_("Model")),
+                FieldPanel("primary_threshold", heading=_("Threshold")),
+                FieldPanel("primary_timeout", heading=_("Timeout")),
+            ],
+            heading=_("Primary model"),
+        ),
+        MultiFieldPanel(
+            [
+                FieldPanel("fallback_provider", heading=_("Provider")),
+                FieldPanel("fallback_model", heading=_("Model")),
+                FieldPanel("fallback_threshold", heading=_("Threshold")),
+            ],
+            heading=_("Fallback model"),
+        ),
+    ]
+
+    class Meta:
+        verbose_name = "spam detection"
 
 
 class ModeratedContent(models.Model):
@@ -207,6 +340,58 @@ class ModeratedContent(models.Model):
             content_type=content_type,
             **kwargs,
         )
+
+    def accepts_spam_check(self) -> bool:
+        """
+        Spam detection never overrides a moderator
+        """
+        return self.spam_moderation is None or self.spam_moderation.reviewer_id is None
+
+    def record_spam_check(self, is_spam: bool, detection_method: str, detection_details: dict):
+        """
+        Record a spam detection result, which hides spam immediately
+        """
+        if not self.accepts_spam_check():
+            return
+        moderation = self.spam_moderation or SpamModeration(
+            content_type=ContentType.objects.get_for_model(type(self)), object_id=self.id
+        )
+        moderation.status = SpamModeration.Status.SPAM if is_spam else SpamModeration.Status.NOT_SPAM
+        moderation.detection_method = detection_method
+        moderation.detection_details = detection_details
+        # SpamModeration updates this object on save
+        moderation.save()
+
+    # submitted fields the spam detection model sees, in addition to tags and submitter context
+    spam_check_fields = ["title", "summary", "description", "external_url"]
+
+    def spam_check_content(self) -> dict:
+        """
+        Everything relevant the spam detection model should know about this submission. Values must be stable
+        between calls: a check is discarded if this changes while the model runs
+        """
+        content = {"type": self._meta.verbose_name}
+        for field in self.spam_check_fields:
+            value = getattr(self, field, None)
+            # markdown fields are sent as written rather than rendered
+            value = str(getattr(value, "raw", value) or "")
+            if value:
+                content[field] = value
+        tags = sorted(self.tags.names())
+        if tags:
+            content["tags"] = tags
+        content["submitted_at"] = self.date_created.isoformat()
+        # account signals only: the submitter's profile is checked on its own, so each item is judged on its content
+        submitter = self.submitter
+        signup_delay = self.date_created - submitter.date_joined
+        content["submitter"] = {
+            "username": submitter.username,
+            "minutes_from_signup_to_submission": round(signup_delay.total_seconds() / 60),
+        }
+        linked_accounts = linked_account_providers(submitter)
+        if linked_accounts:
+            content["submitter"]["linked_accounts"] = linked_accounts
+        return content
 
     class Meta:
         abstract = True
@@ -300,6 +485,9 @@ class MemberProfileQuerySet(models.QuerySet):
     def public(self, **kwargs):
         return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=EXCLUDED_USERNAMES)
 
+    def exclude_spam(self):
+        return self.exclude(is_marked_spam=True)
+
     def with_affiliations(self, **kwargs):
         return self.exclude(affiliations=[]).filter(**kwargs)
 
@@ -319,7 +507,7 @@ class MemberProfileQuerySet(models.QuerySet):
 
 @add_to_comses_permission_whitelist
 @register_snippet
-class MemberProfile(index.Indexed, ClusterableModel):
+class MemberProfile(index.Indexed, ModeratedContent, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
@@ -370,6 +558,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     search_fields = [
         index.FilterField("date_joined"),
         index.FilterField("is_active"),
+        index.FilterField("is_marked_spam"),
         index.FilterField("username"),
         index.SearchField("affiliations_string"),
         index.SearchField("bio"),
@@ -394,6 +583,27 @@ class MemberProfile(index.Indexed, ClusterableModel):
             ],
         ),
     ]
+
+    def spam_check_content(self) -> dict:
+        """
+        The public profile and account, but no contact details
+        """
+        content = {
+            "type": "member profile",
+            "username": self.user.username,
+            "joined_at": self.user.date_joined.isoformat(),
+            "name": self.name,
+            "bio": self.bio.raw,
+            "research_interests": self.research_interests.raw,
+            "personal_url": self.personal_url,
+            "professional_url": self.professional_url,
+            "affiliations": [affiliation.get("name") for affiliation in self.affiliations],
+            "degrees": self.degrees,
+            "industry": self.get_industry_display(),
+            "tags": sorted(self.tags.names()),
+            "linked_accounts": linked_account_providers(self.user),
+        }
+        return {key: value for key, value in content.items() if value}
 
     # Proxies to related user object
 
@@ -683,6 +893,19 @@ class Event(index.Indexed, ModeratedContent, ClusterableModel):
     is_deleted = models.BooleanField(default=False)
     objects = EventQuerySet.as_manager()
 
+    spam_check_fields = [
+        "title",
+        "summary",
+        "description",
+        "location",
+        "start_date",
+        "end_date",
+        "early_registration_deadline",
+        "registration_deadline",
+        "submission_deadline",
+        "external_url",
+    ]
+
     submitter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user), blank=True)
 
     search_fields = [
@@ -807,6 +1030,8 @@ class Job(index.Indexed, ModeratedContent, ClusterableModel):
     )
 
     objects = JobQuerySet.as_manager()
+
+    spam_check_fields = ["title", "summary", "description", "application_deadline", "external_url"]
 
     search_fields = [
         index.SearchField("title"),
