@@ -24,7 +24,6 @@ from core.serializers import (
     TagSerializer,
     MarkdownField,
 )
-from core.mixins import SpamCatcherSerializerMixin
 
 from core.serializers import (
     RelatedMemberProfileSerializer,
@@ -396,7 +395,7 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
         )
 
 
-class CodebaseSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin, FeaturedImageMixin):
+class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     absolute_url = serializers.URLField(source="get_absolute_url", read_only=True)
     all_contributors = ContributorSerializer(many=True, read_only=True)
     date_created = serializers.DateTimeField(read_only=True, default=serializers.CreateOnlyDefault(timezone.now))

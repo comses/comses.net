@@ -310,10 +310,6 @@ DOWNLOAD_ANALYTICS_HMAC_KEY = read_secret("download_analytics_hmac_key", os.gete
 EXPIRED_JOB_DAYS_THRESHOLD = int(os.getenv("EXPIRED_JOB_DAYS_THRESHOLD", 180))
 EXPIRED_EVENT_DAYS_THRESHOLD = int(os.getenv("EXPIRED_EVENT_DAYS_THRESHOLD", 2))
 
-# number of seconds between the load time and submit time of a form
-# submission that is considered likely spam
-SPAM_LIKELY_SECONDS_THRESHOLD = 3
-
 # Database configuration
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 

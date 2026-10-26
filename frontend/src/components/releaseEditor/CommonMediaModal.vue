@@ -83,29 +83,24 @@ const youtubeSchema = yup.object().shape({
 
 type VideoFields = yup.InferType<typeof youtubeSchema>;
 
-const {
-  handleSubmit,
-  values,
-  setValuesWithLoadTime,
-  addUnsavedAlertListener,
-  removeUnsavedAlertListener,
-} = useForm<VideoFields>({
-  schema: youtubeSchema,
-  initialValues: {
-    videoSourceUrl: "",
-  },
-  onSubmit: async () => {
-    isSavingVideo.value = true;
-    videoSaveMessage.value = "";
-    try {
-      await partialUpdate(props.identifier, { videoSourceUrl: values.videoSourceUrl });
-      await store.fetchCodebaseRelease(props.identifier, store.release.versionNumber);
-      videoSaveMessage.value = "Saved.";
-    } finally {
-      isSavingVideo.value = false;
-    }
-  },
-});
+const { handleSubmit, values, setValues, addUnsavedAlertListener, removeUnsavedAlertListener } =
+  useForm<VideoFields>({
+    schema: youtubeSchema,
+    initialValues: {
+      videoSourceUrl: "",
+    },
+    onSubmit: async () => {
+      isSavingVideo.value = true;
+      videoSaveMessage.value = "";
+      try {
+        await partialUpdate(props.identifier, { videoSourceUrl: values.videoSourceUrl });
+        await store.fetchCodebaseRelease(props.identifier, store.release.versionNumber);
+        videoSaveMessage.value = "Saved.";
+      } finally {
+        isSavingVideo.value = false;
+      }
+    },
+  });
 
 const handleVideoSubmit = handleSubmit;
 
@@ -115,7 +110,7 @@ onMounted(async () => {
   }
   if (props.identifier) {
     await retrieve(props.identifier);
-    setValuesWithLoadTime(data.value);
+    setValues(data.value);
   }
   addUnsavedAlertListener();
 });

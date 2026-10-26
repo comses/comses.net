@@ -14,7 +14,6 @@ from taggit.models import Tag
 
 from .validators import validate_affiliations
 from .models import Event, Job, MemberProfile
-from .mixins import SpamCatcherSerializerMixin
 
 logger = logging.getLogger(__name__)
 
@@ -299,7 +298,7 @@ class IsoDateField(serializers.DateField):
         super().__init__(*args, **kwargs)
 
 
-class EventSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
+class EventSerializer(serializers.ModelSerializer):
     submitter = RelatedUserSerializer(read_only=True, help_text=_("User that created the event"), label="Submitter")
     absolute_url = serializers.URLField(
         source="get_absolute_url",
@@ -397,7 +396,7 @@ class EventCalendarSerializer(serializers.ModelSerializer):
         )
 
 
-class JobSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
+class JobSerializer(serializers.ModelSerializer):
     submitter = RelatedUserSerializer(
         read_only=True,
         help_text=_("User that created the job description"),
