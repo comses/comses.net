@@ -3,15 +3,19 @@ Management command for indexing digest archives based on the contents of https:/
 """
 
 import logging
-import requests
 from datetime import datetime
-from django.core.management.base import BaseCommand
+
+import requests
+from django.core.exceptions import ValidationError
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 from home.models import ComsesDigest
 
 logger = logging.getLogger(__name__)
 
 ZENODO_COMMUNITY_API_URL = "https://zenodo.org/api/communities/comses-digest/records"
+
 
 def iter_zenodo_records(session):
     url = f"{ZENODO_COMMUNITY_API_URL}?page=1&size=25&sort=publication-desc"
@@ -25,37 +29,48 @@ def iter_zenodo_records(session):
 
         url = page.get("links", {}).get("next")
 
+
+def validate_zenodo_record(record):
+    try:
+        doi = record["doi"]
+        defaults = {
+            "title": record["metadata"]["title"],
+            "volume": int(record["metadata"]["journal"]["volume"]),
+            "issue_number": int(record["metadata"]["journal"]["issue"]),
+            "publication_date": datetime.strptime(record["metadata"]["publication_date"], "%Y-%m-%d").date(),
+            "url": record["links"]["latest_html"],
+        }
+    except (KeyError, TypeError, ValueError) as exc:
+        raise CommandError("Invalid metadata in a Zenodo digest record.") from exc
+
+    if not isinstance(doi, str) or not doi.strip():
+        raise CommandError("Invalid metadata in a Zenodo digest record: DOI is required.")
+
+    try:
+        ComsesDigest(doi=doi, **defaults).full_clean(validate_unique=False)
+    except ValidationError as exc:
+        raise CommandError(f"Invalid metadata for Zenodo digest record {doi}: {exc}") from exc
+
+    return doi, defaults
+
+
 class Command(BaseCommand):
-    help = "Update CoMSES digest archives page based on the contents of home/static/digest/"
+    help = "Update CoMSES digest archives from the Zenodo community"
 
     def handle(self, *args, **options):
-        err_msg = ""
-
         try:
             with requests.Session() as session:
                 zenodo_records = list(iter_zenodo_records(session))
-        except requests.RequestException:
-            logger.exception("Failed to fetch Zenodo records for CoMSES Digest.")
-            return
+        except Exception as exc:
+            raise CommandError("Failed to fetch Zenodo records for CoMSES Digest.") from exc
 
-        ComsesDigest.objects.all().delete()
+        validated_records = [validate_zenodo_record(record) for record in zenodo_records]
 
-        for record in zenodo_records:
-            try:
-                ComsesDigest.objects.create(
-                    doi=record["doi"],
-                    title=record["metadata"]["title"],
-                    volume=int(record["metadata"]["journal"]["volume"]),
-                    issue_number=int(record["metadata"]["journal"]["issue"]),
-                    publication_date=datetime.strptime(record["metadata"]["publication_date"], "%Y-%m-%d").date(),
-                    url=record["links"]["latest_html"],
-                )
-            except Exception as e:
-                err_msg += f"{record['links']['latest_html']}\n"
-                logger.error(e)
+        try:
+            with transaction.atomic():
+                for doi, defaults in validated_records:
+                    ComsesDigest.objects.update_or_create(doi=doi, defaults=defaults)
+        except Exception as exc:
+            raise CommandError("Failed to import Zenodo records for CoMSES Digest.") from exc
 
-        if err_msg:
-            err_msg = "\n\nFailed to add the following digest records, ensure the metadata is correct:\n\n" + err_msg
-            logger.error(err_msg)
-        else:
-            logger.info(f"\n\nSuccessfully indexed all digest records from Zenodo community.")
+        logger.info("Successfully indexed all digest records from Zenodo community.")
