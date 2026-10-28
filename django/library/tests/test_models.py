@@ -7,8 +7,10 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
+from wagtail.images.models import Filter
 
 from core.tests.base import UserFactory, BaseModelTestCase
 from .base import (
@@ -279,6 +281,45 @@ class CodebaseTest(BaseModelTestCase):
                 [codebase_tag.tag.name for codebase_tag in codebase.tagged_codebases.all()],
                 ["agent-based model"],
             )
+
+    @override_settings(
+        CACHES={
+            "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+            "renditions": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+        }
+    )
+    def test_featured_image_renditions_are_prefetched_for_multiple_codebases(self):
+        expected_urls = {}
+        image_filter = Filter("fill-175x175")
+        for index in range(3):
+            codebase = CodebaseFactory(submitter=self.user).create()
+            image = CodebaseImage.objects.create(
+                codebase=codebase,
+                title=f"Featured image {index}",
+                file=f"featured-{index}.png",
+                width=175,
+                height=175,
+            )
+            rendition = image.renditions.create(
+                filter_spec=image_filter.spec,
+                focal_point_key=image_filter.get_cache_key(image),
+                file=f"featured-{index}.fill-175x175.png",
+                width=175,
+                height=175,
+            )
+            expected_urls[codebase.pk] = rendition.url
+
+        # The codebase without an image must remain supported as well.
+        queryset = Codebase.objects.filter(pk__in=[self.c1.pk, *expected_urls]).with_featured_images()
+        with self.assertNumQueries(3):
+            codebases = list(queryset)
+        with self.assertNumQueries(0):
+            for codebase in codebases:
+                image = codebase.get_featured_image()
+                if codebase.pk == self.c1.pk:
+                    self.assertIsNone(image)
+                else:
+                    self.assertEqual(image.get_rendition(image_filter).url, expected_urls[codebase.pk])
 
     def test_create_release(self):
         release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)

@@ -454,7 +454,7 @@ class CodebaseQuerySet(models.QuerySet):
         return self.prefetch_related("tagged_codebases__tag")
 
     def with_featured_images(self):
-        return self.prefetch_related("featured_images")
+        return self.prefetch_related("featured_images__renditions")
 
     def with_submitter(self):
         return self.select_related("submitter")
