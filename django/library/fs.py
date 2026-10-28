@@ -542,19 +542,22 @@ class BaseCodebaseReleaseFsApi(ABC):
 
     def create_or_update_citation_cff(self, force=False):
         """
-        Returns True if a CITATION.cff file was created, False otherwise
+        Returns True if a CITATION.cff file was created, False otherwise.
+        Unpublished releases have minimal CodeMeta without the authors required by CFF.
         """
+        if not self.release.live:
+            return False
         path = self.cff_path
+        if path.exists() and not force:
+            return False
         try:
             cff_contents = self.cff_contents
         except Exception as e:
             logger.exception(f"error generating CITATION.cff for release {self.release}: {e}")
             return False
-        if force or not path.exists():
-            with path.open(mode="w", encoding="utf-8") as cff_out:
-                cff_out.write(cff_contents)
-            return True
-        return False
+        with path.open(mode="w", encoding="utf-8") as cff_out:
+            cff_out.write(cff_contents)
+        return True
 
     def create_or_update_license(self, force=False):
         """
@@ -966,18 +969,21 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         if created:
             name = str(self.codemeta_path.relative_to(self.sip_contents_dir))
             self.manifest.add_file(name, FileCategories.metadata)
+        return created
 
     def create_or_update_citation_cff(self, force=False):
         created = super().create_or_update_citation_cff(force)
         if created:
             name = str(self.cff_path.relative_to(self.sip_contents_dir))
             self.manifest.add_file(name, FileCategories.metadata)
+        return created
 
     def create_or_update_license(self, force=False):
         created = super().create_or_update_license(force)
         if created:
             name = str(self.license_path.relative_to(self.sip_contents_dir))
             self.manifest.add_file(name, FileCategories.metadata)
+        return created
 
     def download_archive(self, download_url: str, installation_token: str) -> Path:
         """Download a release package archive from a remote URL and

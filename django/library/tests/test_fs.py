@@ -1,4 +1,8 @@
 from pathlib import Path
+from unittest.mock import PropertyMock, patch
+from zipfile import ZipFile
+import yaml
+from codemeticulous.cff.models import CitationFileFormat
 from git import Repo
 from django.test import TestCase
 from django.conf import settings
@@ -17,7 +21,7 @@ from library.fs import (
     CodebaseGitRepositoryApi,
 )
 from library.tests.base import CodebaseFactory, TEST_SAMPLES_DIR
-from library.models import License, GitRefSyncState, ProgrammingLanguage
+from library.models import CodebaseRelease, ImportedReleaseSyncState, License, GitRefSyncState, ProgrammingLanguage
 
 
 import logging
@@ -80,6 +84,25 @@ class ArchiveExtractorTestCase(TestCase):
         self.assertEqual(level, MessageLevels.error)
         self.assertEqual(len(logs), 1)
 
+    def test_unpublished_releases_skip_citation_cff(self):
+        fs_api = self.codebase_release.get_fs_api()
+        for status in CodebaseRelease.Status:
+            if status == CodebaseRelease.Status.PUBLISHED:
+                continue
+            self.codebase_release.status = status
+            for force in (False, True):
+                with self.subTest(status=status, force=force), self.assertNoLogs("library.fs", level="ERROR"):
+                    self.assertFalse(fs_api.create_or_update_citation_cff(force=force))
+                    self.assertFalse(fs_api.cff_path.exists())
+
+    def test_review_archive_without_citation_cff(self):
+        fs_api = self.codebase_release.get_fs_api()
+        with self.assertNoLogs("library.fs", level="ERROR"):
+            fs_api.build_review_archive()
+        with ZipFile(fs_api.review_archivepath) as archive:
+            self.assertIn("codemeta.json", archive.namelist())
+            self.assertNotIn("CITATION.cff", archive.namelist())
+
     def tearDown(self):
         clear_test_shared_folder(settings.REPOSITORY_ROOT)
 
@@ -114,6 +137,52 @@ class GitRepoApiTestCase(TestCase):
         self.assertTrue((api.repo_dir / "codemeta.json").exists())
         self.assertTrue((api.repo_dir / "CITATION.cff").exists())
         self.assertTrue((api.repo_dir / "LICENSE").exists())
+
+    def test_publish_generates_valid_citation_cff(self):
+        update_release_from_sample(self.release_1, self.release_1_dir, version_number="1.0.0")
+        self.assertFalse(self.release_1.codemeta_snapshot.get("author"))
+        with self.assertNoLogs("library.fs", level="ERROR"):
+            self.release_1.publish()
+        with ZipFile(self.release_1.get_fs_api().archivepath) as archive:
+            cff = yaml.safe_load(archive.read("CITATION.cff"))
+        CitationFileFormat(**cff)
+        self.assertTrue(cff["authors"])
+        self.assertEqual(cff["version"], "1.0.0")
+
+    def test_existing_citation_cff_skips_conversion_unless_forced(self):
+        update_release_from_sample(self.release_1, self.release_1_dir, version_number="1.0.0")
+        self.release_1.publish()
+        fs_api = self.release_1.get_fs_api()
+        original = fs_api.cff_path.read_text()
+        updated = original + "\n# regenerated\n"
+        with patch.object(CodebaseRelease, "cff_yaml_str", new_callable=PropertyMock, return_value=updated) as cff:
+            self.assertIs(fs_api.create_or_update_citation_cff(), False)
+            cff.assert_not_called()
+            self.assertEqual(fs_api.cff_path.read_text(), original)
+            self.assertIs(fs_api.create_or_update_citation_cff(force=True), True)
+            cff.assert_called_once_with()
+            self.assertEqual(fs_api.cff_path.read_text(), updated)
+
+    def test_imported_metadata_writers_return_creation_status(self):
+        update_release_from_sample(self.release_1, self.release_1_dir, version_number="1.0.0")
+        self.release_1.publish()
+        self.release_1.imported_release_sync_state = ImportedReleaseSyncState.objects.create(
+            github_release_id="12345", tag_name="1.0.0"
+        )
+        fs_api = self.release_1.get_fs_api()
+        for method, path in (
+            (fs_api.create_or_update_codemeta, fs_api.codemeta_path),
+            (fs_api.create_or_update_citation_cff, fs_api.cff_path),
+            (fs_api.create_or_update_license, fs_api.license_path),
+        ):
+            with self.subTest(file=path.name):
+                path.unlink()
+                self.assertIs(method(), True)
+                self.assertTrue(path.exists())
+                self.release_1.imported_release_sync_state.refresh_from_db()
+                self.assertEqual(fs_api.manifest.data[path.name], FileCategories.metadata.name)
+                self.assertIs(method(), False)
+                self.assertIs(method(force=True), True)
 
     def test_repo_build(self):
         update_release_from_sample(self.release_1, self.release_1_dir, version_number="1.0.0")

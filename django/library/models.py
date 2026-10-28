@@ -2299,7 +2299,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self.first_published_at = now
             self.last_published_on = now
             self.status = self.Status.PUBLISHED
-            self.get_fs_api().build_published_archive(force=True)
             codebase = self.codebase
             codebase.latest_version = self
             codebase.live = True
@@ -2309,6 +2308,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # normally, rebuilding metadata is asynchronous and automatic but
             # here we need to build it synchronously after setting everything
             self.save(defer_fs=False)
+            # Build the archive only after replacing the minimal draft metadata.
+            self.get_fs_api().build_published_archive(force=True)
             # and then rebuild the codebase metadata
             codebase.save(rebuild_metadata=True, rebuild_release_metadata=False)
 
