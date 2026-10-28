@@ -1,16 +1,18 @@
 import logging
 import pathlib
-import semver
 import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
+import semver
+from core.tests.base import BaseModelTestCase, UserFactory
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from core.tests.base import UserFactory, BaseModelTestCase
+from library.fs import FileCategories
+
 from .base import (
     CodebaseFactory,
     ContributorFactory,
@@ -290,12 +292,8 @@ class CodebaseTest(BaseModelTestCase):
             release,
         )
         fs_api = release.get_fs_api()
-        # check that at least something exists for code/docs
-        sip_contents = fs_api.list_sip_contents()
-        contents = {item["label"]: item.get("contents", []) for item in sip_contents["contents"]}
-        for category in ["code", "docs"]:
-            self.assertIn(category, contents)
-            self.assertTrue(contents[category])
+        self.assertTrue(fs_api.check_category_file_exists(FileCategories.code))
+        self.assertTrue(fs_api.check_category_file_exists(FileCategories.docs))
 
     def test_new_draft_carries_forward_data_urls(self):
         source_release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)
