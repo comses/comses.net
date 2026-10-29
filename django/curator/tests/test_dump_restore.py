@@ -1,7 +1,5 @@
 import logging
 import os
-import shlex
-import subprocess
 
 from django.conf import settings
 from django.db import connections
@@ -15,7 +13,6 @@ from core.tests.base import (
     destroy_test_shared_folders,
 )
 from curator.invoke_tasks.borg import _restore as restore_archive, backup
-from curator.invoke_tasks.database import create_pgpass_file
 from core.tests.base import EventFactory, JobFactory
 from library.fs import import_archive
 from library.models import Codebase
@@ -57,30 +54,9 @@ class DumpRestoreTestCase(TransactionTestCase):
             fs_api=fs_api,
         )
 
-        os.makedirs(os.path.join(settings.BACKUP_ROOT, "latest"), exist_ok=True)
-        self.database_dump_path = os.path.join(
-            settings.BACKUP_ROOT,
-            "latest",
-            f"{connections['default'].settings_dict['NAME']}.dump",
-        )
-
     def test_dump_and_restore(self):
         # Backup the test files and the test database
         ctx = Context()
-        create_pgpass_file(ctx)
-        dump_result = subprocess.run(
-            shlex.split(
-                "pg_dump --format=custom -h {HOST} -d {NAME} -U {USER} -f {dest}".format(
-                    **connections["default"].settings_dict,
-                    dest=self.database_dump_path,
-                )
-            ),
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-        )
-        if dump_result.returncode != 0:
-            raise Exception(dump_result.stderr)
-
         backup(ctx)
 
         # Restore the files to their original location and the test database dump to the dump_restore database

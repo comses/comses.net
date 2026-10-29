@@ -337,6 +337,14 @@ LIBRARY_ROOT = os.path.join(SHARE_DIR, "library")
 PREVIOUS_SHARE_ROOT = os.path.join(SHARE_DIR, ".latest")
 REPOSITORY_ROOT = os.path.join(SHARE_DIR, "repository")
 BORG_ROOT = os.path.join(SHARE_DIR, "backups", "repo")
+# Archive counts per calendar tier; -1 retains unlimited, 0 disables a tier.
+# Validated by borg.prune before any repository operation.
+BORG_RETENTION = {
+    "daily": os.getenv("BORG_KEEP_DAILY", 14),
+    "weekly": os.getenv("BORG_KEEP_WEEKLY", 8),
+    "monthly": os.getenv("BORG_KEEP_MONTHLY", 12),
+    "yearly": os.getenv("BORG_KEEP_YEARLY", -1),
+}
 BACKUP_ROOT = os.path.join(SHARE_DIR, "backups")
 EXTRACT_ROOT = os.path.join(SHARE_DIR, "extract")
 

@@ -51,6 +51,12 @@ Initialize a new local repository once before the first backup:
 docker compose exec -T server inv borg.init
 ```
 
+`inv borg.backup` (alias `borg.b`) also runs this complete workflow. Archive
+creation is an internal helper: all public Borg backup commands refresh the dump,
+hold the shared lock, verify the archive, and publish the success marker only
+after every stage succeeds. A failed dump, archive creation, or verification
+leaves the previous success marker unchanged.
+
 Run an on-demand backup with:
 
 ```bash
@@ -155,10 +161,15 @@ docker compose up -d server
 ```
 
 The restore holds the same `.backup.lock` as backup and prune while it
-verifies and extracts the archive, replaces and migrates the database, and
-rotates live shared files. Database-only and files-only restores use the same
-lock. Previous live file trees are preserved under `/shared/.latest` during
-rotation.
+verifies and extracts the archive, checks its required layout, replaces and
+migrates the database, and rotates live shared files. Preflight requires real
+library/media directories and a nonempty database dump before replacement begins.
+The repository directory may be absent in older archives; if present, it must
+also be a real directory. Files-only restores check the directory layout before
+rotating any live or previous trees. These checks do not guarantee that every
+restore step will succeed or make database/file replacement atomic. Database-only
+and files-only restores use the same lock. Previous live file trees are preserved
+under `/shared/.latest` during rotation.
 
 If database restore or migration fails, shared files have not yet been rotated.
 Leave the application stopped, retain the logs and extracted archive, and
@@ -240,8 +251,17 @@ docker compose exec server inv borg.prune --apply
 The command repeats the preview and requires confirmation while holding the
 shared backup lock, then prunes and compacts under that lock. If pruning fails,
 compaction does not start. It refuses retention when the local successful-backup
-marker is missing, older than 48 hours, or in the future. The application does
-not verify off-host recovery prerequisites or manage cloud snapshots.
+marker is missing or malformed, its recorded timestamp is older than 24 hours or
+in the future, or its named archive is absent from the configured Borg repository.
+The timestamp must include a timezone; file modification time is not freshness
+evidence. These checks repeat after confirmation, before deletion, so an expired
+backup cannot pass on the strength of an earlier preview. The 24-hour limit matches
+infrastructure reconciliation admission; allow time for reconciliation or take a
+fresh backup before maintenance. Existing markers retain their two-field format.
+The marker records completion of the backup's existing data verification; this
+gate does not repeat that verification or establish off-host recoverability.
+The application does not verify off-host recovery prerequisites or manage cloud
+snapshots.
 
 Pruning and compaction change repository files without advancing the local backup
 marker. Complete infrastructure reconciliation and destination verification after
@@ -249,10 +269,41 @@ applying; never prune or compact the mirrored repository independently. If local
 maintenance fails, inspect source integrity before retrying. A later transfer
 failure requires reconciliation, not replaying local pruning.
 
-The local retention policy keeps 14 daily, 4 weekly, 12 monthly, and all yearly
-archives. Monitor local storage and repository growth because pruning is explicit
-and yearly retention is unbounded. Do not add `--apply` to cron or invoke
-`borg compact` separately as routine maintenance.
+### Configure retention
+
+The defaults keep **14 daily, 8 weekly, 12 monthly, and unlimited yearly** archives.
+The values live in `django/core/settings/defaults.py` as `BORG_RETENTION` and
+can be overridden with the following settings in the deployment `.env`:
+
+```dotenv
+BORG_KEEP_DAILY=14
+BORG_KEEP_WEEKLY=8
+BORG_KEEP_MONTHLY=12
+BORG_KEEP_YEARLY=-1
+```
+
+After editing `.env`, regenerate Compose with `make docker-compose.yml` and
+recreate the server through the normal deployment procedure. Existing deployments
+without these variables use the application defaults. For a one-off preview:
+
+```bash
+docker compose exec -T -e BORG_KEEP_WEEKLY=8 -e BORG_KEEP_YEARLY=-1 server inv borg.prune
+```
+
+Use the same overrides when applying. Each invocation prints the effective policy
+before checking backup freshness, and the preview echoes the exact Borg command.
+Counts must be integers: `-1` means unlimited and `0` disables a tier; disabling
+all tiers is rejected before accessing the repository.
+
+These are calendar-tier archive counts, not age cutoffs. Borg selects the latest
+archive in each period, excluding archives already kept by finer tiers. Unlimited
+yearly retention preserves annual representatives indefinitely, not every archive
+from each year. Missing periods do not count.
+See [Borg pruning semantics](https://borgbackup.readthedocs.io/en/1.4.5/usage/prune.html).
+
+Monitor local storage and repository growth because pruning is explicit and yearly
+retention is unbounded. Do not add `--apply` to cron or invoke `borg compact`
+separately as routine maintenance.
 
 ### Deployment transition
 

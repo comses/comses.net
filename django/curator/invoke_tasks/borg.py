@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 import fcntl
 from pathlib import Path
+import shlex
 import shutil
 import tempfile
 
@@ -14,7 +15,7 @@ from core.utils import confirm
 DEFAULT_LIBRARY_BASENAME = Path(settings.LIBRARY_ROOT).name
 DEFAULT_MEDIA_BASENAME = Path(settings.MEDIA_ROOT).name
 DEFAULT_REPOSITORY_BASENAME = Path(settings.REPOSITORY_ROOT).name
-MAX_PRUNE_BACKUP_AGE_SECONDS = 2 * 24 * 60 * 60
+MAX_PRUNE_BACKUP_AGE_SECONDS = 24 * 60 * 60
 
 
 @task(aliases=["init"])
@@ -28,19 +29,75 @@ def borg_list(ctx):
     ctx.run(f"borg list {settings.BORG_ROOT}", echo=True, env=environment())
 
 
+def _retention_policy():
+    tiers = ("daily", "weekly", "monthly", "yearly")
+    policy = settings.BORG_RETENTION
+    try:
+        if set(policy) != set(tiers):
+            raise ValueError("expected daily, weekly, monthly and yearly")
+        counts = {}
+        for tier in tiers:
+            value = policy[tier]
+            if type(value) not in (int, str):
+                raise ValueError("counts must be integers")
+            counts[tier] = int(value)
+            if counts[tier] < -1:
+                raise ValueError("use -1 for unlimited retention")
+        if not any(counts.values()):
+            raise ValueError("at least one retention tier must be enabled")
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid BORG_RETENTION: {exc}") from exc
+    return counts
+
+
 def _prune(ctx, *, dry_run=True):
-    # FIXME: provide cli override of these defaults
-    daily = 14
-    weekly = 4
-    monthly = 12
-    yearly = -1
+    options = " ".join(f"--keep-{tier} {count}" for tier, count in _retention_policy().items())
+    repo = shlex.quote(str(settings.BORG_ROOT))
     ctx.run(
-        f"borg prune {'--dry-run ' if dry_run else ''}--verbose --list --keep-daily {daily} --keep-weekly {weekly} --keep-monthly {monthly} --keep-yearly {yearly} {settings.BORG_ROOT}",
+        f"borg prune {'--dry-run ' if dry_run else ''}--verbose --list {options} {repo}",
         echo=True,
         env=environment(),
     )
     if not dry_run:
-        ctx.run(f"borg compact --verbose {settings.BORG_ROOT}", env=environment())
+        ctx.run(f"borg compact --verbose {repo}", env=environment())
+
+
+def _validate_prune_backup(ctx):
+    success_path = Path(settings.BACKUP_ROOT) / "last-successful-backup"
+    if not success_path.is_file():
+        raise RuntimeError("refusing to prune without a successful backup marker")
+    try:
+        entries = [
+            line.split("=", 1)
+            for line in success_path.read_text(encoding="ascii").splitlines()
+        ]
+        fields = dict(entries)
+        if len(entries) != 2 or set(fields) != {"timestamp", "archive"}:
+            raise ValueError("expected timestamp and archive")
+        timestamp = datetime.fromisoformat(fields["timestamp"])
+        archive = fields["archive"]
+        if timestamp.tzinfo is None or not archive or archive != archive.strip():
+            raise ValueError("expected an aware timestamp and archive name")
+        if any(ord(character) < 32 or ord(character) == 127 for character in archive):
+            raise ValueError("invalid archive name")
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise RuntimeError(
+            "refusing to prune: invalid successful backup marker"
+        ) from exc
+    marker_age = (datetime.now(timezone.utc) - timestamp).total_seconds()
+    if not 0 <= marker_age <= MAX_PRUNE_BACKUP_AGE_SECONDS:
+        raise RuntimeError(
+            "refusing to prune: last successful backup is too old or in the future"
+        )
+    result = ctx.run(
+        f"borg list --short {shlex.quote(str(settings.BORG_ROOT))}",
+        hide=True,
+        env=environment(),
+    )
+    if archive not in result.stdout.splitlines():
+        raise RuntimeError(
+            "refusing to prune: successful backup archive is missing from repository"
+        )
 
 
 @task(
@@ -51,28 +108,30 @@ def _prune(ctx, *, dry_run=True):
     },
 )
 def borg_prune(ctx, apply=False):
-    """Preview retention; apply only within the operator maintenance runbook."""
+    """Preview retention configured by BORG_KEEP_DAILY/WEEKLY/MONTHLY/YEARLY.
+
+    Apply only within the operator maintenance runbook.
+    """
+    policy = _retention_policy()
+    summary = ", ".join(f"{tier}={count if count != -1 else 'unlimited'}" for tier, count in policy.items())
+    print(f"Borg retention: {summary} (BORG_KEEP_DAILY/WEEKLY/MONTHLY/YEARLY)")
     with exclusive_backup_operation("prune"):
-        success_path = Path(settings.BACKUP_ROOT) / "last-successful-backup"
-        if not success_path.is_file():
-            raise RuntimeError("refusing to prune without a successful backup marker")
-        marker_age = (
-            datetime.now(timezone.utc).timestamp() - success_path.stat().st_mtime
-        )
-        if not 0 <= marker_age <= MAX_PRUNE_BACKUP_AGE_SECONDS:
-            raise RuntimeError(
-                "refusing to prune: last successful backup is too old or in the future"
-            )
+        _validate_prune_backup(ctx)
         _prune(ctx)
         if apply:
-            confirm(
-                "Apply the removals above and compact the local repository (y/n)? "
-            )
+            confirm("Apply the removals above and compact the local repository (y/n)? ")
+            _validate_prune_backup(ctx)
             _prune(ctx, dry_run=False)
 
 
 @task(aliases=["b"])
 def backup(ctx):
+    """Create a complete verified backup, including a fresh database dump."""
+    return backup_all(ctx)
+
+
+def _create_archive(ctx):
+    """Capture and verify files; caller must hold the lock and refresh the dump."""
     share = settings.SHARE_DIR
     repo = settings.BORG_ROOT
     archive = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
@@ -120,11 +179,12 @@ def backup_all(ctx):
 
     with exclusive_backup_operation("backup"):
         db.backup(ctx)
-        archive = backup(ctx)
+        archive = _create_archive(ctx)
         timestamp = datetime.now(timezone.utc).isoformat()
         temporary_success_path = success_path.with_suffix(".tmp")
         temporary_success_path.write_text(f"timestamp={timestamp}\narchive={archive}\n", encoding="ascii")
         temporary_success_path.replace(success_path)
+        return archive
 
 
 @contextmanager
@@ -167,6 +227,7 @@ def rotate_library_and_media_files(
     Current library, media, and repository files are moved to the '.latest' folder in case of problems during the restore process.
     Files in .latest can be deleted if the restore was successful
     """
+    _validate_restore_files(working_directory, src_library, src_media, src_repository)
     print("rotating library, media, and repository files")
     delete_latest_uncompressed_backup(src_library=src_library, src_media=src_media, src_repository=src_repository)
 
@@ -200,22 +261,45 @@ def environment():
     }
 
 
+def _validate_restore_files(
+    working_directory,
+    src_library=DEFAULT_LIBRARY_BASENAME,
+    src_media=DEFAULT_MEDIA_BASENAME,
+    src_repository=DEFAULT_REPOSITORY_BASENAME,
+):
+    root = Path(working_directory)
+    for name in (src_library, src_media, src_repository):
+        path = root / name
+        # Older archives may omit the repository, but a present entry must be a directory.
+        if name == src_repository and not path.exists() and not path.is_symlink():
+            continue
+        if path.is_symlink() or not path.is_dir():
+            raise ValueError(f"Invalid restore layout: expected directory {path}")
+
+
 def _restore_files(working_directory):
     rotate_library_and_media_files(working_directory)
 
 
-def _restore_database(ctx, working_directory, target_database):
+def _find_restore_dump(working_directory):
     backup_root_name = Path(settings.BACKUP_ROOT).name
     dumpfile_dir = Path(working_directory) / backup_root_name / "latest"
-    if not dumpfile_dir.exists():
+    if dumpfile_dir.is_symlink() or not dumpfile_dir.is_dir():
         raise IOError("dumpfile_dir {} not found".format(dumpfile_dir))
     database_name = settings.DATABASES[db._DEFAULT_DATABASE]["NAME"]
     dumpfile_path = dumpfile_dir / f"{database_name}.dump"
-    if not dumpfile_path.exists():
+    if not dumpfile_path.exists() and not dumpfile_path.is_symlink():
         legacy_dumpfiles = sorted(dumpfile_dir.glob(f"{database_name}*.sql*"))
         if not legacy_dumpfiles:
             raise FileNotFoundError(f"No database dump found in {dumpfile_dir}")
         dumpfile_path = legacy_dumpfiles[-1]
+    if dumpfile_path.is_symlink() or not dumpfile_path.is_file() or dumpfile_path.stat().st_size == 0:
+        raise ValueError(f"Invalid restore layout: expected nonempty database dump {dumpfile_path}")
+    return dumpfile_path
+
+
+def _restore_database(ctx, working_directory, target_database):
+    dumpfile_path = _find_restore_dump(working_directory)
     db.restore_from_dump(
         ctx,
         target_database=target_database,
@@ -256,6 +340,8 @@ def _restore(ctx, repo, archive, working_directory, target_database):
         check_archive(ctx, repo, archive)
         with ctx.cd(working_directory):
             _extract(ctx, repo=repo, archive=archive)
+            _validate_restore_files(working_directory)
+            _find_restore_dump(working_directory)
             _restore_database(
                 ctx,
                 working_directory=working_directory,
