@@ -87,6 +87,35 @@ class SeedProvisioningTests(unittest.TestCase):
             workflow.run(["example"], cwd=self.root, env={}, capture=True)
         self.assertEqual(run.call_args.kwargs["stdin"], subprocess.DEVNULL)
 
+    def test_production_selector_crosses_sudo_environment_reset(self):
+        self.args.environment = "prod"
+        provisioner = workflow.Provisioner(self.root, self.args)
+        provisioner.call = Mock(return_value="")
+        provisioner.oneoff("server", "inv", "borg.restore")
+        command = provisioner.call.call_args.args[0]
+        # Model sudo's env_reset by starting the command after sudo with no env.
+        environment_command = command[2 : command.index("docker")]
+        result = subprocess.run(
+            [
+                *environment_command,
+                sys.executable,
+                "-c",
+                "import os; print(os.environ['COMSES_PROVISION_ENVIRONMENT'])",
+            ],
+            env={},
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertEqual(result.stdout.strip(), "prod")
+
+    def test_without_sudo_uses_the_selected_process_environment(self):
+        self.args.environment = "prod"
+        self.args.sudo_docker = False
+        provisioner = workflow.Provisioner(self.root, self.args)
+        self.assertEqual(provisioner.docker, ["docker"])
+        self.assertEqual(provisioner.env["COMSES_PROVISION_ENVIRONMENT"], "prod")
+
     def test_recovery_settings_disable_sentry_before_importing_staging(self):
         import builtins
         import runpy

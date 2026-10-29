@@ -175,7 +175,13 @@ class Provisioner:
             COMSES_LOG_ROOT="/srv/logs/comses",
             COMSES_BACKUPS_ROOT="/srv/backups/comses",
         )
-        self.docker = ["sudo", "-n", "docker"] if args.sudo_docker else ["docker"]
+        # sudo resets the caller's environment before Compose interpolation.
+        # Pass only the non-secret selector needed by recovery.yml explicitly.
+        self.docker = (
+            ["sudo", "-n", "env", f"COMSES_PROVISION_ENVIRONMENT={args.environment}", "docker"]
+            if args.sudo_docker
+            else ["docker"]
+        )
         self.project = "comses-seed-" + hashlib.sha256(args.target_id.encode()).hexdigest()[:12]
         self.compose = [
             *self.docker,

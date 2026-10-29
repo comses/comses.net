@@ -91,6 +91,13 @@ phase status and rejects mismatched or malformed state before any apply step.
 retains the operator-only recovery profile. It does not authorize a production
 operation or make the profile suitable for public service.
 
+With `--sudo-docker`, the workflow passes the non-secret recovery environment
+selector explicitly across sudo; inheriting the caller environment is insufficient
+because sudo normally clears it. For direct Compose commands outside the workflow,
+set `COMSES_PROVISION_ENVIRONMENT=prod` in the production recovery checkout's local
+`.env`, and verify the effective server environment before running application
+commands. Keep `DJANGO_SETTINGS_MODULE=core.settings.recovery`.
+
 Add `--apply --phase <name>` to run one phase:
 
 1. `configure`: Generate fresh missing application secrets, render Compose and
