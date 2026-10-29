@@ -12,14 +12,9 @@ if [ -z "$VAR_NAME" ] || [ -z "$NEW_VALUE" ]; then
   exit 1
 fi
 
-if sed --version 2>&1 | grep -q "GNU"; then
-    SED_CMD="sed -i" # GNU sed
-else
-    SED_CMD="sed -i ''" # BSD sed
-fi
-
 if grep -q "^$VAR_NAME=" "$ENV_FILE"; then
-    $SED_CMD "s|^$VAR_NAME=.*|$VAR_NAME=$NEW_VALUE|" "$ENV_FILE"
+    # a backup suffix attached to -i works with both GNU and BSD (macOS) sed
+    sed -i.bak "s|^$VAR_NAME=.*|$VAR_NAME=$NEW_VALUE|" "$ENV_FILE" && rm "$ENV_FILE.bak"
 else
     echo "$VAR_NAME not found in $ENV_FILE"
     # echo "$VAR_NAME=$NEW_VALUE" >> $ENV_FILE

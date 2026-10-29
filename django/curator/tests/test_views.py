@@ -1,10 +1,14 @@
+from datetime import timedelta
+
+from core.models import ComsesGroups, SpamModeration
+from core.tests.base import EventFactory, JobFactory, UserFactory
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
-from core.models import SpamModeration
-from core.tests.base import JobFactory, UserFactory, EventFactory
 from curator.models import TagCleanup
 from curator.wagtail_hooks import TagCleanupPermissionHelper
 
@@ -51,7 +55,12 @@ class SpamAdminViewTestCase(TestCase):
         self.user_factory = UserFactory()
         self.superuser = self.user_factory.create(username="admin", is_superuser=True)
         self.submitter = self.user_factory.create(username="submitter")
-        self.client.login(username=self.superuser.username, password=self.user_factory.password)
+        self.moderator = self.user_factory.create(username="moderator")
+        ComsesGroups.initialize()
+        ComsesGroups.MODERATOR.add(self.moderator)
+        self.admin_access = Permission.objects.get(content_type__app_label="wagtailadmin", codename="access_admin")
+        self.moderator.user_permissions.add(self.admin_access)
+        self.client.force_login(self.moderator)
         self.event_factory = EventFactory(submitter=self.submitter)
         self.job_factory = JobFactory(submitter=self.submitter)
         self.event = self.event_factory.create(title="pool cleaning in Salzburg", submitter=self.submitter)
@@ -66,28 +75,109 @@ class SpamAdminViewTestCase(TestCase):
     def tearDown(self):
         self.client.logout()
 
-    def test_admin_confirm_spam(self):
-        url = reverse("curator:confirm_spam", args=[self.event.spam_moderation.id])
-        response = self.client.get(url)
+    def review(self, decision):
+        url = reverse("curator_spam:review", args=[self.event.spam_moderation.id])
+        response = self.client.post(url, {"decision": decision, "notes": "pool spam"})
         self.event.refresh_from_db()
-        self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.SPAM)
-        self.assertTrue(self.event.is_marked_spam)
-        self.assertTrue(self.event.submitter.is_active)
+        self.submitter.refresh_from_db()
+        return response
 
-    def test_admin_reject_spam(self):
-        url = reverse("curator:reject_spam", args=[self.event.spam_moderation.id])
-        response = self.client.get(url)
-        self.event.refresh_from_db()
+    def test_pages_render(self):
+        legitimate = self.job_factory.create(title="Legitimate postdoc opening")
+        legitimate.record_spam_check(False, "asu/gemma4-31b-it", {"spam_probability": 0.02, "threshold": 0.8})
+        response = self.client.get(reverse("curator_spam:index"))
+        self.assertContains(response, "pool cleaning in Salzburg")
+        self.assertNotContains(response, legitimate.title)
+        response = self.client.get(reverse("curator_spam:index"), {"tab": "all"})
+        self.assertContains(response, legitimate.title)
+        response = self.client.get(reverse("curator_spam:detail", args=[self.event.spam_moderation.id]))
+        self.assertContains(response, "and hot tubs")
+
+    def test_least_certain_first(self):
+        for title, p_spam in [("clear postdoc", 0.02), ("borderline workshop", 0.79), ("clear casino", 0.99)]:
+            job = self.job_factory.create(title=title, submitter=self.submitter)
+            moderation = SpamModeration.objects.create(
+                content_object=job,
+                object_id=job.id,
+                status=SpamModeration.Status.SPAM if p_spam >= 0.8 else SpamModeration.Status.NOT_SPAM,
+                detection_method="asu/gemma4-31b-it",
+                detection_details={"spam_probability": p_spam, "threshold": 0.8},
+            )
+            if title == "borderline workshop":
+                moderation.review(self.moderator, is_spam=False)
+            elif title == "clear postdoc":
+                SpamModeration.objects.filter(pk=moderation.pk).update(
+                    last_modified=timezone.now() - timedelta(days=31)
+                )
+        content = self.client.get(reverse("curator_spam:index"), {"tab": "all", "sort": "uncertain"}).content.decode()
+        self.assertNotIn("borderline workshop", content)
+        self.assertLess(content.index("clear casino"), content.index("clear postdoc"))
+        self.assertLess(content.index("clear postdoc"), content.index("pool cleaning in Salzburg"))
+
+    def test_confirm_spam(self):
+        self.event.mark_not_spam(self.superuser)
+        response = self.review("spam")
+        self.assertRedirects(response, reverse("curator_spam:index"), fetch_redirect_response=False)
+        self.assertEqual(self.event.spam_moderation.reviewer, self.moderator)
+        self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.SPAM)
+        self.assertEqual(self.event.spam_moderation.notes, "pool spam")
+        self.assertTrue(self.event.is_marked_spam)
+        self.assertTrue(self.submitter.is_active)
+
+    def test_reject_spam(self):
+        response = self.review("not_spam")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.event.spam_moderation.reviewer, self.moderator)
         self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.NOT_SPAM)
         self.assertFalse(self.event.is_marked_spam)
 
-    def test_admin_confirm_spam_deactivate_user(self):
-        url = reverse("curator:confirm_spam", args=[self.event.spam_moderation.id])
-        response = self.client.get(url + "?deactivate_user=true")
-        self.event.refresh_from_db()
-        self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.SPAM)
+    def test_confirm_spam_deactivate_user(self):
+        self.event.mark_not_spam(self.superuser)
+        response = self.review("spam_deactivate")
+        self.assertEqual(response.status_code, 302)
         self.assertTrue(self.event.is_marked_spam)
-        self.assertFalse(self.event.submitter.is_active)
+        self.assertEqual(self.event.spam_moderation.reviewer, self.moderator)
+        self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.SPAM)
+        self.assertFalse(self.submitter.is_active)
+
+    def test_requires_moderator(self):
+        self.submitter.user_permissions.add(self.admin_access)
+        self.client.force_login(self.submitter)
+        for url in [
+            reverse("curator_spam:index"),
+            reverse("curator_spam:detail", args=[self.event.spam_moderation_id]),
+        ]:
+            self.assertRedirects(self.client.get(url), reverse("wagtailadmin_home"), fetch_redirect_response=False)
+        response = self.review("spam_deactivate")
+        self.assertRedirects(response, reverse("wagtailadmin_home"), fetch_redirect_response=False)
+        self.assertTrue(self.submitter.is_active)
+        self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.SPAM)
+        self.assertIsNone(self.event.spam_moderation.reviewer)
+
+    def test_review_requires_post(self):
+        url = reverse("curator_spam:review", args=[self.event.spam_moderation.id])
+        self.assertEqual(self.client.get(url, {"decision": "spam"}).status_code, 405)
+
+    def test_invalid_decision_does_not_change_moderation(self):
+        response = self.review("delete")
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNone(self.event.spam_moderation.reviewer)
+        self.assertTrue(self.event.is_marked_spam)
+        self.assertTrue(self.submitter.is_active)
+
+    def test_review_rejects_external_redirect(self):
+        url = reverse("curator_spam:review", args=[self.event.spam_moderation_id])
+        response = self.client.post(url, {"decision": "not_spam", "next": "https://example.org/"})
+        self.assertRedirects(response, reverse("curator_spam:index"), fetch_redirect_response=False)
+
+    def test_review_cannot_deactivate_superuser(self):
+        self.event.submitter = self.superuser
+        self.event.save()
+        response = self.review("spam_deactivate")
+        self.assertEqual(response.status_code, 302)
+        self.superuser.refresh_from_db()
+        self.assertTrue(self.superuser.is_active)
+        self.assertTrue(self.event.is_marked_spam)
 
 
 class MarkUserAsSpamTestCase(TestCase):

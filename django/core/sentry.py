@@ -1,5 +1,6 @@
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.huey import HueyIntegration
 
 
 def configure_sentry(*, dsn, release, environment, traces_sample_rate):
@@ -13,7 +14,7 @@ def configure_sentry(*, dsn, release, environment, traces_sample_rate):
         dsn=dsn,
         release=release,
         environment=environment,
-        integrations=[DjangoIntegration()],
+        integrations=[DjangoIntegration(), HueyIntegration()],
         traces_sample_rate=traces_sample_rate,
         send_default_pii=True,
     )

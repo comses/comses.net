@@ -1,0 +1,9 @@
+<div class="spam-score">
+{% if moderation.spam_probability is not None %}
+  <strong class="{% if moderation.flagged_by_model %}w-text-critical-200{% else %}w-text-positive-100{% endif %}"
+    title="P(spam) {{ moderation.spam_probability|floatformat:3 }}">{{ moderation.spam_probability|floatformat:2 }}</strong>
+  <small>(threshold {{ moderation.threshold|floatformat:2 }})</small>
+{% else %}
+  {{ moderation.detection_method|default:"manual" }}
+{% endif %}
+</div>

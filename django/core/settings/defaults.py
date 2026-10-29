@@ -310,9 +310,13 @@ DOWNLOAD_ANALYTICS_HMAC_KEY = read_secret("download_analytics_hmac_key", os.gete
 EXPIRED_JOB_DAYS_THRESHOLD = int(os.getenv("EXPIRED_JOB_DAYS_THRESHOLD", 180))
 EXPIRED_EVENT_DAYS_THRESHOLD = int(os.getenv("EXPIRED_EVENT_DAYS_THRESHOLD", 2))
 
-# number of seconds between the load time and submit time of a form
-# submission that is considered likely spam
-SPAM_LIKELY_SECONDS_THRESHOLD = 3
+# spam detection is configured in the Wagtail admin (core.models.SpamDetectionSettings). provider credentials:
+# Cloudflare clef-omni decision model
+CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "")
+CLOUDFLARE_AI_API_TOKEN = read_secret("cloudflare_ai_api_token")
+# ASU Research Computing AI API, keys from https://voyager.rc.asu.edu
+VOYAGER_AI_BASE_URL = os.getenv("VOYAGER_AI_BASE_URL", "https://openai.rc.asu.edu/v1")
+VOYAGER_AI_API_KEY = read_secret("voyager_ai_api_key")
 
 # Database configuration
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
