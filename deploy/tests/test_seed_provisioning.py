@@ -122,6 +122,7 @@ class SeedProvisioningTests(unittest.TestCase):
 
         staging = ModuleType("core.settings.staging")
         staging.HUEY = {"name": "comses", "immediate": True}
+        staging.MIDDLEWARE = ["core.external_auth.ExternalAuthMiddleware", "allauth.account.middleware.AccountMiddleware"]
         original_import = builtins.__import__
         observed = []
 
@@ -144,6 +145,8 @@ class SeedProvisioningTests(unittest.TestCase):
         self.assertFalse(result["SECURE_SSL_REDIRECT"])
         self.assertEqual(result["DATACITE_DRY_RUN"], "true")
         self.assertFalse(result["GITHUB_CLIENT_SECRET"])
+        self.assertFalse(result["EXTERNAL_AUTH_ENABLED"])
+        self.assertEqual(result["MIDDLEWARE"][0], "core.external_auth.ExternalAuthMiddleware")
 
         with (
             patch.dict(os.environ, {"COMSES_PROVISION_ENVIRONMENT": "prod"}),
@@ -152,6 +155,8 @@ class SeedProvisioningTests(unittest.TestCase):
             result = runpy.run_path(str(ROOT / "django/core/settings/recovery.py"))
         self.assertTrue(any(call.args[0] == "core.settings.production" for call in imported.call_args_list))
         self.assertTrue(result["DATACITE_TEST_MODE"])
+        self.assertFalse(result["EXTERNAL_AUTH_ENABLED"])
+        self.assertEqual(result["MIDDLEWARE"][0], "core.external_auth.ExternalAuthMiddleware")
 
     def test_compose_profile_replaces_public_port_and_normal_init(self):
         import shutil

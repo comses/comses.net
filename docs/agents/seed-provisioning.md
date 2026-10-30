@@ -135,6 +135,45 @@ before initialization, DataCite uses dry-run and integration credentials are
 disabled. Nginx is held behind a profile and loopback-only binding. These controls
 do not sandbox arbitrary application code or restrict host egress.
 
+### External authentication: alternate access path
+
+**Security hazard:** a restored database can restore a usable external
+authentication path. Allauth `SocialApp` records can supply provider credentials,
+and `SocialAccount` records retain links between external identities and local
+users. Clearing environment secrets or changing a local password does not, by
+itself, disable that path. If the provider flow succeeds, a linked external
+identity can authenticate to the restored application under the application's
+account policy. An operator-only tunnel limits reachability; it does not disable
+authentication for someone who can reach it.
+
+The explicit Django setting `EXTERNAL_AUTH_ENABLED` controls both backend
+enforcement and the social-login buttons:
+
+| Settings profile | Value | Behavior |
+| --- | --- | --- |
+| Normal development, test, staging and production | `True` | External authentication is available subject to provider configuration and account permissions. |
+| Recovery (and profiles inheriting recovery) | `False` | External-auth views return 403 before executing; local password login remains available. |
+
+`core.external_auth.ExternalAuthMiddleware` is installed in the common middleware
+list. Only the Boolean `True` enables external authentication; this is a Django
+settings policy, not an automatically read environment variable. Keep it false
+throughout a drill. The guard blocks allauth social login, account linking,
+connection management and callbacks, plus Discourse and Librarian SSO handoffs.
+It leaves restored provider/account records intact. Hiding buttons alone is not
+the security control, and empty provider secrets are not proof of disablement.
+
+Verify GitHub/ORCID initiation and callback URLs return 403 without a `Location`
+header while local login/logout still work. Do not follow live identity-provider
+redirects during the test. Before enabling external authentication on a rebuilt
+service, review the restored providers, linked accounts, callback destinations
+and intended audience as part of the separate activation decision. Never export
+provider credentials as evidence.
+
+This control does not revoke existing authenticated sessions, invalidate upstream
+tokens, disable local accounts, or restrict host egress. Where access revocation
+is required, handle those separately; do not describe this flag as a complete
+account lockdown.
+
 ## Evidence and activation
 
 `<state-dir>/execution.json` associates seed, release, environment, target,

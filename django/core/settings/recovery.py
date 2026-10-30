@@ -11,6 +11,8 @@ else:
     from core.settings.staging import *  # noqa: F403
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+# Clearing settings does not disable provider credentials restored in SocialApp.
+EXTERNAL_AUTH_ENABLED = False
 ANYMAIL = {}
 SENTRY_DSN = ""
 DATACITE_DRY_RUN = "true"

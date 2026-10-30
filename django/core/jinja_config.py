@@ -23,6 +23,7 @@ from datetime import datetime
 from urllib.parse import parse_qsl
 
 from core.discourse import get_sanitized_username, sanitize_username
+from core.external_auth import external_auth_enabled
 from core.fields import render_sanitized_markdown
 from core.models import ComsesGroups
 from core.serializers import FULL_DATE_FORMAT, FULL_DATETIME_FORMAT
@@ -72,6 +73,7 @@ def environment(**options):
             "librarian_url": librarian_url,
             "is_production": is_production,
             "provider_login_url": provider_login_url,
+            "external_auth_enabled": external_auth_enabled,
             "provider_display_name": provider_display_name,
             "get_choices_display": get_choices_display,
             "get_discourse_username": get_discourse_username,

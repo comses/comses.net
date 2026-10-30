@@ -1,3 +1,4 @@
+{% if external_auth_enabled() %}
 <div class="row">
     <div class='col-6'>
         <form action="{{ provider_login_url(request, 'github') }}" method="POST">
@@ -20,4 +21,7 @@
         </form>
     </div>
 </div>
+{% else %}
+<p>External sign-in is disabled on this deployment. Use a local account to sign in.</p>
+{% endif %}
 

@@ -160,6 +160,7 @@ COMSES_APPS = [
 INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + COMSES_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
+    "core.external_auth.ExternalAuthMiddleware",
     "core.request_logging.RequestMetadataMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -546,6 +547,12 @@ HUEY = {
 # https://django-allauth.readthedocs.io/en/latest/installation/quickstart.html
 # and
 # https://django-allauth.readthedocs.io/en/latest/account/configuration.html
+# External providers are an alternate authentication path, including credentials
+# and account links restored from the database. This flag gates views and UI;
+# empty provider secrets alone do not disable external authentication.
+# Recovery overrides this to False. See docs/agents/seed-provisioning.md.
+EXTERNAL_AUTH_ENABLED = True
+
 # ACCOUNT_ADAPTER = 'core.adapter.AccountAdapter'
 # ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_LOGIN_METHODS = {"email", "username"}
