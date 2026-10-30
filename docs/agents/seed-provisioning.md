@@ -1,19 +1,23 @@
-# Provision from an explicit seed and a pinned release
+# Publish and provision an explicit seed with a pinned release
 
-This is the application side of the shared provisioning contract: restore seed X
-with release Y, validate it, and hold activation for separate operator approval.
+This is the application side of the shared provisioning contract: publish an
+identified, validated seed, restore seed X with release Y, validate it, and hold
+activation for separate operator approval.
 Initial staging, a production rebuild and an ephemeral drill use the same
 application phases. Environment-specific credentials and infrastructure state
-remain separate. This workflow currently accepts a prepared Borg seed containing
-a custom-format database dump. It does not publish minimal or sanitized seeds.
+remain separate. Seeds use a Borg repository containing a custom-format database
+dump and matching shared files. `build_synthetic_seed` constructs synthetic
+candidates; minimal/sanitized seed publication follows the operator workflow
+below. `provision-from-seed` consumes seeds and does not build fixtures, sanitize
+production data, or publish seeds automatically.
 
 ## Responsibility boundary
 
 | Owner | Responsibilities |
 | --- | --- |
 | Infrastructure repository | Cloud resources and quotas; networks; operator authority and SSH trust; verified disk identification, formatting and mounting; shared container runtime; application checkout pin; verified snapshot/clone selection; local working repository delivery; handoff and independent evidence export; ephemeral resource teardown. |
-| This application release | Storage ownership/layout helpers; application prerequisites; configuration and fresh generated secrets; Compose/build/runtime requirements; seed identity and dump compatibility checks; existing Borg restore and migrations; application validation; safe application profile and activation policy. |
-| Operator | Approve seed, release and destination; review seed evidence and data sensitivity; authorize data replacement; inspect failures and explicitly authorize destructive retries; perform functional acceptance; approve activation independently; retain evidence and close the drill. |
+| This application release | Seed content/layout and validation requirements; existing Borg backup packaging; storage ownership/layout helpers; application prerequisites; configuration and fresh generated secrets; Compose/build/runtime requirements; seed identity and dump compatibility checks; existing Borg restore and migrations; application validation; safe application profile and activation policy. |
+| Operator | Approve seed content, sanitization, audience, release and destination; publish seed evidence and authorize distribution; authorize data replacement; inspect failures and explicitly authorize destructive retries; perform functional acceptance; approve activation independently; retain evidence and close the drill. |
 
 Infrastructure invokes this release's entry point. It must not reimplement image
 selection, Compose service commands, Django settings, restore logic, migrations
@@ -22,6 +26,209 @@ devices, manage SSH trust, create/delete snapshots or borrow cloud credentials.
 The target identity supplied to the application is an infrastructure attestation;
 the application additionally binds execution to the mounted `/srv` filesystem
 UUID. It does not independently authenticate a cloud instance UUID.
+
+## Publish a minimal or sanitized seed
+
+Seed publication means making a fixed, approved recovery input and its evidence
+available to an authorized consumer. It does not mean publishing a model release,
+registering a DOI, making the seed public, or enabling backup schedules. A replica
+of a full backup can still be selected through the handoff below; it must not be
+labelled sanitized without the content review described here.
+
+### 1. Declare content, audience, and coverage
+
+Record the publisher, intended consumers, source provenance, application commit,
+database/tool versions, fixture-builder or sanitization-script commit, and approved
+distribution location. Choose and label one of these scopes:
+
+- **Minimal synthetic:** build a fresh database and matching files from synthetic
+  fixtures using the pinned application's models/validated import paths. Include
+  only approved synthetic identities and test content. This is the preferred
+  option when real production content is unnecessary.
+- **Sanitized subset:** select explicitly approved records and files from an
+  isolated source copy, with an allowlist and a reviewed transformation/removal
+  policy covering related objects and all retained storage. Record exclusions and
+  preserve referential integrity. A reduced database alone is not a sanitized seed.
+
+For recovery acceptance, include actual model source, documentation and data,
+a model with at least two distinct published versions, a representative larger
+archive, private fixtures, and enough public records for pagination/filter checks.
+Record sizes, file counts, paths, archive and extracted-file SHA-256 hashes, and
+expected search IDs/order. A documentation/metadata-only ZIP is insufficient.
+An intentionally smaller bootstrap seed may be published with its coverage limits,
+but cannot satisfy the missing recovery cases.
+
+Preserve retained real published artifacts, DOI assignments and archival citation
+metadata byte-for-byte where applicable. If a published object contains data that
+cannot be distributed to the intended audience, exclude it and its dependencies
+or substitute a separately identified synthetic fixture; never anonymize it in
+place while retaining its real published identity. Synthetic publication/review
+states must be created through a reviewed fixture procedure with external effects
+suppressed, not by contacting live DOI or review services.
+
+A synthetic/subset seed proves only its stated coverage and restore mechanics.
+Its build timestamp is not a production recovery point, and its restore duration
+does not establish production-scale recovery time. Production recovery acceptance
+still requires the appropriately scoped backup and agreed timing objectives.
+
+### 2. Build and sanitize in isolation
+
+Use a disposable builder with its own database, shared root, Compose project and
+fresh secrets. Pin the application and record image identities. Apply the recovery
+profile described below before application commands: keep live mail, DOI, webhooks,
+SSO redirects, workers, schedules and public ingress suppressed. Infrastructure
+must supply any required network isolation; recovery settings alone do not block
+host egress. Never sanitize the production database, source backup or published
+source files.
+
+Run the versioned fixture/import/sanitization procedure and retain its report.
+There is no generic sanitizer in `provision-from-seed`; an absent or unreviewed
+procedure blocks sanitized publication. Review the retained database and files
+for real account emails/profile data, password hashes, sessions, reset/API/SSO
+tokens, share capabilities, private reviews/messages, and embedded credentials or
+personal data in uploads, archives, repository history and metadata. Remove or
+replace these only according to the approved policy. Seed accounts must have no
+usable shared credentials; create any test login locally after restore.
+
+Materialize only approved library/media/artifact-repository contents. Reconcile
+database references against that file inventory and verify expected hashes.
+Do not carry source logs, caches, previous restore trees, configuration secrets,
+old dumps or old Borg archives into the distributable seed. Keep the original
+source restricted even when the resulting seed is approved for wider access.
+
+### Automated synthetic candidate builder
+
+The `build_synthetic_seed` management command and `core.synthetic_seed` own the
+`synthetic-v1` fixture policy. There is no production-data input or sanitization
+mode. Infrastructure must supply an **empty, already created PostgreSQL database**
+on a separate disposable PostgreSQL instance, isolated mounts and fresh configuration.
+Use the intended restore database name (normally `comsesnet`): the existing restore
+contract locates the dump by that name. The command refuses system databases and
+any existing application tables, views or sequences, including other schemas.
+Do not use `inv db.init`: the builder applies migrations itself and refuses any
+database that already has tables. It also refuses existing fixture storage.
+
+Use a pinned checkout/image and the recovery Compose override. Set `SEED_PROJECT`
+to the disposable project and `SEED_RELEASE` to the full application commit that
+infrastructure has verified; the report records this as a caller attestation,
+not an independent Git/image verification. Example read-only preflight:
+
+```bash
+docker compose --project-name "$SEED_PROJECT" \
+  -f docker-compose.yml -f recovery.yml \
+  run --rm --no-deps --interactive=false --no-tty \
+  -e DJANGO_SETTINGS_MODULE=core.settings.seed \
+  -e COMSES_SEED_DATABASE=comsesnet \
+  -e COMSES_SEED_ROOT=/shared/seeds/candidate01 \
+  --entrypoint python server /code/manage.py build_synthetic_seed \
+  --confirm-database comsesnet \
+  --confirm-root /shared/seeds/candidate01 --release "$SEED_RELEASE"
+```
+
+Add `--apply` to create the schema and fixtures. A database advisory lock serializes
+builders; an exclusively created report claims the storage root. Keep all other
+writers stopped. An interrupted/failed candidate must be investigated and rebuilt
+in a **new empty database/root**; there is no destructive automatic retry/cleanup.
+
+The seed settings inherit integration suppression from recovery, disable automatic
+search indexing, and keep deferred Huey work in process-local memory without
+executing it or sending it to Redis. The builder uses the existing release
+publication validation and archive generation synchronously. It creates twelve
+public codebases, two versions of one model, a private codebase, Unicode authors,
+source/docs/data, and a larger deterministic CSV (8 MiB by default;
+`--large-data-mib` accepts 1–64). The two synthetic accounts and the framework
+anonymous identity are inactive with unusable passwords; releases have no share
+capabilities or assigned DOIs.
+
+`<seed-root>/seed-build.json` records status, policy and builder identity, release
+IDs/paths, archive and storage hashes, coverage and limitations. `built-unapproved`
+means the fixtures and archives passed local construction checks. It does **not**
+mean restored HTTP permissions, search, schema conformance, production-scale timing,
+publication approval or recovery acceptance passed. Review the declared larger
+fixture size for representativeness. Create test logins only on a restored drill
+target; do not add usable credentials to the distributable candidate.
+
+For the packaging commands below, pass the **same** `DJANGO_SETTINGS_MODULE`,
+`COMSES_SEED_DATABASE` and `COMSES_SEED_ROOT` using `run -e` on every invocation.
+The seed profile maps Borg/dump/library/media/repository paths beneath that seed
+root; omitting it would select the ordinary application database/storage instead.
+The success marker is then at `/shared/seeds/candidate01/backups/last-successful-backup`.
+Export the report independently; it is intentionally outside the archived content
+directories. Packaging, restore testing and operator approval remain required.
+
+### 3. Package a fixed candidate with existing backup tooling
+
+Stop every writer to the builder, including web processes and fixture jobs, while
+leaving its database available. The backup lock serializes backup operations;
+it does not prevent application uploads. Verify the builder's backup staging
+directory contains no inherited dumps and its Borg repository path does not yet
+exist. Initialize a **fresh repository**, never a copy of a production repository:
+older archives/chunks can otherwise retain excluded information. Do not delete
+archives or compact the source to manufacture a sanitized repository.
+
+Use the already reviewed builder Compose configuration and recovery override,
+with the same project and environment selector throughout. For example, after
+setting `SEED_PROJECT` to the verified disposable project name:
+
+```bash
+seed_compose=(docker compose --project-name "$SEED_PROJECT"
+  -f docker-compose.yml -f recovery.yml)
+"${seed_compose[@]}" run --rm --no-deps --interactive=false --no-tty \
+  --entrypoint inv server borg.init
+"${seed_compose[@]}" run --rm --no-deps --interactive=false --no-tty \
+  --entrypoint inv server borg.backup-all
+"${seed_compose[@]}" run --rm --no-deps --interactive=false --no-tty \
+  --entrypoint cat server /shared/backups/last-successful-backup
+```
+
+These commands require an already configured builder and running database; they
+are not a builder setup script. Confirm effective mounts/settings before running.
+The existing task produces a fresh validated custom-format dump, archives the
+library, media, artifact repository and `backups/latest`, verifies archive data,
+and writes the local success marker. See the [backup runbook](backup-restore-runbook.md)
+for its implementation contract. `borg.init` currently uses `--encryption=none`;
+the seed is not encrypted by Borg, so infrastructure must enforce appropriate
+storage/transport protection and audience access.
+
+Record the exact archive name from that successful run. Collect repository ID,
+archive fingerprint, file inventory and verification results using the pinned
+Borg runtime, and populate the unchanged handoff manifest below. Freeze the
+candidate repository; do not add further archives during review. Transfer only
+this repository and approved non-secret manifests/evidence, not the builder's
+entire shared root, `.env`, generated Compose secrets or credentials. If packaging
+the repository for transport, record the package SHA-256 and verify it after
+transfer; a transport hash does not replace Borg integrity or content review.
+
+### 4. Restore-test, approve, and publish
+
+Deliver a working copy of the exact candidate to a second disposable target and
+run the preview/apply/validation and operator-only HTTP procedures below. Verify
+the source fixture hashes against restored downloads through nginx, database/file
+reconciliation, schema/citation fidelity, public/private search results, and direct
+private-file/share-link/cache isolation. Inspect the restored database and retained
+files for the excluded sensitive data as well as checking application access.
+A successful backup marker or an HTTP 200 alone cannot approve publication.
+
+Apply the [functional test plan's recovery acceptance criteria](https://github.com/comses/planning/wiki/comses-functional-test-plan#10-recovery-acceptance--isolated-restore-target)
+within the declared seed scope. Retain the seed identity, provenance, content and
+sanitization policy/report, coverage and exclusions, fixture hashes, runtime pins,
+restore receipt, test failures/reruns and results in an access-controlled evidence
+location independent of both builder and restore target. Verify retrieval there.
+Do not export raw sensitive findings into a broadly accessible evidence bundle.
+
+The publisher and approving operator record approval of the **exact** repository
+ID/archive fingerprint and audience. Infrastructure then promotes that fixed
+candidate to its protected distribution location, verifies the delivered identity,
+and publishes the handoff manifest with its independent `evidence_ref`. Consumers
+must not select an unapproved candidate or a mutable “latest” alias. Keep publication
+approval separate from later target recovery acceptance and schedule activation.
+
+Failed review leaves the candidate unpublished. Correct the fixture/sanitization
+procedure and create a new candidate identity; do not overwrite an approved seed.
+Retain prior failure evidence. After independent evidence export, clean up the
+disposable builder/restore target and revoke temporary access, verifying cleanup
+without deleting the approved seed or evidence. Revocation of a previously
+approved seed must be recorded for consumers rather than silently replacing it.
 
 ## Handoff
 

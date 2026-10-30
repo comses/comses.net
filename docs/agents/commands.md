@@ -34,7 +34,13 @@ docker compose exec vite npm run tls # vue tests, lint, prettier
 
 For a fresh installation, rebuild or recovery drill, use the application-owned
 [seed provisioning workflow](seed-provisioning.md). It pairs an explicit seed
-with an exact checked-out release and holds activation separately:
+with an exact checked-out release and holds activation separately. Its
+[seed publication procedure](seed-provisioning.md#publish-a-minimal-or-sanitized-seed)
+covers minimal/sanitized content, candidate verification and distribution approval;
+the provisioning command itself does not sanitize or publish seeds. The
+[synthetic candidate builder](seed-provisioning.md#automated-synthetic-candidate-builder)
+uses `manage.py build_synthetic_seed` under `core.settings.seed`, with explicit
+database/root confirmations and a separate `--apply` step:
 
 ```bash
 python3 deploy/scripts/provision-from-seed --help
