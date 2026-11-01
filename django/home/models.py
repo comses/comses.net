@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import models
+from django.db.models import prefetch_related_objects
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -660,6 +661,14 @@ class JournalSnippetPlacement(models.Model):
 class JournalIndexPage(NavigationMixin, Page):
     template = "home/resources/journals.jinja"
     description = models.TextField(blank=True)
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        # Preserve unsaved placements when rendering Wagtail previews.
+        placements = list(self.journal_placements.all())
+        prefetch_related_objects(placements, "journal__tags")
+        context["journal_placements"] = placements
+        return context
 
     content_panels = Page.content_panels + [
         FieldPanel("description"),

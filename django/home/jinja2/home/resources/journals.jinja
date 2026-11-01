@@ -30,7 +30,7 @@
             {{ markdown(page.description) }}
         </div>
     </div>
-    {% for journal_placement in page.journal_placements.all() %}
+    {% for journal_placement in journal_placements %}
         <h3><a target='_blank' href='{{ journal_placement.journal.url }}'>{{ journal_placement.journal.name }}</a></h3>
         <div class='description'>
             {% autoescape off %}
