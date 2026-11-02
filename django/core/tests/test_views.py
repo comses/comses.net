@@ -142,6 +142,30 @@ class ProfilePageRenderTestCase(TestCase):
         response = self.client.get(reverse("core:profile-detail", kwargs={"pk": self.submitter.id}))
         self.assertEqual(response.status_code, 200)
 
+    def test_flagged_profile_visibility(self):
+        self.profile.mark_spam()
+        ComsesGroups.initialize()
+        moderator = self.user_factory.create(username="moderator")
+        ComsesGroups.MODERATOR.add(moderator)
+        admin = self.user_factory.create(username="admin")
+        ComsesGroups.ADMIN.add(admin)
+        visitors = [
+            (None, 404),
+            (self.user_factory.create(username="visitor"), 404),
+            (self.submitter, 200),
+            (moderator, 200),
+            (admin, 200),
+            (self.user_factory.create(username="staff", is_staff=True), 200),
+            (self.user_factory.create(username="superuser", is_superuser=True), 200),
+        ]
+        url = reverse("core:profile-detail", kwargs={"pk": self.submitter.id})
+        for user, expected_status in visitors:
+            for accept in ("text/html", "application/json"):
+                with self.subTest(user=user, accept=accept):
+                    self.client.force_authenticate(user=user)
+                    response = self.client.get(url, HTTP_ACCEPT=accept)
+                    self.assertEqual(response.status_code, expected_status)
+
     def test_list(self):
         update_index()
         response = self.client.get(reverse("core:profile-list"))

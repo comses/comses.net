@@ -273,7 +273,7 @@ class GeneralSearch:
         )
 
         # Apply the query to the search object
-        s = s.query(combined_query)
+        s = s.query(combined_query).exclude("term", is_marked_spam_filter=True)
 
         # Execute the search
         response = s[start : start + size].execute()

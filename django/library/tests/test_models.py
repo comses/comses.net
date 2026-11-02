@@ -239,6 +239,20 @@ class CodebaseTest(BaseModelTestCase):
             submitter=self.user,
         )
 
+    def test_spam_verdict_preserves_published_release(self):
+        release = self.c1.create_release(status=CodebaseRelease.Status.PUBLISHED, initialize=False)
+        original_release = CodebaseRelease.objects.filter(pk=release.pk).values().get()
+
+        for is_spam in (True, False):
+            with self.subTest(is_spam=is_spam):
+                with patch("modelsearch.signal_handlers.insert_or_update_object_task") as reindex:
+                    self.c1.record_spam_check(is_spam, "test", {})
+                self.c1.refresh_from_db()
+                self.assertEqual(self.c1.is_marked_spam, is_spam)
+                self.assertIsNotNone(self.c1.spam_moderation_id)
+                self.assertEqual(CodebaseRelease.objects.filter(pk=release.pk).values().get(), original_release)
+                reindex.enqueue.assert_called_once_with("library", "codebase", str(self.c1.pk))
+
     def test_base_dir(self):
         self.assertEqual(
             self.c1.base_library_dir,

@@ -381,6 +381,7 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = "__all__"
+        read_only_fields = ("spam_moderation",)
 
 
 class EventCalendarSerializer(serializers.ModelSerializer):

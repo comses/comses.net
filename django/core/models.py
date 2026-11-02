@@ -238,7 +238,8 @@ class SpamModeration(models.Model):
         if hasattr(related_object, "is_marked_spam"):
             related_object.spam_moderation = self
             related_object.is_marked_spam = self.status == self.Status.SPAM
-            related_object.save()
+            # Skip metadata-rebuilding save overrides, but retain post_save search indexing.
+            models.Model.save(related_object, update_fields=["spam_moderation", "is_marked_spam"])
 
     def __str__(self):
         return f"SpamModeration: {self.status} - {self.reviewer} - {self.content_object}"
@@ -487,6 +488,18 @@ class MemberProfileQuerySet(models.QuerySet):
 
     def exclude_spam(self):
         return self.exclude(is_marked_spam=True)
+
+    def accessible(self, user):
+        if not user.is_authenticated:
+            return self.exclude_spam()
+        if (
+            user.is_staff
+            or user.is_superuser
+            or ComsesGroups.ADMIN.is_member(user)
+            or ComsesGroups.is_moderator(user)
+        ):
+            return self
+        return self.filter(models.Q(is_marked_spam=False) | models.Q(user=user))
 
     def with_affiliations(self, **kwargs):
         return self.exclude(affiliations=[]).filter(**kwargs)
