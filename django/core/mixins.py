@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.shortcuts import redirect
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
@@ -201,8 +202,11 @@ class SpamCatcherViewSetMixin:
                 raise ValueError(f"instance {instance} does not have a {field} attribute")
 
     @action(detail=True, methods=["post"], permission_classes=[ModeratorPermissions])
+    @transaction.atomic
     def mark_spam(self, request, **kwargs):
         instance = self.get_object()
+        # Serialize manual decisions with background checks before reading moderation.
+        instance = type(instance).objects.select_for_update().get(pk=instance.pk)
         self._validate_content_object(instance)
         content_type = ContentType.objects.get_for_model(type(instance))
         notes = request.data.get("notes")
