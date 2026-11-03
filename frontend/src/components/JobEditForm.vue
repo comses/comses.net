@@ -8,7 +8,6 @@
       help="Job title"
       required
     />
-    <HoneypotField />
     <MarkdownField
       class="mb-3"
       data-cy="job-description"
@@ -68,7 +67,6 @@ import TextField from "@/components/form/TextField.vue";
 import MarkdownField from "@/components/form/MarkdownField.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
-import HoneypotField from "@/components/form/HoneypotField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import { useForm } from "@/composables/form";
@@ -97,7 +95,7 @@ const {
   errors,
   handleSubmit,
   values,
-  setValuesWithLoadTime,
+  setValues,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
 } = useForm<JobEditFields>({
@@ -114,7 +112,7 @@ const {
 onMounted(async () => {
   if (props.jobId) {
     await retrieve(props.jobId);
-    setValuesWithLoadTime(data.value);
+    setValues(data.value);
   }
   addUnsavedAlertListener();
 });

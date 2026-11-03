@@ -2,21 +2,20 @@ from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib import admin
-from django.contrib.contenttypes.models import ContentType
 from django.middleware.csrf import get_token
-from django.urls import reverse
-from django.utils.html import format_html
+from django.urls import include, path, reverse
 from enum import Enum
 
+from wagtail.admin.menu import MenuItem
 from wagtail.admin.ui.components import Component
 from wagtail_modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.views import IndexView
 from wagtail import hooks
 
-from core.models import Event, Job, SpamModeration
+from core.models import Event, Job
 from library.models import CodebaseRelease, PeerReview
+from . import spam_admin
 from .models import TagCleanup
 
 
@@ -110,98 +109,19 @@ class TagCleanupAdmin(ModelAdmin):
     ordering = ("id",)
 
 
-class SpamContentButtonHelper(ButtonHelper):
-    def reject_button(self, pk):
-        return {
-            "url": reverse("curator:reject_spam", args=[pk]),
-            "label": "not spam",
-            "classname": "button button-small button-secondary",
-            "title": "Reject Spam",
-        }
-
-    def confirm_button(self, pk):
-        return {
-            "url": reverse("curator:confirm_spam", args=[pk]),
-            "label": "mark as spam",
-            "classname": "button button-small button-primary",
-            "title": "Confirm Spam",
-        }
-
-    def confirm_and_deactivate_user_button(self, pk):
-        return {
-            "url": f"{reverse('curator:confirm_spam', args=[pk])}?deactivate_user=true",
-            "label": "mark spam + deactivate user",
-            "classname": "button button-small no",
-            "title": "Confirm Spam",
-        }
-
-    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
-        buttons = []
-        buttons.append(self.reject_button(obj.id))
-        buttons.append(self.confirm_button(obj.id))
-        buttons.append(self.confirm_and_deactivate_user_button(obj.id))
-        return buttons
+class ModeratorMenuItem(MenuItem):
+    def is_shown(self, request):
+        return spam_admin.is_moderator(request.user)
 
 
-class ContentTypeFilter(admin.SimpleListFilter):
-    """
-    custom filter for spam content admin to filter by content type (model)
-    """
-
-    title = "content type"
-    parameter_name = "content_type"
-
-    def lookups(self, request, model_admin):
-        # get the list of content types for which there are spam content entries
-        content_types = SpamModeration.objects.values_list("content_type", flat=True).distinct()
-        return [(ct.id, ct.model) for ct in ContentType.objects.filter(id__in=content_types)]
-
-    def queryset(self, request, queryset):
-        if self.value():
-            return queryset.filter(content_type_id=self.value())
-        return queryset
+@hooks.register("register_admin_urls")
+def register_spam_admin_urls():
+    return [path("spam/", include((spam_admin.urlpatterns, "curator_spam")))]
 
 
-class SpamContentAdmin(ModelAdmin):
-    """
-    provides a custom admin interface for managing spam content
-    """
-
-    model = SpamModeration
-    menu_label = "Spam Content"
-    menu_icon = "warning"
-    add_to_settings_menu = False
-    list_display = (
-        "content_object",
-        "view_content",
-        # "submitter",
-        "status",
-        "first_detected",
-        "last_modified",
-        "detection_method",
-    )
-    search_fields = (
-        "content_type__model",
-        "status",
-        "review_notes",
-    )
-    list_filter = ("status", ContentTypeFilter)
-    button_helper_class = SpamContentButtonHelper
-
-    def view_content(self, obj):
-        return format_html(
-            '<a href="{0}" target="_blank">View {1}</a>',
-            obj.content_object.get_absolute_url(),
-            obj.content_type.model,
-        )
-
-    def first_detected(self, obj):
-        return obj.date_created
-
-    first_detected.admin_order_field = "date_created"
-
-    def submitter(self, obj):
-        return obj.content_object.submitter
+@hooks.register("register_admin_menu_item")
+def register_spam_menu_item():
+    return ModeratorMenuItem("Spam", reverse("curator_spam:index"), icon_name="warning", order=250)
 
 
 @hooks.register("construct_homepage_panels")
@@ -266,4 +186,3 @@ class RecentActivityPanel(Component):
 
 
 modeladmin_register(TagCleanupAdmin)
-modeladmin_register(SpamContentAdmin)

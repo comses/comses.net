@@ -1,0 +1,22 @@
+<style>
+  .spam-admin { max-width: 90rem; padding-bottom: 2rem; }
+  .spam-config { padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid var(--w-color-border-furniture); border-radius: 0.25rem; }
+  .spam-providers { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .spam-providers > div { border-left: 3px solid var(--w-color-border-furniture); padding-left: 1rem; }
+  .spam-providers p { margin: 0.35rem 0; }
+  .spam-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 1rem; margin-bottom: 1.25rem; }
+  .spam-filters label { display: block; margin-bottom: 0.5rem; }
+  .spam-filters select { width: 100%; }
+  .spam-list .title { width: 55%; }
+  .spam-list td { vertical-align: top; }
+  .spam-list .title p { margin: 0.4rem 0 0; color: var(--w-color-text-meta); }
+  .spam-score { white-space: nowrap; }
+  .spam-score small { display: block; margin-top: 0.25rem; color: var(--w-color-text-meta); }
+  .spam-detail { display: grid; grid-template-columns: minmax(18rem, 1fr) minmax(0, 2fr); gap: 2rem; }
+  .spam-detail .listing th { width: 9rem; }
+  .spam-detail .listing td { overflow-wrap: anywhere; }
+  @media (max-width: 60rem) {
+    .spam-providers, .spam-detail { grid-template-columns: 1fr; }
+    .spam-filters { grid-template-columns: 1fr 1fr; }
+  }
+</style>

@@ -1,0 +1,82 @@
+{% extends "wagtailadmin/base.html" %}
+{% block titletag %}Spam: {{ content.title }}{% endblock %}
+
+{% block extra_css %}{{ block.super }}{% include "curator/spam/_styles.html" %}{% endblock %}
+
+{% block content %}
+  {% include "wagtailadmin/shared/header.html" with title=content.title subtitle=content.kind|capfirst icon="warning" %}
+  <div class="nice-padding spam-admin">
+    <p><a href="{% url 'curator_spam:index' %}">&larr; All spam checks</a></p>
+
+    <div class="spam-detail">
+      <section aria-label="Moderation">
+    <div class="listing-with-x-scroll">
+      <table class="listing">
+        <tbody>
+          <tr><th scope="row">Status</th><td><strong class="{% if moderation.status == 'spam' %}w-text-critical-200{% else %}w-text-positive-100{% endif %}">{{ moderation.get_status_display }}</strong></td></tr>
+          <tr><th scope="row">P(spam)</th><td>{% include "curator/spam/_score.html" %}</td></tr>
+          {% if moderation.spam_probability is not None %}
+            <tr><th scope="row">Model</th><td>{{ moderation.detection_method }}</td></tr>
+            {% for failure in moderation.detection_details.fallback_from %}<tr><th scope="row">Fell back from</th><td>{{ failure.model }}<br><small>{{ failure.error }}</small></td></tr>{% endfor %}
+            {% if moderation.detection_details.latency_ms is not None %}<tr><th scope="row">Latency</th><td>{{ moderation.detection_details.latency_ms }} ms</td></tr>{% endif %}
+          {% endif %}
+          <tr><th scope="row">First recorded</th><td>{{ moderation.date_created|date:"M j, Y H:i" }}</td></tr>
+          <tr><th scope="row">Updated</th><td>{{ moderation.last_modified|date:"M j, Y H:i" }}</td></tr>
+          {% if moderation.reviewer %}<tr><th scope="row">Reviewer</th><td>{{ moderation.reviewer.username }}</td></tr>{% endif %}
+          {% if moderation.notes %}<tr><th scope="row">Notes</th><td>{{ moderation.notes|linebreaksbr }}</td></tr>{% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <form class="w-mb-8" method="post" action="{% url 'curator_spam:review' moderation.pk %}">
+      {% csrf_token %}
+      <label for="spam-notes">Notes (optional)</label>
+      <textarea id="spam-notes" name="notes" rows="3" class="w-mb-4"></textarea>
+      <div class="w-flex w-flex-wrap w-gap-4">
+        {% if moderation.status == "spam" %}
+          <button class="button button-secondary" name="decision" value="not_spam">Mark not spam</button>
+        {% else %}
+          <button class="button button-secondary no" name="decision" value="spam">Mark spam</button>
+        {% endif %}
+        {% if submitter and not submitter.is_superuser and submitter.is_active %}
+          <button class="button button-secondary no" name="decision" value="spam_deactivate"
+            onclick="return confirm('Mark as spam and deactivate {{ submitter.username|escapejs }}?')">{% if moderation.status == "spam" %}Deactivate {{ submitter.username }}{% else %}Spam, and deactivate {{ submitter.username }}{% endif %}</button>
+        {% endif %}
+      </div>
+    </form>
+
+    <p class="w-flex w-flex-wrap w-gap-4">
+      {% if content.url %}<a href="{{ content.url }}" target="_blank" rel="noopener">View on site</a>{% endif %}
+      {% if submitter %}<a href="{% url 'core:profile-detail' submitter.pk %}" target="_blank" rel="noopener">{{ submitter.username }}'s profile</a>{% endif %}
+    </p>
+
+      </section>
+      <section aria-label="Submitted content">
+    {% if input_sections %}
+      {% for title, fields in input_sections %}
+        <h2>{{ title }}</h2>
+        <div class="listing-with-x-scroll">
+          <table class="listing">
+            <tbody>{% for label, value in fields %}<tr><th scope="row">{{ label }}</th><td>{{ value|linebreaksbr }}</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      {% endfor %}
+    {% else %}
+      <h2>Detection</h2>
+      <div class="listing-with-x-scroll">
+        <table class="listing">
+          <tbody>
+            <tr><th scope="row">Method</th><td>{{ moderation.detection_method|default:"manual" }}</td></tr>
+            {% for key, value in other_details.items %}<tr><th scope="row">{{ key }}</th><td>{{ value|linebreaksbr }}</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    <details class="w-mb-8">
+      <summary>Recorded detection details</summary>
+      <pre class="w-overflow-x-auto">{{ raw_details }}</pre>
+    </details>
+      </section>
+    </div>
+  </div>
+{% endblock %}
