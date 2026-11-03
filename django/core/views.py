@@ -375,7 +375,9 @@ class MemberProfileViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDe
             return MemberProfileSerializer
 
     def get_queryset(self):
-        queryset = self.queryset.accessible(self.request.user)
+        queryset = self.queryset
+        if self.action != "list":
+            queryset = queryset.accessible(self.request.user)
         if self.action == "retrieve":
             return queryset.with_peer_review_invitations()
         else:
