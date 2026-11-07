@@ -20,6 +20,7 @@ from pathlib import Path
 from django.contrib.messages import constants as messages
 
 from core.request_logging import configure_request_logging
+from core.redis_policy import cache_options
 
 
 from pathlib import Path
@@ -528,10 +529,7 @@ CACHES = {
         "BACKEND": "django_redis.cache.RedisCache",
         # FIXME: switch to TCP in prod
         "LOCATION": "unix:///shared/redis/redis.sock",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {"max_connections": 20},
-        },
+        "OPTIONS": cache_options(),
     }
 }
 

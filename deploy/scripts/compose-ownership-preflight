@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Reject competing writers, including stopped containers that restart on boot."""
+
+import json
+import os
+import shlex
+from pathlib import Path
+import subprocess
+import sys
+
+
+def conflicts(containers, project, roots):
+    roots = [Path(root).resolve() for root in roots]
+    for container in containers:
+        if container["project"] == project:
+            continue
+        if container["status"] not in ("running", "restarting", "paused") and container["restart"] in ("", "no"):
+            continue
+        for mount in container["mounts"]:
+            if mount.get("Type") != "bind" or not mount.get("RW"):
+                continue
+            source = Path(mount["Source"]).resolve()
+            if any(source == root or source in root.parents or root in source.parents for root in roots):
+                yield f"{container['name']}: project={container['project'] or 'unlabelled'}, state={container['status']}, restart={container['restart']}, writable={source}"
+
+
+def storage_layout():
+    result = subprocess.run(
+        ["bash", str(Path(__file__).with_name("storage-layout.sh")), "--json"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(result.stdout)
+
+
+def inspect_conflicts(docker, project, layout):
+    ids = subprocess.check_output([*docker, "ps", "-aq"], text=True).split()
+    containers = []
+    if ids:
+        template = '{"name":{{json .Name}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"status":{{json .State.Status}},"restart":{{json .HostConfig.RestartPolicy.Name}},"mounts":{{json .Mounts}}}'
+        output = subprocess.check_output([*docker, "inspect", "--format", template, *ids], text=True)
+        containers = [json.loads(line) for line in output.splitlines()]
+    roots = [layout[key] for key in ("shared", "postgres", "logs", "backups")]
+    return list(conflicts(containers, project, roots))
+
+
+def main():
+    if os.environ.get("DEPLOY_ENVIRONMENT", "dev") not in ("prod", "staging"):
+        return
+    docker = shlex.split(os.environ.get("DOCKER", "docker"))
+    if not docker:
+        sys.exit("Compose ownership preflight failed: DOCKER command is empty.")
+    # Ask Compose for its effective project name, including .env and name: settings.
+    config = json.loads(
+        subprocess.check_output(
+            [*docker, "compose", "--project-directory", os.getcwd(), "config", "--format", "json"], text=True
+        )
+    )
+    project = config["name"]
+    problems = inspect_conflicts(docker, project, storage_layout())
+    if problems:
+        print("Compose ownership preflight failed: competing writable storage owners:", file=sys.stderr)
+        print("\n".join(problems), file=sys.stderr)
+        sys.exit(
+            "Verify the authoritative project, then explicitly stop and disable restart on obsolete containers. No containers were changed."
+        )
+    print(f"Compose ownership preflight passed for {project}.")
+
+
+if __name__ == "__main__":
+    main()

@@ -12,6 +12,8 @@ This page is a minimal index of commonly used operational commands.
 - Full storage and migration contract: `docs/agents/storage-layout.md`
 - Backup and restore runbook: `docs/agents/backup-restore-runbook.md`
 - Canonical deployment procedures: docs/source/deployment.md
+- [Application deployment preflight](deployment-preflight.md)
+- [Production connection budget and Compose ownership](production-connection-budget.md)
 
 Guidelines:
 

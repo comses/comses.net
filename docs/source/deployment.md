@@ -58,12 +58,14 @@ From repository root:
 make deploy
 ```
 
-What `make deploy` does:
+What `make deploy` does (see the [preflight contract](../agents/deployment-preflight.md)):
 
-1.  Builds and renders `docker-compose.yml` from selected environment files.
+1.  Runs the unified application preflight before building, then renders
+    `docker-compose.yml` from selected environment files.
 2.  Builds images and ensures generated secrets/config files exist.
 3.  Pulls base services (and nginx for non-dev environments).
-4.  Starts services with Docker Compose.
+4.  Rechecks the generated configuration, storage and ownership, then starts
+    services with Docker Compose.
 5.  Runs container preparation via `docker compose exec server inv prepare`.
 
 ## Redis socket readiness and recovery
