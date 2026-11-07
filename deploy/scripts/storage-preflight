@@ -1,35 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_ROOT=${COMSES_APP_ROOT:-$(pwd -P)}
-SHARED_ROOT=${COMSES_SHARED_ROOT:-$APP_ROOT/docker/shared}
-POSTGRES_ROOT=${COMSES_POSTGRES_ROOT:-$APP_ROOT/docker/pgdata}
-LOG_ROOT=${COMSES_LOG_ROOT:-$SHARED_ROOT/logs}
-BACKUPS_ROOT=${COMSES_BACKUPS_ROOT:-/srv/backups/comses}
-SECRETS_ROOT=${COMSES_SECRETS_ROOT:-$APP_ROOT/docker/secrets}
-DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT:-dev}
-DEPLOY_UID=${DEPLOY_UID:-1000}
-DEPLOY_GID=${DEPLOY_GID:-1000}
-APP_UID=${APP_UID:-0}
-APP_GID=${APP_GID:-0}
-POSTGRES_UID=${POSTGRES_UID:-999}
-POSTGRES_GID=${POSTGRES_GID:-999}
-REDIS_UID=${REDIS_UID:-999}
-REDIS_GID=${REDIS_GID:-1000}
-ELASTICSEARCH_UID=${ELASTICSEARCH_UID:-1000}
-ELASTICSEARCH_GID=${ELASTICSEARCH_GID:-0}
-NGINX_UID=${NGINX_UID:-101}
-NGINX_GID=${NGINX_GID:-101}
-
-# Pinned host paths. Overridable so storage tests can exercise the same
-# staging/prod validation logic against a disposable fixture tree.
-EXPECTED_APP_ROOT=${COMSES_EXPECTED_APP_ROOT:-/srv/apps/comses}
-EXPECTED_SHARED_ROOT=${COMSES_EXPECTED_SHARED_ROOT:-$EXPECTED_APP_ROOT/docker/shared}
-EXPECTED_POSTGRES_ROOT=${COMSES_EXPECTED_POSTGRES_ROOT:-$EXPECTED_APP_ROOT/docker/pgdata}
-EXPECTED_LOG_ROOT=${COMSES_EXPECTED_LOG_ROOT:-/srv/logs/comses}
-EXPECTED_BACKUPS_ROOT=${COMSES_EXPECTED_BACKUPS_ROOT:-/srv/backups/comses}
-EXPECTED_SECRETS_ROOT=${COMSES_EXPECTED_SECRETS_ROOT:-$EXPECTED_APP_ROOT/docker/secrets}
-SRV_ROOT=${COMSES_SRV_ROOT:-/srv}
+. "$(dirname "${BASH_SOURCE[0]}")/storage-layout.sh"
 
 # Infrastructure collaborative group for the canonical logs/backups bind
 # roots (typically "operators"); resolved lazily so a missing group on a
@@ -117,6 +89,10 @@ validate_collaborative_root() {
         fi
     fi
 
+    if [ "${COMSES_PREFLIGHT_READ_ONLY:-false}" = true ]; then
+        [ -w "$path" ] || die "$path is not writable by the deployment/service user"
+        return
+    fi
     probe="$path/.storage-preflight-probe.$$"
     if ! ( : > "$probe" ) 2>/dev/null; then
         die "$path is not writable by the deployment/service user; required collaborative access is not effective"

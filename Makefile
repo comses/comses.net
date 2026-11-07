@@ -34,21 +34,18 @@ include .env
 DOCKER ?= docker
 SLEEP ?= sleep
 COMPOSE_ROOT := $(shell pwd -P)
+DEPLOY_SCRIPTS_DIR ?= deploy/scripts
+COMPOSE_SOURCE_ROOT ?= $(COMPOSE_ROOT)
 COMPOSE := $(DOCKER) compose --project-directory "$(COMPOSE_ROOT)"
-ifneq ($(filter staging prod,$(DEPLOY_ENVIRONMENT)),)
-COMSES_APP_ROOT ?= /srv/apps/comses
-COMSES_SHARED_ROOT ?= /srv/apps/comses/docker/shared
-COMSES_POSTGRES_ROOT ?= /srv/apps/comses/docker/pgdata
-COMSES_LOG_ROOT ?= /srv/logs/comses
-COMSES_BACKUPS_ROOT ?= /srv/backups/comses
-COMSES_SECRETS_ROOT ?= /srv/apps/comses/docker/secrets
-else
-COMSES_APP_ROOT ?= $(CURDIR)
-COMSES_SHARED_ROOT ?= $(COMSES_APP_ROOT)/docker/shared
-COMSES_POSTGRES_ROOT ?= $(COMSES_APP_ROOT)/docker/pgdata
-COMSES_LOG_ROOT ?= $(COMSES_SHARED_ROOT)/logs
-COMSES_SECRETS_ROOT ?= $(COMSES_APP_ROOT)/docker/secrets
-endif
+COMPOSE_SOURCE_FILES := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --compose-files "$(DEPLOY_ENVIRONMENT)")
+# One path contract is shared with provisioning and all application checks.
+storage_root = $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get $(1) "$(DEPLOY_ENVIRONMENT)" "$(2)")
+COMSES_APP_ROOT ?= $(call storage_root,APP_ROOT,)
+COMSES_SHARED_ROOT ?= $(call storage_root,SHARED_ROOT,$(COMSES_APP_ROOT))
+COMSES_POSTGRES_ROOT ?= $(call storage_root,POSTGRES_ROOT,$(COMSES_APP_ROOT))
+COMSES_LOG_ROOT ?= $(call storage_root,LOG_ROOT,$(COMSES_APP_ROOT))
+COMSES_BACKUPS_ROOT ?= $(call storage_root,BACKUPS_ROOT,$(COMSES_APP_ROOT))
+COMSES_SECRETS_ROOT ?= $(call storage_root,SECRETS_ROOT,$(COMSES_APP_ROOT))
 
 # Deployed hosts are provisioned explicitly; local and CI Compose bind mounts
 # must exist because create_host_path is intentionally disabled.
@@ -64,7 +61,7 @@ PATH := $(HOME)/.local/bin:$(PATH)
 .EXPORT_ALL_VARIABLES:
 # release-version rewrites .env after Make has parsed it. Let Compose read the
 # updated file instead of exporting Make's stale RELEASE_VERSION value.
-unexport RELEASE_VERSION
+unexport RELEASE_VERSION storage_root
 
 .PHONY: build
 build: docker-compose.yml secrets $(COMPOSE_STORAGE_PREREQUISITES)
@@ -74,8 +71,10 @@ $(BORG_REPO_PATH):
 	@mkdir -p $(@D)
 	wget -c ${BORG_REPO_URL} -O $@
 
+ifeq ($(filter deploy-preflight,$(MAKECMDGOALS)),)
 config.mk:
 	@envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
+endif
 
 .PHONY: $(DOCKER_SHARED_DIR)
 $(DOCKER_SHARED_DIR):
@@ -130,6 +129,7 @@ release-version: .env
 	@$(ENVREPLACE) RELEASE_VERSION $$(git describe --tags --abbrev=1 2>/dev/null || git rev-parse --short HEAD) .env
 	@chmod 0600 .env
 
+ifeq ($(filter deploy-preflight,$(MAKECMDGOALS)),)
 .env: $(DB_PASSWORD_PATH) $(SECRET_KEY_PATH)
 	@if [ ! -f .env ]; then \
 		cp $(ENV_TEMPLATE) .env; \
@@ -139,14 +139,13 @@ release-version: .env
 	$(ENVREPLACE) TEST_BASIC_AUTH_PASSWORD $$(openssl rand -base64 42) .env; \
 	chmod 0600 .env
 
+endif
+
 .PHONY: docker-compose.yml
 docker-compose.yml: base.yml dev.yml staging.yml test.yml prod.yml config.mk \
 	$(PGPASS_PATH) $(DOWNLOAD_ANALYTICS_HMAC_KEY_PATH) release-version .env $(COMPOSE_STORAGE_PREREQUISITES)
-	@case "$(DEPLOY_ENVIRONMENT)" in \
-	  dev|staging|test) $(COMPOSE) -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
-	  prod) $(COMPOSE) -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
-	  *) echo "invalid environment. must be either dev, staging or prod" 1>&2; exit 1;; \
-	esac
+	@case "$(DEPLOY_ENVIRONMENT)" in dev|staging|test|prod) ;; *) echo "invalid deployment environment" >&2; exit 1;; esac
+	@$(COMPOSE) $(addprefix -f ,$(COMPOSE_SOURCE_FILES)) config > docker-compose.yml
 
 .PHONY: set-db-password
 set-db-password: $(DB_PASSWORD_PATH) .env
@@ -161,12 +160,13 @@ secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
 
 .PHONY: deploy
 deploy:
-	@deploy/scripts/storage-preflight
+	@deploy/scripts/deploy-preflight
 	+@$(MAKE) build
 	$(COMPOSE) pull -q db redis elasticsearch
 ifneq ($(DEPLOY_ENVIRONMENT),dev)
 	$(COMPOSE) pull -q nginx
 endif
+	@deploy/scripts/deploy-preflight --rendered docker-compose.yml
 	$(COMPOSE) up -d --quiet-pull
 	$(SLEEP) 42
 	$(COMPOSE) exec server inv prepare
@@ -221,6 +221,10 @@ endif
 prepare-host-storage:
 	deploy/scripts/prepare-host-storage
 
+.PHONY: deploy-preflight
+deploy-preflight:
+	@"$(DEPLOY_SCRIPTS_DIR)/deploy-preflight" --source-root "$(COMPOSE_SOURCE_ROOT)"
+
 .PHONY: storage-preflight
 storage-preflight:
 	@deploy/scripts/storage-preflight
@@ -231,7 +235,7 @@ test-storage-scripts:
 
 .PHONY: test-deploy-contracts
 test-deploy-contracts:
-	python3 -m unittest deploy.tests.test_makefile
+	python3 -m unittest deploy.tests.test_makefile deploy.tests.test_compose_ownership deploy.tests.test_deploy_preflight
 
 .PHONY: test-seed-provisioning
 test-seed-provisioning:

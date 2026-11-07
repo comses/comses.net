@@ -17,9 +17,7 @@ FAKE_PREFLIGHT = ROOT / "deploy/tests/fixtures/fake_storage_preflight.py"
 
 class MakefileContractTests(unittest.TestCase):
     def setUp(self):
-        self.temporary_directory = tempfile.TemporaryDirectory(
-            prefix="comses-make-contract-"
-        )
+        self.temporary_directory = tempfile.TemporaryDirectory(prefix="comses-make-contract-")
         self.root = Path(self.temporary_directory.name)
         self.project = self.root / "physical checkout"
         self.alias = self.root / "logical-checkout"
@@ -41,9 +39,7 @@ class MakefileContractTests(unittest.TestCase):
             "docker-compose.yml",
         ):
             (self.project / name).touch()
-        (self.project / ".env").write_text(
-            "RELEASE_VERSION=fixture\n", encoding="utf-8"
-        )
+        (self.project / ".env").write_text("RELEASE_VERSION=fixture\n", encoding="utf-8")
         for name in (
             "db_password",
             ".pgpass",
@@ -55,9 +51,21 @@ class MakefileContractTests(unittest.TestCase):
         scripts = self.project / "deploy/scripts"
         scripts.mkdir(parents=True)
         shutil.copy(FAKE_PREFLIGHT, scripts / "storage-preflight")
+        shutil.copy(ROOT / "deploy/scripts/storage-layout.sh", scripts / "storage-layout.sh")
         shutil.copy(FAKE_NOOP, scripts / "envreplace")
         (scripts / "storage-preflight").chmod(0o755)
         (scripts / "envreplace").chmod(0o755)
+        ownership = scripts / "deploy-preflight"
+        ownership.write_text(
+            "#!/usr/bin/env python3\nimport json, os, sys\n"
+            'with open(os.environ["FAKE_DOCKER_LOG"], "a") as log:\n'
+            '    log.write(json.dumps({"event": "ownership"}) + "\\n")\n'
+            'with open(os.environ["FAKE_DOCKER_LOG"]) as log:\n'
+            '    count = sum(json.loads(line).get("event") == "ownership" for line in log)\n'
+            'fail_on = int(os.environ.get("FAKE_PREFLIGHT_FAIL_ON", "0"))\n'
+            'sys.exit(int(os.environ.get("FAKE_OWNERSHIP_FAILURE", "0")) or count == fail_on)\n'
+        )
+        ownership.chmod(0o755)
 
         self.log = self.root / "docker.jsonl"
         self.ps_count = self.root / "docker-ps-count"
@@ -121,16 +129,13 @@ class MakefileContractTests(unittest.TestCase):
             capture_output=True,
             text=True,
         )
-        records = [
-            json.loads(line)
-            for line in self.log.read_text(encoding="utf-8").splitlines()
-        ]
+        records = [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
         return result, records
 
     def assert_compose_prefix(self, records):
         commands = []
         for record in records:
-            if record.get("event") == "preflight":
+            if record.get("event") in ("preflight", "ownership"):
                 commands.append(record)
                 continue
             arguments = record["args"]
@@ -153,7 +158,7 @@ class MakefileContractTests(unittest.TestCase):
             for entry in (self.project, self.alias):
                 with self.subTest(deployment=deployment, entry=entry.name):
                     _, records = self.run_make("deploy", deployment, entry=entry)
-                    self.assertEqual(records.pop(0), {"event": "preflight"})
+                    self.assertEqual(records.pop(0), {"event": "ownership"})
                     commands = self.assert_compose_prefix(records)
                     files = ["-f", "base.yml"]
                     if deployment == "prod":
@@ -168,6 +173,7 @@ class MakefileContractTests(unittest.TestCase):
                     if deployment != "dev":
                         expected.append(["pull", "-q", "nginx"])
                     expected += [
+                        {"event": "ownership"},
                         ["up", "-d", "--quiet-pull"],
                         ["exec", "server", "inv", "prepare"],
                     ]
@@ -177,30 +183,50 @@ class MakefileContractTests(unittest.TestCase):
                         "application recreated retired Borg push secrets",
                     )
 
+    def test_deploy_stops_before_pull_or_start_when_ownership_check_fails(self):
+        result, records = self.run_make("deploy", "prod", environment={"FAKE_OWNERSHIP_FAILURE": "1"}, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        commands = self.assert_compose_prefix(records)
+        self.assertEqual(commands[-1], {"event": "ownership"})
+        self.assertFalse(
+            any(isinstance(command, list) and command[0] in ("build", "pull", "up") for command in commands)
+        )
+
+    def test_changed_conditions_after_build_block_service_start(self):
+        result, records = self.run_make("deploy", "prod", environment={"FAKE_PREFLIGHT_FAIL_ON": "2"}, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        commands = self.assert_compose_prefix(records)
+        self.assertIn(["build", "--pull", "--parallel"], commands)
+        self.assertNotIn(["up", "-d", "--quiet-pull"], commands)
+        self.assertEqual(commands[-1], {"event": "ownership"})
+
+    def test_preflight_does_not_generate_environment_or_secrets(self):
+        before = (self.project / ".env").read_bytes()
+        for path in self.secrets.iterdir():
+            path.unlink()
+        _, records = self.run_make("deploy-preflight", "prod")
+        self.assertEqual(records, [{"event": "ownership"}])
+        self.assertEqual((self.project / ".env").read_bytes(), before)
+        self.assertEqual(list(self.secrets.iterdir()), [])
+
     def test_compose_render_uses_release_updated_in_same_invocation(self):
         bin_directory = self.root / "bin"
         bin_directory.mkdir()
         fake_git = bin_directory / "git"
-        fake_git.write_text(
-            "#!/bin/sh\nprintf '%s\\n' new-release\n", encoding="utf-8"
-        )
+        fake_git.write_text("#!/bin/sh\nprintf '%s\\n' new-release\n", encoding="utf-8")
         fake_git.chmod(0o755)
 
         envreplace = self.project / "deploy/scripts/envreplace"
         shutil.copy(ROOT / "deploy/scripts/envreplace", envreplace)
         envreplace.chmod(0o755)
-        (self.project / ".env").write_text(
-            "RELEASE_VERSION=old-release\n", encoding="utf-8"
-        )
+        (self.project / ".env").write_text("RELEASE_VERSION=old-release\n", encoding="utf-8")
 
         _, records = self.run_make(
             "docker-compose.yml",
             environment={"PATH": f"{bin_directory}:{os.environ['PATH']}"},
         )
 
-        config_record = next(
-            record for record in records if "config" in record.get("args", [])
-        )
+        config_record = next(record for record in records if "config" in record.get("args", []))
         self.assertEqual(config_record["release_version"], "new-release")
         self.assertEqual(
             (self.project / ".env").read_text(encoding="utf-8"),
@@ -235,9 +261,7 @@ class MakefileContractTests(unittest.TestCase):
                     self.assertEqual(commands, expected)
 
     def test_stop_skips_redis_save_when_redis_is_stopped(self):
-        _, records = self.run_make(
-            "stop", environment={"FAKE_REDIS_RUNNING": "0"}
-        )
+        _, records = self.run_make("stop", environment={"FAKE_REDIS_RUNNING": "0"})
         commands = self.assert_compose_prefix(records)
         self.assertFalse(any("SAVE" in command for command in commands))
 

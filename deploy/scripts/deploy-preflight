@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""Check the application deployment contract without building or changing services."""
+
+import argparse
+import json
+import os
+from pathlib import Path
+import runpy
+import shlex
+import subprocess
+import sys
+
+SCRIPTS = Path(__file__).resolve().parent
+ownership = runpy.run_path(str(SCRIPTS / "compose-ownership-preflight"))
+
+
+def candidate(docker, layout, rendered=None, source_root=None):
+    command = [*docker, "compose", "--project-directory", os.getcwd()]
+    files = [rendered] if rendered else [Path(source_root or os.getcwd()) / file for file in layout["compose_files"]]
+    for file in files:
+        command += ["-f", str(file)]
+    output = subprocess.check_output([*command, "config", "--format", "json"], text=True, stderr=subprocess.PIPE)
+    return json.loads(output)
+
+
+def configuration_errors(config, environment, layout):
+    errors = []
+    if not config.get("name"):
+        errors.append("candidate has no Compose project identity")
+    services = config.get("services", {})
+    for service, target, expected in (
+        ("db", "/var/lib/postgresql/data", layout["postgres"]),
+        ("redis", "/data", layout["shared"] + "/redis"),
+        ("server", "/shared", layout["shared"]),
+        ("server", "/shared/logs", layout["logs"]),
+    ):
+        mounts = [mount for mount in services.get(service, {}).get("volumes", []) if mount.get("target") == target]
+        if len(mounts) != 1 or mounts[0].get("type") != "bind" or mounts[0].get("source") != expected:
+            errors.append(f"{service}:{target} must bind {expected}")
+    expected_settings = "core.settings.production" if environment == "prod" else "core.settings.staging"
+    actual_settings = services.get("server", {}).get("environment", {}).get("DJANGO_SETTINGS_MODULE")
+    if actual_settings != expected_settings:
+        errors.append(f"server must select {expected_settings}")
+    return errors
+
+
+def check(rendered=None, source_root=None):
+    environment = os.environ.get("DEPLOY_ENVIRONMENT", "dev")
+    if environment not in ("dev", "test", "staging", "prod"):
+        raise ValueError("DEPLOY_ENVIRONMENT must be dev, test, staging or prod")
+    failures = []
+    storage = subprocess.run(
+        [str(SCRIPTS / "storage-preflight")],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "COMSES_PREFLIGHT_READ_ONLY": "true"},
+    )
+    print(f"{'FAIL' if storage.returncode else 'PASS'} storage layout and access")
+    if storage.returncode:
+        print(storage.stderr.strip(), file=sys.stderr)
+        failures.append("storage")
+    if environment in ("staging", "prod"):
+        docker = shlex.split(os.environ.get("DOCKER", "docker"))
+        if not docker:
+            raise ValueError("DOCKER command is empty")
+        layout = ownership["storage_layout"]()
+        try:
+            config = candidate(docker, layout, rendered, source_root)
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
+            # Compose output can contain resolved secrets; never echo it.
+            print("FAIL candidate configuration: cannot render Compose configuration", file=sys.stderr)
+            failures.append("configuration")
+        else:
+            errors = configuration_errors(config, environment, layout)
+            print(f"{'FAIL' if errors else 'PASS'} candidate identity and storage bindings")
+            if errors:
+                failures.append("configuration")
+                print("\n".join(errors), file=sys.stderr)
+            if config.get("name"):
+                try:
+                    conflicts = ownership["inspect_conflicts"](docker, config["name"], layout)
+                except subprocess.CalledProcessError:
+                    print("FAIL storage ownership: cannot inspect deployment Docker daemon", file=sys.stderr)
+                    failures.append("ownership")
+                else:
+                    print(f"{'FAIL' if conflicts else 'PASS'} storage ownership and restart policies")
+                    if conflicts:
+                        failures.append("ownership")
+                        print("\n".join(conflicts), file=sys.stderr)
+    if failures:
+        print("Deployment preflight failed: " + ", ".join(failures), file=sys.stderr)
+        return 1
+    print("Deployment preflight passed; no build or service changes performed.")
+    return 0
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--rendered", help="check the generated Compose file immediately before startup")
+    parser.add_argument("--source-root", help="read the selected release configuration without changing the checkout")
+    args = parser.parse_args()
+    try:
+        sys.exit(check(args.rendered, args.source_root))
+    except (ValueError, OSError, subprocess.CalledProcessError) as error:
+        # Do not include subprocess stdout/stderr or environment values here.
+        print(f"Deployment preflight could not complete ({type(error).__name__}).", file=sys.stderr)
+        sys.exit(1)
