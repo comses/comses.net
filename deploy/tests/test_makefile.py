@@ -148,7 +148,12 @@ class MakefileContractTests(unittest.TestCase):
                 self.assertNotIn("--project-name", arguments)
                 self.assertNotIn("-p", arguments)
                 self.assertEqual(record["project_name"], "existing-stack")
-                commands.append(arguments[3:])
+                selected = arguments[3:]
+                if "config" not in selected:
+                    self.assertEqual(selected[:2], ["-f", "docker-compose.yml"])
+                    self.assertEqual(selected.count("-f"), 1)
+                    selected = selected[2:]
+                commands.append(selected)
             else:
                 commands.append(arguments)
         return commands
@@ -182,6 +187,21 @@ class MakefileContractTests(unittest.TestCase):
                         list(self.secrets.glob("borg_replication_*")),
                         "application recreated retired Borg push secrets",
                     )
+
+    def test_deploy_pins_configuration_despite_discovery_overrides(self):
+        (self.project / "docker-compose.override.yml").write_text(
+            "services: {db: {image: unvalidated}}\n"
+        )
+        _, records = self.run_make(
+            "deploy", "prod", environment={"COMPOSE_FILE": "unvalidated.yml"}
+        )
+        commands = self.assert_compose_prefix(records)
+        self.assertIn(["up", "-d", "--quiet-pull"], commands)
+        render = next(command for command in commands if "config" in command)
+        self.assertEqual(
+            render,
+            ["-f", "base.yml", "-f", "staging.yml", "-f", "prod.yml", "config"],
+        )
 
     def test_deploy_stops_before_pull_or_start_when_ownership_check_fails(self):
         result, records = self.run_make("deploy", "prod", environment={"FAKE_OWNERSHIP_FAILURE": "1"}, check=False)

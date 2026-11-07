@@ -22,7 +22,7 @@ it does not itself authorize either operation or run automatically during them.
 | Known, accepted source | Infrastructure | Clean canonical checkout, release on main, exact staging QA SHA for production |
 | Recovery readiness and operation exclusion | Infrastructure | Fresh application backup marker and shared backup/restore lock |
 | Intended durable storage | Application | Mounts, ownership/access, canonical bind aliases and PostgreSQL authority |
-| Candidate uses that storage and environment | Application | Render selected Compose overlays; verify core DB, Redis and application binds and Django settings |
+| Candidate uses that storage and environment | Application | Render selected Compose overlays; verify writable core DB, Redis and application binds and Django settings |
 | No competing foreign writers | Application | Inspect the same Docker command/context; reject active or restartable foreign writable mounts overlapping protected roots |
 | Bounded resource demand | Application configuration and acceptance | Worker ceilings and Redis timeout tests; these do not prove total live DB consumption or representative-load capacity |
 | Successful transition | Infrastructure plus functional QA | Exact resulting revision, clean source, running services and Django checks; operator functional acceptance remains necessary |
@@ -50,9 +50,13 @@ Failures identify the invariant and relevant storage paths, not credential value
 
 Overlay selection is shared. The early check renders configuration in memory;
 the normal build writes the deployment configuration; the final check validates
-that generated file. These are distinct observations, not a claim that state
-cannot change between them. Direct Docker operations and non-cooperating
-operators remain outside the backup/deployment lock.
+that generated file. Build and runtime commands explicitly select
+`docker-compose.yml`, so automatic override-file discovery and `COMPOSE_FILE`
+cannot substitute an unchecked configuration. Source rendering selects the
+shared overlay list explicitly; E2E commands explicitly add their test overlay.
+These are distinct observations, not a claim that state cannot change between
+them. Direct Docker operations and non-cooperating operators remain outside the
+backup/deployment lock.
 
 Infrastructure previews may extract the selected release's Makefile, scripts and
 Compose inputs into a temporary directory and invoke `make deploy-preflight`

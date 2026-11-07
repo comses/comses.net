@@ -36,7 +36,9 @@ SLEEP ?= sleep
 COMPOSE_ROOT := $(shell pwd -P)
 DEPLOY_SCRIPTS_DIR ?= deploy/scripts
 COMPOSE_SOURCE_ROOT ?= $(COMPOSE_ROOT)
-COMPOSE := $(DOCKER) compose --project-directory "$(COMPOSE_ROOT)"
+COMPOSE_BASE := $(DOCKER) compose --project-directory "$(COMPOSE_ROOT)"
+# Runtime commands must use the same file as the final deployment preflight.
+COMPOSE := $(COMPOSE_BASE) -f docker-compose.yml
 COMPOSE_SOURCE_FILES := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --compose-files "$(DEPLOY_ENVIRONMENT)")
 # One path contract is shared with provisioning and all application checks.
 storage_root = $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get $(1) "$(DEPLOY_ENVIRONMENT)" "$(2)")
@@ -145,7 +147,7 @@ endif
 docker-compose.yml: base.yml dev.yml staging.yml test.yml prod.yml config.mk \
 	$(PGPASS_PATH) $(DOWNLOAD_ANALYTICS_HMAC_KEY_PATH) release-version .env $(COMPOSE_STORAGE_PREREQUISITES)
 	@case "$(DEPLOY_ENVIRONMENT)" in dev|staging|test|prod) ;; *) echo "invalid deployment environment" >&2; exit 1;; esac
-	@$(COMPOSE) $(addprefix -f ,$(COMPOSE_SOURCE_FILES)) config > docker-compose.yml
+	@$(COMPOSE_BASE) $(addprefix -f ,$(COMPOSE_SOURCE_FILES)) config > docker-compose.yml
 
 .PHONY: set-db-password
 set-db-password: $(DB_PASSWORD_PATH) .env
@@ -298,14 +300,14 @@ $(E2E_REPO_PATH):
 
 .PHONY: e2e
 e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
-	$(COMPOSE) -f docker-compose.yml -f e2e.yml build -q
-	$(COMPOSE) -f docker-compose.yml -f e2e.yml up -d --quiet-pull
+	$(COMPOSE_BASE) -f docker-compose.yml -f e2e.yml build -q
+	$(COMPOSE_BASE) -f docker-compose.yml -f e2e.yml up -d --quiet-pull
 	$(SLEEP) 42
-	$(COMPOSE) -f docker-compose.yml -f e2e.yml exec server bash -c "\
+	$(COMPOSE_BASE) -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \
 		inv prepare"
 
-E2E_NPM_COMPOSE_RUN = $(COMPOSE) -f docker-compose.yml -f e2e.yml run --rm --no-deps -v "$(CURDIR)/e2e:/e2e" -w /e2e vite
+E2E_NPM_COMPOSE_RUN = $(COMPOSE_BASE) -f docker-compose.yml -f e2e.yml run --rm --no-deps -v "$(CURDIR)/e2e:/e2e" -w /e2e vite
 
 .PHONY: e2e-deps-install-lock
 e2e-deps-install-lock: docker-compose.yml

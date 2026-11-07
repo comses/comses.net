@@ -37,6 +37,8 @@ def configuration_errors(config, environment, layout):
         mounts = [mount for mount in services.get(service, {}).get("volumes", []) if mount.get("target") == target]
         if len(mounts) != 1 or mounts[0].get("type") != "bind" or mounts[0].get("source") != expected:
             errors.append(f"{service}:{target} must bind {expected}")
+        elif mounts[0].get("read_only", False):
+            errors.append(f"{service}:{target} must be writable")
     expected_settings = "core.settings.production" if environment == "prod" else "core.settings.staging"
     actual_settings = services.get("server", {}).get("environment", {}).get("DJANGO_SETTINGS_MODULE")
     if actual_settings != expected_settings:

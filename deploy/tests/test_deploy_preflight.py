@@ -52,6 +52,19 @@ class PreflightTests(unittest.TestCase):
         value["services"]["db"]["volumes"][0]["source"] = "/other/pgdata"
         self.assertIn("db:/var/lib/postgresql/data", config_errors(value, "prod", layout())[0])
 
+    def test_required_data_mounts_must_be_writable(self):
+        for service, index in (("db", 0), ("redis", 0), ("server", 0), ("server", 1)):
+            with self.subTest(service=service, index=index):
+                value = config()
+                mount = value["services"][service]["volumes"][index]
+                mount["read_only"] = True
+                self.assertEqual(
+                    config_errors(value, "prod", layout()),
+                    [f"{service}:{mount['target']} must be writable"],
+                )
+                mount["read_only"] = False
+                self.assertEqual(config_errors(value, "prod", layout()), [])
+
     def test_configuration_rejects_wrong_application_environment(self):
         self.assertTrue(config_errors(config(), "staging", layout()))
         self.assertEqual(config_errors(config(), "prod", layout()), [])
