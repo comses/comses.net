@@ -11,6 +11,8 @@ Run it from the canonical checkout with its existing `config.mk` and `.env`.
 It does not generate secrets/configuration, build or pull images, change source,
 or start/stop services. Missing configuration is an error. The storage check
 uses permission inspection rather than creating write probes in this mode.
+It must be the sole Make goal; combining it with deployment or other goals is
+rejected before recipes run.
 The command is also suitable for application checks before maintenance or reboot;
 it does not itself authorize either operation or run automatically during them.
 
@@ -43,7 +45,9 @@ Failures identify the invariant and relevant storage paths, not credential value
 1. Infrastructure selects the exact candidate and runs its application preflight.
 2. Under infrastructure's operation lock, `make deploy` checks source Compose
    configuration and current storage/ownership before building.
-3. The normal application build renders Compose and builds/pulls images.
+3. The normal application build renders Compose into a private (`0600`) temporary
+   file, replaces `docker-compose.yml` only on success, and builds/pulls images.
+   Failed rendering preserves the previous configuration for operational commands.
 4. Preflight repeats against the **generated** `docker-compose.yml` immediately
    before `up`; newly conflicting owners or changed storage block service startup.
 5. The normal preparation and infrastructure postflight run, followed by QA.
@@ -73,10 +77,17 @@ This checks Docker bind mounts, not the host mounts provisioned by infrastructur
 
 ## Deliberate limits
 
-The ownership policy trusts containers in the selected Compose project, permits
-read-only foreign consumers, and rejects foreign writers, including writers to
+The ownership policy exempts containers only when both their Compose project name
+and normalized working-directory label match the canonical deployment directory.
+Missing directory labels and same-name containers from other checkouts receive no
+exemption. Temporary preview source directories do not change this identity.
+It permits read-only foreign consumers and rejects foreign writers, including writers to
 collaborative log/backup roots. It does not prove one process per database, inspect
 host processes, discover arbitrary bind aliases or prevent privileged bypass.
+Stopped containers with a restart policy are conservatively checked even when
+that policy would keep a manually stopped container stopped. The diagnostic reports
+the observed state and policy; it does not predict that every such container will
+restart on boot. Labels are not an authentication boundary.
 Any legitimate foreign writer needs an explicit policy review; do not add a
 blanket skip switch. This contract does not replace database privilege separation,
 load testing, data-compatible rollback planning or functional recovery testing.
@@ -84,3 +95,18 @@ load testing, data-compatible rollback planning or functional recovery testing.
 Validation: `make test-deploy-contracts` exercises command selection, path aliases,
 configuration bindings, failure aggregation, read-only preview and both deployment
 gates. `make test-storage-scripts` tests actual ownership and bind-mount fixtures.
+
+Storage defaults for staging and production use `/srv/apps/comses`, matching
+infrastructure provisioning, rather than the caller's current directory.
+Non-canonical installations must explicitly configure and review their storage
+paths and expected-path overrides. Make resolves defaults once and stops if the
+layout helper fails; explicit operator overrides are preserved.
+
+If Compose rendering fails, preflight reports the operation and exit status (or
+filesystem error) without dumping configuration or subprocess output. Ownership
+inspection is skipped with an explicit diagnostic because the candidate project
+identity is unavailable; it never guesses a project name.
+
+Contract tests run the real Make/preflight CLI with disposable storage-check and
+Docker fixtures, including temporary-source preview, the final rendered-file gate,
+and a competing writer appearing after build. They do not start containers.

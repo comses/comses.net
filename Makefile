@@ -1,3 +1,10 @@
+# A preview must not be combined with a mutating goal, including under make -j.
+ifneq ($(filter deploy-preflight,$(MAKECMDGOALS)),)
+ifneq ($(words $(MAKECMDGOALS)),1)
+$(error deploy-preflight must be the sole goal)
+endif
+endif
+
 DOCKER_SHARED_DIR=$(COMSES_SHARED_ROOT)
 # Writable shared paths. Deployed hosts provision these before Compose starts;
 # this target retains the convenient repository-local behavior for development.
@@ -39,15 +46,47 @@ COMPOSE_SOURCE_ROOT ?= $(COMPOSE_ROOT)
 COMPOSE_BASE := $(DOCKER) compose --project-directory "$(COMPOSE_ROOT)"
 # Runtime commands must use the same file as the final deployment preflight.
 COMPOSE := $(COMPOSE_BASE) -f docker-compose.yml
+# Check each helper immediately: later shell calls overwrite .SHELLSTATUS.
 COMPOSE_SOURCE_FILES := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --compose-files "$(DEPLOY_ENVIRONMENT)")
-# One path contract is shared with provisioning and all application checks.
-storage_root = $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get $(1) "$(DEPLOY_ENVIRONMENT)" "$(2)")
-COMSES_APP_ROOT ?= $(call storage_root,APP_ROOT,)
-COMSES_SHARED_ROOT ?= $(call storage_root,SHARED_ROOT,$(COMSES_APP_ROOT))
-COMSES_POSTGRES_ROOT ?= $(call storage_root,POSTGRES_ROOT,$(COMSES_APP_ROOT))
-COMSES_LOG_ROOT ?= $(call storage_root,LOG_ROOT,$(COMSES_APP_ROOT))
-COMSES_BACKUPS_ROOT ?= $(call storage_root,BACKUPS_ROOT,$(COMSES_APP_ROOT))
-COMSES_SECRETS_ROOT ?= $(call storage_root,SECRETS_ROOT,$(COMSES_APP_ROOT))
+ifneq ($(.SHELLSTATUS),0)
+$(error cannot resolve Compose overlays from storage-layout.sh)
+endif
+ifeq ($(origin COMSES_APP_ROOT),undefined)
+COMSES_APP_ROOT := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get APP_ROOT "$(DEPLOY_ENVIRONMENT)" "")
+ifneq ($(.SHELLSTATUS),0)
+$(error cannot resolve COMSES_APP_ROOT from storage-layout.sh)
+endif
+endif
+ifeq ($(origin COMSES_SHARED_ROOT),undefined)
+COMSES_SHARED_ROOT := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get SHARED_ROOT "$(DEPLOY_ENVIRONMENT)" "$(COMSES_APP_ROOT)")
+ifneq ($(.SHELLSTATUS),0)
+$(error cannot resolve COMSES_SHARED_ROOT from storage-layout.sh)
+endif
+endif
+ifeq ($(origin COMSES_POSTGRES_ROOT),undefined)
+COMSES_POSTGRES_ROOT := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get POSTGRES_ROOT "$(DEPLOY_ENVIRONMENT)" "$(COMSES_APP_ROOT)")
+ifneq ($(.SHELLSTATUS),0)
+$(error cannot resolve COMSES_POSTGRES_ROOT from storage-layout.sh)
+endif
+endif
+ifeq ($(origin COMSES_LOG_ROOT),undefined)
+COMSES_LOG_ROOT := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get LOG_ROOT "$(DEPLOY_ENVIRONMENT)" "$(COMSES_APP_ROOT)")
+ifneq ($(.SHELLSTATUS),0)
+$(error cannot resolve COMSES_LOG_ROOT from storage-layout.sh)
+endif
+endif
+ifeq ($(origin COMSES_BACKUPS_ROOT),undefined)
+COMSES_BACKUPS_ROOT := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get BACKUPS_ROOT "$(DEPLOY_ENVIRONMENT)" "$(COMSES_APP_ROOT)")
+ifneq ($(.SHELLSTATUS),0)
+$(error cannot resolve COMSES_BACKUPS_ROOT from storage-layout.sh)
+endif
+endif
+ifeq ($(origin COMSES_SECRETS_ROOT),undefined)
+COMSES_SECRETS_ROOT := $(shell bash "$(DEPLOY_SCRIPTS_DIR)/storage-layout.sh" --get SECRETS_ROOT "$(DEPLOY_ENVIRONMENT)" "$(COMSES_APP_ROOT)")
+ifneq ($(.SHELLSTATUS),0)
+$(error cannot resolve COMSES_SECRETS_ROOT from storage-layout.sh)
+endif
+endif
 
 # Deployed hosts are provisioned explicitly; local and CI Compose bind mounts
 # must exist because create_host_path is intentionally disabled.
@@ -63,7 +102,7 @@ PATH := $(HOME)/.local/bin:$(PATH)
 .EXPORT_ALL_VARIABLES:
 # release-version rewrites .env after Make has parsed it. Let Compose read the
 # updated file instead of exporting Make's stale RELEASE_VERSION value.
-unexport RELEASE_VERSION storage_root
+unexport RELEASE_VERSION
 
 .PHONY: build
 build: docker-compose.yml secrets $(COMPOSE_STORAGE_PREREQUISITES)
@@ -147,7 +186,10 @@ endif
 docker-compose.yml: base.yml dev.yml staging.yml test.yml prod.yml config.mk \
 	$(PGPASS_PATH) $(DOWNLOAD_ANALYTICS_HMAC_KEY_PATH) release-version .env $(COMPOSE_STORAGE_PREREQUISITES)
 	@case "$(DEPLOY_ENVIRONMENT)" in dev|staging|test|prod) ;; *) echo "invalid deployment environment" >&2; exit 1;; esac
-	@$(COMPOSE_BASE) $(addprefix -f ,$(COMPOSE_SOURCE_FILES)) config > docker-compose.yml
+	@set -eu; umask 077; tmp=$$(mktemp ./docker-compose.yml.XXXXXX); \
+	trap 'rm -f "$$tmp"' EXIT HUP INT TERM; \
+	$(COMPOSE_BASE) $(addprefix -f ,$(COMPOSE_SOURCE_FILES)) config > "$$tmp"; \
+	mv -f "$$tmp" docker-compose.yml
 
 .PHONY: set-db-password
 set-db-password: $(DB_PASSWORD_PATH) .env
@@ -162,13 +204,13 @@ secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
 
 .PHONY: deploy
 deploy:
-	@deploy/scripts/deploy-preflight
+	@"$(DEPLOY_SCRIPTS_DIR)/deploy-preflight"
 	+@$(MAKE) build
 	$(COMPOSE) pull -q db redis elasticsearch
 ifneq ($(DEPLOY_ENVIRONMENT),dev)
 	$(COMPOSE) pull -q nginx
 endif
-	@deploy/scripts/deploy-preflight --rendered docker-compose.yml
+	@"$(DEPLOY_SCRIPTS_DIR)/deploy-preflight" --rendered docker-compose.yml
 	$(COMPOSE) up -d --quiet-pull
 	$(SLEEP) 42
 	$(COMPOSE) exec server inv prepare

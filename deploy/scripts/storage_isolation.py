@@ -3,6 +3,11 @@
 from pathlib import Path
 
 
+def paths_overlap(left, right):
+    left, right = Path(left).resolve(), Path(right).resolve()
+    return left == right or left in right.parents or right in left.parents
+
+
 def postgres_isolation_errors(config, postgres_root):
     """Only db may bind the PostgreSQL root, its ancestors or descendants."""
     postgres = Path(postgres_root).resolve()
@@ -14,7 +19,7 @@ def postgres_isolation_errors(config, postgres_root):
             if mount.get("type") != "bind" or not mount.get("source"):
                 continue
             source = Path(mount["source"]).resolve()
-            if source == postgres or source in postgres.parents or postgres in source.parents:
+            if paths_overlap(source, postgres):
                 errors.append(
                     f"{name}:{mount.get('target', '?')} bind {mount['source']} "
                     "exposes PostgreSQL data; only db may mount it"

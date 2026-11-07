@@ -2,14 +2,12 @@
 import json
 import os
 from pathlib import Path
-import runpy
 import subprocess
 import sys
 
 
-postgres_isolation_errors = runpy.run_path(
-    str(Path(__file__).with_name("storage_isolation.py"))
-)["postgres_isolation_errors"]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from storage_isolation import postgres_isolation_errors
 
 
 def expected_mounts(environment):

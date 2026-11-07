@@ -78,7 +78,7 @@ class PreflightTests(unittest.TestCase):
         with patch.dict(os.environ, {"DEPLOY_ENVIRONMENT": "prod", "DOCKER": "sudo docker"}, clear=True):
             with patch.dict(check.__globals__, candidate=lambda *a: response):
                 with patch.dict(
-                    module["ownership"], storage_layout=layout, inspect_conflicts=lambda *a: conflicts or []
+                    module["ownership"].__dict__, storage_layout=layout, inspect_conflicts=lambda *a: conflicts or []
                 ):
                     with patch(
                         "subprocess.run",
@@ -104,7 +104,7 @@ class PreflightTests(unittest.TestCase):
         output = io.StringIO()
         with (
             patch.dict(os.environ, {"DEPLOY_ENVIRONMENT": "prod"}, clear=True),
-            patch.dict(module["ownership"], storage_layout=layout),
+            patch.dict(module["ownership"].__dict__, storage_layout=layout),
         ):
             with patch.dict(
                 check.__globals__,

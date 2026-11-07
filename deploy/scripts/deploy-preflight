@@ -5,16 +5,24 @@ import argparse
 import json
 import os
 from pathlib import Path
-import runpy
 import shlex
 import subprocess
 import sys
 
 SCRIPTS = Path(__file__).resolve().parent
-ownership = runpy.run_path(str(SCRIPTS / "compose-ownership-preflight"))
-postgres_isolation_errors = runpy.run_path(
-    str(SCRIPTS / "storage_isolation.py")
-)["postgres_isolation_errors"]
+sys.path.insert(0, str(SCRIPTS))
+import compose_ownership as ownership
+from storage_isolation import postgres_isolation_errors
+
+
+def failure_detail(error):
+    if isinstance(error, subprocess.CalledProcessError):
+        return f"command exited with status {error.returncode}"
+    if isinstance(error, OSError):
+        return f"{error.filename or 'filesystem operation'}: {error.strerror}"
+    if isinstance(error, json.JSONDecodeError):
+        return "Compose returned invalid JSON"
+    return type(error).__name__
 
 
 def candidate(docker, layout, rendered=None, source_root=None):
@@ -68,12 +76,13 @@ def check(rendered=None, source_root=None):
         docker = shlex.split(os.environ.get("DOCKER", "docker"))
         if not docker:
             raise ValueError("DOCKER command is empty")
-        layout = ownership["storage_layout"]()
+        layout = ownership.storage_layout()
         try:
             config = candidate(docker, layout, rendered, source_root)
-        except (subprocess.CalledProcessError, json.JSONDecodeError):
+        except (subprocess.CalledProcessError, json.JSONDecodeError, OSError) as error:
             # Compose output can contain resolved secrets; never echo it.
-            print("FAIL candidate configuration: cannot render Compose configuration", file=sys.stderr)
+            print(f"FAIL candidate configuration: {failure_detail(error)}", file=sys.stderr)
+            print("SKIP storage ownership: candidate identity unavailable", file=sys.stderr)
             failures.append("configuration")
         else:
             errors = configuration_errors(config, environment, layout)
@@ -83,15 +92,17 @@ def check(rendered=None, source_root=None):
                 print("\n".join(errors), file=sys.stderr)
             if config.get("name"):
                 try:
-                    conflicts = ownership["inspect_conflicts"](docker, config["name"], layout)
-                except subprocess.CalledProcessError:
-                    print("FAIL storage ownership: cannot inspect deployment Docker daemon", file=sys.stderr)
+                    conflicts = ownership.inspect_conflicts(docker, config["name"], layout, Path.cwd().resolve())
+                except (subprocess.CalledProcessError, OSError) as error:
+                    print(f"FAIL storage ownership: {failure_detail(error)}", file=sys.stderr)
                     failures.append("ownership")
                 else:
                     print(f"{'FAIL' if conflicts else 'PASS'} storage ownership and restart policies")
                     if conflicts:
                         failures.append("ownership")
                         print("\n".join(conflicts), file=sys.stderr)
+            else:
+                print("SKIP storage ownership: candidate identity unavailable", file=sys.stderr)
     if failures:
         print("Deployment preflight failed: " + ", ".join(failures), file=sys.stderr)
         return 1
@@ -108,5 +119,5 @@ if __name__ == "__main__":
         sys.exit(check(args.rendered, args.source_root))
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         # Do not include subprocess stdout/stderr or environment values here.
-        print(f"Deployment preflight could not complete ({type(error).__name__}).", file=sys.stderr)
+        print(f"Deployment preflight could not complete: {failure_detail(error)}", file=sys.stderr)
         sys.exit(1)

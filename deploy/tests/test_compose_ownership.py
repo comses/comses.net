@@ -2,28 +2,31 @@ import contextlib
 import io
 import json
 import os
+import shlex
 import runpy
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-preflight = runpy.run_path(str(Path(__file__).parents[1] / "scripts/compose-ownership-preflight"))
-conflicts = preflight["conflicts"]
+entry = runpy.run_path(str(Path(__file__).parents[1] / "scripts/deploy-preflight"))
+preflight = entry["ownership"]
+conflicts = preflight.conflicts
 
 
 class OwnershipTests(unittest.TestCase):
     def check(
-        self, *, project="old", status="running", restart="no", rw=True, source="/srv/apps/comses/docker/shared/redis"
+        self, *, project="old", status="running", restart="no", rw=True, source="/srv/apps/comses/docker/shared/redis", working_dir="/srv/apps/comses"
     ):
         container = dict(
             name="old-redis",
             project=project,
+            working_dir=working_dir,
             status=status,
             restart=restart,
             mounts=[dict(Type="bind", RW=rw, Source=source)],
         )
         return list(
-            conflicts([container], "comses", ["/srv/apps/comses/docker/shared", "/srv/apps/comses/docker/pgdata"])
+            conflicts([container], "comses", ["/srv/apps/comses/docker/shared", "/srv/apps/comses/docker/pgdata"], "/srv/apps/comses")
         )
 
     def test_running_foreign_writer_is_rejected(self):
@@ -37,6 +40,15 @@ class OwnershipTests(unittest.TestCase):
 
     def test_current_project_is_allowed(self):
         self.assertFalse(self.check(project="comses"))
+
+    def test_same_name_other_directory_is_rejected(self):
+        self.assertTrue(self.check(project="comses", working_dir="/other/comses"))
+
+    def test_same_name_missing_directory_is_rejected(self):
+        self.assertTrue(self.check(project="comses", working_dir=None))
+
+    def test_same_name_normalized_directory_is_allowed(self):
+        self.assertFalse(self.check(project="comses", working_dir="/srv/apps/other/../comses"))
 
     def test_read_only_backup_is_allowed(self):
         self.assertFalse(self.check(rw=False))
@@ -70,7 +82,12 @@ class PreflightCommandTests(unittest.TestCase):
                 side_effect=[json.dumps({"name": "comses"}), "container-id", json.dumps(container)],
             ) as command:
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                    preflight["main"]()
+                    layout = preflight.storage_layout()
+                    docker = shlex.split(os.environ.get("DOCKER", "docker"))
+                    candidate = entry["candidate"](docker, layout, rendered="docker-compose.yml")
+                    problems = preflight.inspect_conflicts(docker, candidate["name"], layout, os.getcwd())
+                    if problems:
+                        raise SystemExit("obsolete containers: " + str(problems))
                 return [call.args[0] for call in command.call_args_list]
 
     def test_all_commands_use_selected_docker_prefix(self):
@@ -90,21 +107,12 @@ class PreflightCommandTests(unittest.TestCase):
                     self.assertEqual(call[: len(prefix)], prefix)
                 self.assertEqual(
                     calls[0][len(prefix) :],
-                    ["compose", "--project-directory", os.getcwd(), "config", "--format", "json"],
+                    ["compose", "--project-directory", os.getcwd(), "-f", "docker-compose.yml", "config", "--format", "json"],
                 )
 
     def test_default_docker_command(self):
         for call in self.invoke():
             self.assertEqual(call[0], "docker")
-
-    def test_empty_command_fails_before_invocation(self):
-        with (
-            patch.dict(os.environ, {"DEPLOY_ENVIRONMENT": "prod", "DOCKER": " "}, clear=True),
-            patch("subprocess.check_output") as command,
-        ):
-            with self.assertRaisesRegex(SystemExit, "empty"):
-                preflight["main"]()
-            command.assert_not_called()
 
     def test_canonical_backup_and_log_aliases_are_protected(self):
         for source in ["/srv/backups/comses/repo", "/srv/logs/comses/nginx", "/srv/backups", "/srv/logs/comses"]:

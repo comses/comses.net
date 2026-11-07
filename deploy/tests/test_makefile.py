@@ -105,6 +105,7 @@ class MakefileContractTests(unittest.TestCase):
         process_environment = os.environ.copy()
         for name in (
             "DOCKER_BUILD_FLAGS",
+            "FAKE_RENDER_FAIL",
             "FAKE_REDIS_RUNNING",
             "FAKE_REDIS_SAVE_FAIL",
             "FAKE_REDIS_SAVE_RESPONSE",
@@ -202,6 +203,123 @@ class MakefileContractTests(unittest.TestCase):
             render,
             ["-f", "base.yml", "-f", "staging.yml", "-f", "prod.yml", "config"],
         )
+
+    def test_failed_render_preserves_previous_configuration(self):
+        rendered = self.project / "docker-compose.yml"
+        rendered.write_text("previous configuration\n")
+        result, _ = self.run_make("build", environment={"FAKE_RENDER_FAIL": "1"}, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(rendered.read_text(), "previous configuration\n")
+        self.assertEqual(list(self.project.glob("docker-compose.yml.*")), [])
+
+    def test_render_creates_private_configuration(self):
+        self.run_make("build")
+        self.assertEqual((self.project / "docker-compose.yml").stat().st_mode & 0o777, 0o600)
+        self.assertEqual(list(self.project.glob("docker-compose.yml.*")), [])
+
+    def test_mixed_preflight_goals_fail_before_any_command(self):
+        arguments = self.make_arguments("deploy-preflight", "prod") + ["deploy"]
+        result = subprocess.run(arguments, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must be the sole goal", result.stderr)
+        self.assertFalse(self.log.exists())
+
+    def test_layout_failure_stops_make_before_commands(self):
+        (self.project / "deploy/scripts/storage-layout.sh").write_text("exit 17\n")
+        result, records = self.run_make("deploy", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot resolve Compose overlays", result.stderr)
+        self.assertEqual(records, [])
+
+    def install_real_preflight(self):
+        from deploy.tests.test_deploy_preflight import config
+        scripts = self.project / "deploy/scripts"
+        for name in ("deploy-preflight", "compose_ownership.py", "storage_isolation.py"):
+            shutil.copy(ROOT / "deploy/scripts" / name, scripts / name)
+        value = config()
+        for service in value["services"].values():
+            for mount in service["volumes"]:
+                target = mount["target"]
+                mount["source"] = str({
+                    "/var/lib/postgresql/data": self.root / "pgdata",
+                    "/data": self.shared / "redis",
+                    "/shared": self.shared,
+                    "/shared/logs": self.root / "logs",
+                }[target])
+        config_path = self.root / "candidate.json"
+        config_path.write_text(json.dumps(value))
+        container_path = self.root / "container.json"
+        container_path.write_text(json.dumps({
+            "name": "fixture-writer", "project": "comses", "working_dir": str(self.project),
+            "status": "running", "restart": "always",
+            "mounts": [{"Type": "bind", "RW": True, "Source": str(self.shared)}],
+        }))
+        return {"FAKE_PREFLIGHT_CONFIG": str(config_path),
+                "FAKE_PREFLIGHT_CONTAINER": str(container_path)}
+
+    def test_real_preflight_reads_selected_source_and_canonical_identity(self):
+        environment = self.install_real_preflight()
+        source = self.root / "candidate source"
+        source.mkdir()
+        for name in ("base.yml", "staging.yml", "prod.yml"):
+            (source / name).touch()
+        before = (self.project / ".env").read_bytes()
+        result, records = self.run_make("deploy-preflight", "prod", environment={
+            **environment, "COMPOSE_SOURCE_ROOT": str(source),
+        })
+        self.assertIn("Deployment preflight passed", result.stdout)
+        commands = [record["args"] for record in records if "args" in record]
+        self.assertEqual([command[3] for command in commands if command[0] == "compose"], ["-f"])
+        self.assertIn(str(source / "prod.yml"), commands[0])
+        self.assertEqual([command[0] for command in commands], ["compose", "ps", "inspect"])
+        self.assertEqual((self.project / ".env").read_bytes(), before)
+
+    def test_real_final_preflight_rejects_same_name_other_checkout(self):
+        environment = self.install_real_preflight()
+        # Run the actual Make deployment sequence, including its final --rendered argument.
+        # The Docker fixture handles config/build/pull without starting services.
+        environment["FAKE_PREFLIGHT_ALLOW_BUILD"] = "1"
+        # Allow the early observation, then change identity after the build.
+        result, records = self.run_make("deploy", "prod", environment=environment, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("FAIL storage ownership", result.stdout)
+        configs = [record["args"] for record in records if "config" in record.get("args", [])]
+        self.assertEqual(configs[-1][3:5], ["-f", "docker-compose.yml"])
+        self.assertFalse(any("up" in record.get("args", []) for record in records))
+
+    def test_real_preflight_render_error_is_safe_and_skips_identity_guess(self):
+        environment = self.install_real_preflight()
+        result, records = self.run_make("deploy-preflight", "prod", environment={
+            **environment, "FAKE_RENDER_FAIL": "1",
+        }, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("status 23", result.stderr)
+        self.assertIn("candidate identity unavailable", result.stderr)
+        self.assertNotIn("SENSITIVE", result.stdout + result.stderr)
+        self.assertFalse(any("inspect" in record.get("args", []) for record in records))
+
+    def test_real_preflight_missing_docker_identifies_executable(self):
+        environment = self.install_real_preflight()
+        arguments = self.make_arguments("deploy-preflight", "prod")
+        missing = str(self.root / "missing-docker")
+        arguments.append(f"DOCKER={missing}")
+        result = subprocess.run(arguments, capture_output=True, text=True,
+                                env={**os.environ, **environment, "FAKE_DOCKER_LOG": str(self.log)})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(missing, result.stderr)
+        self.assertIn("candidate identity unavailable", result.stderr)
+
+    def test_root_resolution_failure_is_not_an_empty_default(self):
+        helper = self.project / "deploy/scripts/storage-layout.sh"
+        helper.write_text('case "$1" in --compose-files) echo base.yml;; *) exit 19;; esac\n')
+        arguments = [argument for argument in self.make_arguments("deploy", "prod")
+                     if not argument.startswith("COMSES_APP_ROOT=")]
+        environment = os.environ.copy()
+        environment.pop("COMSES_APP_ROOT", None)
+        result = subprocess.run(arguments, capture_output=True, text=True, env=environment)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot resolve COMSES_APP_ROOT", result.stderr)
+        self.assertFalse(self.log.exists())
 
     def test_deploy_stops_before_pull_or_start_when_ownership_check_fails(self):
         result, records = self.run_make("deploy", "prod", environment={"FAKE_OWNERSHIP_FAILURE": "1"}, check=False)
