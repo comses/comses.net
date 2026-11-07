@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import runpy
 import subprocess
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -140,3 +141,53 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(actual["logs"], "/logs-alias")
         self.assertEqual(actual["backups"], "/backups-alias")
         self.assertEqual(actual["compose_files"], ["base.yml", "staging.yml", "prod.yml"])
+
+
+class PostgresIsolationTests(unittest.TestCase):
+    def assert_isolation(self, source, *, rejected, service="server", read_only=False):
+        value = config()
+        value["services"].setdefault(service, {"volumes": []})["volumes"].append(
+            {"type": "bind", "source": source, "target": "/exposed-db", "read_only": read_only}
+        )
+        errors = config_errors(value, "prod", layout())
+        self.assertEqual(bool(errors), rejected, errors)
+        if rejected:
+            self.assertIn(f"{service}:/exposed-db", errors[0])
+
+        # Exercise the standalone verifier as well, with valid mounts for its
+        # broader storage contract. Only Compose execution is mocked.
+        verifier = runpy.run_path(str(SCRIPT.with_name("verify-compose-storage")))
+        with patch.dict(os.environ, {"DEPLOY_ENVIRONMENT": "prod"}, clear=True):
+            expected, _, _ = verifier["expected_mounts"]("prod")
+            for (name, target), (path, readonly) in expected.items():
+                volumes = value["services"].setdefault(name, {}).setdefault("volumes", [])
+                volumes[:] = [mount for mount in volumes if mount["target"] != target]
+                volumes.append({"type": "bind", "source": path, "target": target,
+                                "read_only": readonly, "bind": {"create_host_path": False}})
+            output = io.StringIO()
+            with patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(value), "")):
+                with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                    status = verifier["main"]()
+        self.assertEqual(status, int(rejected), output.getvalue())
+        if rejected:
+            self.assertIn("exposes PostgreSQL data", output.getvalue())
+
+    def test_non_database_services_cannot_mount_postgres_paths(self):
+        postgres = layout()["postgres"]
+        for source in (postgres, str(Path(postgres).parent), postgres + "/base"):
+            for service in ("server", "nginx", "worker"):
+                for read_only in (False, True):
+                    with self.subTest(source=source, service=service, read_only=read_only):
+                        self.assert_isolation(source, rejected=True, service=service, read_only=read_only)
+
+    def test_symlink_to_postgres_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            alias = Path(directory) / "database-alias"
+            alias.symlink_to(layout()["postgres"], target_is_directory=True)
+            self.assert_isolation(str(alias), rejected=True, read_only=True)
+
+    def test_unrelated_sibling_is_allowed(self):
+        self.assert_isolation(layout()["postgres"] + "-other", rejected=False)
+
+    def test_database_service_can_mount_postgres(self):
+        self.assert_isolation(layout()["postgres"], rejected=False, service="db")

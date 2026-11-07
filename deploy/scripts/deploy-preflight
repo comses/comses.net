@@ -12,6 +12,9 @@ import sys
 
 SCRIPTS = Path(__file__).resolve().parent
 ownership = runpy.run_path(str(SCRIPTS / "compose-ownership-preflight"))
+postgres_isolation_errors = runpy.run_path(
+    str(SCRIPTS / "storage_isolation.py")
+)["postgres_isolation_errors"]
 
 
 def candidate(docker, layout, rendered=None, source_root=None):
@@ -24,7 +27,7 @@ def candidate(docker, layout, rendered=None, source_root=None):
 
 
 def configuration_errors(config, environment, layout):
-    errors = []
+    errors = postgres_isolation_errors(config, layout["postgres"])
     if not config.get("name"):
         errors.append("candidate has no Compose project identity")
     services = config.get("services", {})

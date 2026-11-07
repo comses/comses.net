@@ -65,6 +65,12 @@ project directory, protected environment and storage still belong to the real
 canonical checkout. A preview must not run the old checkout's checks while
 claiming to validate a newer candidate. It must not remake `.env` or `config.mk`.
 
+PostgreSQL files may be bind-mounted only by `db`. Candidate preflight and the
+standalone storage verifier share this rule, rejecting mounts of the PostgreSQL
+root, its parents or descendants on any other service, even when read-only.
+Paths are normalized and symlinks resolved; unrelated sibling paths are allowed.
+This checks Docker bind mounts, not the host mounts provisioned by infrastructure.
+
 ## Deliberate limits
 
 The ownership policy trusts containers in the selected Compose project, permits
