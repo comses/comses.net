@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from storage_isolation import postgres_isolation_errors
 
 
 def expected_mounts(environment):
@@ -89,15 +94,7 @@ def main() -> int:
         expected_secret = f"{secrets_root}/{secret_name}"
         if secret.get("file") != expected_secret:
             errors.append("a Compose secret file does not match the storage contract")
-    for service_name, service in config.get("services", {}).items():
-        if service_name == "db":
-            continue
-        for mount in service.get("volumes", []):
-            if mount.get("type") != "bind":
-                continue
-            source = mount.get("source")
-            if source and os.path.commonpath((source, postgres_root)) == source:
-                errors.append("a non-database service bind mount exposes PostgreSQL data")
+    errors.extend(postgres_isolation_errors(config, postgres_root))
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1

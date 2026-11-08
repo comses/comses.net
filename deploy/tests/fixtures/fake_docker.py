@@ -49,10 +49,38 @@ def increment(path):
 
 arguments = sys.argv[1:]
 append_record(arguments)
-command = compose_command(arguments)
+command = compose_command(arguments[2:] if arguments[:1] == ["--context"] else arguments)
+
+if os.environ.get("FAKE_PREFLIGHT_CONFIG"):
+    if "config" in command:
+        for index, argument in enumerate(arguments):
+            if argument == "-f" and not Path(arguments[index + 1]).is_file():
+                print("SENSITIVE render diagnostic", file=sys.stderr)
+                raise SystemExit(24)
+        if os.environ.get("FAKE_RENDER_FAIL"):
+            print("SENSITIVE render diagnostic", file=sys.stderr)
+            raise SystemExit(23)
+        print(Path(os.environ["FAKE_PREFLIGHT_CONFIG"]).read_text())
+    elif command[:1] == ["ps"]:
+        print("fixture-container")
+    elif command[:1] == ["inspect"]:
+        print(Path(os.environ["FAKE_PREFLIGHT_CONTAINER"]).read_text())
+    elif command[:1] in (["build"], ["pull"]):
+        if not os.environ.get("FAKE_PREFLIGHT_ALLOW_BUILD"):
+            raise SystemExit(25)
+        if command[0] == "build":
+            path = Path(os.environ["FAKE_PREFLIGHT_CONTAINER"])
+            container = json.loads(path.read_text())
+            container["working_dir"] = "/different/checkout"
+            path.write_text(json.dumps(container))
+    else:
+        raise SystemExit(25)
+    raise SystemExit(0)
 
 if "config" in command:
     print("services: {}")
+    if os.environ.get("FAKE_RENDER_FAIL"):
+        raise SystemExit(23)
 elif command[:4] == ["ps", "--status", "running", "--services"]:
     count = increment(os.environ["FAKE_DOCKER_PS_COUNT"])
     if count == 1 and os.environ.get("FAKE_REDIS_RUNNING", "1") == "1":

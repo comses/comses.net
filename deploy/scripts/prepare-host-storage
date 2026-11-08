@@ -1,35 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Infrastructure may override these IDs to match the pinned container images.
-DEPLOY_UID=${DEPLOY_UID:-1000}
-DEPLOY_GID=${DEPLOY_GID:-1000}
-APP_UID=${APP_UID:-0}
-APP_GID=${APP_GID:-0}
-POSTGRES_UID=${POSTGRES_UID:-999}
-POSTGRES_GID=${POSTGRES_GID:-999}
-REDIS_UID=${REDIS_UID:-999}
-REDIS_GID=${REDIS_GID:-1000}
-ELASTICSEARCH_UID=${ELASTICSEARCH_UID:-1000}
-ELASTICSEARCH_GID=${ELASTICSEARCH_GID:-0}
-NGINX_UID=${NGINX_UID:-101}
-NGINX_GID=${NGINX_GID:-101}
-
-APP_ROOT=${COMSES_APP_ROOT:-/srv/apps/comses}
-SHARED_ROOT=${COMSES_SHARED_ROOT:-/srv/apps/comses/docker/shared}
-POSTGRES_ROOT=${COMSES_POSTGRES_ROOT:-/srv/apps/comses/docker/pgdata}
-LOG_ROOT=${COMSES_LOG_ROOT:-/srv/logs/comses}
-BACKUPS_ROOT=${COMSES_BACKUPS_ROOT:-/srv/backups/comses}
-SECRETS_ROOT=${COMSES_SECRETS_ROOT:-/srv/apps/comses/docker/secrets}
-
-# Pinned host paths. Overridable so storage tests can exercise this script
-# against a disposable fixture tree instead of the real /srv layout.
-EXPECTED_APP_ROOT=${COMSES_EXPECTED_APP_ROOT:-/srv/apps/comses}
-EXPECTED_SHARED_ROOT=${COMSES_EXPECTED_SHARED_ROOT:-$EXPECTED_APP_ROOT/docker/shared}
-EXPECTED_POSTGRES_ROOT=${COMSES_EXPECTED_POSTGRES_ROOT:-$EXPECTED_APP_ROOT/docker/pgdata}
-EXPECTED_LOG_ROOT=${COMSES_EXPECTED_LOG_ROOT:-/srv/logs/comses}
-EXPECTED_BACKUPS_ROOT=${COMSES_EXPECTED_BACKUPS_ROOT:-/srv/backups/comses}
-EXPECTED_SECRETS_ROOT=${COMSES_EXPECTED_SECRETS_ROOT:-$EXPECTED_APP_ROOT/docker/secrets}
+DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT:-prod}
+. "$(dirname "${BASH_SOURCE[0]}")/storage-layout.sh"
 
 die() {
     echo "prepare-host-storage: $*" >&2
@@ -65,7 +38,6 @@ ensure_exact_dir() {
 [ -d "$APP_ROOT" ] || die "$APP_ROOT must already contain the application checkout"
 [ ! -L "$APP_ROOT" ] || die "$APP_ROOT must not be a symlink"
 [ "$(realpath -e "$APP_ROOT")" = "$APP_ROOT" ] || die "$APP_ROOT resolves through a symlink"
-SRV_ROOT=${COMSES_SRV_ROOT:-/srv}
 mount_target=$(findmnt -n -o TARGET --mountpoint "$SRV_ROOT") || die "$SRV_ROOT is not mounted; infrastructure must mount it before storage preparation"
 [ "$mount_target" = "$SRV_ROOT" ] || die "$SRV_ROOT is not an exact mountpoint"
 mount_target=$(findmnt -n -o TARGET -T "$APP_ROOT") || die "cannot identify the filesystem containing $APP_ROOT"
