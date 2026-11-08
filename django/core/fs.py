@@ -105,9 +105,26 @@ def rm_system_files(base_dir):
     return removed_files
 
 
+def archive_member_path(name, destination):
+    """Validate an archive path before any extraction or path normalization."""
+    path = pathlib.PurePosixPath(name)
+    if not name or path.is_absolute() or ".." in path.parts or "\\" in name or pathlib.PureWindowsPath(name).drive:
+        raise ValueError("Archive member paths must be relative and stay within the extraction directory")
+    target = pathlib.Path(destination).joinpath(*path.parts)
+    if not target.resolve().is_relative_to(pathlib.Path(destination).resolve()):
+        raise ValueError("Archive member path escapes the extraction directory")
+    return target
+
+
 def unrar(archive_path, dst_dir: str):
     with rarfile.RarFile(archive_path) as rf:
-        rf.extractall(dst_dir)
+        members = rf.infolist()
+        # Validate the entire archive before creating files or links.
+        for member in members:
+            archive_member_path(member.filename, dst_dir)
+            if member.is_symlink() or member.file_redir or not (member.is_file() or member.is_dir()):
+                raise ValueError("RAR archive members must be regular files or directories without redirections")
+        rf.extractall(dst_dir, members=members)
 
 
 def make_bag(path, info: dict = None):

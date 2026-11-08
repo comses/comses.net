@@ -7,6 +7,7 @@ import mimetypes
 import os
 import re
 import shutil
+import stat
 import tarfile
 import zipfile
 import filecmp
@@ -19,7 +20,6 @@ from typing import Callable, Optional
 from git import Actor, GitCommandError, InvalidGitRepositoryError, Repo
 
 import bagit
-import rarfile
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import File
@@ -1014,10 +1014,13 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
     def extract_to_sip(self, archive_path: Path):
         """Extract the downloaded release package archive into the SIP storage"""
         sip_storage = self.get_sip_storage()
-        sip_storage.clear()
         if not zipfile.is_zipfile(str(archive_path)):
             raise ValueError("Archive file must be a zip archive")
-        extract_zip_without_top_dir(archive_path, Path(sip_storage.location))
+        # Keep the existing SIP intact if validation, decompression or CRC checks fail.
+        with TemporaryDirectory() as staging:
+            extract_zip_without_top_dir(archive_path, Path(staging))
+            sip_storage.clear()
+            shutil.copytree(staging, sip_storage.location, dirs_exist_ok=True)
         logger.info(f"extracted imported release archive to {sip_storage.location}")
 
     def import_release_package(self, installation_token: str, download_url: str | None = None) -> tuple[dict, dict]:
@@ -1400,6 +1403,17 @@ class ArchiveExtractor:
     def __init__(self, sip_storage: CodebaseReleaseSipStorage):
         self.sip_storage = sip_storage
 
+    @staticmethod
+    def _tar_filter(member, destination):
+        # Submissions contain files and directories, never links or devices.
+        # Reject links before extraction: the SIP copy step follows file links.
+        if not (member.isfile() or member.isdir()):
+            raise tarfile.FilterError("Archive members must be regular files or directories")
+        path = Path(member.name)
+        if path.is_absolute() or ".." in path.parts:
+            raise tarfile.FilterError("Archive member paths must stay within the extraction directory")
+        return tarfile.data_filter(member, destination)
+
     def extractall(self, unpack_destination, filename):
         mimetype = mimetypes.guess_type(filename)[0]
         if mimetype == "application/zip":
@@ -1408,14 +1422,13 @@ class ArchiveExtractor:
 
         elif mimetype == "application/x-tar":
             with tarfile.TarFile(filename, "r") as t:
-                t.extractall(path=unpack_destination)
+                t.extractall(path=unpack_destination, filter=self._tar_filter)
 
         elif mimetype == "application/rar":
             if hasattr(filename, "name"):
                 raise TypeError("RAR archives cannot be extracted from file objects. Requires string filename")
 
-            with rarfile.RarFile(filename, "r") as r:
-                r.extractall(path=unpack_destination)
+            fs.unrar(filename, unpack_destination)
 
         else:
             return Message(f"Archive {filename} is unsupported")
@@ -1469,17 +1482,34 @@ def import_archive(codebase_release, nested_code_folder_name, fs_api=None):
 def extract_zip_without_top_dir(zip_path: Path, extract_to: Path):
     """extract a zip archive to a directory, removing the top-level directory"""
     with zipfile.ZipFile(zip_path, "r") as z:
-        all_names = [m.filename for m in z.infolist()]
-        top_level = os.path.commonprefix(all_names).rstrip("/")
-        # remove the top-level dir from each path and extract
-        for member in z.infolist():
-            relative_path = os.path.relpath(member.filename, top_level)
-            if relative_path == ".":  # skip top-level dir
+        members = z.infolist()
+        paths = []
+        for member in members:
+            fs.archive_member_path(member.filename, extract_to)
+            file_type = stat.S_IFMT(member.external_attr >> 16)
+            if file_type not in (0, stat.S_IFREG, stat.S_IFDIR):
+                raise ValueError("ZIP archive members must be regular files or directories")
+            paths.append(Path(member.filename))
+
+        # Strip exactly one shared directory, never a character prefix or filename.
+        roots = {path.parts[0] for path in paths if path.parts}
+        strip_root = len(roots) == 1 and all(
+            len(path.parts) > 1 or member.is_dir() for member, path in zip(members, paths)
+        )
+        targets = []
+        for member, path in zip(members, paths):
+            relative_path = Path(*path.parts[1:]) if strip_root else path
+            if relative_path == Path("."):
+                if not member.is_dir():
+                    raise ValueError("ZIP file member must have a filename")
                 continue
-            target_path = extract_to / relative_path
+            target_path = fs.archive_member_path(relative_path.as_posix(), extract_to)
+            targets.append((member, target_path))
+
+        for member, target_path in targets:
             if member.is_dir():
                 target_path.mkdir(parents=True, exist_ok=True)
             else:
                 target_path.parent.mkdir(parents=True, exist_ok=True)
-                with target_path.open("wb") as f:
-                    f.write(z.read(member))
+                with z.open(member) as source, target_path.open("wb") as destination:
+                    shutil.copyfileobj(source, destination)
