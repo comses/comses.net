@@ -14,6 +14,7 @@ This page is a minimal index of commonly used operational commands.
 - Canonical deployment procedures: docs/source/deployment.md
 - [Application deployment preflight](deployment-preflight.md)
 - [Production connection budget and Compose ownership](production-connection-budget.md)
+- [Archive limits, rejection handling, and runtime verification](archive-security-limits.md)
 
 Guidelines:
 

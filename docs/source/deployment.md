@@ -2,6 +2,9 @@
 
 This project is deployed and run using a multi-container Docker Compose workflow generated from repository config.
 
+For model-library upload and import budgets, configuration overrides, and rejection
+handling, see [Archive download and extraction limits](../agents/archive-security-limits.md).
+
 ## Source of truth
 
 - `make deploy` is the default deployment entrypoint.
