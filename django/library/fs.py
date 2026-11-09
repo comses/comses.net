@@ -7,7 +7,6 @@ import mimetypes
 import os
 import re
 import shutil
-import stat
 import tarfile
 import zipfile
 import filecmp
@@ -986,28 +985,36 @@ class ImportedCodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
         return created
 
     def download_archive(self, download_url: str, installation_token: str) -> Path:
-        """Download a release package archive from a remote URL and
-        places it in the originals stage directory"""
+        """Stage a bounded ZIP download, then atomically replace the local archive."""
         originals_storage = self.get_originals_storage()
-        if not os.path.exists(originals_storage.location):
-            os.makedirs(originals_storage.location, exist_ok=True)
-        originals_storage.clear()
+        originals_dir = Path(originals_storage.location)
+        originals_dir.mkdir(parents=True, exist_ok=True)
+        # Remote headers and Git tags are metadata, never local filesystem paths.
+        file_path = originals_dir / "release.zip"
+        budget = fs.ArchiveBudget()
         headers = {
             "Authorization": f"Bearer {installation_token}",
         }
-        response = requests.get(download_url, headers=headers, stream=True)
-        response.raise_for_status()
-        cd = response.headers.get("content-disposition")
-        if cd and "filename=" in cd:
-            filename = re.findall("filename=(.+)", cd)[0]
-        else:
-            tag_name = self.imported_release_sync_state.tag_name
-            filename = f"{tag_name}.zip"
-        file_path = Path(originals_storage.location) / filename
-        with file_path.open("wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
+        with TemporaryDirectory(dir=originals_dir) as staging:
+            staged_path = Path(staging) / "release.zip"
+            with requests.get(download_url, headers=headers, stream=True, timeout=(10, 15)) as response:
+                response.raise_for_status()
+                content_length = response.headers.get("Content-Length")
+                if content_length is not None and int(content_length) > budget.input_limit:
+                    raise fs.ArchiveLimitError(f"Archive download exceeds {budget.input_limit} bytes")
+                downloaded = 0
+                with staged_path.open("wb") as destination:
+                    for chunk in response.iter_content(chunk_size=64 * 1024):
+                        budget.check_time()
+                        downloaded += len(chunk)
+                        if downloaded > budget.input_limit:
+                            raise fs.ArchiveLimitError(f"Archive download exceeds {budget.input_limit} bytes")
+                        destination.write(chunk)
+                budget.check_time()
+            if not zipfile.is_zipfile(staged_path):
+                raise ValueError("Downloaded archive must be a ZIP file")
+            budget.check_time()
+            os.replace(staged_path, file_path)
         logger.info(f"downloaded imported release archive to {file_path}")
         return file_path
 
@@ -1417,12 +1424,29 @@ class ArchiveExtractor:
     def extractall(self, unpack_destination, filename):
         mimetype = mimetypes.guess_type(filename)[0]
         if mimetype == "application/zip":
-            with zipfile.ZipFile(filename, "r") as z:
-                z.extractall(path=unpack_destination)
+            fs.extract_zip(filename, unpack_destination)
 
         elif mimetype == "application/x-tar":
+            budget = fs.ArchiveBudget()
+            budget.check_input(filename)
             with tarfile.TarFile(filename, "r") as t:
-                t.extractall(path=unpack_destination, filter=self._tar_filter)
+                members = []
+                for member in t:
+                    budget.add_member(member.name, member.size)
+                    member = self._tar_filter(member, unpack_destination)
+                    target = fs.archive_member_path(member.name, unpack_destination)
+                    members.append((member, target))
+                for member, target in members:
+                    budget.check_time()
+                    if member.isdir():
+                        target.mkdir(parents=True, exist_ok=True)
+                    else:
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        with t.extractfile(member) as source, target.open("wb") as destination:
+                            budget.copy(source, destination)
+                        if member.mode is not None:
+                            target.chmod(member.mode)
+                budget.check_time()
 
         elif mimetype == "application/rar":
             if hasattr(filename, "name"):
@@ -1444,9 +1468,7 @@ class ArchiveExtractor:
             with TemporaryDirectory() as d:
                 try:
                     msg = self.extractall(unpack_destination=d, filename=filename)
-                except zipfile.BadZipFile as e:
-                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
-                except tarfile.TarError as e:
+                except (zipfile.BadZipFile, tarfile.TarError, fs.ArchiveLimitError) as e:
                     msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
                 except Exception as e:
                     logger.exception("Error unpacking archive")
@@ -1480,36 +1502,5 @@ def import_archive(codebase_release, nested_code_folder_name, fs_api=None):
 
 
 def extract_zip_without_top_dir(zip_path: Path, extract_to: Path):
-    """extract a zip archive to a directory, removing the top-level directory"""
-    with zipfile.ZipFile(zip_path, "r") as z:
-        members = z.infolist()
-        paths = []
-        for member in members:
-            fs.archive_member_path(member.filename, extract_to)
-            file_type = stat.S_IFMT(member.external_attr >> 16)
-            if file_type not in (0, stat.S_IFREG, stat.S_IFDIR):
-                raise ValueError("ZIP archive members must be regular files or directories")
-            paths.append(Path(member.filename))
-
-        # Strip exactly one shared directory, never a character prefix or filename.
-        roots = {path.parts[0] for path in paths if path.parts}
-        strip_root = len(roots) == 1 and all(
-            len(path.parts) > 1 or member.is_dir() for member, path in zip(members, paths)
-        )
-        targets = []
-        for member, path in zip(members, paths):
-            relative_path = Path(*path.parts[1:]) if strip_root else path
-            if relative_path == Path("."):
-                if not member.is_dir():
-                    raise ValueError("ZIP file member must have a filename")
-                continue
-            target_path = fs.archive_member_path(relative_path.as_posix(), extract_to)
-            targets.append((member, target_path))
-
-        for member, target_path in targets:
-            if member.is_dir():
-                target_path.mkdir(parents=True, exist_ok=True)
-            else:
-                target_path.parent.mkdir(parents=True, exist_ok=True)
-                with z.open(member) as source, target_path.open("wb") as destination:
-                    shutil.copyfileobj(source, destination)
+    """Extract a ZIP within resource limits, stripping one shared directory."""
+    fs.extract_zip(zip_path, extract_to, strip_top_dir=True)

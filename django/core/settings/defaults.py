@@ -358,6 +358,14 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
 FILE_UPLOAD_PERMISSIONS = 0o644
 FILE_UPLOAD_TEMP_DIR = os.path.join(SHARE_DIR, "uploads")
 
+# Per-archive budgets, independent of Django's in-memory upload threshold.
+ARCHIVE_MAX_INPUT_BYTES = int(os.getenv("ARCHIVE_MAX_INPUT_BYTES", 100 * 1024**2))
+ARCHIVE_MAX_TOTAL_BYTES = int(os.getenv("ARCHIVE_MAX_TOTAL_BYTES", 2 * 1024**3))
+ARCHIVE_MAX_FILE_BYTES = int(os.getenv("ARCHIVE_MAX_FILE_BYTES", 100 * 1024**2))
+ARCHIVE_MAX_MEMBERS = int(os.getenv("ARCHIVE_MAX_MEMBERS", 10000))
+ARCHIVE_MAX_PATH_DEPTH = int(os.getenv("ARCHIVE_MAX_PATH_DEPTH", 32))
+ARCHIVE_MAX_SECONDS = int(os.getenv("ARCHIVE_MAX_SECONDS", 45))
+
 for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT, FILE_UPLOAD_TEMP_DIR):
     try:
         if not os.path.isdir(d):

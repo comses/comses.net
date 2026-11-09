@@ -219,8 +219,14 @@ class ZipExtractionSecurityTests(SimpleTestCase):
 
 
 class RarExtractionSecurityTests(SimpleTestCase):
+    def setUp(self):
+        temporary = TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.archive_path = Path(temporary.name) / "upload.rar"
+        self.archive_path.write_bytes(b"mock RAR")
+
     def member(self, name="safe.txt", **overrides):
-        member = Mock(filename=name, file_redir=None)
+        member = Mock(filename=name, file_redir=None, file_size=0)
         member.is_symlink.return_value = False
         member.is_file.return_value = True
         member.is_dir.return_value = False
@@ -242,8 +248,8 @@ class RarExtractionSecurityTests(SimpleTestCase):
                     archive = rar.return_value.__enter__.return_value
                     archive.infolist.return_value = [self.member(), member]
                     with self.assertRaises(ValueError):
-                        fs.unrar("upload.rar", destination)
-                    archive.extractall.assert_not_called()
+                        fs.unrar(self.archive_path, destination)
+                    archive.open.assert_not_called()
 
     def test_regular_members_are_passed_to_extractor(self):
         with TemporaryDirectory() as destination, patch("core.fs.rarfile.RarFile") as rar:
@@ -253,8 +259,10 @@ class RarExtractionSecurityTests(SimpleTestCase):
             directory.is_dir.return_value = True
             members = [directory, self.member("project/file")]
             archive.infolist.return_value = members
-            fs.unrar("upload.rar", destination)
-            archive.extractall.assert_called_once_with(destination, members=members)
+            archive.open.return_value = io.BytesIO(b"contents")
+            fs.unrar(self.archive_path, destination)
+            archive.open.assert_called_once_with(members[1])
+            self.assertEqual((Path(destination) / "project/file").read_bytes(), b"contents")
 
     def test_upload_rejects_rar_without_importing_contents(self):
         # Exercise the existing RAR branch regardless of the OS MIME database.
@@ -266,7 +274,7 @@ class RarExtractionSecurityTests(SimpleTestCase):
             archive.infolist.return_value = [self.member(file_redir=(1, 0, "/secret"))]
             storage = Mock()
             with self.assertLogs("library.fs", level="ERROR"):
-                result = ArchiveExtractor(storage).process(FileCategories.code, "upload.rar")
+                result = ArchiveExtractor(storage).process(FileCategories.code, str(self.archive_path))
             self.assertEqual(result.level, MessageLevels.error)
             storage.log_save.assert_not_called()
-            archive.extractall.assert_not_called()
+            archive.open.assert_not_called()

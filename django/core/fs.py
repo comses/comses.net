@@ -4,6 +4,9 @@ import mimetypes
 import os
 import pathlib
 import shutil
+import stat
+import time
+import zipfile
 
 import bagit
 import rarfile
@@ -105,6 +108,73 @@ def rm_system_files(base_dir):
     return removed_files
 
 
+class ArchiveLimitError(ValueError):
+    """An archive exceeded its configured resource budget."""
+
+
+class ArchiveBudget:
+    """Bound declared sizes and actual output; deadlines are cooperative."""
+
+    def __init__(self):
+        self.input_limit = settings.ARCHIVE_MAX_INPUT_BYTES
+        self.total_limit = settings.ARCHIVE_MAX_TOTAL_BYTES
+        self.file_limit = settings.ARCHIVE_MAX_FILE_BYTES
+        self.member_limit = settings.ARCHIVE_MAX_MEMBERS
+        self.depth_limit = settings.ARCHIVE_MAX_PATH_DEPTH
+        limits = (
+            self.input_limit,
+            self.total_limit,
+            self.file_limit,
+            self.member_limit,
+            self.depth_limit,
+            settings.ARCHIVE_MAX_SECONDS,
+        )
+        if any(limit <= 0 for limit in limits):
+            raise ArchiveLimitError("Archive limits must be positive")
+        self.deadline = time.monotonic() + settings.ARCHIVE_MAX_SECONDS
+        self.members = 0
+        self.declared_bytes = 0
+        self.written_bytes = 0
+
+    def check_time(self):
+        if time.monotonic() >= self.deadline:
+            raise ArchiveLimitError("Archive processing time limit exceeded")
+
+    def check_input(self, filename):
+        self.check_time()
+        if pathlib.Path(filename).stat().st_size > self.input_limit:
+            raise ArchiveLimitError(f"Archive input size exceeds {self.input_limit} bytes")
+
+    def add_member(self, name, size):
+        self.check_time()
+        self.members += 1
+        if self.members > self.member_limit:
+            raise ArchiveLimitError(f"Archive member count exceeds {self.member_limit}")
+        if len(pathlib.PurePosixPath(name).parts) > self.depth_limit:
+            raise ArchiveLimitError(f"Archive path depth exceeds {self.depth_limit} components")
+        if size < 0 or size > self.file_limit:
+            raise ArchiveLimitError(f"Archive member size must be between 0 and {self.file_limit} bytes")
+        self.declared_bytes += size
+        if self.declared_bytes > self.total_limit:
+            raise ArchiveLimitError(f"Archive total extracted size exceeds {self.total_limit} bytes")
+
+    def copy(self, source, destination):
+        file_bytes = 0
+        while True:
+            self.check_time()
+            chunk = source.read(64 * 1024)
+            self.check_time()
+            if not chunk:
+                return
+            file_bytes += len(chunk)
+            if file_bytes > self.file_limit:
+                raise ArchiveLimitError(f"Archive individual file size exceeds {self.file_limit} bytes")
+            if self.written_bytes + len(chunk) > self.total_limit:
+                raise ArchiveLimitError(f"Archive total extracted size exceeds {self.total_limit} bytes")
+            destination.write(chunk)
+            self.written_bytes += len(chunk)
+
+
 def archive_member_path(name, destination):
     """Validate an archive path before any extraction or path normalization."""
     path = pathlib.PurePosixPath(name)
@@ -117,14 +187,66 @@ def archive_member_path(name, destination):
 
 
 def unrar(archive_path, dst_dir: str):
+    budget = ArchiveBudget()
+    budget.check_input(archive_path)
     with rarfile.RarFile(archive_path) as rf:
         members = rf.infolist()
         # Validate the entire archive before creating files or links.
         for member in members:
+            budget.add_member(member.filename, member.file_size)
             archive_member_path(member.filename, dst_dir)
             if member.is_symlink() or member.file_redir or not (member.is_file() or member.is_dir()):
                 raise ValueError("RAR archive members must be regular files or directories without redirections")
-        rf.extractall(dst_dir, members=members)
+        for member in members:
+            budget.check_time()
+            target = archive_member_path(member.filename, dst_dir)
+            if member.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with rf.open(member) as source, target.open("wb") as destination:
+                    budget.copy(source, destination)
+        budget.check_time()
+
+
+def extract_zip(zip_path, extract_to, strip_top_dir=False):
+    budget = ArchiveBudget()
+    budget.check_input(zip_path)
+    with zipfile.ZipFile(zip_path, "r") as archive:
+        members = archive.infolist()
+        paths = []
+        for member in members:
+            budget.add_member(member.filename, member.file_size)
+            archive_member_path(member.filename, extract_to)
+            file_type = stat.S_IFMT(member.external_attr >> 16)
+            if file_type not in (0, stat.S_IFREG, stat.S_IFDIR):
+                raise ValueError("ZIP archive members must be regular files or directories")
+            paths.append(pathlib.Path(member.filename))
+
+        roots = {path.parts[0] for path in paths if path.parts}
+        strip_root = (
+            strip_top_dir
+            and len(roots) == 1
+            and all(len(path.parts) > 1 or member.is_dir() for member, path in zip(members, paths))
+        )
+        targets = []
+        for member, path in zip(members, paths):
+            relative_path = pathlib.Path(*path.parts[1:]) if strip_root else path
+            if relative_path == pathlib.Path("."):
+                if not member.is_dir():
+                    raise ValueError("ZIP file member must have a filename")
+                continue
+            targets.append((member, archive_member_path(relative_path.as_posix(), extract_to)))
+
+        for member, target in targets:
+            budget.check_time()
+            if member.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with archive.open(member) as source, target.open("wb") as destination:
+                    budget.copy(source, destination)
+        budget.check_time()
 
 
 def make_bag(path, info: dict = None):
