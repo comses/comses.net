@@ -77,7 +77,7 @@ describe("CommonMediaModal - Save video payload", () => {
       },
     });
 
-    // Wait for onMounted to complete (retrieve + setValuesWithLoadTime)
+    // Wait for onMounted to complete (retrieve + setValues)
     await flushPromises();
 
     // Find the video URL input and update it
@@ -112,6 +112,5 @@ describe("CommonMediaModal - Save video payload", () => {
     expect(payload).not.toHaveProperty("doi");
     expect(payload).not.toHaveProperty("repositoryUrl");
     expect(payload).not.toHaveProperty("submitter");
-    expect(payload).not.toHaveProperty("loadedTime");
   });
 });

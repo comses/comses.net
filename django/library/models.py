@@ -1075,6 +1075,17 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     objects = CodebaseQuerySet.as_manager()
 
+    spam_check_fields = [
+        "title",
+        "summary",
+        "description",
+        "repository_url",
+        "video_source_url",
+        "replication_text",
+        "references_text",
+        "associated_publication_text",
+    ]
+
     search_fields = [
         index.SearchField("title", boost=10.0),
         index.SearchField("description", boost=8.0),

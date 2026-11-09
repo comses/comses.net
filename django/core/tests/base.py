@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import TestCase
-from django.utils import timezone
 
 from core.models import Job, Event
 from core.serializers import EventSerializer, JobSerializer
@@ -43,17 +42,11 @@ class ContentModelFactory(ABC):
     def get_default_data(self) -> dict:
         pass
 
-    def get_request_data(self, with_tags=True, honeypot_value=None, elapsed_time=999, **kwargs):
+    def get_request_data(self, with_tags=True, **kwargs):
         data = self.get_default_data()
         data.pop("submitter")
         if with_tags:
             data["tags"] = []
-        if not hasattr(self.model, "spam_moderation"):
-            return data
-
-        if honeypot_value:
-            data["content"] = honeypot_value
-        data["loaded_time"] = timezone.now() - timezone.timedelta(seconds=elapsed_time)
         data.update(kwargs)
         return data
 

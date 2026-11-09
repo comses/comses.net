@@ -71,10 +71,6 @@ export function useForm<Values>(options: UseFormValidationOptions<Values>) {
     ...optionalValidate,
   });
 
-  const setValuesWithLoadTime = (values: Partial<Values>, shouldValidate?: boolean) => {
-    form.setValues({ ...values, loadedTime: new Date() }, shouldValidate);
-  };
-
   // create event listener for leaving with unsaved changes
   function handleBeforeUnload(event: BeforeUnloadEvent) {
     if (!form.isSubmitting.value && !isEmpty(form.touched.value)) {
@@ -91,7 +87,6 @@ export function useForm<Values>(options: UseFormValidationOptions<Values>) {
 
   return {
     ...form,
-    setValuesWithLoadTime,
     addUnsavedAlertListener,
     removeUnsavedAlertListener,
   };

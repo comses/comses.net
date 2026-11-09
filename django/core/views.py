@@ -351,10 +351,10 @@ class MemberProfileFilter(filters.BaseFilterBackend):
             return queryset
         query_params = request.query_params
         tags = query_params.getlist("tags")
-        return get_search_queryset(query_params, queryset, tags=tags)
+        return get_search_queryset(query_params, queryset.exclude_spam(), tags=tags)
 
 
-class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
+class MemberProfileViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteViewSet):
     lookup_field = "user__pk"
     lookup_url_kwarg = "pk"
     queryset = MemberProfile.objects.public().with_tags()
@@ -364,6 +364,10 @@ class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
     context_object_name = "profile"
     context_list_name = "profiles"
 
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        self.handle_spam_detection(serializer)
+
     def get_serializer_class(self):
         if self.action == "list":
             return RelatedMemberProfileSerializer
@@ -371,10 +375,13 @@ class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
             return MemberProfileSerializer
 
     def get_queryset(self):
+        queryset = self.queryset
+        if self.action != "list":
+            queryset = queryset.accessible(self.request.user)
         if self.action == "retrieve":
-            return self.queryset.with_peer_review_invitations()
+            return queryset.with_peer_review_invitations()
         else:
-            return self.queryset.with_user()
+            return queryset.with_user()
 
     def get_retrieve_context(self, instance):
         context = super().get_retrieve_context(instance)

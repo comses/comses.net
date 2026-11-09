@@ -8,7 +8,6 @@
       data-cy="codebase-title"
       required
     />
-    <HoneypotField />
     <MarkdownField
       class="mb-3"
       name="description"
@@ -82,7 +81,6 @@ import TextField from "@/components/form/TextField.vue";
 import TextareaField from "@/components/form/TextareaField.vue";
 import MarkdownField from "@/components/form/MarkdownField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
-import HoneypotField from "@/components/form/HoneypotField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { type RequestOptions, useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
@@ -126,7 +124,7 @@ const {
   errors,
   handleSubmit,
   values,
-  setValuesWithLoadTime,
+  setValues,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
 } = useForm<CodebaseEditFields>({
@@ -143,7 +141,7 @@ const {
 onMounted(async () => {
   if (props.identifier) {
     await retrieve(props.identifier);
-    setValuesWithLoadTime(data.value);
+    setValues(data.value);
   }
   addUnsavedAlertListener();
 });

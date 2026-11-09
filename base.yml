@@ -107,6 +107,8 @@ services:
     build: django
     image: comses/server
     secrets:
+      - voyager_ai_api_key
+      - cloudflare_ai_api_token
       - datacite_api_password
       - db_password
       - discourse_api_key
@@ -164,6 +166,10 @@ networks:
     internal: true
 
 secrets:
+  voyager_ai_api_key:
+    file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/voyager_ai_api_key
+  cloudflare_ai_api_token:
+    file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/cloudflare_ai_api_token
   datacite_api_password:
     file: ${COMSES_SECRETS_ROOT:-./docker/secrets}/datacite_api_password
   db_password:
