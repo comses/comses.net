@@ -14,6 +14,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from django.core.management import call_command
+from library.fs import FileCategories
 from library.models import CodebaseRelease, ImportedReleaseSyncState
 from library.tests.base import CodebaseFactory, ReleaseSetup
 
@@ -159,6 +160,74 @@ class SubmissionIntegrationTests(TestCase):
                     {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()},
                     files,
                 )
+
+    def test_upload_and_delete_do_not_copy_unchanged_files(self):
+        self.upload({"inputs/large.dat": b"x" * 1024 * 1024, "README.md": b"docs"})
+        existing = self.root / "inputs/large.dat"
+        original_inode = existing.stat().st_ino
+
+        self.upload({"extra.py": b"code"})
+        self.assertEqual(existing.stat().st_ino, original_inode)
+        self.assertEqual(existing.stat().st_nlink, 1)
+        response = self.client.delete(self.files_url + "extra.py/")
+        self.assertEqual(response.status_code, 202, response.content)
+        self.assertEqual(existing.stat().st_ino, original_inode)
+        self.assertEqual(existing.stat().st_nlink, 1)
+        self.assertEqual(existing.read_bytes(), b"x" * 1024 * 1024)
+
+    def test_failed_edits_restore_files_and_manifest(self):
+        self.upload({"main.py": b"code", "README.md": b"docs", "LICENSE": b"original license"})
+        self.release.refresh_from_db()
+        manifest = dict(self.release.category_manifest)
+        files = {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        api = self.release.get_fs_api()
+        edits = {
+            "replace metadata": lambda: api.add(content=bundle({"LICENSE": b"replacement", "new.py": b"new"})),
+            "delete file": lambda: api.delete(None, Path("main.py")),
+            "clear category": lambda: api.clear_category(FileCategories.docs),
+        }
+        for name, edit in edits.items():
+            with self.subTest(edit=name):
+                with patch("library.fs.CategoryManifestManager.update", side_effect=RuntimeError("database failure")):
+                    with self.assertRaisesMessage(RuntimeError, "database failure"):
+                        edit()
+                self.release.refresh_from_db()
+                self.assertEqual(self.release.category_manifest, manifest)
+                self.assertEqual(
+                    {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()},
+                    files,
+                )
+                self.assertTrue(all(p.stat().st_nlink == 1 for p in self.root.rglob("*") if p.is_file()))
+
+    def test_rejected_upload_does_not_modify_existing_metadata(self):
+        self.upload({"main.py": b"original code", "LICENSE": b"original license"})
+        response = self.client.post(
+            self.files_url,
+            {"file": bundle({"LICENSE": b"replacement", "main.py": b"collision"})},
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual((self.root / "LICENSE").read_bytes(), b"original license")
+        self.assertEqual((self.root / "main.py").read_bytes(), b"original code")
+
+    def test_failed_release_copy_preserves_source_and_destination(self):
+        self.upload({"LICENSE": b"destination license"})
+        source = ReleaseSetup.setUpPublishableDraftRelease(
+            CodebaseFactory(self.user).create(), with_files=False
+        )
+        source_api = source.get_fs_api()
+        source_api.add(content=bundle({"LICENSE": b"source license", "main.py": b"source code"}))
+        self.release.refresh_from_db()
+        manifest = dict(self.release.category_manifest)
+        with patch("library.fs.CategoryManifestManager.update", side_effect=RuntimeError("database failure")):
+            with self.assertRaisesMessage(RuntimeError, "database failure"):
+                self.release.get_fs_api().copy_originals(source)
+        self.release.refresh_from_db()
+        self.assertEqual(self.release.category_manifest, manifest)
+        self.assertEqual((self.root / "LICENSE").read_bytes(), b"destination license")
+        self.assertFalse((self.root / "main.py").exists())
+        self.assertEqual((source_api.sip_contents_dir / "LICENSE").read_bytes(), b"source license")
+        self.assertEqual((source_api.sip_contents_dir / "main.py").read_bytes(), b"source code")
 
     def test_metadata_save_preserves_new_uploads_and_category_edits(self):
         self.upload({"main.py": b"code", "guide.txt": b"docs"})

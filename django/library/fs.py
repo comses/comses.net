@@ -794,7 +794,9 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
                         )
                     manifest = CategoryManifestManager(release)
                     categories = dict(manifest.data)
-                    shutil.copytree(self.sip_contents_dir, work)
+                    # Share unchanged file data with the working package. Edits must
+                    # replace/unlink entries, never write through these hard links.
+                    shutil.copytree(self.sip_contents_dir, work, copy_function=os.link)
                     edit(work, categories)
                     for directory in sorted(work.rglob("*"), reverse=True):
                         if directory.is_dir() and not any(directory.iterdir()):
@@ -881,7 +883,7 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
                             f"A file blocks the directory for '{relative}'."
                         )
                     target.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(source, target)
+                    source.replace(target)
                     categories[relative] = (
                         FileCategories.metadata.name
                         if generated_metadata
@@ -918,8 +920,16 @@ class CodebaseReleaseFsApi(BaseCodebaseReleaseFsApi):
     def copy_originals(self, source_release):
         source = source_release.get_fs_api()
 
+        def copy_file(source, target):
+            # The destination may be linked to the current package. Break that
+            # link before copying, so a failed edit cannot change the original.
+            Path(target).unlink(missing_ok=True)
+            return shutil.copy2(source, target)
+
         def copy_files(work, categories):
-            shutil.copytree(source.sip_contents_dir, work, dirs_exist_ok=True)
+            shutil.copytree(
+                source.sip_contents_dir, work, dirs_exist_ok=True, copy_function=copy_file
+            )
             categories.update(source.manifest.data)
 
         self._edit_package(copy_files)
