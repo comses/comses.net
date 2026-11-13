@@ -2,6 +2,7 @@
 
 import hashlib
 import io
+import tarfile
 import tempfile
 import zipfile
 from pathlib import Path
@@ -128,6 +129,36 @@ class SubmissionIntegrationTests(TestCase):
         self.assertNotIn("inputs/data.csv", self.release.category_manifest)
         self.assertNotIn("new.py", self.release.category_manifest)
         self.assertEqual(self.release.category_manifest["extra.py"], "code")
+
+    def test_archive_limits_preserve_existing_package_and_manifest(self):
+        self.upload({"main.py": b"original", "README.md": b"docs"})
+        self.release.refresh_from_db()
+        manifest = dict(self.release.category_manifest)
+        files = {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        for kind in ("zip", "tar", "tar.gz"):
+            output = io.BytesIO()
+            if kind == "zip":
+                with zipfile.ZipFile(output, "w") as archive:
+                    archive.writestr("new.py", b"too large")
+            else:
+                with tarfile.open(fileobj=output, mode="w:gz" if kind == "tar.gz" else "w") as archive:
+                    member = tarfile.TarInfo("new.py")
+                    member.size = 9
+                    archive.addfile(member, io.BytesIO(b"too large"))
+            with self.subTest(kind=kind), override_settings(ARCHIVE_MAX_FILE_BYTES=2):
+                response = self.client.post(
+                    self.files_url,
+                    {"file": SimpleUploadedFile(f"upload.{kind}", output.getvalue())},
+                    format="multipart",
+                )
+                self.assertEqual(response.status_code, 400, response.content)
+                self.assertNotIn(str(self.root.parent), str(response.data))
+                self.release.refresh_from_db()
+                self.assertEqual(self.release.category_manifest, manifest)
+                self.assertEqual(
+                    {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()},
+                    files,
+                )
 
     def test_metadata_save_preserves_new_uploads_and_category_edits(self):
         self.upload({"main.py": b"code", "guide.txt": b"docs"})

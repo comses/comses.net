@@ -736,7 +736,7 @@ def validate_package_path(name):
 def extract_manual_archive(archive, destination):
     """Preserve package paths while enforcing the shared archive safety limits."""
     if zipfile.is_zipfile(archive):
-        fs.extract_zip(archive, destination)
+        fs.extract_zip(archive, destination, overwrite=False)
     elif tarfile.is_tarfile(archive):
         budget = fs.ArchiveBudget()
         budget.check_input(archive)
