@@ -28,6 +28,12 @@ export function useReleaseEditorAPI() {
   function listOriginalsFileUrl(identifier: string, versionNumber: string, category: string) {
     return releaseDetailUrl(identifier, versionNumber, ["files", "originals", category]);
   }
+  function packageFilesUrl(identifier: string, versionNumber: string) {
+    return releaseDetailUrl(identifier, versionNumber, ["files", "package"]);
+  }
+  function packageFileUrl(identifier: string, versionNumber: string, path: string) {
+    return `${packageFilesUrl(identifier, versionNumber)}${path.split("/").map(encodeURIComponent).join("/")}/`;
+  }
   function clearCategoryUrl(identifier: string, versionNumber: string, category: string) {
     return releaseDetailUrl(identifier, versionNumber, [
       "files",
@@ -147,6 +153,8 @@ export function useReleaseEditorAPI() {
     editUrl,
     detailEditUrl,
     listOriginalsFileUrl,
+    packageFilesUrl,
+    packageFileUrl,
     clearCategoryUrl,
     downloadPreviewUrl,
     downloadUrl,

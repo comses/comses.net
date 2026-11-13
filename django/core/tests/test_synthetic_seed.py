@@ -124,6 +124,14 @@ class SyntheticSeedTest(TestCase):
         private = CodebaseRelease.objects.get(codebase__identifier="seed-private")
         self.assertFalse(private.live)
         self.assertIn(b"population", (private.get_fs_api().sip_contents_dir / "code/model.py").read_bytes())
+        for release in CodebaseRelease.objects.all():
+            for path, category in (
+                ("code/model.py", "code"),
+                ("docs/README.md", "docs"),
+                ("data/input.csv", "data"),
+            ):
+                self.assertEqual(release.category_manifest[path], category)
+                self.assertTrue((release.get_fs_api().sip_contents_dir / path).is_file())
         self.assertGreaterEqual(report["large_input_bytes"], 1024 * 1024)
         for release in report["releases"]:
             if release["archive"]:

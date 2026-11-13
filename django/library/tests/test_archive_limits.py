@@ -9,7 +9,7 @@ import requests
 from django.test import SimpleTestCase, override_settings
 
 from core import fs
-from library.fs import ArchiveExtractor, FileCategories, ImportedCodebaseReleaseFsApi
+from library.fs import ImportedCodebaseReleaseFsApi, extract_manual_archive
 
 
 class ArchiveBudgetTests(SimpleTestCase):
@@ -75,10 +75,10 @@ class ArchiveExtractionLimitTests(SimpleTestCase):
             for limits, entries in cases:
                 with self.subTest(kind=kind, limits=limits), override_settings(**limits):
                     archive = self.create_archive(kind, entries)
-                    storage = Mock()
-                    result = ArchiveExtractor(storage).process(FileCategories.code, str(archive))
-                    self.assertTrue(result.has_errors)
-                    storage.log_save.assert_not_called()
+                    destination = self.root / "output"
+                    with self.assertRaises(fs.ArchiveLimitError):
+                        extract_manual_archive(archive, destination)
+                    self.assertFalse(destination.exists())
 
     def test_exact_size_and_count_limits_are_allowed(self):
         for kind in ("zip", "tar"):
@@ -91,7 +91,7 @@ class ArchiveExtractionLimitTests(SimpleTestCase):
                 archive = self.create_archive(kind, [("safe", b"abc")])
                 destination = self.root / kind
                 destination.mkdir()
-                ArchiveExtractor(Mock()).extractall(destination, str(archive))
+                extract_manual_archive(archive, destination)
                 self.assertEqual((destination / "safe").read_bytes(), b"abc")
 
     def test_imported_zip_limit_preserves_sip(self):
@@ -107,7 +107,7 @@ class ArchiveExtractionLimitTests(SimpleTestCase):
                 archive = self.create_archive(kind, [])
                 with patch("core.fs.time.monotonic", side_effect=[0, 0, 46]):
                     with self.assertRaises(fs.ArchiveLimitError):
-                        ArchiveExtractor(Mock()).extractall(self.root / "output", str(archive))
+                        extract_manual_archive(archive, self.root / "output")
 
     def test_tar_preserves_executable_mode_without_special_bits(self):
         archive_path = self.root / "executable.tar"
@@ -117,7 +117,7 @@ class ArchiveExtractionLimitTests(SimpleTestCase):
             member.size = 4
             archive.addfile(member, io.BytesIO(b"code"))
         destination = self.root / "output"
-        ArchiveExtractor(Mock()).extractall(destination, str(archive_path))
+        extract_manual_archive(archive_path, destination)
         self.assertEqual((destination / "script").stat().st_mode & 0o7777, 0o755)
 
     def test_rar_declared_size_is_checked_before_decompression(self):

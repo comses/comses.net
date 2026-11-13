@@ -15,7 +15,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
-from core.tests.base import UserFactory
+from core.tests.base import UserFactory, update_index
 from core.tests.permissions_base import (
     BaseViewSetTestCase,
     create_perm_str,
@@ -907,6 +907,7 @@ class CodebaseRenderPageTestCase(TestCase):
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase.create_release(status=CodebaseRelease.Status.PUBLISHED, initialize=False)
+        update_index()
 
     def test_list(self):
         response = self.client.get(reverse("library:codebase-list"))
@@ -946,6 +947,7 @@ class CodebaseSearchTestCase(TestCase):
         self.submitter = user_factory.create()
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
+        update_index()
 
     def test_search(self):
         response = self.client.get(

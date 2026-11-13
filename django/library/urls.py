@@ -25,6 +25,11 @@ router.register(
 )
 router.register(r"reviews/(?P<slug>[\da-f\-]+)/editor/feedback", views.PeerReviewFeedbackViewSet)
 router.register(
+    views.CodebaseReleasePackageFilesViewSet.get_url_matcher(),
+    views.CodebaseReleasePackageFilesViewSet,
+    basename="codebaserelease-package-files",
+)
+router.register(
     views.CodebaseReleaseFilesSipViewSet.get_url_matcher(),
     views.CodebaseReleaseFilesSipViewSet,
     basename="codebaserelease-sip-files",

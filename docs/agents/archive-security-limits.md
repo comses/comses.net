@@ -1,6 +1,6 @@
 # Archive download and extraction limits
 
-The model library applies the same per-archive budgets to uploaded ZIP/tar/RAR
+The model library applies the same per-archive budgets to uploaded ZIP/tar
 extraction and imported GitHub ZIP packages. Downloads use a fixed local
 `release.zip` filename; remote filename headers and Git tags never determine a
 local path. Downloads are staged on the destination filesystem and atomically
@@ -40,9 +40,8 @@ upload allowance.
 
 These are archive-processing limits, not a new per-release storage quota or a
 general validator for individually uploaded non-archive files. Increasing the
-archive input limit does not increase Nginx's request limit. The RAR checks apply
-when the RAR extraction path is reached; this change does not fix the existing
-RAR MIME-routing or external-decompressor compatibility issues.
+archive input limit does not increase Nginx's request limit. Manual uploads reject
+RAR archives; submit ZIP or tar archives instead.
 
 ## Operator verification and rejected submissions
 
@@ -59,8 +58,8 @@ not inspect their already-loaded Python settings.
 For a rejection:
 
 1. Distinguish a proxy HTTP 413 (the full upload request exceeds 100 MiB) from an
-   application archive-limit error. Archive errors identify the violated budget;
-   size/count/depth errors include the configured threshold.
+   application archive-limit error. Manual uploads return a generic unpacking error;
+   server logs identify the violated budget and configured threshold.
 2. Ask the submitter to remove unnecessary generated files, reduce directory
    nesting, or place large datasets in an external repository with a persistent
    reference. Splitting an archive does not waive the per-file or mirroring limits.
@@ -77,26 +76,28 @@ Archives containing links must be repackaged with regular files and directories.
 
 ## Enforcement and failure behavior
 
-- Input size is checked before opening uploaded archives. HTTP downloads enforce
+- Input size is checked before extracting uploaded archives. HTTP downloads enforce
   advertised Content-Length when present and count actual streamed bytes even
   when the header is absent or inaccurate. Connect/read timeouts are 10/15 seconds.
 - Every member, including directories and repeated paths, consumes the member
   budget. Declared file sizes consume the total budget even if a later member
-  overwrites the same path. Path depth is checked before stripping a ZIP root.
+  repeats the same path. Manual uploads reject duplicate file entries. Path depth
+  is checked before stripping a GitHub ZIP root.
 - Declared sizes are checked before extracting files. Bounded reads count actual
   output and reject a chunk before writing it if it exceeds a file or total cap.
   Tar sparse files are subject to the same logical/output byte limits.
-- ZIP and RAR share path validation and reject links/special entries. Tar retains
+- ZIP path validation rejects links/special entries. Tar retains
   its strict filter and Python's data filter, including sanitized file modes.
 - Uploaded archives extract in temporary storage and are not copied into SIP on
-  rejection. Imported ZIPs finish extraction before clearing existing SIP data.
-  Transfer from staging into SIP is not an atomic directory transaction.
+  rejection. Manual edits hold a release row lock, edit a copy, and swap the SIP
+  contents with rollback on failure. Imported ZIPs finish extraction before clearing
+  existing SIP data; their transfer into SIP is not an atomic directory transaction.
 
 ## Boundaries
 
 The time budget is **cooperative**, checked between members and before/after
 stream reads. It cannot interrupt a blocked decoder, library header parser,
-filesystem call, or RAR subprocess. HTTP timeouts limit connection/read inactivity;
+or filesystem call. HTTP timeouts limit connection/read inactivity;
 they are not a hard total request deadline. uWSGI's existing 60-second harakiri
 remains separate and does not protect Huey tasks.
 
