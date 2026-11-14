@@ -56,6 +56,7 @@ from .serializers import (
 )
 from .mixins import (
     CommonViewSetMixin,
+    HtmlActionRendererMixin,
     HtmlListModelMixin,
     HtmlRetrieveModelMixin,
     PermissionRequiredByHttpMethodMixin,
@@ -354,7 +355,8 @@ class MemberProfileFilter(filters.BaseFilterBackend):
         return get_search_queryset(query_params, queryset.exclude_spam(), tags=tags)
 
 
-class MemberProfileViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteViewSet):
+class MemberProfileViewSet(SpamCatcherViewSetMixin, HtmlActionRendererMixin, CommonViewSetMixin, HtmlNoDeleteViewSet):
+    html_actions = ("list", "retrieve", "mark_spam")
     lookup_field = "user__pk"
     lookup_url_kwarg = "pk"
     queryset = MemberProfile.objects.public().with_tags()
@@ -470,7 +472,10 @@ class EventFilter(filters.BaseFilterBackend):
         )
 
 
-class EventViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
+class EventViewSet(
+    SpamCatcherViewSetMixin, HtmlActionRendererMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet
+):
+    html_actions = ("list", "retrieve", "calendar", "mark_spam")
     serializer_class = EventSerializer
     queryset = Event.objects.with_tags().with_submitter().with_expired().with_started().order_by("-date_created")
     pagination_class = SmallResultSetPagination
@@ -529,7 +534,7 @@ class EventViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermis
         are events to be rendered in the calendar"""
         calendar_events = {}
         if request.query_params:
-            if request.accepted_media_type == "application/json":
+            if request.accepted_renderer.format == "json":
                 calendar_events = []
                 queryset, start, end = self.get_calendar_queryset()
                 for event in list(queryset):
@@ -571,7 +576,10 @@ class JobFilter(filters.BaseFilterBackend):
         return get_search_queryset(query_params, queryset, tags=tags, criteria=criteria)
 
 
-class JobViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
+class JobViewSet(
+    SpamCatcherViewSetMixin, HtmlActionRendererMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet
+):
+    html_actions = ("list", "retrieve", "mark_spam")
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.with_tags().with_submitter().with_expired().order_by("-date_created")

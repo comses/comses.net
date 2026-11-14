@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import date, timedelta
 from types import SimpleNamespace
 from unittest import mock
 from unittest.mock import patch
@@ -100,11 +101,14 @@ class JobPageRenderTestCase(TestCase):
     def test_detail(self):
         response = self.client.get(reverse("core:job-detail", kwargs={"pk": self.job.id}))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
+        self.assertIn("Accept", response["Vary"])
 
     def test_list(self):
         update_index()
         response = self.client.get(reverse("core:job-list"))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
 
 
 class EventPageRenderTestCase(TestCase):
@@ -118,15 +122,27 @@ class EventPageRenderTestCase(TestCase):
     def test_detail(self):
         response = self.client.get(reverse("core:event-detail", kwargs={"pk": self.event.id}))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
 
     def test_list(self):
         update_index()
         response = self.client.get(reverse("core:event-list"))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
 
     def test_calendar(self):
         response = self.client.get(reverse("core:event-calendar"))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
+
+    def test_calendar_accepts_parameterized_json(self):
+        response = self.client.get(
+            reverse("core:event-calendar"),
+            {"start": date.today().isoformat(), "end": (date.today() + timedelta(days=7)).isoformat()},
+            HTTP_ACCEPT="application/json; charset=utf-8",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
 
 
 class ProfilePageRenderTestCase(TestCase):
@@ -141,6 +157,7 @@ class ProfilePageRenderTestCase(TestCase):
     def test_detail(self):
         response = self.client.get(reverse("core:profile-detail", kwargs={"pk": self.submitter.id}))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
 
     def test_flagged_profile_visibility(self):
         self.profile.mark_spam()
@@ -170,6 +187,7 @@ class ProfilePageRenderTestCase(TestCase):
         update_index()
         response = self.client.get(reverse("core:profile-list"))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
 
 
 def provider_response(probability, provider="asu"):

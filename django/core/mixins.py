@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import redirect
+from djangorestframework_camel_case.render import CamelCaseJSONRenderer
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -13,9 +14,24 @@ from rest_framework.decorators import action
 
 from .models import SpamModeration
 from .permissions import ViewRestrictedObjectPermissions, ModeratorPermissions
+from .renderers import RootContextHTMLRenderer
 from .tasks import queue_spam_check
 
 logger = logging.getLogger(__name__)
+
+
+class HtmlActionRendererMixin:
+    """Allow HTML only for declared page, redirect, and download actions."""
+
+    # Keep both classes declared so DRF adds Vary: Accept to negotiated pages.
+    renderer_classes = (RootContextHTMLRenderer, CamelCaseJSONRenderer)
+    html_actions = ()
+
+    def get_renderers(self):
+        renderers = super().get_renderers()
+        if getattr(self, "action", None) in self.html_actions:
+            return renderers
+        return [renderer for renderer in renderers if renderer.format != "html"]
 
 
 def _common_namespace_path(model):

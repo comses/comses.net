@@ -8,12 +8,14 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.db import connection, connections
+from django.http import HttpResponse
 from django.test import TestCase, TransactionTestCase, RequestFactory
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
+from wagtail.models import Site
 
 from core.tests.base import UserFactory
 from core.tests.permissions_base import (
@@ -33,6 +35,7 @@ from library.models import (
     PeerReviewEvent,
     ReviewStatus,
     PeerReviewer,
+    GitHubIntegrationConfiguration,
 )
 from library.fs import FileCategories
 from library.tests.base import ReviewSetup
@@ -59,6 +62,48 @@ from library.models import GithubIntegrationAppInstallation
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class ProgrammingLanguageViewSetTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.language = ProgrammingLanguage.objects.create(
+            name="Negotiation test language", is_pinned=True, is_user_defined=False
+        )
+
+    def test_list_and_retrieve_negotiate_json(self):
+        urls = (
+            reverse("library:programminglanguage-list"),
+            reverse("library:programminglanguage-detail", args=[self.language.pk]),
+        )
+        for url in urls:
+            for accept in (
+                None,
+                "*/*",
+                "application/json",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            ):
+                with self.subTest(url=url, accept=accept):
+                    headers = {} if accept is None else {"HTTP_ACCEPT": accept}
+                    response = self.client.get(url, **headers)
+                    self.assertEqual(response.status_code, status.HTTP_200_OK)
+                    self.assertEqual(response["Content-Type"], "application/json")
+                    data = response.json()
+                    if isinstance(data, list):
+                        data = next(item for item in data if item["id"] == self.language.pk)
+                    self.assertEqual(data["name"], self.language.name)
+                    self.assertTrue(data["isPinned"])
+                    self.assertFalse(data["isUserDefined"])
+
+    def test_html_only_requests_are_not_acceptable(self):
+        for url in (
+            reverse("library:programminglanguage-list"),
+            reverse("library:programminglanguage-detail", args=[self.language.pk]),
+        ):
+            with self.subTest(url=url):
+                response = self.client.get(url, HTTP_ACCEPT="text/html")
+                self.assertEqual(response.status_code, status.HTTP_406_NOT_ACCEPTABLE)
+                self.assertEqual(response["Content-Type"], "application/json")
 
 
 class CodebaseViewSetTestCase(BaseViewSetTestCase):
@@ -911,6 +956,25 @@ class CodebaseRenderPageTestCase(TestCase):
     def test_list(self):
         response = self.client.get(reverse("library:codebase-list"))
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
+
+    def test_git_page_keeps_html_and_actions_use_json(self):
+        config = GitHubIntegrationConfiguration.for_site(Site.objects.get(is_default_site=True))
+        config.approved_users.add(self.submitter)
+        self.client.force_login(self.submitter)
+        kwargs = {"identifier": self.codebase.identifier}
+        response = self.client.get(reverse("library:codebase-git-remotes-list", kwargs=kwargs))
+        self.assertContains(response, "Connect a GitHub repository")
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
+        self.assertIn("Accept", response["Vary"])
+
+        response = self.client.get(
+            reverse("library:codebase-git-remotes-active-remote", kwargs=kwargs),
+            HTTP_ACCEPT="text/html,application/xhtml+xml,*/*;q=0.8",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.accepted_renderer.format, "json")
+        self.assertEqual(response.content, b"")
 
 
 class CodebaseReleaseRenderPageTestCase(TestCase):
@@ -938,6 +1002,22 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
             )
         )
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
+
+    def test_shared_detail_still_renders_html(self):
+        response = self.client.get(self.codebase_release.share_url, HTTP_ACCEPT="text/html")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
+
+    @patch("library.views.build_archive_download_response")
+    def test_downloads_preserve_file_response_for_browsers(self, build_download):
+        self.client.force_login(self.submitter)
+        for url in (self.codebase_release.get_download_url(), self.codebase_release.get_review_download_url()):
+            with self.subTest(url=url):
+                build_download.return_value = HttpResponse(headers={"X-Accel-Redirect": "/library/internal/archive.zip"})
+                response = self.client.get(url, HTTP_ACCEPT="text/html")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response["X-Accel-Redirect"], "/library/internal/archive.zip")
 
 
 class CodebaseSearchTestCase(TestCase):
