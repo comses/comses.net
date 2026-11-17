@@ -46,12 +46,11 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from djangorestframework_camel_case.render import CamelCaseJSONRenderer
 
 from core.models import MemberProfile
 from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_user_retrieve_perms, get_search_queryset
-from core.mixins import CommonViewSetMixin, SpamCatcherViewSetMixin
+from core.mixins import CommonViewSetMixin, HtmlActionRendererMixin, SpamCatcherViewSetMixin
 from core.views import (
     FormUpdateView,
     FormCreateView,
@@ -507,7 +506,8 @@ class CodebaseFilter(filters.BaseFilterBackend):
         )
 
 
-class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteViewSet):
+class CodebaseViewSet(SpamCatcherViewSetMixin, HtmlActionRendererMixin, CommonViewSetMixin, HtmlNoDeleteViewSet):
+    html_actions = ("list", "retrieve", "mark_spam")
     lookup_field = "identifier"
     lookup_value_regex = r"[\w\-\.]+"
     pagination_class = SmallResultSetPagination
@@ -655,7 +655,10 @@ class CanChangeCodebase(permissions.BasePermission):
         return request.user.has_perm("library.change_codebase", codebase)
 
 
-class CodebaseGitRemoteViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class CodebaseGitRemoteViewSet(
+    HtmlActionRendererMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
+):
+    html_actions = ("list",)
     queryset = CodebaseGitRemote.objects.all()
     permission_classes = (CanChangeCodebase, GitHubIntegrationPermission)
     pagination_class = None
@@ -1099,11 +1102,14 @@ def build_archive_download_response(codebase_release, review_archive=False):
     return response
 
 
-class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class CodebaseReleaseShareViewSet(
+    HtmlActionRendererMixin, CommonViewSetMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
     """
     viewset supporting private codebase release share page (e.g., Download for Review)
     """
 
+    html_actions = ("retrieve", "download")
     namespace = "library/codebases/releases/"
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     lookup_field = "share_uuid"
@@ -1140,11 +1146,18 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         return response
 
 
-class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
+class CodebaseReleaseViewSet(HtmlActionRendererMixin, CommonViewSetMixin, NoDeleteViewSet):
     """
     Handles DRF requests to view, edit, or download the archival information packages for a specific codebase release
     """
 
+    html_actions = (
+        "list",
+        "retrieve",
+        "download",
+        "notify_reviewers_of_changes",
+        "request_peer_review",
+    )
     namespace = "library/codebases/releases"
     lookup_field = "version_number"
     lookup_value_regex = r"\d+\.\d+\.\d+"
@@ -1384,10 +1397,8 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
 
         return response
 
-    @action(detail=True, methods=["get"], renderer_classes=[CamelCaseJSONRenderer])
+    @action(detail=True, methods=["get"])
     def download_preview(self, request, **kwargs):
-        # always render JSON here since there is no HTML template for this action and the
-        # default renderer negotiates to RootContextHTMLRenderer for browser requests
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()
         contents = fs_api.list_sip_contents()
