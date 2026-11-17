@@ -1,0 +1,32 @@
+{% extends "base.jinja" %}
+
+{% block title %}Email address{% endblock %}
+
+{% block introduction %}
+<h1>Email address</h1>
+{% endblock %}
+
+{% block content %}
+    {% if current_emailaddress %}
+        <p>Current email: <strong>{{ current_emailaddress.email }}</strong></p>
+    {% elif not new_emailaddress %}
+        <p>You do not have an email address associated with your account. Add one below.</p>
+    {% endif %}
+
+    {% if new_emailaddress %}
+        <p>Pending verification: <strong>{{ new_emailaddress.email }}</strong></p>
+        <form method="post" action="{{ url('account_email') }}" class="mb-3">
+            {{ csrf_input }}
+            <input type="hidden" name="email" value="{{ new_emailaddress.email }}">
+            <button type="submit" name="action_send" class="btn btn-secondary">Re-send verification</button>
+            {% if current_emailaddress %}
+                <button type="submit" name="action_remove" class="btn btn-outline-danger">Cancel change</button>
+            {% endif %}
+        </form>
+    {% endif %}
+
+    <form method="post" action="{{ url('account_email') }}">
+        {% include "includes/form.jinja" %}
+        <button type="submit" name="action_add" class="btn btn-primary">Change email</button>
+    </form>
+{% endblock %}
