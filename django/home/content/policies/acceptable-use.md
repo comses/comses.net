@@ -14,4 +14,6 @@ Report suspected vulnerabilities privately through the [contact page](/about/con
 
 Proposed responses include asking for corrections, restricting access, or removing harmful content. Responses should be proportionate to the risk and allow an explanation and reconsideration where feasible. Urgent protective action may precede notice. The responsible decision makers, reporting process, and appeal route must be approved before this policy is adopted.
 
+For automated spam classifications, the proposed route is contact-page intake with manual fallback to support@comses.net, curator review, a different curator for reconsideration of curator decisions or conflicts, and appeal to the CoMSES Executive Board as final internal authority. Record outcomes privately and explain the decision to the requester, as described in the [privacy policy](/about/data-privacy/#audit). This does not establish the decision or appeal process for other conduct matters.
+
 Community interactions are also addressed by the [code of conduct](/about/policy/code-of-conduct/).

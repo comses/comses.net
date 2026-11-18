@@ -1,14 +1,62 @@
+from html.parser import HTMLParser
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from urllib.parse import unquote, urljoin, urlsplit
 
+from core.fields import render_sanitized_markdown
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from wagtail.models import Page, Site
 
 from django.core.management import call_command
-from home.management.commands.sync_policy_page import POLICY_DOCUMENTS
+from home.management.commands.sync_policy_page import CONTENT_PATH, POLICY_DOCUMENTS
 from home.models import CategoryIndexPage, MarkdownPage
+
+
+class PolicyHTMLParser(HTMLParser):
+    def __init__(self, source):
+        super().__init__()
+        self.links = []
+        self.anchors = set()
+        self.feed(render_sanitized_markdown(source))
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if "id" in attrs:
+            self.anchors.add(attrs["id"])
+        if tag == "a" and "href" in attrs:
+            self.links.append(attrs["href"])
+
+
+class PolicyContentLinksTestCase(SimpleTestCase):
+    def test_internal_links_resolve_across_canonical_policy_documents(self):
+        sources = {
+            "/about/policy/": CONTENT_PATH,
+            "/about/data-privacy/": CONTENT_PATH.parent / "data-privacy.md",
+            **{
+                f"/about/policy/{slug}/": CONTENT_PATH.parent / "policies" / f"{slug}.md"
+                for slug, _ in POLICY_DOCUMENTS
+            },
+        }
+        self.assertEqual(
+            set(CONTENT_PATH.parent.glob("policies/*.md")),
+            set(sources.values()) - {CONTENT_PATH, sources["/about/data-privacy/"]},
+        )
+        documents = {route: PolicyHTMLParser(path.read_text(encoding="utf-8")) for route, path in sources.items()}
+        # These existing site pages are outside the source-managed policy collection.
+        other_routes = {"/about/contact/", "/about/faq/", "/reviews/", "/digest/"}
+        for route, document in documents.items():
+            for href in document.links:
+                with self.subTest(source=route, link=href):
+                    target = urlsplit(href)
+                    if target.scheme or target.netloc:
+                        continue
+                    target = urlsplit(urljoin(route, href))
+                    path = unquote(target.path).rstrip("/") + "/"
+                    self.assertIn(path, documents.keys() | other_routes, "Unknown internal policy link target")
+                    if path in documents and target.fragment:
+                        self.assertIn(unquote(target.fragment), documents[path].anchors, "Missing policy anchor")
 
 
 @override_settings(WAGTAILSEARCH_BACKENDS={"default": {"BACKEND": "wagtail.search.backends.database"}})

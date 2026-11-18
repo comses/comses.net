@@ -24,4 +24,4 @@ Curatorial discretion remains available. Accepted departures from normal require
 
 ## Ownership and revisions
 
-The CoMSES team is the contact for this draft collection. Each policy needs an approved owner, effective date, and revision history before adoption. Material changes should explain their effect on existing accounts and deposits. Direct questions or requests for clarification to the [contact page](/about/contact/).
+The CoMSES Executive Board is the policy approval authority, with operational responsibilities exercised by its delegated operators. Each policy needs an effective date and revision history before adoption. Material changes should explain their effect on existing accounts and deposits. Direct questions or requests for clarification to the [contact page](/about/contact/).
