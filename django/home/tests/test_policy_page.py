@@ -88,16 +88,18 @@ class PolicyPageTestCase(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def sync(self):
-        call_command("sync_policy_page")
+    def sync(self, *, draft=False):
+        call_command("sync_policy_page", draft=draft)
         return MarkdownPage.objects.child_of(self.about).get(slug="policy")
 
-    def test_creates_unpublished_page_and_unchanged_rerun_is_noop(self):
+    def test_publishes_initial_page_and_unchanged_rerun_is_noop(self):
         page = self.sync()
         self.assertEqual(page.url, "/about/policy/")
-        self.assertFalse(page.live)
+        self.assertTrue(page.live)
         self.assertFalse(page.show_in_menus)
-        self.assertIsNone(page.first_published_at)
+        self.assertIsNotNone(page.first_published_at)
+        self.assertEqual(page.live_revision_id, page.latest_revision_id)
+        self.assertEqual(page.body.raw, self.content_path.read_text())
         revision_id = page.get_latest_revision().pk
         self.assertEqual(page.get_latest_revision_as_object().body.raw, self.content_path.read_text())
         self.assertEqual(self.sync().get_latest_revision().pk, revision_id)
@@ -105,8 +107,6 @@ class PolicyPageTestCase(TestCase):
 
     def test_source_change_updates_draft_without_changing_live_content(self):
         page = self.sync()
-        page.get_latest_revision().publish()
-        page.refresh_from_db()
         live_revision_id = page.live_revision_id
         before = page.revisions.count()
         self.content_path.write_text("## Revised canonical policy\n", encoding="utf-8")
@@ -130,17 +130,18 @@ class PolicyPageTestCase(TestCase):
         editorial_revision = draft.save_revision()
         page = self.sync()
         updated = page.get_latest_revision_as_object()
-        self.assertFalse(page.live)
+        self.assertTrue(page.live)
+        self.assertEqual(page.title, "CoMSES Policies")
         self.assertEqual(updated.title, "Editorial title")
         self.assertEqual(updated.description.raw, "Pending editorial description")
         self.assertEqual(updated.body.raw, self.content_path.read_text())
         self.assertTrue(page.revisions.filter(pk=editorial_revision.pk).exists())
 
-    def test_source_change_on_unpublished_page_remains_unpublished(self):
-        page = self.sync()
+    def test_draft_option_keeps_initial_source_updates_unpublished(self):
+        page = self.sync(draft=True)
         before = page.revisions.count()
         self.content_path.write_text("Updated draft policy\n", encoding="utf-8")
-        page = self.sync()
+        page = self.sync(draft=True)
         self.assertFalse(page.live)
         self.assertIsNone(page.first_published_at)
         self.assertEqual(page.revisions.count(), before + 1)
@@ -158,12 +159,12 @@ class PolicyPageTestCase(TestCase):
             call_command("sync_policy_page")
         self.assertFalse(MarkdownPage.objects.filter(slug="policy").exists())
 
-    def test_collection_is_flat_draft_only_and_rerun_preserves_revision_ids(self):
+    def test_collection_is_flat_published_and_rerun_preserves_revision_ids(self):
         self.sync()
         pages = list(MarkdownPage.objects.child_of(self.about))
         self.assertEqual({p.slug for p in pages}, {slug for slug, _ in POLICY_DOCUMENTS})
         revisions = {p.pk: p.latest_revision_id for p in pages}
-        self.assertTrue(all(not p.live for p in pages))
+        self.assertTrue(all(p.live for p in pages))
         for page in pages:
             self.assertEqual(page.url, f"/about/{page.slug}/")
             self.assertFalse(page.get_children().exists())
@@ -218,3 +219,50 @@ class PolicyPageTestCase(TestCase):
         with self.assertRaisesRegex(CommandError, "Policy source is empty"):
             self.sync()
         self.assertFalse(Page.objects.child_of(self.about).exists())
+
+    def test_default_publishes_existing_initial_draft_without_new_revision(self):
+        page = self.sync(draft=True)
+        revision_id = page.latest_revision_id
+        page = self.sync()
+        self.assertTrue(page.live)
+        self.assertEqual(page.live_revision_id, revision_id)
+        self.assertEqual(page.latest_revision_id, revision_id)
+        self.assertEqual(page.body.raw, self.content_path.read_text())
+
+    def test_default_publishes_updated_initial_draft(self):
+        self.sync(draft=True)
+        self.content_path.write_text("Revised initial content\n")
+        page = self.sync()
+        self.assertTrue(page.live)
+        self.assertEqual(page.body.raw, "Revised initial content\n")
+        self.assertEqual(page.live_revision_id, page.latest_revision_id)
+
+    def test_previously_published_page_is_not_republished_after_unpublishing(self):
+        page = self.sync()
+        first_published = page.first_published_at
+        page.unpublish()
+        self.content_path.write_text("Pending after unpublishing\n")
+        page = self.sync()
+        self.assertFalse(page.live)
+        self.assertEqual(page.first_published_at, first_published)
+        self.assertEqual(page.body.raw, "Initial policy content\n")
+        self.assertEqual(page.get_latest_revision_as_object().body.raw, "Pending after unpublishing\n")
+
+    def test_later_type_conflict_rolls_back_initial_publication(self):
+        conflicting = self.about.add_child(instance=Page(title="Other privacy", slug="data-privacy"))
+        with self.assertRaisesRegex(CommandError, "different type"):
+            self.sync()
+        self.assertFalse(Page.objects.child_of(self.about).filter(slug="policy").exists())
+        self.assertTrue(Page.objects.filter(pk=conflicting.pk).exists())
+
+    def test_live_legacy_privacy_without_publication_metadata_is_not_replaced(self):
+        privacy = self.about.add_child(
+            instance=MarkdownPage(title="Legacy privacy", slug="data-privacy", body="Existing live privacy", live=True)
+        )
+        self.sync()
+        privacy.refresh_from_db()
+        self.assertTrue(privacy.live)
+        self.assertIsNone(privacy.first_published_at)
+        self.assertIsNone(privacy.live_revision_id)
+        self.assertEqual(privacy.body.raw, "Existing live privacy")
+        self.assertEqual(privacy.get_latest_revision_as_object().body.raw, self.privacy_path.read_text())

@@ -1,4 +1,4 @@
-"""Synchronize education source files into reviewable Wagtail draft revisions."""
+"""Synchronize education content, publishing first versions for feedback."""
 
 import json
 import re
@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 from core.fs import get_canonical_image
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from home.content_sync import update_fields
+from home.content_sync import save_source_revision, update_fields
 from home.models import EducationPage, TutorialCard, TutorialDetailPage
 from wagtail.models import Page
 
@@ -87,14 +87,17 @@ def read_index(directory, thumbnail_directory):
 
 
 class Command(BaseCommand):
-    help = "Sync education source content to drafts; preserve live pages and omitted entries."
+    help = "Sync education content; publish first versions and save later changes as drafts."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--draft", action="store_true", help="Keep initial pages unpublished for preview.")
 
     def handle(self, *args, **options):
         index = read_index(EDUCATION_CONTENT_DIR, THUMBNAIL_DIR)
         with transaction.atomic():
-            self.sync_pages(index)
+            self.sync_pages(index, publish_initial=not options["draft"])
 
-    def sync_pages(self, index):
+    def sync_pages(self, index, *, publish_initial):
         homes = Page.objects.filter(slug="home")
         if homes.count() != 1:
             raise CommandError("Expected exactly one home page; resolve the page tree before syncing.")
@@ -128,7 +131,7 @@ class Command(BaseCommand):
         for entry in index:
             if entry["external"]:
                 continue
-            self.sync_tutorial(page, entry)
+            self.sync_tutorial(page, entry, publish_initial=publish_initial)
         if not created:
             page = page.get_latest_revision_as_object()
         changed = update_fields(
@@ -140,14 +143,18 @@ class Command(BaseCommand):
             },
         )
         cards_changed = self.sync_cards(page, index)
-        if created or changed or cards_changed:
-            page.save_revision()
+        revision, published = save_source_revision(
+            page, changed=created or changed or cards_changed, publish_initial=publish_initial
+        )
+        if published:
+            self.stdout.write("Published initial education index.")
+        elif revision:
             self.stdout.write("Saved education index draft.")
         else:
             self.stdout.write("Education index already matches; no revision created.")
-        self.stdout.write("No pages published. Preview tutorials and index in Wagtail before publishing.")
+        self.stdout.write("Existing published content is unchanged. Review pending updates in Wagtail.")
 
-    def sync_tutorial(self, parent, entry):
+    def sync_tutorial(self, parent, entry, *, publish_initial):
         existing = Page.objects.child_of(parent).filter(slug=entry["slug"]).first()
         created = existing is None
         if created:
@@ -165,8 +172,10 @@ class Command(BaseCommand):
                 "body": entry["body"],
             },
         )
-        if created or changed:
-            page.save_revision()
+        revision, published = save_source_revision(page, changed=created or changed, publish_initial=publish_initial)
+        if published:
+            self.stdout.write(f"Published initial tutorial: {entry['slug']}.")
+        elif revision:
             self.stdout.write(f"Saved tutorial draft: {entry['slug']}.")
 
     def sync_cards(self, page, index):

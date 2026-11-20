@@ -1,10 +1,10 @@
-"""Synchronize the compact About policy collection into Wagtail drafts."""
+"""Synchronize About policies, publishing first versions for feedback."""
 
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from home.content_sync import update_fields
+from home.content_sync import save_source_revision, update_fields
 from home.models import CategoryIndexPage, MarkdownPage
 from wagtail.models import Page
 
@@ -17,7 +17,10 @@ CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 
 
 class Command(BaseCommand):
-    help = "Sync CoMSES Policies and Privacy under About as drafts without publishing."
+    help = "Sync About policies; publish first versions and save later changes as drafts."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--draft", action="store_true", help="Keep initial pages unpublished for preview.")
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -40,17 +43,20 @@ class Command(BaseCommand):
         if parent.url != "/about/":
             raise CommandError("The About category page must resolve to /about/.")
         for content in contents:
-            self.sync_page(parent, *content)
-        self.stdout.write(self.style.SUCCESS("Policy drafts synchronized. Preview and publish through Wagtail."))
+            self.sync_page(parent, *content, publish_initial=not options["draft"])
+        self.stdout.write(self.style.SUCCESS("Policies synchronized. Review later changes in Wagtail."))
 
-    def sync_page(self, parent, slug, title, content):
+    def sync_page(self, parent, slug, title, content, *, publish_initial):
         existing = Page.objects.child_of(parent).filter(slug=slug).first()
         if existing:
             if not isinstance(existing.specific, MarkdownPage):
                 raise CommandError(f"An existing {slug} page has a different type; review it in Wagtail.")
             page = existing.specific.get_latest_revision_as_object()
-            if update_fields(page, {"body": content}):
-                page.save_revision()
+            changed = update_fields(page, {"body": content})
+            revision, published = save_source_revision(page, changed=changed, publish_initial=publish_initial)
+            if published:
+                self.stdout.write(f"Published initial page: {existing.url}")
+            elif revision:
                 self.stdout.write(f"Updated draft: {existing.url}")
             else:
                 self.stdout.write(f"Unchanged: {existing.url}")
@@ -70,6 +76,7 @@ class Command(BaseCommand):
         page.add_breadcrumbs(breadcrumbs)
         navigation = [(title, f"/about/{slug}/") for slug, title in POLICY_DOCUMENTS]
         page.add_navigation_links((*navigation, ("Contact", "/about/contact/")))
-        page.save_revision()
-        self.stdout.write(f"Created draft: {page.url}")
+        _, published = save_source_revision(page, changed=True, publish_initial=publish_initial)
+        action = "Published initial page" if published else "Created draft"
+        self.stdout.write(f"{action}: {page.url}")
         return page

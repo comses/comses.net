@@ -9,11 +9,19 @@ guide linked from Policies. Thumbnails remain browser assets under
 docker compose exec server ./manage.py sync_education_pages
 ```
 
-The command validates every entry and internal Markdown file before creating
-draft revisions. It preserves page IDs, URLs,
-children, prior revisions, and published content. Repeating a sync against a
-matching latest draft creates no new revision. External links do not prevent
-later internal tutorials from being synchronized.
+The command validates every entry and internal Markdown file before writing.
+It publishes first versions by default, including existing drafts that have never
+been published. To keep initial pages unpublished for preview:
+
+```bash
+docker compose exec server ./manage.py sync_education_pages --draft
+```
+
+Later changes to previously published pages remain drafts. Unpublished pages that
+were previously live are not republished automatically. Page IDs, URLs, children,
+prior revisions and existing published content are preserved. Unchanged reruns
+create no revisions; an unchanged initial draft can be published using its
+existing revision. External links do not skip later internal tutorials.
 
 ## Managed content
 
@@ -27,14 +35,15 @@ later internal tutorials from being synchronized.
   pages remain in place. A changed external URL creates a new card; review the
   old card explicitly rather than relying on omission to remove it.
 
-The command refuses incompatible existing page types. It does not delete an old
-Markdown education page to change its type, rewrite Resources navigation, publish
-revisions, or remove omitted content. Reconcile those changes separately in Wagtail.
+The command refuses incompatible page types. It does not delete an old Markdown
+education page to change its type, rewrite Resources navigation or remove omitted
+content. Reconcile those changes separately in Wagtail.
 
-Review and publish new tutorial pages before publishing index cards that link to
-them. Use Wagtail previews to check pending index-card and tutorial-body changes.
-The education view uses its own revision's cards, including in previews, rather
-than a global query of saved cards.
+First publication uses the source-managed content and any preserved editorial
+fields. New tutorials publish before a new index. If the index has already been
+published, changes to its cards stay in a draft even when a new tutorial is made
+live. Publish those index changes in Wagtail to expose the new card. The education
+view uses its revision's cards, including in previews, rather than a global query.
 
 ## Checks
 
@@ -46,4 +55,5 @@ Use a disposable database and the repository's containerized test workflow.
 Do not point setup or migration operations at a development database that must
 be preserved. Compare both live and draft content, retained child IDs, revision
 counts, source errors, omitted entries, and an internal tutorial following an
-external entry. No live education content is changed by this refactor alone.
+external entry. Check initial publication, `--draft`, and protection of previously
+published content, including pages later unpublished by an editor.

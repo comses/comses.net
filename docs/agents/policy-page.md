@@ -13,8 +13,8 @@ Preparation checklists and license comparisons belong in Education.
 | `django/home/content/education/content/sharing-models.md` | `/education/sharing-models/` |
 
 The Policies page contains the actual text, not a second index. There are no
-policy child pages or standalone Terms/accessibility pages. Proposed URLs have
-not been published; no aliases or redirects are required or generated.
+managed policy child pages or standalone Terms/accessibility pages. Retired
+proposed routes have no aliases or redirects.
 
 ## Synchronize content
 
@@ -25,17 +25,24 @@ docker compose exec server ./manage.py sync_education_pages
 docker compose exec server ./manage.py sync_policy_page
 ```
 
-The education command creates the contributor guide and its card. The policy
-command creates Policies and Privacy as sibling `MarkdownPage` objects
-under `/about/`. Neither command publishes pages or changes global navigation.
-Review and publish the guide and About pages together before exposing links.
+Both commands publish first versions by default, including existing initial
+drafts that have never been published. This makes the pages available for feedback;
+the draft labels remain in the policy text and publication does not adopt a policy.
+To keep initial pages unpublished for preview, add `--draft` to either command.
+
+Previously published pages are never automatically republished, even if an editor
+has since unpublished them. Later source changes remain pending Wagtail revisions.
+An existing live privacy page therefore keeps its published body. A new contributor
+guide is published, but changes to an existing education index, including its new
+card, still need publication in Wagtail. Neither command changes global navigation.
 
 The policy command reads every source before writing and rolls back on errors,
-including incompatible page types. Existing page identity, URL, live content,
-title and pending edits to other fields are preserved. Only changed bodies create
-draft revisions; rerunning unchanged sources creates none. Source files supersede
-CMS-only body edits, with old revisions retained. New pages receive cross-links
-to Policies, Privacy and Contact.
+including incompatible page types or failed publication. Existing page identity,
+URL, title and pending edits to other fields are preserved. Source files supersede
+CMS-only body edits, with old revisions retained. Initial publication includes
+those preserved editorial fields. Rerunning unchanged sources creates no new
+revision; a never-published draft can be published using its existing revision.
+New pages receive cross-links to Policies, Privacy and Contact.
 
 Unmanaged database pages are not deleted. If an earlier sync created discarded
 child pages or a standalone Terms draft, remove those copies manually in Wagtail.
@@ -241,18 +248,21 @@ Use disposable services and storage: the standard test target resets its databas
 make test TEST_ARGS='home.tests.test_policy_page home.tests.test_education_content_sync'
 ```
 
-Tests cover flat page creation, draft/live isolation, identity and pending-edit
-preservation, no-op reruns, source validation, transactional rollback, unmanaged
+Tests cover flat page creation, initial publication and `--draft`, draft/live
+isolation, identity and pending-edit preservation, no-op reruns, source validation,
+transactional rollback, unmanaged
 page retention, education synchronization, and rendered internal links/fragments.
 The link check includes both About sources, the contributor guide and the
 responsible-practices page; it resolves target education pages from their manifest.
 Contact, FAQ, People, review, digest and education-index routes are existing site routes
 outside this source check. External links are not fetched by the unit tests.
 
-On 2026-11-19, all 21 policy and education tests passed in fresh isolated
-services using copied source and synthetic credentials. This includes retention
-of old policy child pages, draft/live isolation and rendered links and callouts.
-Ruff lint/format and `git diff --check` passed. No live-site database was modified.
+On 2026-11-19, all 30 policy and education tests passed in isolated services using
+copied source and synthetic credentials. Coverage includes default initial
+publication, `--draft`, earlier initial drafts, unchanged reruns, pages unpublished
+by editors, legacy live privacy without publication metadata, rollback,
+retained old policy children, and rendered links/callouts. Ruff lint/format and
+`git diff --check` passed. No live-site database was modified.
 
 On 2026-11-18, the public metadata-schema source link returned HTTP 200, and the
 actual MarkdownPage template was previewed with existing site SCSS at 1280px and

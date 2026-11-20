@@ -49,21 +49,16 @@ class EducationContentSyncTestCase(TestCase):
     def write_index(self):
         (self.directory / "index.json").write_text(json.dumps(self.index))
 
-    def sync(self):
-        call_command("sync_education_pages")
+    def sync(self, *, draft=False):
+        call_command("sync_education_pages", draft=draft)
         return EducationPage.objects.child_of(self.home).get(slug="education")
-
-    def publish(self, page):
-        for child in page.get_children():
-            child.get_latest_revision().publish()
-        page.get_latest_revision().publish()
-        page.refresh_from_db()
 
     def test_external_entry_does_not_skip_later_tutorial_and_rerun_is_noop(self):
         page = self.sync()
-        self.assertFalse(page.live)
+        self.assertTrue(page.live)
+        self.assertIsNotNone(page.first_published_at)
         self.assertCountEqual(page.get_children().values_list("slug", flat=True), ["first", "last"])
-        self.assertFalse(page.get_children().filter(live=True).exists())
+        self.assertFalse(page.get_children().filter(live=False).exists())
         ids = list(page.get_children().values_list("pk", flat=True))
         counts = {p.pk: p.revisions.count() for p in [page, *page.get_children()]}
         page = self.sync()
@@ -72,7 +67,6 @@ class EducationContentSyncTestCase(TestCase):
 
     def test_changed_source_updates_only_drafts_and_preview_uses_pending_cards(self):
         page = self.sync()
-        self.publish(page)
         page_id = page.pk
         child = TutorialDetailPage.objects.child_of(page).get(slug="last")
         child_id = child.pk
@@ -115,7 +109,6 @@ class EducationContentSyncTestCase(TestCase):
 
     def test_omission_preserves_cards_children_and_revisions(self):
         page = self.sync()
-        self.publish(page)
         child = page.get_children().get(slug="last")
         revision_id = child.get_latest_revision().pk
         self.index = self.index[:2]
@@ -141,3 +134,51 @@ class EducationContentSyncTestCase(TestCase):
         page = self.sync()
         child.refresh_from_db()
         self.assertFalse(child.get_latest_revision_as_object().jumbotron)
+
+    def test_initial_drafts_publish_without_creating_new_revisions(self):
+        page = self.sync(draft=True)
+        pages = [page, *page.get_children()]
+        self.assertTrue(all(not item.live for item in pages))
+        revisions = {item.pk: item.latest_revision_id for item in pages}
+        page = self.sync()
+        for item in [page, *page.get_children()]:
+            self.assertTrue(item.live)
+            self.assertIsNotNone(item.first_published_at)
+            self.assertEqual(item.latest_revision_id, revisions[item.pk])
+            self.assertEqual(item.live_revision_id, revisions[item.pk])
+
+    def test_new_tutorial_publishes_without_publishing_existing_index_changes(self):
+        page = self.sync()
+        live_revision_id = page.live_revision_id
+        self.index.append(self.entry("new"))
+        self.write_index()
+        (self.directory / "content" / "new.md").write_text("New tutorial\n")
+        page = self.sync()
+        tutorial = TutorialDetailPage.objects.child_of(page).get(slug="new")
+        self.assertTrue(tutorial.live)
+        self.assertEqual(tutorial.body.raw, "New tutorial\n")
+        self.assertEqual(page.live_revision_id, live_revision_id)
+        self.assertFalse(page.cards.filter(url="new").exists())
+        self.assertTrue(page.get_latest_revision_as_object().cards.filter(url="new").exists())
+
+    def test_draft_option_keeps_new_tutorial_unpublished(self):
+        page = self.sync()
+        self.index.append(self.entry("new"))
+        self.write_index()
+        (self.directory / "content" / "new.md").write_text("New tutorial\n")
+        page = self.sync(draft=True)
+        self.assertTrue(page.live)
+        self.assertFalse(page.get_children().get(slug="new").live)
+
+    def test_previously_published_index_and_tutorial_are_not_republished(self):
+        page = self.sync()
+        child = TutorialDetailPage.objects.child_of(page).get(slug="last")
+        child.unpublish()
+        page.unpublish()
+        (self.directory / "content" / "last.md").write_text("Pending tutorial\n")
+        page = self.sync()
+        child.refresh_from_db()
+        self.assertFalse(page.live)
+        self.assertFalse(child.live)
+        self.assertNotEqual(child.body.raw, "Pending tutorial\n")
+        self.assertEqual(child.get_latest_revision_as_object().body.raw, "Pending tutorial\n")
