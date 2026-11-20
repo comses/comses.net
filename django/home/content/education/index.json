@@ -1,6 +1,14 @@
 [
   {
     "external": false,
+    "slug": "sharing-models",
+    "category": "in-house",
+    "title": "Sharing a Model on CoMSES",
+    "description": "Prepare a reusable deposit, choose licenses for code, data and documentation, and explain material AI assistance.",
+    "tags": ["Publishing", "Licensing"]
+  },
+  {
+    "external": false,
     "slug": "responsible-practices",
     "category": "in-house",
     "title": "Responsible Practices for Scientific Software",

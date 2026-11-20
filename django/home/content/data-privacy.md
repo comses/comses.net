@@ -1,94 +1,88 @@
 ## Who manages the data?
 
-The PIs, executive board, and software developers behind [CoMSES Net, the Network for Computational Modeling in the Social and Ecological sciences](/about/contact/) value your privacy and take security issues seriously. We are an open-source volunteer-driven community but we also have paid staff who are responsible for ensuring the security and privacy of your data.
+CoMSES Net is an open-source community supported by volunteers and paid staff. Our principal investigators, Executive Board and developers share responsibility for protecting your data. Please [contact us](/about/contact/) with privacy or security concerns.
 
 ## What information is collected when you visit this site?
 
-When you visit this site we track:
+We collect technical information about visits and downloads, along with content you post:
 
-- IP addresses
-        - [pseudo-anonymized](https://support.google.com/analytics/answer/2763052?hl=en) via Google Analytics
-        - in HTTP server logs to help us handle Denial of Service and other brute force hacks via [fail2ban](https://www.fail2ban.org/)
-        - when a codebase release is downloaded to help us disambiguate bots from real users
-- Site content which includes:
-        - Posting a job or event
-        - Publishing a codebase release
-        - Posting comments in our [forum](https://forum.comses.net/)
+- IP addresses in server logs, used to respond to denial-of-service attacks and other abuse through tools such as [fail2ban](https://www.fail2ban.org/).
+- Information about model downloads, used to help distinguish bots from people.
+- Website usage information through Google Analytics. Its [IP-handling guidance](https://support.google.com/analytics/answer/2763052?hl=en) describes its anonymization practices; our live configuration still needs to be checked.
+- Content you submit, including jobs, events, model releases and comments in our [forum](https://forum.comses.net/).
 
 ## What do we do with this information?
 
-- track user engagement to help us improve our website layout and organization of content
-- summarize jobs, events, published computational models, and other content for the [comses digest](/digest/)
-- provide aggregate statistics for reports and grant proposals to funding agencies
-- provide a (hopefully!) useful service to the computational modeling community
+We use it to improve the site, prepare the [CoMSES Digest](/digest/), report aggregate statistics to funders and support the computational modeling community. Spam screening, when enabled, uses the information described below.
 
 <a id="audit"></a>
 
 ## Automated screening for spam
 
-> Draft update for approval. This section distinguishes the proposed screening policy from current capabilities. Implementation changes are tracked separately; descriptions of deployed behavior require operator verification.
+!!! info "Draft update for approval"
+    The screening policy below is proposed. The current software does not yet enforce it, and operators still need to confirm what is running on the live site.
 
-Proposed policy: deterministic, rule-based spam checks may run on private drafts and public content within CoMSES. AI inference for spam detection is limited to publicly visible content and public fields, including public profile fields. Private drafts, confidential reviews and nonpublic account information are excluded from spam inference. A request to publish does not itself make private content eligible; inference may run after public visibility begins and when public fields change.
+We propose allowing ordinary rule-based checks on private drafts and public content within CoMSES. AI spam checks would use only publicly visible content and fields, including public profile fields. They must exclude private drafts, confidential reviews and nonpublic account information. A request to publish is not enough: content must already be public before it is sent for AI spam screening, including checks after public-field changes.
 
-The current inference workflow does not enforce that boundary. Detection defaults to disabled and is controlled by a site-wide setting, with no individual opt-in or opt-out control. Production activation has not been verified. Follow-up work includes aligning screening triggers and payloads with the proposed boundary, verifying deployed deterministic checks, and confirming the authorization model and any user controls.
+AI screening is disabled by default and controlled by a site-wide setting, with no individual opt-in or opt-out. We have not confirmed whether it is enabled on the live site. The current software can screen models before publication and send nonpublic account information; this must change to meet the proposed policy.
 
 ### What is checked?
 
-The proposed inference workflow would screen public codebase descriptions and metadata, job and event posts, and public profile fields. The following list describes the current payload, which requires changes before it meets the proposed policy: the current workflow can screen new codebases before publication and includes nonpublic account signals.
+The proposed checks cover public model descriptions and metadata, job and event posts, and public profile fields. The current software selects:
 
-- **Submission information:** selected titles, summaries, descriptions, tags, links, event locations and relevant dates; codebase replication notes, references and associated-publication text; submission time, submitter username, time between signup and submission, and linked-account provider names.
+- **Submission information:** titles, summaries, descriptions, tags, links, event locations and dates; model replication notes, references and associated-publication text; submission time, submitter username, time between signup and submission, and linked-account provider names.
 - **Profile information:** username, account join time, name, biography, research interests, affiliations, degrees, industry, tags, personal and professional links, and linked-account provider names.
 
-Uploaded model files, passwords and dedicated email fields are not selected for these screening requests. Screened text can contain email addresses or other personal or sensitive information. Operator check: restrict every inference payload to publicly visible fields, removing nonpublic account signals and private material; confirm the deployed selection and any separate forum-screening process before adding it to this disclosure.
+These requests do not select uploaded model files, passwords or dedicated email fields. Text people write can still contain email addresses or sensitive information. The list describes the software, not a verified account of live requests. Operators must restrict requests to public fields and check any separate forum screening before describing it here.
 
 ### Who processes the information?
 
-The implementation supports models hosted by Arizona State University Research Computing and Cloudflare Workers AI. Defaults select ASU as primary and Cloudflare as a fallback, but providers and models are configurable. If the primary service fails or takes too long, the same selected content can reach both providers. Available credentials also affect which configured service receives a request. Operator check: confirm the active services, request paths and fallback configuration; these defaults do not establish the production recipients.
+We plan to use ASU Research Computing first, with Cloudflare Workers AI as a separately approved fallback. The software supports both. If ASU fails or takes too long, both may receive the same content. Settings and available credentials can change which service receives a request; live recipients and request routes still need confirmation.
 
 ### What could be kept?
 
-Provider documentation was checked on November 17, 2026. The table distinguishes that documentation from the local retention proposal; it does not verify deployed settings or completed deletions.
+Provider documentation was checked on November 19, 2026. It does not verify our account settings, operator approvals or completed deletions.
 
-| Organization | Information kept and its purpose |
+| Organization | Screening records and retention |
 | --- | --- |
-| **CoMSES Net** | The implementation stores full screening inputs, model identity, classification score and threshold, latency, and fallback error details for moderation and evaluation. Human curators will manually manage retention and deletion. Screening inputs and detailed results become eligible for deletion after 3 weeks and are removed during the next curator cleanup. This is a cleanup target, not a guaranteed deletion deadline; records may remain longer until cleanup occurs. Responsible curators, cleanup cadence, deletion scope and records of completed deletions require confirmation. |
-| **ASU Research Computing** | For drafting, we assume private inference, no use of submitted inputs or outputs for training, and content retention limited to what is necessary for inference. Explicit human-operator approval of these terms remains pending. ASU documentation separately describes gateway usage records retained for 180 days without prompt or response text; this is not a 180-day content-retention claim. [ASU data handling](https://docs.rc.asu.edu/ai/api/limits-and-errors/#usage-and-data-handling) |
-| **Cloudflare Workers AI** | Its documentation limits standard inference content retention to request processing and delivery, subject to stated exceptions, and says customer content is not used for training. Stateful features, logging, caching and operational metadata have separate rules. Operator check: confirm the applicable agreement and selected features. [Cloudflare data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/) |
+| **CoMSES Net** | The software stores screening inputs, model identity, spam score and cutoff, response time and fallback errors for moderation and evaluation. Curators will delete inputs and detailed results at their next cleanup after 3 weeks. This is a target, not a deletion deadline; records may remain longer between cleanups. Curator assignments, cadence, deletion scope and cleanup records still need confirmation. |
+| **ASU Research Computing** | This draft assumes private inference, no training on inputs or outputs, and content kept only as needed for inference. Operator approval is pending. ASU documents separate gateway usage records kept for 180 days without prompt or response text; that period does not describe content retention. [ASU data handling](https://docs.rc.asu.edu/ai/api/limits-and-errors/#usage-and-data-handling) |
+| **Cloudflare Workers AI** | Its documentation says standard inference content is kept for processing and delivery, with stated exceptions, and is not used for training. Features that save state, logging, caching and usage records have separate rules. Our agreement and selected features still need operator approval. [Cloudflare data usage](https://developers.cloudflare.com/workers-ai/platform/data-usage/) |
 
-Fallback errors are also logged, and task failures can reach configured error-reporting services. Operator check: identify recipients and retention for application logs, error reports, backups, exports and evaluation copies; deletion of a moderation record does not establish deletion of those copies.
+Fallback errors are logged, and task failures can reach error-reporting services. Logs, backups, exports and evaluation copies may have separate recipients and retention. Deleting a moderation record does not establish that these copies were deleted.
 
 ### What can CoMSES control?
 
-We control which information we send, which services may receive it, whether a backup service is used, and what our application stores. After a provider receives a request, its own systems and service terms govern its handling of that information.
+We choose what to send, which providers may receive it, whether to use a fallback and what to store locally. Providers handle requests under their own systems and terms. Our draft [AI policy](/about/policy/#ai-and-automation) requires no-training agreements even for public inputs. Documented exceptions need Board approval before use. These requirements await policy approval and do not control independent uses of public deposits under their licenses or the law.
 
-The [AI policy](/about/policy/ai-automated-processing/#provider-commitments) proposes requiring no-training agreements for CoMSES-operated inference, including public inputs, with documented exceptions approved by the CoMSES Executive Board before use. The proposed requirement still needs policy approval. Operator check: verify each provider's applicable agreement or approved exception and disclose material effects on data handling. This does not establish that unrelated parties cannot use public deposits under their licenses or applicable law.
+Before publishing this disclosure as current practice, operators must confirm live settings, field selection, providers and fallback routes, agreements, additional recipients, logs and retention. Provider documentation alone does not establish how our application handles data. Any approved exception affecting data handling must be explained here.
 
 ### What if the system makes a mistake?
 
-When screening is enabled, a spam classification can hide flagged content from public listings without prior human review. Moderators can overturn classifications, and automated checks preserve manual decisions. If you believe your content has been incorrectly flagged, request moderation reconsideration through the [contact page](/about/contact/). If you cannot use the form, email [support@comses.net](mailto:support@comses.net) for manual intake. Include a link or identifier for the affected content and a brief explanation; do not send passwords or unnecessary sensitive information. This is separate from scientific peer review, which is requested through the Request Peer Review button on the model detail page.
+When enabled, screening can hide content from public listings before human review. Moderators can reverse classifications, and automated checks preserve their decisions. If your content was wrongly flagged, use our [contact page](/about/contact/) or email [support@comses.net](mailto:support@comses.net) if you cannot use the form. Include the content link or identifier and a brief explanation, without passwords or unnecessary sensitive information.
 
-Under the proposed process, the curator team handles these moderation requests. A different curator reviews the case when reconsidering a curator's decision or when the original handler has a conflict of interest. Unresolved or contested decisions may be appealed to the CoMSES Executive Board as the final internal appeal authority. Record the outcome and any correction privately and send an explanation to the requester. This draft does not promise automatic review of every classification or a response deadline. Operator check: establish monitoring coverage for both intake routes and the procedures for assignment, private decision records, corrections and Board escalation.
+Under the proposed process, curators handle these requests. A different curator reconsiders a curator's decision or handles a conflict of interest. Unresolved or contested decisions can be appealed to the Executive Board as the final internal authority. We would keep private outcome and correction records and explain decisions to the requester. We cannot promise a response time or automatically review every flag. Intake monitoring, case assignment, records and appeals still need to be put in place.
+
+Scientific peer review is separate: use **Request Peer Review** on your model's detail page.
 
 ## Disclosure to Third Parties
 
-We use [Google Analytics](https://policies.google.com/privacy?hl=en).
-
-When enabled, the supported [content screening workflow](#audit) sends selected submission and profile information to configured ASU Research Computing or Cloudflare Workers AI services. Production recipients and any additional logging or error-reporting services remain subject to the operator checks above.
+We use [Google Analytics](https://policies.google.com/privacy?hl=en). When enabled, [spam screening](#audit) sends selected information to configured ASU Research Computing or Cloudflare Workers AI services. Operators must confirm live recipients, including logging and error-reporting services.
 
 ### Proposed AI assistance during peer review
 
-The proposed [peer review request](/about/policy/review-publication/#ai-assistance-and-your-review-request) would offer a checkbox to opt out of CoMSES-operated AI assessment and summarization. This control is not implemented. This review assistance is separate from public-content spam inference and may involve private release materials only for the disclosed review purpose, when the contributor has not opted out and applicable permissions are in place. Historical requests without a recorded choice do not authorize it. Operator check: identify and disclose review inputs, providers, retention, human checks and preference-change handling before enabling the feature. The spam-screening provider and retention descriptions above do not establish how a future review feature will handle data.
+We plan a checkbox on the [peer review request](/education/sharing-models/#request-peer-review) to opt out of AI assessment and summarization by CoMSES and its reviewers. It is not implemented yet. Review assistance may use private release materials only for the stated review purpose, with the necessary permissions and if you have not opted out. Confidential reviewer correspondence needs separate permission. Older requests without a recorded choice do not authorize AI assistance.
+
+Before enabling this feature, we must explain what is sent, to whom, what is kept, how people check results and what happens if you change your choice. The spam-screening details above do not describe the handling of a future review feature.
 
 ## How does CoMSES secure your data?
 
-- We use the security protections provided by our authentication framework to safeguard account credentials.
-- All web resources are only accessible over https
-- We patch and update our systems as soon as possible when security vulnerabilities in our technology stack are reported. We monitor CVEs and security mailing lists to help us keep our dependencies up to date.
+We use our authentication framework's security protections for account credentials, serve the site over HTTPS and monitor vulnerability reports for our software dependencies. We apply security updates as soon as possible.
 
 ## Use of Cookies
 
-Cookies are used on this website for authentication as well as tracking page views and downloads. You may opt out of Google Analytics tracking with a [browser addon](https://tools.google.com/dlpage/gaoptout/).
+We use cookies for authentication and tracking page views and downloads. You can opt out of Google Analytics tracking with its [browser add-on](https://tools.google.com/dlpage/gaoptout/).
 
 ## What personal information is stored on our site?
 
-We store information supplied by you or other contributors, as well as the technical information described above. The planned spam-screening workflow would also store screening inputs and classification results as described above. Personally entered information in your user profile can be deleted from the website at any time by editing your user profile. If someone else has entered sensitive information about you on our website and you would like it removed please [contact us](/about/contact/).
+We store information you or other contributors provide, along with the technical information described above. The proposed spam checks would also keep the inputs and results described in this draft. You can remove information you entered in your profile by editing it. If someone else has posted sensitive information about you, please [contact us](/about/contact/) to request its removal.

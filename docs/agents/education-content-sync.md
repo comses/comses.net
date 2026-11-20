@@ -1,7 +1,8 @@
 # Education content synchronization
 
 `django/home/content/education/index.json` and its `content/*.md` files are the
-canonical education sources. Thumbnails remain browser assets under
+canonical education sources, including the practical `sharing-models` contributor
+guide linked from Policies. Thumbnails remain browser assets under
 `django/home/static/education/thumbnails/`.
 
 ```bash

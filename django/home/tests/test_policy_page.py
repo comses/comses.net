@@ -1,28 +1,32 @@
+import json
 from html.parser import HTMLParser
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from urllib.parse import unquote, urljoin, urlsplit
 
-from core.fields import render_sanitized_markdown
+from core.fields import render_sanitized_markdown, render_sanitized_tutorial_markdown
 from django.core.management.base import CommandError
 from django.test import SimpleTestCase, TestCase, override_settings
 from wagtail.models import Page, Site
 
 from django.core.management import call_command
-from home.management.commands.sync_policy_page import CONTENT_PATH, POLICY_DOCUMENTS
+from home.management.commands.sync_policy_page import CONTENT_DIR, POLICY_DOCUMENTS
 from home.models import CategoryIndexPage, MarkdownPage
 
 
 class PolicyHTMLParser(HTMLParser):
-    def __init__(self, source):
+    def __init__(self, source, renderer=render_sanitized_markdown):
         super().__init__()
         self.links = []
         self.anchors = set()
-        self.feed(render_sanitized_markdown(source))
+        self.callouts = []
+        self.feed(renderer(source))
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if "admonition" in attrs.get("class", "").split():
+            self.callouts.append(attrs["class"])
         if "id" in attrs:
             self.anchors.add(attrs["id"])
         if tag == "a" and "href" in attrs:
@@ -31,22 +35,18 @@ class PolicyHTMLParser(HTMLParser):
 
 class PolicyContentLinksTestCase(SimpleTestCase):
     def test_internal_links_resolve_across_canonical_policy_documents(self):
-        sources = {
-            "/about/policy/": CONTENT_PATH,
-            "/about/data-privacy/": CONTENT_PATH.parent / "data-privacy.md",
-            **{
-                f"/about/policy/{slug}/": CONTENT_PATH.parent / "policies" / f"{slug}.md"
-                for slug, _ in POLICY_DOCUMENTS
-            },
-        }
-        self.assertEqual(
-            set(CONTENT_PATH.parent.glob("policies/*.md")),
-            set(sources.values()) - {CONTENT_PATH, sources["/about/data-privacy/"]},
-        )
+        sources = {f"/about/{slug}/": CONTENT_DIR / f"{slug}.md" for slug, _ in POLICY_DOCUMENTS}
         documents = {route: PolicyHTMLParser(path.read_text(encoding="utf-8")) for route, path in sources.items()}
-        # These existing site pages are outside the source-managed policy collection.
-        other_routes = {"/about/contact/", "/about/faq/", "/reviews/", "/digest/"}
-        for route, document in documents.items():
+        education = CONTENT_DIR / "education"
+        for entry in json.loads((education / "index.json").read_text(encoding="utf-8")):
+            if not entry["external"]:
+                source = (education / "content" / f"{entry['slug']}.md").read_text(encoding="utf-8")
+                documents[f"/education/{entry['slug']}/"] = PolicyHTMLParser(source, render_sanitized_tutorial_markdown)
+        checked_routes = set(sources) | {"/education/sharing-models/", "/education/responsible-practices/"}
+        # Existing site pages outside the source-managed collection.
+        other_routes = {"/about/contact/", "/about/faq/", "/about/people/", "/reviews/", "/digest/", "/education/"}
+        for route in checked_routes:
+            document = documents[route]
             for href in document.links:
                 with self.subTest(source=route, link=href):
                     target = urlsplit(href)
@@ -57,6 +57,13 @@ class PolicyContentLinksTestCase(SimpleTestCase):
                     self.assertIn(path, documents.keys() | other_routes, "Unknown internal policy link target")
                     if path in documents and target.fragment:
                         self.assertIn(unquote(target.fragment), documents[path].anchors, "Missing policy anchor")
+
+    def test_policy_uses_existing_sanitized_callouts(self):
+        policy = PolicyHTMLParser((CONTENT_DIR / "policy.md").read_text(encoding="utf-8"))
+        self.assertIn("admonition info", policy.callouts)
+        self.assertIn("terms-of-use", policy.anchors)
+        self.assertIn("accessibility", policy.anchors)
+        self.assertIn("#terms-of-use", policy.links)
 
 
 @override_settings(WAGTAILSEARCH_BACKENDS={"default": {"BACKEND": "wagtail.search.backends.database"}})
@@ -72,15 +79,12 @@ class PolicyPageTestCase(TestCase):
         )
         directory = TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        self.content_path = Path(directory.name) / "policy.md"
-        self.content_path.write_text("Initial canonical policy\n", encoding="utf-8")
-        self.privacy_path = self.content_path.parent / "data-privacy.md"
-        self.privacy_path.write_text("Existing privacy policy\n")
-        self.documents_dir = self.content_path.parent / "policies"
-        self.documents_dir.mkdir()
+        self.content_dir = Path(directory.name)
         for slug, _ in POLICY_DOCUMENTS:
-            (self.documents_dir / f"{slug}.md").write_text(f"Initial {slug} policy\n")
-        patcher = patch("home.management.commands.sync_policy_page.CONTENT_PATH", self.content_path)
+            (self.content_dir / f"{slug}.md").write_text(f"Initial {slug} content\n", encoding="utf-8")
+        self.content_path = self.content_dir / "policy.md"
+        self.privacy_path = self.content_dir / "data-privacy.md"
+        patcher = patch("home.management.commands.sync_policy_page.CONTENT_DIR", self.content_dir)
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -109,7 +113,7 @@ class PolicyPageTestCase(TestCase):
         page = self.sync()
         self.assertTrue(page.live)
         self.assertEqual(page.live_revision_id, live_revision_id)
-        self.assertEqual(page.body.raw, "Initial canonical policy\n")
+        self.assertEqual(page.body.raw, "Initial policy content\n")
         self.assertEqual(page.get_latest_revision_as_object().body.raw, "## Revised canonical policy\n")
         self.assertIn("<h2", page.get_latest_revision_as_object().body.rendered)
         self.assertNotIn("<h2", page.body.rendered)
@@ -154,35 +158,28 @@ class PolicyPageTestCase(TestCase):
             call_command("sync_policy_page")
         self.assertFalse(MarkdownPage.objects.filter(slug="policy").exists())
 
-    def test_collection_is_draft_only_and_rerun_preserves_revision_ids(self):
-        hub = self.sync()
-        children = list(MarkdownPage.objects.child_of(hub))
-        self.assertEqual({p.slug for p in children}, {slug for slug, _ in POLICY_DOCUMENTS})
-        privacy = MarkdownPage.objects.child_of(self.about).get(slug="data-privacy")
-        self.assertEqual(privacy.url, "/about/data-privacy/")
-        pages = [hub, privacy, *children]
+    def test_collection_is_flat_draft_only_and_rerun_preserves_revision_ids(self):
+        self.sync()
+        pages = list(MarkdownPage.objects.child_of(self.about))
+        self.assertEqual({p.slug for p in pages}, {slug for slug, _ in POLICY_DOCUMENTS})
         revisions = {p.pk: p.latest_revision_id for p in pages}
         self.assertTrue(all(not p.live for p in pages))
+        for page in pages:
+            self.assertEqual(page.url, f"/about/{page.slug}/")
+            self.assertFalse(page.get_children().exists())
+            links = {link["url"] for link in page.get_latest_revision_as_object().get_navigation_links()}
+            self.assertEqual(links, {f"/about/{slug}/" for slug, _ in POLICY_DOCUMENTS} | {"/about/contact/"})
         self.sync()
         self.assertEqual(dict(Page.objects.filter(pk__in=revisions).values_list("pk", "latest_revision_id")), revisions)
+        self.assertFalse(Page.objects.filter(slug="terms-of-use").exists())
 
-    def test_child_update_preserves_live_content_and_unmanaged_children(self):
-        hub = self.sync()
-        child = MarkdownPage.objects.child_of(hub).first()
-        child.get_latest_revision().publish()
-        child.refresh_from_db()
-        previous = child.body.raw
-        unmanaged = hub.add_child(instance=Page(title="Other policy", slug="other"))
-        hub_revision = hub.latest_revision_id
-        (self.documents_dir / f"{child.slug}.md").write_text("## Changed child\n")
+    def test_unmanaged_about_pages_and_legacy_policy_children_are_retained(self):
+        policy = self.sync()
+        unmanaged = self.about.add_child(instance=Page(title="Other page", slug="other"))
+        legacy = policy.add_child(instance=Page(title="Old Terms draft", slug="terms-of-use"))
         self.sync()
-        child.refresh_from_db()
-        hub.refresh_from_db()
-        self.assertEqual(child.body.raw, previous)
-        self.assertEqual(child.get_latest_revision_as_object().body.raw, "## Changed child\n")
-        self.assertIn("<h2", child.get_latest_revision_as_object().body.rendered)
-        self.assertEqual(hub.latest_revision_id, hub_revision)
         self.assertTrue(Page.objects.filter(pk=unmanaged.pk).exists())
+        self.assertTrue(Page.objects.child_of(policy).filter(pk=legacy.pk).exists())
 
     def test_existing_privacy_page_keeps_identity_and_published_content(self):
         privacy = self.about.add_child(
@@ -198,22 +195,26 @@ class PolicyPageTestCase(TestCase):
         self.assertEqual(Page.objects.filter(slug="data-privacy").count(), 1)
 
     def test_missing_document_does_not_create_any_pages(self):
-        next(self.documents_dir.iterdir()).unlink()
+        (self.content_dir / "data-privacy.md").unlink()
         with self.assertRaisesRegex(CommandError, "Cannot read policy source"):
             self.sync()
         self.assertFalse(Page.objects.child_of(self.about).exists())
 
-    def test_child_type_conflict_rolls_back_all_updates(self):
-        hub = self.sync()
-        child = MarkdownPage.objects.child_of(hub).first()
-        slug = child.slug
-        child.delete()
-        hub.refresh_from_db()
-        conflicting = hub.add_child(instance=Page(title="Legacy page", slug=slug))
-        before = hub.latest_revision_id
-        self.content_path.write_text("Changed hub\n")
+    def test_later_type_conflict_rolls_back_all_updates(self):
+        policy = self.sync()
+        privacy = MarkdownPage.objects.child_of(self.about).get(slug="data-privacy")
+        privacy.delete()
+        conflicting = self.about.add_child(instance=Page(title="Legacy privacy", slug="data-privacy"))
+        before = policy.latest_revision_id
+        self.content_path.write_text("Changed policy\n")
         with self.assertRaisesRegex(CommandError, "different type"):
             self.sync()
-        hub.refresh_from_db()
-        self.assertEqual(hub.latest_revision_id, before)
+        policy.refresh_from_db()
+        self.assertEqual(policy.latest_revision_id, before)
         self.assertTrue(Page.objects.filter(pk=conflicting.pk).exists())
+
+    def test_empty_source_does_not_create_any_pages(self):
+        (self.content_dir / "data-privacy.md").write_text(" \n")
+        with self.assertRaisesRegex(CommandError, "Policy source is empty"):
+            self.sync()
+        self.assertFalse(Page.objects.child_of(self.about).exists())

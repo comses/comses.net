@@ -60,6 +60,8 @@ Grimm, V., S.F. Railsback, C.E. Vincenot, U. Berger, C. Gallagher, D.L. DeAngeli
 
 # Licenses
 
+For a practical checklist covering code, datasets, documentation and AI assistance, see [Sharing a Model on CoMSES](/education/sharing-models/#choose-licenses-by-component).
+
 !!! info ""
     Our general recommendation is to use the [MIT License](https://spdx.org/licenses/MIT.html) for an easy to understand, permissive license that supports maximal reuse with a protective liability clause.
 
