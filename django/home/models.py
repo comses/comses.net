@@ -357,13 +357,17 @@ class EducationPage(NavigationMixin, Page):
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        cards = TutorialCard.objects.all()
+        # Use this page's card cluster so previews include draft-only changes.
+        cards = list(self.cards.all())
         tag = request.GET.get("tag")
         if tag:
-            cards = cards.filter(tags__name=tag)
-            context["cards"] = cards.filter(tags__name=tag)
+            cards = [card for card in cards if tag in card.tags.names()]
         context["cards"] = cards
         context["categories"] = TutorialCard.EducationalContentCategory.choices
+        context["cards_by_category"] = {
+            category: [card for card in cards if card.category == category]
+            for category, label in context["categories"]
+        }
         context["jumbotron"] = self.jumbotron_dict
         return context
 
