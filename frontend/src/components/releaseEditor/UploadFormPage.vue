@@ -1,153 +1,218 @@
 <template>
   <div>
-    <p v-if="store.release.canEditOriginals">
-      A codebase release should ideally include the source code, documentation, input data and
-      dependencies necessary for someone else to understand, replicate, or reuse the model. Please
-      note the active filesystem layout used to organize your files. Uploaded source code are placed
-      in <code>project-root/code/</code>, data files go in <code>project-root/data/</code>,
-      documentation files go in <code>project-root/docs/</code>, and simulation outputs go in
-      <code>project-root/results/</code>. If your source code references uploaded data files please
-      consider using the relative path <code>../data/&lt;datafile&gt;</code> to access those data
-      files. This will make it easier for others to download, run, and review your model.
-    </p>
-    <p v-else>
-      The current filesystem layout of your published model is shown below. This release has already
-      been published so files are no longer editable.
-    </p>
-    <div class="card card-body bg-light">
-      <h3 class="card-title">Current Archival Package Filesystem Layout</h3>
-      <span class="text-warning" v-if="folderContents === null">Loading download preview...</span>
-      <div class="alert alert-danger" v-else-if="serverErrors.length">
-        {{ serverErrors.join(", ") }}
+    <FileUpload
+      v-if="editable"
+      title="Upload model files"
+      instructions=""
+      accepted-file-types="*/*"
+      :originals="[]"
+      :upload-url="packageFilesUrl(store.identifier, store.versionNumber)"
+      category="package"
+      hide-file-list
+      @upload-done="refreshFiles"
+    />
+    <ul v-if="editable" class="text-muted small mb-3">
+      <li>
+        Submitted tarballs or zip archives are unpacked. System files may be removed but the
+        original directory structure will be preserved.
+      </li>
+      <li>
+        All file types are currently accepted though files should be stored in open or plaintext
+        formats.
+      </li>
+      <li>
+        We reserve the right to curate and remove executables, binaries, or other inappropriate
+        content.
+      </li>
+      <li>Submissions are required to have source code and documentation at a minimum.</li>
+      <li>
+        We'll try to automatically categorize submitted files, please review the categorization
+        below.
+      </li>
+    </ul>
+    <div v-if="editable" class="text-muted mb-3">
+      <div
+        class="category-tabs nav nav-pills flex-nowrap w-100 gap-2"
+        role="tablist"
+        aria-label="File category guidance"
+      >
+        <button
+          v-for="(category, index) in categories"
+          :id="`file-guidance-tab-${category.id}`"
+          :key="category.id"
+          type="button"
+          class="nav-link border d-flex align-items-center justify-content-center gap-1"
+          :class="{ active: activeCategory === category.id, 'text-muted': !category.required }"
+          role="tab"
+          :aria-label="`${category.title}${category.required ? ' (required)' : ''}`"
+          :aria-selected="activeCategory === category.id"
+          :aria-controls="`file-guidance-content-${category.id}`"
+          :tabindex="activeCategory === category.id ? 0 : -1"
+          :data-cy="`file-guidance-${category.id}`"
+          @click="activeCategory = category.id"
+          @keydown="handleGuidanceKeydown($event, index)"
+        >
+          <span :class="category.icon" aria-hidden="true"></span>
+          <span>{{ category.label }}</span>
+          <span class="far fa-question-circle category-help" aria-hidden="true"></span>
+        </button>
       </div>
-      <div v-if="folderContents">
-        <FileTree :directory="folderContents" />
+      <div
+        v-for="category in categories"
+        v-show="activeCategory === category.id"
+        :id="`file-guidance-content-${category.id}`"
+        :key="category.id"
+        class="border rounded p-3 mt-2"
+        role="tabpanel"
+        :aria-labelledby="`file-guidance-tab-${category.id}`"
+        tabindex="0"
+      >
+        <p class="mb-0 small">
+          {{ category.instructions }}
+          <strong v-if="category.importantInstructions">{{
+            category.importantInstructions
+          }}</strong>
+        </p>
       </div>
     </div>
-    <div v-if="store.release.canEditOriginals">
-      <div v-for="config in configs" :key="config.uploadType">
-        <FileUpload
-          :accepted-file-types="config.acceptedFileTypes"
-          :instructions="config.instructions"
-          :originals="store.getFilesInCategory(config.uploadType)"
-          :upload-url="uploadUrl(config.uploadType)"
-          :title="config.title"
-          :category="config.uploadType"
-          @delete-file="handleDeleteFile(config.uploadType, $event)"
-          @clear="handleClear(config.uploadType)"
-          @upload-done="handleUploadDone(config.uploadType)"
-        >
-        </FileUpload>
-        <hr />
-      </div>
+    <div class="card card-body bg-light mt-3">
+      <h3 class="card-title">Current Archival Package Filesystem Layout</h3>
+      <div v-if="serverErrors.length" class="alert alert-danger">{{ serverErrors.join(", ") }}</div>
+      <span v-else-if="folderContents === null">Loading files...</span>
+      <FileTree
+        v-if="folderContents"
+        :directory="folderContents"
+        :categorizable="editable"
+        :removable="editable"
+        @files-changed="refreshFiles"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import FileUpload from "@/components/releaseEditor/FileUpload.vue";
 import FileTree from "@/components/releaseEditor/FileTree.vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import { useReleaseEditorAPI } from "@/composables/api";
 import type { FileCategory, Folder } from "@/types";
 
-export interface Config {
-  uploadType: FileCategory;
-  acceptedFileTypes: string;
-  title: string;
-  instructions: string;
-}
-
 const store = useReleaseEditorStore();
+const categories = [
+  {
+    id: "code",
+    label: "Code",
+    icon: "fas fa-code",
+    title: "Source Code",
+    required: true,
+    instructions: `Include the source code (e.g., a NetLogo .nlogo file) and dependencies necessary for someone else to run the model.`,
+  },
+  {
+    id: "docs",
+    label: "Docs",
+    icon: "fas fa-file-alt",
+    title: "Narrative Documentation",
+    required: true,
+    instructions: `Upload narrative documentation that comprehensively describes your computational model. The ODD Protocol, although designed for individual based or agent based simulation models, may serve as a useful reference for properly describing your computational model. Effective narrative documentation includes equations, pseudocode, and flow diagrams. Documentation formats include Markdown, OpenDocument Text files (ODT), and PDF documents.`,
+  },
+  {
+    id: "data",
+    label: "Data",
+    icon: "fas fa-database",
+    title: "Input Data",
+    required: false,
+    instructions: `Upload any input datasets required by your source code. Use relative paths to reference input data files so the model can run when downloaded.`,
+    importantInstructions: `There is a limit on file upload size so if your datasets are very large (over 1 GB), please consider using a trusted data repository like osf.io, figshare, or Zenodo to publish your data and include references to your data in your code via DOI or other permanent URL.`,
+  },
+  {
+    id: "results",
+    label: "Results",
+    icon: "fas fa-chart-bar",
+    title: "Simulation Outputs",
+    required: false,
+    instructions: `Upload simulation outputs associated with your computational model.`,
+    importantInstructions: `There is a limit on file upload size so if your datasets are very large (over 1 GB), please consider using a trusted data repository like osf.io, figshare, or Zenodo to publish your data and include references to it in your code via DOI or other permanent URL.`,
+  },
+  {
+    id: "metadata",
+    label: "Metadata",
+    icon: "fas fa-info-circle",
+    title: "Metadata",
+    required: false,
+    instructions: `Metadata files help others properly identify, cite, and reuse code. We'll generate CITATION.cff, codemeta.json, and LICENSE files automatically from your release metadata when publishing.`,
+  },
+];
 
-const folderContents = ref<Folder | null>(null);
+const activeCategory = ref("code");
 
-const { data, serverErrors, downloadPreview, listOriginalsFileUrl } = useReleaseEditorAPI();
-
-function uploadUrl(category: FileCategory) {
-  return listOriginalsFileUrl(store.identifier, store.versionNumber, category);
+function handleGuidanceKeydown(event: KeyboardEvent, index: number) {
+  let nextIndex: number;
+  switch (event.key) {
+    case "ArrowRight":
+      nextIndex = (index + 1) % categories.length;
+      break;
+    case "ArrowLeft":
+      nextIndex = (index + categories.length - 1) % categories.length;
+      break;
+    case "Home":
+      nextIndex = 0;
+      break;
+    case "End":
+      nextIndex = categories.length - 1;
+      break;
+    default:
+      return;
+  }
+  event.preventDefault();
+  activeCategory.value = categories[nextIndex].id;
+  const tab = event.currentTarget as HTMLButtonElement;
+  tab.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
 }
 
-onMounted(() => {
-  if (store.isInitialized) {
-    getDownloadPreview();
+const editable = computed(() => store.release.canEditOriginals);
+const folderContents = ref<Folder | null>(null);
+const { data, serverErrors, downloadPreview, packageFilesUrl } = useReleaseEditorAPI();
+
+async function refreshFiles() {
+  await downloadPreview(store.identifier, store.versionNumber);
+  if (!serverErrors.value.length && data.value) folderContents.value = data.value as Folder;
+  if (editable.value) {
+    await Promise.all(
+      (["code", "docs", "data", "results"] as FileCategory[]).map(store.fetchOriginalFiles)
+    );
   }
-});
+}
 
 watch(
   () => store.isInitialized,
-  () => {
-    if (store.isInitialized) {
-      getDownloadPreview();
-    }
-  }
+  initialized => {
+    if (initialized) refreshFiles();
+  },
+  { immediate: true }
 );
-
-async function getDownloadPreview() {
-  await downloadPreview(store.identifier, store.versionNumber);
-  if (serverErrors.value.length === 0 && data.value) {
-    folderContents.value = data.value as Folder;
-  }
-}
-
-async function handleUploadDone(category: FileCategory) {
-  await store.fetchOriginalFiles(category);
-  return getDownloadPreview();
-}
-
-async function handleDeleteFile(category: FileCategory, path: string) {
-  await store.deleteFile(category, path);
-  return getDownloadPreview();
-}
-
-async function handleClear(category: FileCategory) {
-  await store.clearCategory(category);
-  return getDownloadPreview();
-}
-
-const configs: Config[] = [
-  {
-    uploadType: "code",
-    acceptedFileTypes: "*/*",
-    title: "Upload Source Code (required)",
-    instructions: `Upload a single plaintext source code file (e.g., a NetLogo .nlogo file) or a tarball or zip archive of
-            plaintext source code representing your codebase. Submitted archives are unpacked with all files within
-            the archive extracted during the publishing process. System files may be removed but your archive's original
-            directory structure will be preserved. All file types are currently accepted though files should be stored
-            in open or plaintext formats. We reserve the right to curate and remove executables, binaries, or
-            inappropriate content.`,
-  },
-  {
-    uploadType: "docs",
-    acceptedFileTypes: "*/*",
-    title: "Upload Narrative Documentation (required)",
-    instructions: `Upload narrative documentation that comprehensively describes your computational model. The ODD
-            Protocol, although designed for individual based or agent based simulation models, may serve as a
-            useful reference for properly describing your computational model. Effective narrative documentation includes equations, pseudocode, and flow diagrams. Only open plaintext formats are accepted and include
-            Markdown, OpenDocument Text files (ODT), and PDF documents.`,
-  },
-  {
-    uploadType: "data",
-    acceptedFileTypes: "*/*",
-    title: "Upload Data (optional)",
-    instructions: `Upload any input datasets required by your source code. There is a limit on file upload size so if
-            your datasets are very large (over 1 GB), please consider using a trusted data repository like osf.io,
-            figshare, or Zenodo to publish your data and include references to your data in your code via DOI or other
-            permanent URL. If a zip or tar archive is uploaded it will be automatically unpacked. Files should be in
-            plaintext or other open data formats but all file types are currently accepted. Please note that data files
-            uploaded here will be placed in a "<project-root>/data" directory so if you'd like for your source code to
-            work immediately when another researcher downloads your codebase, your code may need to reference your input
-            data files via a relative path "../data/<your-data-file>".`,
-  },
-  {
-    uploadType: "results",
-    acceptedFileTypes: "*/*",
-    title: "Upload Simulation Outputs (optional)",
-    instructions: `Upload simulation outputs associated with your computational model. There is a limit on file upload
-    size so if your datasets are very large (over 1 GB), please consider using a trusted data repository like osf.io,
-    figshare, or Zenodo to publish your data and include references to it in your code via DOI or other permanent URL.
-    Data files should be in plain text or other open data formats.`,
-  },
-];
 </script>
+
+<style scoped>
+.category-tabs {
+  --bs-nav-link-color: var(--bs-gray-700);
+  --bs-nav-link-hover-color: var(--bs-gray-900);
+  --bs-nav-pills-link-active-bg: var(--bs-gray-200);
+  --bs-nav-pills-link-active-color: var(--bs-gray-800);
+}
+
+.category-tabs .nav-link {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 0.875rem;
+  font-size: 0.875rem;
+}
+
+.category-help {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  font-size: 0.625rem;
+}
+</style>

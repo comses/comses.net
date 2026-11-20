@@ -7,13 +7,11 @@ from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 from django.test import SimpleTestCase
+from rest_framework.exceptions import ValidationError
 
 from core import fs
 from library.fs import (
-    ArchiveExtractor,
-    FileCategories,
-    Message,
-    MessageLevels,
+    extract_manual_archive,
     ImportedCodebaseReleaseFsApi,
     extract_zip_without_top_dir,
 )
@@ -29,8 +27,6 @@ class TarExtractionSecurityTests(SimpleTestCase):
         self.sentinel = self.root / "sentinel.txt"
         self.sentinel.write_bytes(b"private data")
         self.archive = self.root / "upload.tar"
-        self.storage = Mock()
-        self.extractor = ArchiveExtractor(self.storage)
 
     def write_archive(self, members):
         with tarfile.open(self.archive, "w") as archive:
@@ -43,7 +39,7 @@ class TarExtractionSecurityTests(SimpleTestCase):
             with self.subTest(name=name):
                 self.write_archive([(tarfile.TarInfo(name), b"overwritten")])
                 with self.assertRaises(tarfile.FilterError):
-                    self.extractor.extractall(self.destination, str(self.archive))
+                    extract_manual_archive(self.archive, self.destination)
                 self.assertEqual(self.sentinel.read_bytes(), b"private data")
                 self.assertEqual(list(self.destination.iterdir()), [])
 
@@ -61,7 +57,7 @@ class TarExtractionSecurityTests(SimpleTestCase):
                 member.linkname = str(self.sentinel)
                 self.write_archive([(member, b"")])
                 with self.assertRaises(tarfile.FilterError):
-                    self.extractor.extractall(self.destination, str(self.archive))
+                    extract_manual_archive(self.archive, self.destination)
                 self.assertEqual(list(self.destination.iterdir()), [])
                 self.assertEqual(self.sentinel.read_bytes(), b"private data")
 
@@ -72,9 +68,9 @@ class TarExtractionSecurityTests(SimpleTestCase):
                 link.type = member_type
                 link.linkname = "safe.txt"
                 self.write_archive([(tarfile.TarInfo("safe.txt"), b"safe"), (link, b"")])
-                result = self.extractor.process(FileCategories.code, str(self.archive))
-                self.assertEqual(result.level, MessageLevels.error)
-                self.storage.log_save.assert_not_called()
+                with self.assertRaises(tarfile.FilterError):
+                    extract_manual_archive(self.archive, self.destination)
+                self.assertEqual(list(self.destination.iterdir()), [])
 
     def test_link_then_write_cannot_escape(self):
         link = tarfile.TarInfo("outside")
@@ -82,7 +78,7 @@ class TarExtractionSecurityTests(SimpleTestCase):
         link.linkname = str(self.root)
         self.write_archive([(link, b""), (tarfile.TarInfo("outside/sentinel.txt"), b"overwritten")])
         with self.assertRaises(tarfile.FilterError):
-            self.extractor.extractall(self.destination, str(self.archive))
+            extract_manual_archive(self.archive, self.destination)
         self.assertEqual(self.sentinel.read_bytes(), b"private data")
 
     def test_rejected_archive_imports_no_files_or_external_contents(self):
@@ -92,9 +88,9 @@ class TarExtractionSecurityTests(SimpleTestCase):
         for unsafe_member in (link, tarfile.TarInfo(str(self.sentinel))):
             with self.subTest(member_type=unsafe_member.type):
                 self.write_archive([(tarfile.TarInfo("safe.txt"), b"safe"), (unsafe_member, b"")])
-                result = self.extractor.process(FileCategories.code, str(self.archive))
-                self.assertEqual(result.level, MessageLevels.error)
-                self.storage.log_save.assert_not_called()
+                with self.assertRaises(tarfile.FilterError):
+                    extract_manual_archive(self.archive, self.destination)
+                self.assertEqual(list(self.destination.iterdir()), [])
                 self.assertEqual(self.sentinel.read_bytes(), b"private data")
 
     def test_regular_files_and_directories_are_imported(self):
@@ -107,20 +103,13 @@ class TarExtractionSecurityTests(SimpleTestCase):
                 (tarfile.TarInfo("project/src/model.py"), b"print('model')"),
             ]
         )
-        imported = {}
-
-        def save(name, content):
-            imported[name] = content.read()
-            return Message("saved")
-
-        self.storage.log_save.side_effect = save
-        result = self.extractor.process(FileCategories.code, str(self.archive))
-        self.assertFalse(result.has_errors)
+        extract_manual_archive(self.archive, self.destination)
         self.assertEqual(
-            imported,
+            {p.relative_to(self.destination).as_posix(): p.read_bytes()
+             for p in self.destination.rglob("*") if p.is_file()},
             {
-                "code/README.md": b"readme",
-                "code/src/model.py": b"print('model')",
+                "project/README.md": b"readme",
+                "project/src/model.py": b"print('model')",
             },
         )
 
@@ -149,6 +138,15 @@ class ZipExtractionSecurityTests(SimpleTestCase):
                     extract_zip_without_top_dir(self.archive, self.destination)
                 self.assertEqual(self.sentinel.read_bytes(), b"private data")
                 self.assertEqual(list(self.destination.iterdir()), [])
+
+    def test_manual_zip_preserves_paths_and_rejects_duplicate_members(self):
+        self.write_archive(["project/README", "project/src/model.py"])
+        extract_manual_archive(self.archive, self.destination)
+        self.assertEqual((self.destination / "project/README").read_bytes(), b"contents")
+        with self.assertWarns(UserWarning):
+            self.write_archive(["duplicate", "duplicate"])
+        with self.assertRaises(FileExistsError):
+            extract_manual_archive(self.archive, self.destination)
 
     def test_strips_only_a_shared_directory(self):
         for names, expected in (
@@ -265,16 +263,7 @@ class RarExtractionSecurityTests(SimpleTestCase):
             self.assertEqual((Path(destination) / "project/file").read_bytes(), b"contents")
 
     def test_upload_rejects_rar_without_importing_contents(self):
-        # Exercise the existing RAR branch regardless of the OS MIME database.
-        with (
-            patch("core.fs.rarfile.RarFile") as rar,
-            patch("library.fs.mimetypes.guess_type", return_value=("application/rar", None)),
-        ):
-            archive = rar.return_value.__enter__.return_value
-            archive.infolist.return_value = [self.member(file_redir=(1, 0, "/secret"))]
-            storage = Mock()
-            with self.assertLogs("library.fs", level="ERROR"):
-                result = ArchiveExtractor(storage).process(FileCategories.code, str(self.archive_path))
-            self.assertEqual(result.level, MessageLevels.error)
-            storage.log_save.assert_not_called()
-            archive.open.assert_not_called()
+        with patch("core.fs.rarfile.RarFile") as rar:
+            with self.assertRaises(ValidationError):
+                extract_manual_archive(self.archive_path, self.archive_path.parent / "output")
+            rar.assert_not_called()

@@ -59,19 +59,41 @@ describe("Visit codebases page", () => {
       cy.get("body").click(0, 0);
       cy.get("body").click(0, 0);
 
-      //upload files
-      getDataCy("upload-code")
-        .first()
-        .selectFile("cypress/fixtures/codebase/testCodebase.zip", { force: true });
-      getDataCy("upload-docs")
-        .first()
-        .selectFile("cypress/fixtures/codebase/testNarrativeDocumentation.txt", { force: true });
-      getDataCy("upload-data")
-        .first()
-        .selectFile("cypress/fixtures/codebase/testUploadData.txt", { force: true });
-      getDataCy("upload-results")
-        .first()
-        .selectFile("cypress/fixtures/codebase/testSimulationOutput.txt", { force: true });
+      getDataCy("file-guidance-code").should("have.attr", "aria-selected", "true");
+      getDataCy("file-guidance-docs").trigger("pointerenter", { pointerType: "mouse" });
+      getDataCy("file-guidance-docs").should("have.attr", "aria-selected", "false");
+      getDataCy("file-guidance-docs").click();
+      cy.get("#file-guidance-content-docs").should("be.visible").and("contain", "ODD Protocol");
+      cy.get("#file-guidance-content-code").should("not.be.visible");
+      getDataCy("file-guidance-metadata").click();
+      cy.get("#file-guidance-content-metadata")
+        .should("be.visible")
+        .and("contain", "CITATION.cff")
+        .and("contain", "codemeta.json")
+        .and("contain", "LICENSE");
+      getDataCy("file-guidance-metadata").trigger("keydown", { key: "Home" });
+      getDataCy("file-guidance-code").should("be.focused").and("have.attr", "aria-selected", "true");
+
+      cy.intercept("POST", "**/files/package/").as("uploadPackage");
+      getDataCy("dropzone-package").selectFile([
+        "cypress/fixtures/codebase/testSourceCode.txt",
+        "cypress/fixtures/codebase/testNarrativeDocumentation.txt",
+        "cypress/fixtures/codebase/testUploadData.txt",
+        "cypress/fixtures/codebase/testSimulationOutput.txt",
+      ], { action: "drag-drop" });
+      cy.wait(["@uploadPackage", "@uploadPackage", "@uploadPackage", "@uploadPackage"]);
+      getDataCy("upload-status-package").should("contain", "4 of 4 files uploaded");
+      getDataCy("dropzone-package").should("not.be.disabled");
+      cy.intercept("POST", "**/update_category/").as("categorize");
+      cy.get('[data-file-path="testNarrativeDocumentation.txt"]').select("docs");
+      cy.wait("@categorize");
+      cy.get('[data-file-path="testUploadData.txt"]').select("data");
+      cy.wait("@categorize");
+      cy.get('[data-file-path="testSimulationOutput.txt"]').select("results");
+      cy.wait("@categorize");
+      cy.reload();
+      cy.get('[data-file-path="testNarrativeDocumentation.txt"]').should("have.value", "docs");
+      cy.get('[data-file-path="testUploadData.txt"]').should("have.value", "data");
 
       getDataCy("add-metadata").click();
       getDataCy("release-notes").type("Release notes");

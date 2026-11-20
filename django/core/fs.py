@@ -209,7 +209,7 @@ def unrar(archive_path, dst_dir: str):
         budget.check_time()
 
 
-def extract_zip(zip_path, extract_to, strip_top_dir=False):
+def extract_zip(zip_path, extract_to, strip_top_dir=False, overwrite=True):
     budget = ArchiveBudget()
     budget.check_input(zip_path)
     with zipfile.ZipFile(zip_path, "r") as archive:
@@ -244,7 +244,7 @@ def extract_zip(zip_path, extract_to, strip_top_dir=False):
                 target.mkdir(parents=True, exist_ok=True)
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
-                with archive.open(member) as source, target.open("wb") as destination:
+                with archive.open(member) as source, target.open("wb" if overwrite else "xb") as destination:
                     budget.copy(source, destination)
         budget.check_time()
 

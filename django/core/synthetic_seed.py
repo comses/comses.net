@@ -86,10 +86,12 @@ def inventory(root):
 def add_file(api, category, name, content):
     stream = io.BytesIO(content)
     stream.name = name
-    messages = api.add(category, stream)
+    # Categories no longer determine upload paths; request the seed layout explicitly.
+    relative_path = f"{category.name}/{name}"
+    messages = api.add(category, stream, name=relative_path)
     if messages.has_errors:
-        raise CommandError(f"Synthetic fixture upload failed: {category.name}/{name}")
-    path = api.sip_contents_dir / category.name / name
+        raise CommandError(f"Synthetic fixture upload failed: {relative_path}")
+    path = api.sip_contents_dir / relative_path
     if sha256(path) != hashlib.sha256(content).hexdigest():
         raise CommandError("Synthetic file bytes changed during upload.")
 
